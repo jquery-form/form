@@ -261,12 +261,13 @@ $.fn.ajaxSubmit = function(options) {
             }
         }, 10);
 
+        var operaHack = 0;
+		
         function cb() {
             if (cbInvoked++) return;
             
             io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
 
-            var operaHack = 0;
             var ok = true;
             try {
                 if (timedOut) throw 'timeout';
