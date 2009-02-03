@@ -1,14 +1,12 @@
 /*
  * jQuery Form Plugin
- * version: 2.18 (06-JAN-2009)
+ * version: 2.19 (02-FEB-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
  * Dual licensed under the MIT and GPL licenses:
  *   http://www.opensource.org/licenses/mit-license.php
  *   http://www.gnu.org/licenses/gpl.html
- *
- * Revision: $Id: jquery.form.js 6061 2009-01-07 01:43:18Z malsup $
  */
 ;(function($) {
 
@@ -221,12 +219,14 @@ $.fn.ajaxSubmit = function(options) {
         setTimeout(function() {
             // make sure form attrs are set
             var t = $form.attr('target'), a = $form.attr('action');
-            $form.attr({
-                target:   id,
-                method:   'POST',
-                action:   opts.url
-            });
-            
+
+			// update form attrs in IE friendly way
+			form.setAttribute('target',id);
+			if (form.getAttribute('method') != 'POST')
+				form.setAttribute('method', 'POST');
+			if (form.getAttribute('action') != opts.url)
+				form.setAttribute('action', opts.url);
+							
             // ie borks in some cases when setting encoding
             if (! options.skipEncodingOverride) {
                 $form.attr({
@@ -255,8 +255,8 @@ $.fn.ajaxSubmit = function(options) {
             }
             finally {
                 // reset attrs and remove "extra" input elements
-                $form.attr('action', a);
-                t ? $form.attr('target', t) : $form.removeAttr('target');
+				form.setAttribute('action',a);
+                t ? form.setAttribute('target', t) : $form.removeAttr('target');
                 $(extraInputs).remove();
             }
         }, 10);
