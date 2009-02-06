@@ -276,7 +276,7 @@ $.fn.ajaxSubmit = function(options) {
 
                 doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
                 
-                if (doc.body == null && !operaHack && $.browser.opera) {
+                if ((doc.body == null || doc.body.innerHTML == '') && !operaHack && $.browser.opera) {
                     // In Opera 9.2.x the iframe DOM is not always traversable when
                     // the onload callback fires so we give Opera 100ms to right itself
                     operaHack = 1;
