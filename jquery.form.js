@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.19 (02-FEB-2009)
+ * version: 2.20 (06-FEB-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -138,7 +138,7 @@ $.fn.ajaxSubmit = function(options) {
    if (options.iframe || found) { 
        // hack to fix Safari hang (thanks to Tim Molendijk for this)
        // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-       if ($.browser.safari && options.closeKeepAlive)
+       if (options.closeKeepAlive)
            $.get(options.closeKeepAlive, fileUpload);
        else
            fileUpload();
@@ -164,11 +164,9 @@ $.fn.ajaxSubmit = function(options) {
 		var s = jQuery.extend(true, {}, $.extend(true, {}, $.ajaxSettings), opts);
 
         var id = 'jqFormIO' + (new Date().getTime());
-        var $io = $('<iframe id="' + id + '" name="' + id + '" />');
+        var $io = $('<iframe id="' + id + '" name="' + id + '" src="javascript:false;document.write("");" />');
         var io = $io[0];
 
-        if ($.browser.msie || $.browser.opera) 
-            io.src = 'javascript:false;document.write("");';
         $io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
 
         var xhr = { // mock object
@@ -261,7 +259,7 @@ $.fn.ajaxSubmit = function(options) {
             }
         }, 10);
 
-        var operaHack = 0;
+        var nullCheckFlag = 0;
 		
         function cb() {
             if (cbInvoked++) return;
@@ -276,10 +274,10 @@ $.fn.ajaxSubmit = function(options) {
 
                 doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
                 
-                if ((doc.body == null || doc.body.innerHTML == '') && !operaHack && $.browser.opera) {
-                    // In Opera 9.2.x the iframe DOM is not always traversable when
-                    // the onload callback fires so we give Opera 100ms to right itself
-                    operaHack = 1;
+                if ((doc.body == null || doc.body.innerHTML == '') && !nullCheckFlag) {
+                    // in some browsers (cough, Opera 9.2.x) the iframe DOM is not always traversable when
+                    // the onload callback fires, so we give them a 2nd chance
+                    nullCheckFlag = 1;
                     cbInvoked--;
                     setTimeout(cb, 100);
                     return;
@@ -540,8 +538,9 @@ $.fieldValue = function(el, successful) {
         for(var i=(one ? index : 0); i < max; i++) {
             var op = ops[i];
             if (op.selected) {
-                // extra pain for IE...
-                var v = ($.browser.msie && op.attributes && op.attributes['value'] && !(op.attributes['value'].specified)) ? op.text : op.value;
+				var v = op.value;
+				if (!v) // extra pain for IE...
+                	v = (op.attributes && op.attributes['value'] && !(op.attributes['value'].specified)) ? op.text : op.value;
                 if (one) return v;
                 a.push(v);
             }
