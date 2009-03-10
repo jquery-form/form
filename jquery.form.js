@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.22 (09-MAR-2009)
+ * version: 2.23 (10-MAR-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -53,9 +53,10 @@ $.fn.ajaxSubmit = function(options) {
     if (typeof options == 'function')
         options = { success: options };
 
-    // clean url (don't include hash)
+    // clean url (don't include hash vaue)
     var url = this.attr('action') || window.location.href;
-    url = url.match(/([^#]+)/)[1];
+    url = (url.match(/^([^#]+)/)||[])[1];
+    url = url || '';
 
     options = $.extend({
         url:  url,
@@ -267,7 +268,7 @@ $.fn.ajaxSubmit = function(options) {
 
         function cb() {
             if (cbInvoked++) return;
-            
+
             io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
 
             var ok = true;
