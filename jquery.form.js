@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.23 (10-MAR-2009)
+ * version: 2.24 (10-MAR-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -84,7 +84,7 @@ $.fn.ajaxSubmit = function(options) {
         for (var n in options.data) {
           if(options.data[n] instanceof Array) {
             for (var k in options.data[n])
-              a.push( { name: n, value: options.data[n][k] } )
+              a.push( { name: n, value: options.data[n][k] } );
           }
           else
              a.push( { name: n, value: options.data[n] } );
@@ -602,7 +602,7 @@ $.fn.resetForm = function() {
 $.fn.enable = function(b) {
     if (b == undefined) b = true;
     return this.each(function() {
-        this.disabled = !b
+        this.disabled = !b;
     });
 };
 
