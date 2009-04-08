@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.24 (10-MAR-2009)
+ * version: 2.25 (08-APR-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -166,7 +166,7 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         var opts = $.extend({}, $.ajaxSettings, options);
-		var s = jQuery.extend(true, {}, $.extend(true, {}, $.ajaxSettings), opts);
+		var s = $.extend(true, {}, $.extend(true, {}, $.ajaxSettings), opts);
 
         var id = 'jqFormIO' + (new Date().getTime());
         var $io = $('<iframe id="' + id + '" name="' + id + '" src="about:blank" />');
@@ -195,7 +195,7 @@ $.fn.ajaxSubmit = function(options) {
         if (g) $.event.trigger("ajaxSend", [xhr, opts]);
 
 		if (s.beforeSend && s.beforeSend(xhr, s) === false) {
-			s.global && jQuery.active--;
+			s.global && $.active--;
 			return;
         }
         if (xhr.aborted)
