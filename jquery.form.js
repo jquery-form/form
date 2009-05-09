@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.25 (08-APR-2009)
+ * version: 2.27 (09-MAY-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -53,10 +53,12 @@ $.fn.ajaxSubmit = function(options) {
     if (typeof options == 'function')
         options = { success: options };
 
-    // clean url (don't include hash vaue)
-    var url = this.attr('action') || window.location.href;
-    url = (url.match(/^([^#]+)/)||[])[1];
-    url = url || '';
+    var url = $.trim(this.attr('action'));
+    if (url) {
+	    // clean url (don't include hash vaue)
+	    url = (url.match(/^([^#]+)/)||[])[1];
+   	}
+   	url = url || window.location.href || ''
 
     options = $.extend({
         url:  url,
@@ -139,8 +141,12 @@ $.fn.ajaxSubmit = function(options) {
         if (files[j])
             found = true;
 
+	var multipart = false;
+//	var mp = 'multipart/form-data';
+//	multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
+
     // options.iframe allows user to force iframe mode
-   if (options.iframe || found) {
+   if (options.iframe || found || multipart) {
        // hack to fix Safari hang (thanks to Tim Molendijk for this)
        // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
        if (options.closeKeepAlive)
