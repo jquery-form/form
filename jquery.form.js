@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.27 (09-MAY-2009)
+ * version: 2.28 (10-MAY-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -421,8 +421,10 @@ $.fn.formToArray = function(semantic) {
 
         if (semantic && form.clk && el.type == "image") {
             // handle image inputs on the fly when semantic == true
-            if(!el.disabled && form.clk == el)
+            if(!el.disabled && form.clk == el) {
+            	a.push({name: n, value: $(el).val()});
                 a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
+            }
             continue;
         }
 
@@ -436,13 +438,11 @@ $.fn.formToArray = function(semantic) {
     }
 
     if (!semantic && form.clk) {
-        // input type=='image' are not found in elements array! handle them here
-        var inputs = form.getElementsByTagName("input");
-        for(var i=0, max=inputs.length; i < max; i++) {
-            var input = inputs[i];
-            var n = input.name;
-            if(n && !input.disabled && input.type == "image" && form.clk == input)
-                a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
+        // input type=='image' are not found in elements array! handle it here
+        var $input = $(form.clk), input = $input[0], n = input.name;
+        if (n && !input.disabled && input.type == 'image') {
+        	a.push({name: n, value: $input.val()});
+            a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
         }
     }
     return a;
