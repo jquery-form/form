@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.28 (10-MAY-2009)
+ * version: 2.30 (06-SEP-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -270,7 +270,7 @@ $.fn.ajaxSubmit = function(options) {
             }
         }, 10);
 
-        var nullCheckFlag = 0;
+        var domCheckCount = 50;
 
         function cb() {
             if (cbInvoked++) return;
@@ -285,14 +285,17 @@ $.fn.ajaxSubmit = function(options) {
 
                 doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
 
-                if ((doc.body == null || doc.body.innerHTML == '') && !nullCheckFlag) {
-                    // in some browsers (cough, Opera 9.2.x) the iframe DOM is not always traversable when
-                    // the onload callback fires, so we give them a 2nd chance
-                    nullCheckFlag = 1;
-                    cbInvoked--;
-                    setTimeout(cb, 100);
-                    return;
-                }
+                if (doc.body == null || doc.body.innerHTML == '') {
+                 	if (--domCheckCount) {
+	                    // in some browsers (Opera) the iframe DOM is not always traversable when
+	                    // the onload callback fires, so we loop a bit to accommodate
+	                    cbInvoked = 0;
+	                    setTimeout(cb, 100);
+	                    return;
+	                }
+	                log('Could not access iframe DOM after 50 tries.');
+	                return;
+	            }
 
                 xhr.responseText = doc.body ? doc.body.innerHTML : null;
                 xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
