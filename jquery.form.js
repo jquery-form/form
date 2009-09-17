@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.31 (09-SEP-2009)
+ * version: 2.32 (17-SEP-2009)
  * @requires jQuery v1.2.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -284,8 +284,10 @@ $.fn.ajaxSubmit = function(options) {
                 var data, doc;
 
                 doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
-
-                if (doc.body == null || doc.body.innerHTML == '') {
+				
+				var isXml = opts.dataType == 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
+				log('isXml='+isXml);
+                if (!isXml && (doc.body == null || doc.body.innerHTML == '')) {
                  	if (--domCheckCount) {
 	                    // in some browsers (Opera) the iframe DOM is not always traversable when
 	                    // the onload callback fires, so we loop a bit to accommodate
