@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.33 (22-SEP-2009)
+ * version: 2.34 (04-NOV-2009)
  * @requires jQuery v1.2.6 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -377,13 +377,18 @@ $.fn.ajaxForm = function(options) {
 		$(this).ajaxSubmit(options);
 		return false;
 	}).bind('click.form-plugin', function(e) {
-		var $el = $(e.target);
+		var target = e.target;
+		var $el = $(target);
 		if (!($el.is(":submit,input:image"))) {
-			return;
+			// is this a child element of the submit el?  (ex: a span within a button)
+			var t = $el.closest(':submit');
+			if (t.length == 0)
+				return;
+			target = t[0];
 		}
 		var form = this;
-		form.clk = e.target;
-		if (e.target.type == 'image') {
+		form.clk = target;
+		if (target.type == 'image') {
 			if (e.offsetX != undefined) {
 				form.clk_x = e.offsetX;
 				form.clk_y = e.offsetY;
@@ -392,8 +397,8 @@ $.fn.ajaxForm = function(options) {
 				form.clk_x = e.pageX - offset.left;
 				form.clk_y = e.pageY - offset.top;
 			} else {
-				form.clk_x = e.pageX - e.target.offsetLeft;
-				form.clk_y = e.pageY - e.target.offsetTop;
+				form.clk_x = e.pageX - target.offsetLeft;
+				form.clk_y = e.pageY - target.offsetTop;
 			}
 		}
 		// clear form vars
