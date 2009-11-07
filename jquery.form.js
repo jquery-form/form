@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.35 (06-NOV-2009)
+ * version: 2.36 (07-NOV-2009)
  * @requires jQuery v1.2.6 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -63,7 +63,7 @@ $.fn.ajaxSubmit = function(options) {
 	options = $.extend({
 		url:  url,
 		type: this.attr('method') || 'GET',
-		iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank',
+		iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
 	}, options || {});
 
 	// hook for manipulating the form data before it is extracted;
