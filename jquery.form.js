@@ -1,7 +1,7 @@
 /*
  * jQuery Form Plugin
- * version: 2.36 (07-NOV-2009)
- * @requires jQuery v1.2.6 or later
+ * version: 2.37 (13-FEB-2010)
+ * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
  * Dual licensed under the MIT and GPL licenses:
@@ -130,9 +130,9 @@ $.fn.ajaxSubmit = function(options) {
 	else if (options.success)
 		callbacks.push(options.success);
 
-	options.success = function(data, status) {
+	options.success = function(data, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
 		for (var i=0, max=callbacks.length; i < max; i++)
-			callbacks[i].apply(options, [data, status, $form]);
+			callbacks[i].apply(options, [data, status, xhr || $form, $form]);
 	};
 
 	// are there files to upload?
