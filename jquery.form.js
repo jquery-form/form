@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.37 (13-FEB-2010)
+ * version: 2.38 (13-FEB-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -217,17 +217,17 @@ $.fn.ajaxSubmit = function(options) {
 		if (sub) {
 			var n = sub.name;
 			if (n && !sub.disabled) {
-				options.extraData = options.extraData || {};
-				options.extraData[n] = sub.value;
+				opts.extraData = opts.extraData || {};
+				opts.extraData[n] = sub.value;
 				if (sub.type == "image") {
-					options.extraData[name+'.x'] = form.clk_x;
-					options.extraData[name+'.y'] = form.clk_y;
+					opts.extraData[name+'.x'] = form.clk_x;
+					opts.extraData[name+'.y'] = form.clk_y;
 				}
 			}
 		}
 
 		// take a breath so that pending repaints get some cpu time before the upload starts
-		setTimeout(function() {
+		function doSubmit() {
 			// make sure form attrs are set
 			var t = $form.attr('target'), a = $form.attr('action');
 
@@ -239,7 +239,7 @@ $.fn.ajaxSubmit = function(options) {
 				form.setAttribute('action', opts.url);
 
 			// ie borks in some cases when setting encoding
-			if (! options.skipEncodingOverride) {
+			if (! opts.skipEncodingOverride) {
 				$form.attr({
 					encoding: 'multipart/form-data',
 					enctype:  'multipart/form-data'
@@ -253,10 +253,10 @@ $.fn.ajaxSubmit = function(options) {
 			// add "extra" data to form if provided in options
 			var extraInputs = [];
 			try {
-				if (options.extraData)
-					for (var n in options.extraData)
+				if (opts.extraData)
+					for (var n in opts.extraData)
 						extraInputs.push(
-							$('<input type="hidden" name="'+n+'" value="'+options.extraData[n]+'" />')
+							$('<input type="hidden" name="'+n+'" value="'+opts.extraData[n]+'" />')
 								.appendTo(form)[0]);
 
 				// add iframe to doc and submit the form
@@ -270,8 +270,13 @@ $.fn.ajaxSubmit = function(options) {
 				t ? form.setAttribute('target', t) : $form.removeAttr('target');
 				$(extraInputs).remove();
 			}
-		}, 10);
+		};
 
+		if (opts.forceSync)
+			doSubmit();
+		else
+			setTimeout(doSubmit, 10); // this lets dom updates render
+	
 		var domCheckCount = 50;
 
 		function cb() {
