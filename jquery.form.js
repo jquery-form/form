@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.38 (13-FEB-2010)
+ * version: 2.39 (19-FEB-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -177,7 +177,7 @@ $.fn.ajaxSubmit = function(options) {
 		var s = $.extend(true, {}, $.extend(true, {}, $.ajaxSettings), opts);
 
 		var id = 'jqFormIO' + (new Date().getTime());
-		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ opts.iframeSrc +'" />');
+		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ opts.iframeSrc +'" onload="(jQuery(this).data(\'form-plugin-onload\'))()" />');
 		var io = $io[0];
 
 		$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
@@ -261,7 +261,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				// add iframe to doc and submit the form
 				$io.appendTo('body');
-				io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+				$io.data('form-plugin-onload', cb);
 				form.submit();
 			}
 			finally {
@@ -282,7 +282,7 @@ $.fn.ajaxSubmit = function(options) {
 		function cb() {
 			if (cbInvoked++) return;
 
-			io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
+			$io.removeData('form-plugin-onload');
 
 			var ok = true;
 			try {
