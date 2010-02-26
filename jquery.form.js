@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.39 (19-FEB-2010)
+ * version: 2.40 (26-FEB-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -209,7 +209,7 @@ $.fn.ajaxSubmit = function(options) {
 		if (xhr.aborted)
 			return;
 
-		var cbInvoked = 0;
+		var cbInvoked = false;
 		var timedOut = 0;
 
 		// add submitting element to data if we know it
@@ -277,12 +277,11 @@ $.fn.ajaxSubmit = function(options) {
 		else
 			setTimeout(doSubmit, 10); // this lets dom updates render
 	
-		var domCheckCount = 50;
+		var domCheckCount = 100;
 
 		function cb() {
-			if (cbInvoked++) return;
-
-			$io.removeData('form-plugin-onload');
+			if (cbInvoked) 
+				return;
 
 			var ok = true;
 			try {
@@ -298,14 +297,14 @@ $.fn.ajaxSubmit = function(options) {
 				 	if (--domCheckCount) {
 						// in some browsers (Opera) the iframe DOM is not always traversable when
 						// the onload callback fires, so we loop a bit to accommodate
-						cbInvoked = 0;
-						setTimeout(cb, 100);
+						setTimeout(cb, 250);
 						return;
 					}
-					log('Could not access iframe DOM after 50 tries.');
+					log('Could not access iframe DOM after 100 tries.');
 					return;
 				}
 
+				cbInvoked = true;
 				xhr.responseText = doc.body ? doc.body.innerHTML : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				xhr.getResponseHeader = function(header){
@@ -346,6 +345,7 @@ $.fn.ajaxSubmit = function(options) {
 
 			// clean up
 			setTimeout(function() {
+				$io.removeData('form-plugin-onload');
 				$io.remove();
 				xhr.responseXML = null;
 			}, 100);
@@ -380,9 +380,9 @@ $.fn.ajaxSubmit = function(options) {
  * the form itself.
  */
 $.fn.ajaxForm = function(options) {
-	return this.ajaxFormUnbind().bind('submit.form-plugin', function() {
+	return this.ajaxFormUnbind().bind('submit.form-plugin', function(e) {
+		e.preventDefault();
 		$(this).ajaxSubmit(options);
-		return false;
 	}).bind('click.form-plugin', function(e) {
 		var target = e.target;
 		var $el = $(target);
