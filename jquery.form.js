@@ -1,6 +1,6 @@
 /*
  * jQuery Form Plugin
- * version: 2.40 (26-FEB-2010)
+ * version: 2.41 (27-FEB-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -297,6 +297,7 @@ $.fn.ajaxSubmit = function(options) {
 				 	if (--domCheckCount) {
 						// in some browsers (Opera) the iframe DOM is not always traversable when
 						// the onload callback fires, so we loop a bit to accommodate
+				 		log('requeing onLoad callback, DOM not available');
 						setTimeout(cb, 250);
 						return;
 					}
@@ -304,6 +305,7 @@ $.fn.ajaxSubmit = function(options) {
 					return;
 				}
 
+				log('response detected');
 				cbInvoked = true;
 				xhr.responseText = doc.body ? doc.body.innerHTML : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
@@ -330,6 +332,7 @@ $.fn.ajaxSubmit = function(options) {
 				data = $.httpData(xhr, opts.dataType);
 			}
 			catch(e){
+				log('error caught:',e);
 				ok = false;
 				$.handleError(opts, xhr, 'error', e);
 			}
@@ -658,8 +661,13 @@ $.fn.selected = function(select) {
 // helper fn for console logging
 // set $.fn.ajaxSubmit.debug to true to enable debug logging
 function log() {
-	if ($.fn.ajaxSubmit.debug && window.console && window.console.log)
-		window.console.log('[jquery.form] ' + Array.prototype.join.call(arguments,''));
+	if ($.fn.ajaxSubmit.debug) {
+		var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
+		if (window.console && window.console.log)
+			window.console.log(msg);
+		else if (window.opera && window.opera.postError)
+			window.opera.postError(msg);
+	}
 };
 
 })(jQuery);
