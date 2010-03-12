@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.42 (12-MAR-2010)
+ * version: 2.43 (12-MAR-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -124,7 +124,8 @@ $.fn.ajaxSubmit = function(options) {
 	if (!options.dataType && options.target) {
 		var oldSuccess = options.success || function(){};
 		callbacks.push(function(data) {
-			$(options.target).html(data).each(oldSuccess, arguments);
+			var fn = options.replaceTarget ? 'replaceWith' : 'html';
+			$(options.target)[fn](data).each(oldSuccess, arguments);
 		});
 	}
 	else if (options.success)
@@ -334,6 +335,7 @@ $.fn.ajaxSubmit = function(options) {
 			catch(e){
 				log('error caught:',e);
 				ok = false;
+				xhr.error = e;
 				$.handleError(opts, xhr, 'error', e);
 			}
 
