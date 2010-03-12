@@ -1,6 +1,6 @@
-/*
+/*!
  * jQuery Form Plugin
- * version: 2.41 (27-FEB-2010)
+ * version: 2.42 (12-MAR-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -220,8 +220,8 @@ $.fn.ajaxSubmit = function(options) {
 				opts.extraData = opts.extraData || {};
 				opts.extraData[n] = sub.value;
 				if (sub.type == "image") {
-					opts.extraData[name+'.x'] = form.clk_x;
-					opts.extraData[name+'.y'] = form.clk_y;
+					opts.extraData[n+'.x'] = form.clk_x;
+					opts.extraData[n+'.y'] = form.clk_y;
 				}
 			}
 		}
