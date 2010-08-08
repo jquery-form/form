@@ -637,7 +637,7 @@ $.fn.fieldValue = function(successful) {
  */
 $.fieldValue = function(el, successful) {
 	var n = el.name, t = el.type, tag = el.tagName.toLowerCase();
-	if (typeof successful == 'undefined') {
+	if (successful === undefined) {
 		successful = true;
 	}
 
@@ -723,7 +723,7 @@ $.fn.resetForm = function() {
  * Enables or disables any matching elements.
  */
 $.fn.enable = function(b) {
-	if (b == undefined) {
+	if (b === undefined) {
 		b = true;
 	}
 	return this.each(function() {
@@ -736,7 +736,9 @@ $.fn.enable = function(b) {
  * selects/deselects and matching option elements.
  */
 $.fn.selected = function(select) {
-	if (select == undefined) select = true;
+	if (select === undefined) {
+		select = true;
+	}
 	return this.each(function() {
 		var t = this.type;
 		if (t == 'checkbox' || t == 'radio') {
