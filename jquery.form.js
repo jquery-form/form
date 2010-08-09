@@ -215,7 +215,7 @@ $.fn.ajaxSubmit = function(options) {
 			$.event.trigger("ajaxStart");
 		}
 		if (g) {
-			$.event.trigger("ajaxSend", [xhr, opts]);
+			$.event.trigger("ajaxSend", [xhr, s]);
 		}
 
 		if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
@@ -371,18 +371,18 @@ $.fn.ajaxSubmit = function(options) {
 				log('error caught:',e);
 				ok = false;
 				xhr.error = e;
-				$.handleError(opts, xhr, 'error', e);
+				$.handleError(s, xhr, 'error', e);
 			}
 
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
 			if (ok) {
 				s.success.call(s.context, data, 'success');
 				if (g) {
-					$.event.trigger("ajaxSuccess", [xhr, opts]);
+					$.event.trigger("ajaxSuccess", [xhr, s]);
 				}
 			}
 			if (g) {
-				$.event.trigger("ajaxComplete", [xhr, opts]);
+				$.event.trigger("ajaxComplete", [xhr, s]);
 			}
 			if (g && ! --$.active) {
 				$.event.trigger("ajaxStop");
