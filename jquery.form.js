@@ -189,7 +189,9 @@ $.fn.ajaxSubmit = function(options) {
 		var s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
 		var id = 'jqFormIO' + (new Date().getTime());
-		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" onload="var f = jQuery(this).data(\'form-plugin-onload\'); if (f) f();" />');
+        var jquery_alias = ("jquery.form.plugin.jquery" + $().jquery).replace(/\./g, "_");
+        window[jquery_alias] = $;
+		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" onload="var f = '+ jquery_alias +'(this).data(\'form-plugin-onload\'); if (f) f();" />');
 		var io = $io[0];
 
 		$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
