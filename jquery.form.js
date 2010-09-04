@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.45 (09-AUG-2010)
+ * version: 2.47 (04-SEP-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -185,11 +185,19 @@ $.fn.ajaxSubmit = function(options) {
 			alert('Error: Form elements must not have name or id of "submit".');
 			return;
 		}
-
+		
 		var s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
-		var id = 'jqFormIO' + (new Date().getTime());
-		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" onload="var f = jQuery(this).data(\'form-plugin-onload\'); if (f) f();" />');
+		var id = 'jqFormIO' + (new Date().getTime()), fn = '_'+id;
+		window[fn] = function() {
+			var f = $io.data('form-plugin-onload');
+			if (f) {
+				f();
+				window[fn] = undefined;
+				try { delete window[fn]; } catch(e){}
+			}
+		}
+		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" onload="window[\'_\'+this.id]()" />');
 		var io = $io[0];
 
 		$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
@@ -307,7 +315,7 @@ $.fn.ajaxSubmit = function(options) {
 			setTimeout(doSubmit, 10); // this lets dom updates render
 		}
 	
-		var data, doc, domCheckCount = 100;
+		var data, doc, domCheckCount = 50;
 
 		function cb() {
 			if (cbInvoked) {
@@ -326,7 +334,7 @@ $.fn.ajaxSubmit = function(options) {
 				
 				var isXml = s.dataType == 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
 				log('isXml='+isXml);
-				if (!isXml && (doc.body == null || doc.body.innerHTML == '')) {
+				if (!isXml && window.opera && (doc.body == null || doc.body.innerHTML == '')) {
 					if (--domCheckCount) {
 						// in some browsers (Opera) the iframe DOM is not always traversable when
 						// the onload callback fires, so we loop a bit to accommodate
@@ -334,11 +342,12 @@ $.fn.ajaxSubmit = function(options) {
 						setTimeout(cb, 250);
 						return;
 					}
-					log('Could not access iframe DOM after 100 tries.');
-					throw 'DOMException: not available';
+					// let this fall through because server response could be an empty document
+					//log('Could not access iframe DOM after mutiple tries.');
+					//throw 'DOMException: not available';
 				}
 
-				log('response detected');
+				//log('response detected');
 				cbInvoked = true;
 				xhr.responseText = doc.documentElement ? doc.documentElement.innerHTML : null; 
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
@@ -376,7 +385,7 @@ $.fn.ajaxSubmit = function(options) {
 
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
 			if (ok) {
-				s.success.call(s.context, data, 'success');
+				s.success.call(s.context, data, 'success', xhr);
 				if (g) {
 					$.event.trigger("ajaxSuccess", [xhr, s]);
 				}
