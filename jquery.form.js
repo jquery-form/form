@@ -273,6 +273,24 @@ $.fn.ajaxSubmit = function(options) {
 			if (s.timeout) {
 				setTimeout(function() { timedOut = true; cb(); }, s.timeout);
 			}
+            
+            // throw an error if the server aborts the request when using an iframe
+            function check_for_error() {
+                var state;
+                try {
+                    state = io.contentDocument.readyState;
+                }
+                catch (err) {
+                    if (err.name == "Error") {
+                        cb({ err: "iFrame aborted" });
+                    }
+                    return;
+                }
+                if (state.toLowerCase() == 'uninitialized') {
+                    setTimeout(check_for_error, 50);
+                }
+            }
+            setTimeout(check_for_error, 50);
 
 			// add "extra" data to form if provided in options
 			var extraInputs = [];
@@ -311,7 +329,7 @@ $.fn.ajaxSubmit = function(options) {
 	
 		var data, doc, domCheckCount = 100;
 
-		function cb() {
+		function cb(kwargs) {
 			if (cbInvoked) {
 				return;
 			}
@@ -320,6 +338,9 @@ $.fn.ajaxSubmit = function(options) {
 			
 			var ok = true;
 			try {
+                if (kwargs && kwargs.err) {
+                    throw kwargs.err;
+                }
 				if (timedOut) {
 					throw 'timeout';
 				}
@@ -373,6 +394,9 @@ $.fn.ajaxSubmit = function(options) {
 				log('error caught:',e);
 				ok = false;
 				xhr.error = e;
+                if (/abort/.exec(e.toLowerCase())) {
+                   xhr.aborted = true;
+                }
 				$.handleError(s, xhr, 'error', e);
 			}
 
