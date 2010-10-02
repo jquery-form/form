@@ -179,9 +179,11 @@ $.fn.ajaxSubmit = function(options) {
 	function fileUpload(a) {
 		var form = $form[0];
 
+                if (a) {
                 // some elements might be disabled by beforeSubmit. enable.
-                for (key in a) {
-                  $(form[a[key].name]).attr('disabled', false);
+                  for (key in a) {
+                    $(form[a[key].name]).attr('disabled', false);
+                  }
                 }
 
 		if ($(':input[name=submit],:input[id=submit]', form).length) {
