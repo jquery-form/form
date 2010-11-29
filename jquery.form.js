@@ -293,7 +293,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				// add iframe to doc and submit the form
 				$io.appendTo('body');
-				$io.data('form-plugin-onload', cb);
+				setTimeout(function(){$io.data('form-plugin-onload', cb);}, 10);
 				form.submit();
 			}
 			finally {
