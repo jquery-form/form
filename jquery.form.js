@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.50 (03-DEC-2010)
+ * version: 2.51 (04-DEC-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -54,7 +54,8 @@ $.fn.ajaxSubmit = function(options) {
 		options = { success: options };
 	}
 
-	var url = $.trim(this.attr('action'));
+	var action = this.attr('action');
+	var url = (typeof action === 'string') ? $.trim(action) : '';
 	if (url) {
 		// clean url (don't include hash vaue)
 		url = (url.match(/^([^#]+)/)||[])[1];
