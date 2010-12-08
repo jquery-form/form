@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.51 (04-DEC-2010)
+ * version: 2.52 (07-DEC-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -386,6 +386,11 @@ $.fn.ajaxSubmit = function(options) {
 				ok = false;
 				xhr.error = e;
 				$.handleError(s, xhr, 'error', e);
+			}
+			
+			if (xhr.aborted) {
+				log('upload aborted');
+				ok = false;
 			}
 
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
