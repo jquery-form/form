@@ -460,8 +460,10 @@ $.fn.ajaxSubmit = function(options) {
             data.append($(this).attr("name"), $(this).val());
         });
         options.data = null;
+        var originalBeforeSend = options.beforeSend;
         options.beforeSend = function(xhr, options) { // et toc !
             options.data = data;
+            if (originalBeforeSend) originalBeforeSend(xhr, options);
         }
         $.ajax(options);
     }

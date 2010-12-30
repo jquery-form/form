@@ -9,14 +9,21 @@ $(document).ready(function() {
 });
 
 asyncTest("upload 1 file", function() {
+    var beforeSendCalled = 0;
     var f = $("#form1").ajaxSubmit(
         {
             dataType: 'json',
+            beforeSend: function(xhr, options) {
+                beforeSendCalled++;
+                ok(xhr, "beforeSend xhr ok");
+                ok(options, "beforeSend options ok");
+            },
             success: function(data) {
                 start();
-                ok(true);
-                ok(data.files.upload);
-                equal(data.files.upload.error, 0);
+                ok(true, "fine");
+                equal(beforeSendCalled, 1, "beforeSend called");
+                ok(data.files.upload, "file uploaded");
+                equal(data.files.upload.error, 0, "file uploaded without errors");
             },
             error: function() {
                 start();
