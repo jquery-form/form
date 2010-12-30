@@ -144,7 +144,7 @@ $.fn.ajaxSubmit = function(options) {
 	}
 
 	options.success = function(data, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
-		var context = options.context || options;   // jQuery 1.4+ supports scope context 
+		var context = options.context || options;   // jQuery 1.4+ supports scope context
 		for (var i=0, max=callbacks.length; i < max; i++) {
 			callbacks[i].apply(context, [data, status, xhr || $form, $form]);
 		}
@@ -154,30 +154,36 @@ $.fn.ajaxSubmit = function(options) {
 	var fileInputs = $('input:file', this).length > 0;
 	var mp = 'multipart/form-data';
 	var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
+	var fileAPI = !!(fileInputs && $('input:file', this).get(0).files);
+	log("fileAPI :" + fileAPI);
+	var shouldUseFrame = (fileInputs || multipart) && !fileAPI;
 
-	// options.iframe allows user to force iframe mode
-	// 06-NOV-09: now defaulting to iframe mode if file input is detected
-   if (options.iframe !== false && (fileInputs || options.iframe || multipart)) {
-	   // hack to fix Safari hang (thanks to Tim Molendijk for this)
-	   // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-	   if (options.closeKeepAlive) {
-		   $.get(options.closeKeepAlive, fileUpload);
-		}
-	   else {
-		   fileUpload();
-		}
-   }
-   else {
-	   $.ajax(options);
-   }
+    // options.iframe allows user to force iframe mode
+    // 06-NOV-09: now defaulting to iframe mode if file input is detected
+    if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
+	// hack to fix Safari hang (thanks to Tim Molendijk for this)
+	// see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
+	if (options.closeKeepAlive) {
+	    $.get(options.closeKeepAlive, fileUploadIframe);
+	}
+	else {
+	    fileUploadIframe();
+	}
+    }
+    else if ((fileInputs || multipart) && fileAPI) {
+        fileUploadXhr();
+    }
+    else {
+	$.ajax(options);
+    }
 
 	// fire 'notify' event
 	this.trigger('form-submit-notify', [this, options]);
 	return this;
 
 
-	// private function for handling file uploads (hat tip to YAHOO!)
-	function fileUpload() {
+	// private function for handling file uploads in iframe (hat tip to YAHOO!)
+	function fileUploadIframe() {
 		var form = $form[0];
 
 		if ($(':input[name=submit],:input[id=submit]', form).length) {
@@ -186,7 +192,7 @@ $.fn.ajaxSubmit = function(options) {
 			alert('Error: Form elements must not have name or id of "submit".');
 			return;
 		}
-		
+
 		var s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
 		var id = 'jqFormIO' + (new Date().getTime()), fn = '_'+id;
@@ -228,7 +234,7 @@ $.fn.ajaxSubmit = function(options) {
 		}
 
 		if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
-			if (s.global) { 
+			if (s.global) {
 				$.active--;
 			}
 			return;
@@ -315,7 +321,7 @@ $.fn.ajaxSubmit = function(options) {
 		else {
 			setTimeout(doSubmit, 10); // this lets dom updates render
 		}
-	
+
 		var data, doc, domCheckCount = 50;
 
 		function cb() {
@@ -324,7 +330,7 @@ $.fn.ajaxSubmit = function(options) {
 			}
 
 			$io.removeData('form-plugin-onload');
-			
+
 			var ok = true;
 			try {
 				if (timedOut) {
@@ -332,7 +338,7 @@ $.fn.ajaxSubmit = function(options) {
 				}
 				// extract the server response from the iframe
 				doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
-				
+
 				var isXml = s.dataType == 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
 				log('isXml='+isXml);
 				if (!isXml && window.opera && (doc.body == null || doc.body.innerHTML == '')) {
@@ -350,7 +356,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				//log('response detected');
 				cbInvoked = true;
-				xhr.responseText = doc.documentElement ? doc.documentElement.innerHTML : null; 
+				xhr.responseText = doc.documentElement ? doc.documentElement.innerHTML : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				xhr.getResponseHeader = function(header){
 					var headers = {'content-type': s.dataType};
@@ -374,7 +380,7 @@ $.fn.ajaxSubmit = function(options) {
 						else if (b) {
 							xhr.responseText = b.innerHTML;
 						}
-					}			  
+					}
 				}
 				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
@@ -387,7 +393,7 @@ $.fn.ajaxSubmit = function(options) {
 				xhr.error = e;
 				$.handleError(s, xhr, 'error', e);
 			}
-			
+
 			if (xhr.aborted) {
 				log('upload aborted');
 				ok = false;
@@ -430,6 +436,36 @@ $.fn.ajaxSubmit = function(options) {
 			return (doc && doc.documentElement && doc.documentElement.tagName != 'parsererror') ? doc : null;
 		}
 	}
+
+    // private function for handling file uploads with xmlhttprequest (hat type to jquery-sexypost)
+    function fileUploadXhr() {
+        // this function will POST the contents of the selected form via XmlHttpRequest.
+
+        var data = new FormData();
+
+        $("input:text, input:hidden, input:password, textarea", $form).each(function(){
+            data.append($(this).attr("name"), $(this).val());
+        });
+
+        $("input:file", $form).each(function(){
+            var files = this.files;
+            for (i=0; i<files.length; i++) data.append($(this).attr("name"), files[i]);
+        });
+
+        $("select option:selected", $form).each(function(){
+            data.append($(this).parent().attr("name"), $(this).val());
+        });
+
+        $("input:checked", $form).each(function(){
+            data.append($(this).attr("name"), $(this).val());
+        });
+        options.data = null;
+        options.beforeSend = function(xhr, options) { // et toc !
+            options.data = data;
+        }
+        $.ajax(options);
+    }
+
 };
 
 /**
@@ -462,7 +498,7 @@ $.fn.ajaxForm = function(options) {
 		log('terminating; zero elements found by selector' + ($.isReady ? '' : ' (DOM not ready)'));
 		return this;
 	}
-	
+
 	return this.ajaxFormUnbind().bind('submit.form-plugin', function(e) {
 		if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
 			e.preventDefault();
@@ -526,7 +562,7 @@ $.fn.formToArray = function(semantic) {
 	if (!els) {
 		return a;
 	}
-	
+
 	var i,j,n,v,el,max,jmax;
 	for(i=0, max=els.length; i < max; i++) {
 		el = els[i];

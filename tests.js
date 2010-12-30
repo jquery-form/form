@@ -1,4 +1,5 @@
 QUnit.config.autostart = false;
+$.fn.ajaxSubmit.debug = true;
 
 $(document).ready(function() {
     $("#forms-ready").click(function(e) {
