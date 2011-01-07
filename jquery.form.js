@@ -171,6 +171,7 @@ $.fn.ajaxSubmit = function(options) {
 	}
     }
     else if ((fileInputs || multipart) && fileAPI) {
+        options.progress = options.progress || $.noop();
         fileUploadXhr();
     }
     else {
@@ -442,7 +443,6 @@ $.fn.ajaxSubmit = function(options) {
         // this function will POST the contents of the selected form via XmlHttpRequest.
 
         var data = new FormData();
-
         $("input:text, input:hidden, input:password, textarea", $form).each(function(){
             data.append($(this).attr("name"), $(this).val());
         });
@@ -461,8 +461,13 @@ $.fn.ajaxSubmit = function(options) {
         });
         options.data = null;
         var originalBeforeSend = options.beforeSend;
+        _options = options;
         options.beforeSend = function(xhr, options) { // et toc !
             options.data = data;
+            xhr.upload.onprogress = function(event) {
+                console.log(event);
+                _options.progress(event.position, event.total);
+            }
             if (originalBeforeSend) originalBeforeSend(xhr, options);
         }
         $.ajax(options);
