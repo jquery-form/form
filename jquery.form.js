@@ -154,7 +154,7 @@ $.fn.ajaxSubmit = function(options) {
 	var fileInputs = $('input:file', this).length > 0;
 	var mp = 'multipart/form-data';
 	var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
-	var fileAPI = !!(fileInputs && $('input:file', this).get(0).files);
+	var fileAPI = !!(fileInputs && $('input:file', this).get(0).files && window.FormData);
 	log("fileAPI :" + fileAPI);
 	var shouldUseFrame = (fileInputs || multipart) && !fileAPI;
 
