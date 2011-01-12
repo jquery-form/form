@@ -465,7 +465,6 @@ $.fn.ajaxSubmit = function(options) {
         options.beforeSend = function(xhr, options) { // et toc !
             options.data = data;
             xhr.upload.onprogress = function(event) {
-                console.log(event);
                 _options.progress(event.position, event.total);
             }
             if (originalBeforeSend) originalBeforeSend(xhr, options);
