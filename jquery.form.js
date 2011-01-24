@@ -62,9 +62,14 @@ $.fn.ajaxSubmit = function(options) {
 	}
 	url = url || window.location.href || '';
 
+	var method = this.attr('method') || 'GET';
+	if (method == 'get') { //Make certain IE hasn't modified the method attribute
+		method = $(this).get(0).getAttribute('method') || method; 
+	}
+
 	options = $.extend(true, {
 		url:  url,
-		type: this.attr('method') || 'GET',
+		type: method,
 		iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
 	}, options);
 
