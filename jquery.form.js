@@ -467,6 +467,17 @@ $.fn.ajaxSubmit = function(options) {
             xhr.upload.onprogress = function(event) {
                 _options.progress(event.position, event.total);
             }
+            /**
+             * You can use https://github.com/francois2metz/html5-formdata for a fake FormData object
+             * Only work with Firefox 3.6
+             */
+            if (data.fake) {
+                xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary="+ data.boundary);
+                // with fake FormData object, we must use sendAsBinary
+                xhr.send = function(data) {
+                    xhr.sendAsBinary(data.toString());
+                }
+            }
             if (originalBeforeSend) originalBeforeSend(xhr, options);
         }
         $.ajax(options);
