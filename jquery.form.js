@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.61 (28-JAN-2010)
+ * version: 2.62 (29-JAN-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -417,23 +417,26 @@ $.fn.ajaxSubmit = function(options) {
 			}
 			return (doc && doc.documentElement && doc.documentElement.nodeName != 'parsererror') ? doc : null;
 		};
+		var parseJSON = $.parseJSON || function(s) {
+			return window['eval']('(' + s + ')');
+		};
 		
-		var httpData = $.httpData || function( xhr, type, s ) { // lifted from jq1.4.4
-			var ct = xhr.getResponseHeader("content-type") || "",
-				xml = type === "xml" || !type && ct.indexOf("xml") >= 0,
-				data = (xml || xhr.responseXML) ? xhr.responseXML : xhr.responseText;
+		var httpData = function( xhr, type, s ) { // mostly lifted from jq1.4.4
+			var ct = xhr.getResponseHeader('content-type') || '',
+				xml = type === 'xml' || !type && ct.indexOf('xml') >= 0,
+				data = xml ? xhr.responseXML : xhr.responseText;
 
-			if ( xml && data.documentElement.nodeName === "parsererror" ) {
-				$.error( "parsererror" );
+			if (xml && data.documentElement.nodeName === 'parsererror') {
+				$.error && $.error('parsererror');
 			}
-			if ( s && s.dataFilter ) {
-				data = s.dataFilter( data, type );
+			if (s && s.dataFilter) {
+				data = s.dataFilter(data, type);
 			}
-			if ( typeof data === "string" ) {
-				if ( type === "json" || !type && ct.indexOf("json") >= 0 ) {
-					data = $.parseJSON( data );
-				} else if ( type === "script" || !type && ct.indexOf("javascript") >= 0 ) {
-					$.globalEval( data );
+			if (typeof data === 'string') {
+				if (type === 'json' || !type && ct.indexOf('json') >= 0) {
+					data = parseJSON(data);
+				} else if (type === "script" || !type && ct.indexOf("javascript") >= 0) {
+					$.globalEval(data);
 				}
 			}
 			return data;
