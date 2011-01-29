@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.52 (07-DEC-2010)
+ * version: 2.60 (28-JAN-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -64,7 +64,7 @@ $.fn.ajaxSubmit = function(options) {
 
 	options = $.extend(true, {
 		url:  url,
-		type: this.attr('method') || 'GET',
+		type: this[0].getAttribute('method') || 'GET', // IE7 massage (see issue 57)
 		iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
 	}, options);
 
@@ -168,7 +168,7 @@ $.fn.ajaxSubmit = function(options) {
 		}
    }
    else {
-	   $.ajax(options);
+		$.ajax(options);
    }
 
 	// fire 'notify' event
@@ -190,15 +190,7 @@ $.fn.ajaxSubmit = function(options) {
 		var s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
 		var id = 'jqFormIO' + (new Date().getTime()), fn = '_'+id;
-		window[fn] = function() {
-			var f = $io.data('form-plugin-onload');
-			if (f) {
-				f();
-				window[fn] = undefined;
-				try { delete window[fn]; } catch(e){}
-			}
-		}
-		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" onload="window[\'_\'+this.id]()" />');
+		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" />');
 		var io = $io[0];
 
 		$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
@@ -294,7 +286,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				// add iframe to doc and submit the form
 				$io.appendTo('body');
-				$io.data('form-plugin-onload', cb);
+                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
 				form.submit();
 			}
 			finally {
@@ -319,20 +311,19 @@ $.fn.ajaxSubmit = function(options) {
 		var data, doc, domCheckCount = 50;
 
 		function cb() {
-			if (cbInvoked) {
+			doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
+			if (!doc || doc.location.href == s.iframeSrc) {
+				// response not received yet
 				return;
 			}
+            io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
 
-			$io.removeData('form-plugin-onload');
-			
 			var ok = true;
 			try {
 				if (timedOut) {
 					throw 'timeout';
 				}
-				// extract the server response from the iframe
-				doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
-				
+
 				var isXml = s.dataType == 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
 				log('isXml='+isXml);
 				if (!isXml && window.opera && (doc.body == null || doc.body.innerHTML == '')) {
@@ -350,7 +341,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				//log('response detected');
 				cbInvoked = true;
-				xhr.responseText = doc.documentElement ? doc.documentElement.innerHTML : null; 
+				xhr.responseText = doc.body ? doc.body.innerHTML : doc.documentElement ? doc.documentElement.innerHTML : null; 
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				xhr.getResponseHeader = function(header){
 					var headers = {'content-type': s.dataType};
@@ -379,13 +370,15 @@ $.fn.ajaxSubmit = function(options) {
 				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
-				data = $.httpData(xhr, s.dataType);
+				
+				data = httpData(xhr, s.dataType, s);
 			}
 			catch(e){
 				log('error caught:',e);
 				ok = false;
 				xhr.error = e;
-				$.handleError(s, xhr, 'error', e);
+				s.error.call(s.context, xhr, 'error', e);
+				g && $.event.trigger("ajaxError", [xhr, s, e]);
 			}
 			
 			if (xhr.aborted) {
@@ -396,19 +389,16 @@ $.fn.ajaxSubmit = function(options) {
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
 			if (ok) {
 				s.success.call(s.context, data, 'success', xhr);
-				if (g) {
-					$.event.trigger("ajaxSuccess", [xhr, s]);
-				}
+				g && $.event.trigger("ajaxSuccess", [xhr, s]);
 			}
-			if (g) {
-				$.event.trigger("ajaxComplete", [xhr, s]);
-			}
+			
+			g && $.event.trigger("ajaxComplete", [xhr, s]);
+
 			if (g && ! --$.active) {
 				$.event.trigger("ajaxStop");
 			}
-			if (s.complete) {
-				s.complete.call(s.context, xhr, ok ? 'success' : 'error');
-			}
+			
+			s.complete && s.complete.call(s.context, xhr, ok ? 'success' : 'error');
 
 			// clean up
 			setTimeout(function() {
@@ -418,7 +408,7 @@ $.fn.ajaxSubmit = function(options) {
 			}, 100);
 		}
 
-		function toXml(s, doc) {
+		var toXml = $.parseXML || function(s, doc) { // use parseXML if available (jQuery 1.5+)
 			if (window.ActiveXObject) {
 				doc = new ActiveXObject('Microsoft.XMLDOM');
 				doc.async = 'false';
@@ -427,8 +417,29 @@ $.fn.ajaxSubmit = function(options) {
 			else {
 				doc = (new DOMParser()).parseFromString(s, 'text/xml');
 			}
-			return (doc && doc.documentElement && doc.documentElement.tagName != 'parsererror') ? doc : null;
-		}
+			return (doc && doc.documentElement && doc.documentElement.nodeName != 'parsererror') ? doc : null;
+		};
+		
+		var httpData = $.httpData || function( xhr, type, s ) { // lifted from jq1.4.4
+			var ct = xhr.getResponseHeader("content-type") || "",
+				xml = type === "xml" || !type && ct.indexOf("xml") >= 0,
+				data = xml ? xhr.responseXML : xhr.responseText;
+
+			if ( xml && data.documentElement.nodeName === "parsererror" ) {
+				$.error( "parsererror" );
+			}
+			if ( s && s.dataFilter ) {
+				data = s.dataFilter( data, type );
+			}
+			if ( typeof data === "string" ) {
+				if ( type === "json" || !type && ct.indexOf("json") >= 0 ) {
+					data = $.parseJSON( data );
+				} else if ( type === "script" || !type && ct.indexOf("javascript") >= 0 ) {
+					$.globalEval( data );
+				}
+			}
+			return data;
+		};
 	}
 };
 
