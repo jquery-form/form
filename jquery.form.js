@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.60 (28-JAN-2010)
+ * version: 2.61 (28-JAN-2010)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -229,7 +229,6 @@ $.fn.ajaxSubmit = function(options) {
 			return;
 		}
 
-		var cbInvoked = false;
 		var timedOut = 0;
 
 		// add submitting element to data if we know it
@@ -340,7 +339,6 @@ $.fn.ajaxSubmit = function(options) {
 				}
 
 				//log('response detected');
-				cbInvoked = true;
 				xhr.responseText = doc.body ? doc.body.innerHTML : doc.documentElement ? doc.documentElement.innerHTML : null; 
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				xhr.getResponseHeader = function(header){
@@ -423,7 +421,7 @@ $.fn.ajaxSubmit = function(options) {
 		var httpData = $.httpData || function( xhr, type, s ) { // lifted from jq1.4.4
 			var ct = xhr.getResponseHeader("content-type") || "",
 				xml = type === "xml" || !type && ct.indexOf("xml") >= 0,
-				data = xml ? xhr.responseXML : xhr.responseText;
+				data = (xml || xhr.responseXML) ? xhr.responseXML : xhr.responseText;
 
 			if ( xml && data.documentElement.nodeName === "parsererror" ) {
 				$.error( "parsererror" );
