@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.63 (29-JAN-2011)
+ * version: 2.64 (25-FEB-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -375,7 +375,7 @@ $.fn.ajaxSubmit = function(options) {
 				log('error caught:',e);
 				ok = false;
 				xhr.error = e;
-				s.error.call(s.context, xhr, 'error', e);
+				s.error && s.error.call(s.context, xhr, 'error', e);
 				g && $.event.trigger("ajaxError", [xhr, s, e]);
 			}
 			
@@ -386,7 +386,7 @@ $.fn.ajaxSubmit = function(options) {
 
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
 			if (ok) {
-				s.success.call(s.context, data, 'success', xhr);
+				s.success && s.success.call(s.context, data, 'success', xhr);
 				g && $.event.trigger("ajaxSuccess", [xhr, s]);
 			}
 			
