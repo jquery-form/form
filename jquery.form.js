@@ -363,12 +363,22 @@ $.fn.ajaxSubmit = function(options) {
 						else if (b) {
 							xhr.responseText = b.innerHTML;
 						}
-					}			  
+					}
 				}
 				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
-				
+
+				if(s.dataType.toLowerCase() === 'json') {
+					var temp = xhr.responseText;
+					try {
+						xhr.responseText = $.parseJSON(xhr.responseText);
+					} catch(e) {
+						xhr.responseText = temp;
+						throw 'invalid JSON response';
+					}
+				}
+
 				data = httpData(xhr, s.dataType, s);
 			}
 			catch(e){
