@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.64 (25-FEB-2011)
+ * version: 2.65 (09-MAR-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -310,7 +310,7 @@ $.fn.ajaxSubmit = function(options) {
 		var data, doc, domCheckCount = 50;
 
 		function cb() {
-			doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
+			doc = io.document ? io.document : io.contentWindow ? io.contentWindow.document : io.contentDocument;
 			if (!doc || doc.location.href == s.iframeSrc) {
 				// response not received yet
 				return;
