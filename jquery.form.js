@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.65 (09-MAR-2011)
+ * version: 2.66 (11-MAR-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -205,8 +205,14 @@ $.fn.ajaxSubmit = function(options) {
 			getResponseHeader: function() {},
 			setRequestHeader: function() {},
 			abort: function() {
+				log('aborting upload...');
+				var e = 'aborted';
 				this.aborted = 1;
 				$io.attr('src', s.iframeSrc); // abort op in progress
+				xhr.error = e;
+				s.error && s.error.call(s.context, xhr, 'error', e);
+				g && $.event.trigger("ajaxError", [xhr, s, e]);
+				s.complete && s.complete.call(s.context, xhr, 'error');
 			}
 		};
 
@@ -310,7 +316,13 @@ $.fn.ajaxSubmit = function(options) {
 		var data, doc, domCheckCount = 50;
 
 		function cb() {
-			doc = io.document ? io.document : io.contentWindow ? io.contentWindow.document : io.contentDocument;
+			if (xhr.aborted) {
+				return;
+			}
+			
+			$.browser.opera 
+				? doc = (io.document ? io.document : io.contentWindow ? io.contentWindow.document : io.contentDocument)
+				: doc = (io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document);
 			if (!doc || doc.location.href == s.iframeSrc) {
 				// response not received yet
 				return;
