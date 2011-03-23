@@ -186,7 +186,7 @@ $.fn.ajaxSubmit = function(options) {
 			alert('Error: Form elements must not have name or id of "submit".');
 			return;
 		}
-		
+
 		var s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
 		var id = 'jqFormIO' + (new Date().getTime()), fn = '_'+id;
@@ -226,7 +226,7 @@ $.fn.ajaxSubmit = function(options) {
 		}
 
 		if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
-			if (s.global) { 
+			if (s.global) {
 				$.active--;
 			}
 			return;
@@ -312,14 +312,14 @@ $.fn.ajaxSubmit = function(options) {
 		else {
 			setTimeout(doSubmit, 10); // this lets dom updates render
 		}
-	
+
 		var data, doc, domCheckCount = 50;
 
 		function cb() {
 			if (xhr.aborted) {
 				return;
 			}
-			
+
 			var doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
 			if (!doc || doc.location.href == s.iframeSrc) {
 				// response not received yet
@@ -327,7 +327,7 @@ $.fn.ajaxSubmit = function(options) {
 			}
             io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
 
-			var ok = true;
+			var status = 'success', errMsg;
 			try {
 				if (timedOut) {
 					throw 'timeout';
@@ -350,7 +350,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				//log('response detected');
                 var docRoot = doc.body ? doc.body : doc.documentElement;
-				xhr.responseText = docRoot ? docRoot.innerHTML : null;
+                xhr.responseText = docRoot ? docRoot.innerHTML : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				xhr.getResponseHeader = function(header) {
 					var headers = {'content-type': s.dataType};
@@ -382,40 +382,51 @@ $.fn.ajaxSubmit = function(options) {
 						else if (b) {
 							xhr.responseText = b.innerHTML;
 						}
-					}			  
+					}
 				}
 				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
-				
-				data = httpData(xhr, s.dataType, s);
+
+                try {
+                    data = httpData(xhr, s.dataType, s);
+                }
+                catch (e) {
+                    status = 'parsererror';
+                    errMsg = e;
+                }
 			}
-			catch(e){
-				log('error caught:',e);
-				ok = false;
-				xhr.error = e;
-				s.error && s.error.call(s.context, xhr, 'error', e);
-				g && $.event.trigger("ajaxError", [xhr, s, e]);
-			}
-			
-			if (xhr.aborted) {
-				log('upload aborted');
-				ok = false;
+			catch (e) {
+				status = 'error';
+				errMsg = e;
 			}
 
+			if (xhr.aborted) {
+				log('upload aborted');
+				status = null;
+			}
+
+            if (typeof(xhr.status) === 'number') { // we've set xhr.status
+                status = $.httpSuccess( xhr ) ? 'success' : 'error';
+            }
+
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
-			if (ok) {
-				s.success && s.success.call(s.context, data, 'success', xhr);
+			if (status === 'success') {
+				s.success.call(s.context, data, 'success', xhr);
 				g && $.event.trigger("ajaxSuccess", [xhr, s]);
 			}
-			
+            else if (status) {
+				s.error.call(s.context, xhr, status, errMsg);
+				g && $.event.trigger("ajaxError", [xhr, s, errMsg]);
+            }
+
 			g && $.event.trigger("ajaxComplete", [xhr, s]);
 
 			if (g && ! --$.active) {
 				$.event.trigger("ajaxStop");
 			}
-			
-			s.complete && s.complete.call(s.context, xhr, ok ? 'success' : 'error');
+
+			s.complete && s.complete.call(s.context, xhr, status);
 
 			// clean up
 			setTimeout(function() {
@@ -439,8 +450,9 @@ $.fn.ajaxSubmit = function(options) {
 		var parseJSON = $.parseJSON || function(s) {
 			return window['eval']('(' + s + ')');
 		};
-		
+
 		var httpData = function( xhr, type, s ) { // mostly lifted from jq1.4.4
+
 			var ct = xhr.getResponseHeader('content-type') || '',
 				xml = type === 'xml' || !type && ct.indexOf('xml') >= 0,
 				data = xml ? xhr.responseXML : xhr.responseText;
@@ -493,7 +505,7 @@ $.fn.ajaxForm = function(options) {
 		log('terminating; zero elements found by selector' + ($.isReady ? '' : ' (DOM not ready)'));
 		return this;
 	}
-	
+
 	return this.ajaxFormUnbind().bind('submit.form-plugin', function(e) {
 		if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
 			e.preventDefault();
@@ -557,7 +569,7 @@ $.fn.formToArray = function(semantic) {
 	if (!els) {
 		return a;
 	}
-	
+
 	var i,j,n,v,el,max,jmax;
 	for(i=0, max=els.length; i < max; i++) {
 		el = els[i];
