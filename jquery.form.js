@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.68 (05-APR-2011)
+ * version: 2.69 (06-APR-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -64,6 +64,7 @@ $.fn.ajaxSubmit = function(options) {
 
 	options = $.extend(true, {
 		url:  url,
+		success: $.ajaxSettings.success,
 		type: this[0].getAttribute('method') || 'GET', // IE7 massage (see issue 57)
 		iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
 	}, options);
