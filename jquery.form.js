@@ -190,32 +190,43 @@ $.fn.ajaxSubmit = function(options) {
 		
 		var s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
-		var id = 'jqFormIO' + (new Date().getTime()), fn = '_'+id;
-		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" />');
+		var id = '', fn;
+        //Patch by Michael Gaertner on 2011.04.19
+        var $io;
+        if (typeof options.iframeTarget === undefined) {
+            id = 'jqFormIO' + (new Date().getTime()); 
+            fn = '_'+id;
+            $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" />');
+            $io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
+        }else{
+            id = options.iframeTarget;
+            fn = '_'+id;
+            $io = $('#'+id);   
+        }
 		var io = $io[0];
 
-		$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
-
 		var xhr = { // mock object
-			aborted: 0,
-			responseText: null,
-			responseXML: null,
-			status: 0,
-			statusText: 'n/a',
-			getAllResponseHeaders: function() {},
-			getResponseHeader: function() {},
-			setRequestHeader: function() {},
-			abort: function() {
-				log('aborting upload...');
-				var e = 'aborted';
-				this.aborted = 1;
-				$io.attr('src', s.iframeSrc); // abort op in progress
-				xhr.error = e;
-				s.error && s.error.call(s.context, xhr, 'error', e);
-				g && $.event.trigger("ajaxError", [xhr, s, e]);
-				s.complete && s.complete.call(s.context, xhr, 'error');
-			}
-		};
+            aborted: 0,
+            responseText: null,
+            responseXML: null,
+            status: 0,
+            statusText: 'n/a',
+            getAllResponseHeaders: function(){},
+            getResponseHeader: function(){},
+            setRequestHeader: function(){},
+            abort: function(){
+                log('aborting upload...');
+                var e = 'aborted';
+                this.aborted = 1;
+                if (typeof options.iframeTarget === undefined) {
+                    $io.attr('src', s.iframeSrc); // abort op in progress
+                }
+                xhr.error = e;
+                s.error && s.error.call(s.context, xhr, 'error', e);
+                g && $.event.trigger("ajaxError", [xhr, s, e]);
+                s.complete && s.complete.call(s.context, xhr, 'error');
+            }
+        };
 
 		var g = s.global;
 		// trigger ajax global events so that activity/block indicators work like normal
@@ -291,8 +302,10 @@ $.fn.ajaxSubmit = function(options) {
 				}
 
 				// add iframe to doc and submit the form
+				if (typeof options.iframeTarget === undefined) {
 				$io.appendTo('body');
                 io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+                }
 				form.submit();
 			}
 			finally {
@@ -412,8 +425,10 @@ $.fn.ajaxSubmit = function(options) {
 
 			// clean up
 			setTimeout(function() {
+				if (typeof options.iframeTarget === undefined) {
 				$io.removeData('form-plugin-onload');
 				$io.remove();
+                }
 				xhr.responseXML = null;
 			}, 100);
 		}
