@@ -158,7 +158,7 @@ $.fn.ajaxSubmit = function(options) {
 
 	// options.iframe allows user to force iframe mode
 	// 06-NOV-09: now defaulting to iframe mode if file input is detected
-   if (options.iframe !== false && (fileInputs || options.iframe || multipart)) {
+   if ((fileInputs || options.iframe === true || multipart)) {
 	   // hack to fix Safari hang (thanks to Tim Molendijk for this)
 	   // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
 	   if (options.closeKeepAlive) {
@@ -193,7 +193,7 @@ $.fn.ajaxSubmit = function(options) {
 		var id = '', fn;
         //Patch by Michael Gaertner on 2011.04.19
         var $io;
-        if (typeof options.iframeTarget === undefined) {
+        if (typeof options.iframeTarget === 'undefined') {
             id = 'jqFormIO' + (new Date().getTime()); 
             fn = '_'+id;
             $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" />');
@@ -218,7 +218,7 @@ $.fn.ajaxSubmit = function(options) {
                 log('aborting upload...');
                 var e = 'aborted';
                 this.aborted = 1;
-                if (typeof options.iframeTarget === undefined) {
+                if (typeof options.iframeTarget === 'undefined') {
                     $io.attr('src', s.iframeSrc); // abort op in progress
                 }
                 xhr.error = e;
@@ -302,10 +302,11 @@ $.fn.ajaxSubmit = function(options) {
 				}
 
 				// add iframe to doc and submit the form
-				if (typeof options.iframeTarget === undefined) {
-				$io.appendTo('body');
-                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
-                }
+				if (typeof options.iframeTarget === 'undefined') {
+				    $io.appendTo('body');
+                                }
+                                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+                
 				form.submit();
 			}
 			finally {
