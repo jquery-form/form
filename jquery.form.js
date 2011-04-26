@@ -358,7 +358,7 @@ $.fn.ajaxSubmit = function(options) {
 					return headers[header];
 				};
 
-				var scr = /(json|script)/.test(s.dataType);
+				var scr = /(json|script|text)/.test(s.dataType);
 				if (scr || s.textarea) {
 					// see if user embedded response in textarea
 					var ta = doc.getElementsByTagName('textarea')[0];
