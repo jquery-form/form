@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.69 (06-APR-2011)
+ * version: 2.70 (28-APR-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -353,6 +353,8 @@ $.fn.ajaxSubmit = function(options) {
 				//log('response detected');
 				xhr.responseText = doc.body ? doc.body.innerHTML : doc.documentElement ? doc.documentElement.innerHTML : null; 
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
+				if (!xhr.responseText && xhr.responseXML && !s.dataType) 
+					s.dataType = 'xml';
 				xhr.getResponseHeader = function(header){
 					var headers = {'content-type': s.dataType};
 					return headers[header];
