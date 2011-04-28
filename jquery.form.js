@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.71 (28-APR-2011)
+ * version: 2.72 (28-APR-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -205,15 +205,15 @@ $.fn.ajaxSubmit = function(options) {
 			getAllResponseHeaders: function() {},
 			getResponseHeader: function() {},
 			setRequestHeader: function() {},
-			abort: function() {
-				log('aborting upload...');
-				var e = 'aborted';
+			abort: function(status) {
+				var e = (status === 'timeout' ? 'timeout' : 'aborted');
+				log('aborting upload... ' + e);
 				this.aborted = 1;
 				$io.attr('src', s.iframeSrc); // abort op in progress
 				xhr.error = e;
-				s.error && s.error.call(s.context, xhr, 'error', e);
+				s.error && s.error.call(s.context, xhr, e, e);
 				g && $.event.trigger("ajaxError", [xhr, s, e]);
-				s.complete && s.complete.call(s.context, xhr, 'error');
+				s.complete && s.complete.call(s.context, xhr, e);
 			}
 		};
 
@@ -236,7 +236,7 @@ $.fn.ajaxSubmit = function(options) {
 			return;
 		}
 
-		var timedOut = 0;
+		var timedOut = 0, timeoutHandle;
 
 		// add submitting element to data if we know it
 		var sub = form.clk;
@@ -276,7 +276,7 @@ $.fn.ajaxSubmit = function(options) {
 
 			// support timout
 			if (s.timeout) {
-				setTimeout(function() { timedOut = true; cb(); }, s.timeout);
+				timeoutHandle = setTimeout(function() { timedOut = true; cb(true); }, s.timeout);
 			}
 
 			// add "extra" data to form if provided in options
@@ -314,10 +314,14 @@ $.fn.ajaxSubmit = function(options) {
 			setTimeout(doSubmit, 10); // this lets dom updates render
 		}
 	
-		var data, doc, domCheckCount = 50;
+		var data, doc, domCheckCount = 50, callbackProcessed;
 
-		function cb() {
-			if (xhr.aborted) {
+		function cb(e) {
+			if (xhr.aborted || callbackProcessed) {
+				return;
+			}
+			if (e === true && xhr) {
+				xhr.abort('timeout');
 				return;
 			}
 			
@@ -411,6 +415,10 @@ $.fn.ajaxSubmit = function(options) {
 			}
 			
 			s.complete && s.complete.call(s.context, xhr, ok ? 'success' : 'error');
+
+			callbackProcessed = true;
+			if (s.timeout)
+				clearTimeout(timeoutHandle);
 
 			// clean up
 			setTimeout(function() {
