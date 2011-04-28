@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.70 (28-APR-2011)
+ * version: 2.71 (28-APR-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -360,7 +360,7 @@ $.fn.ajaxSubmit = function(options) {
 					return headers[header];
 				};
 
-				var scr = /(json|script)/.test(s.dataType);
+				var scr = /(json|script|text)/.test(s.dataType);
 				if (scr || s.textarea) {
 					// see if user embedded response in textarea
 					var ta = doc.getElementsByTagName('textarea')[0];
