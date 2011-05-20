@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.73 (03-MAY-2011)
+ * version: 2.74 (20-MAY-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -376,7 +376,7 @@ $.fn.ajaxSubmit = function(options) {
 						var pre = doc.getElementsByTagName('pre')[0];
 						var b = doc.getElementsByTagName('body')[0];
 						if (pre) {
-							xhr.responseText = pre.textContent;
+							xhr.responseText = pre.textContent ? pre.textContent : pre.innerHTML;
 						}
 						else if (b) {
 							xhr.responseText = b.innerHTML;
