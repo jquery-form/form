@@ -376,7 +376,7 @@ $.fn.ajaxSubmit = function(options) {
 						var pre = doc.getElementsByTagName('pre')[0];
 						var b = doc.getElementsByTagName('body')[0];
 						if (pre) {
-							xhr.responseText = pre.textContent;
+							xhr.responseText = pre.textContent ? pre.textContent : pre.innerHTML;
 						}
 						else if (b) {
 							xhr.responseText = b.innerHTML;
