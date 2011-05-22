@@ -152,7 +152,7 @@ $.fn.ajaxSubmit = function(options) {
 	};
 
 	// are there files to upload?
-	var fileInputs = $('input:file', this).length > 0;
+	var fileInputs = $('input:file:enabled', this).length > 0;
 	var mp = 'multipart/form-data';
 	var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
 
