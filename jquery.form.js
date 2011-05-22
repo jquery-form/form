@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.75 (20-MAY-2011)
+ * version: 2.76 (22-MAY-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -179,7 +179,7 @@ $.fn.ajaxSubmit = function(options) {
 
 	// private function for handling file uploads (hat tip to YAHOO!)
 	function fileUpload() {
-		var form = $form[0];
+		var form = $form[0], s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
 
 		if ($(':input[name=submit],:input[id=submit]', form).length) {
 			// if there is an input with a name or id of 'submit' then we won't be
@@ -188,15 +188,25 @@ $.fn.ajaxSubmit = function(options) {
 			return;
 		}
 		
-		var s = $.extend(true, {}, $.ajaxSettings, options);
+		s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
-		var id = 'jqFormIO' + (new Date().getTime()), fn = '_'+id;
-		var $io = $('<iframe id="' + id + '" name="' + id + '" src="'+ s.iframeSrc +'" />');
-		var io = $io[0];
+		$io, id = 'jqFormIO' + (new Date().getTime());
+		if (s.iframeTarget) {
+			$io = $(s.iframeTarget);
+			n = $io.attr('name');
+			if (n == null)
+			 	$io.attr('name', id);
+			else
+				id = n;
+		}
+		else {
+			$io = $('<iframe name="' + id + '" src="'+ s.iframeSrc +'" />');
+			$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
+		}
+		io = $io[0];
 
-		$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
 
-		var xhr = { // mock object
+		xhr = { // mock object
 			aborted: 0,
 			responseText: null,
 			responseXML: null,
@@ -217,7 +227,7 @@ $.fn.ajaxSubmit = function(options) {
 			}
 		};
 
-		var g = s.global;
+		g = s.global;
 		// trigger ajax global events so that activity/block indicators work like normal
 		if (g && ! $.active++) {
 			$.event.trigger("ajaxStart");
@@ -236,12 +246,10 @@ $.fn.ajaxSubmit = function(options) {
 			return;
 		}
 
-		var timedOut = 0, timeoutHandle;
-
 		// add submitting element to data if we know it
-		var sub = form.clk;
+		sub = form.clk;
 		if (sub) {
-			var n = sub.name;
+			n = sub.name;
 			if (n && !sub.disabled) {
 				s.extraData = s.extraData || {};
 				s.extraData[n] = sub.value;
@@ -290,9 +298,11 @@ $.fn.ajaxSubmit = function(options) {
 					}
 				}
 
-				// add iframe to doc and submit the form
-				$io.appendTo('body');
-                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+				if (!s.iframeTarget) {
+					// add iframe to doc and submit the form
+					$io.appendTo('body');
+	                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+				}
 				form.submit();
 			}
 			finally {
@@ -364,7 +374,7 @@ $.fn.ajaxSubmit = function(options) {
 					return headers[header];
 				};
 
-				var scr = /(json|script|text)/.test(s.dataType);
+				var scr = /(json|script|text)/.test(s.dataType.toLowerCase());
 				if (scr || s.textarea) {
 					// see if user embedded response in textarea
 					var ta = doc.getElementsByTagName('textarea')[0];
@@ -422,8 +432,8 @@ $.fn.ajaxSubmit = function(options) {
 
 			// clean up
 			setTimeout(function() {
-				$io.removeData('form-plugin-onload');
-				$io.remove();
+				if (!s.iframeTarget)
+					$io.remove();
 				xhr.responseXML = null;
 			}, 100);
 		}
