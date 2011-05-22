@@ -414,7 +414,7 @@ $.fn.ajaxSubmit = function(options) {
 				status = null;
 			}
 
-            if (typeof(xhr.status) === 'number') { // we've set xhr.status
+            if (xhr.status) { // we've set xhr.status
                 // jQuery.httpSuccess available in 1.4 but removed from 1.5
                 // IE sometimes returns 1223 when it should be 204 so treat it as success, see #1450
                 status = xhr.status >= 200 && xhr.status < 300 || xhr.status === 304 || xhr.status === 1223 ? 'success' : 'error';
