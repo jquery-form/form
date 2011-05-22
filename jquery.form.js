@@ -162,10 +162,10 @@ $.fn.ajaxSubmit = function(options) {
 	   // hack to fix Safari hang (thanks to Tim Molendijk for this)
 	   // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
 	   if (options.closeKeepAlive) {
-		   $.get(options.closeKeepAlive, fileUpload);
+		   $.get(options.closeKeepAlive, function() { fileUpload(a); });
 		}
 	   else {
-		   fileUpload();
+		   fileUpload(a);
 		}
    }
    else {
@@ -178,8 +178,15 @@ $.fn.ajaxSubmit = function(options) {
 
 
 	// private function for handling file uploads (hat tip to YAHOO!)
-	function fileUpload() {
+	function fileUpload(a) {
 		var form = $form[0];
+
+                if (a) {
+                // some elements might be disabled by beforeSubmit. enable.
+                  for (key in a) {
+                    $(form[a[key].name]).attr('disabled', false);
+                  }
+                }
 
 		if ($(':input[name=submit],:input[id=submit]', form).length) {
 			// if there is an input with a name or id of 'submit' then we won't be
