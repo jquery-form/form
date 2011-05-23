@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.76 (22-MAY-2011)
+ * version: 2.77 (23-MAY-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -237,7 +237,7 @@ $.fn.ajaxSubmit = function(options) {
 		}
 
 		if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
-			if (s.global) { 
+			if (s.global) {
 				$.active--;
 			}
 			return;
@@ -323,7 +323,7 @@ $.fn.ajaxSubmit = function(options) {
 		else {
 			setTimeout(doSubmit, 10); // this lets dom updates render
 		}
-	
+
 		var data, doc, domCheckCount = 50, callbackProcessed;
 
 		function cb(e) {
@@ -334,7 +334,7 @@ $.fn.ajaxSubmit = function(options) {
 				xhr.abort('timeout');
 				return;
 			}
-			
+
 			var doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
 			if (!doc || doc.location.href == s.iframeSrc) {
 				// response not received yet
@@ -343,7 +343,7 @@ $.fn.ajaxSubmit = function(options) {
 			}
             io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
 
-			var ok = true;
+			var status = 'success', errMsg;
 			try {
 				if (timedOut) {
 					throw 'timeout';
@@ -365,7 +365,8 @@ $.fn.ajaxSubmit = function(options) {
 				}
 
 				//log('response detected');
-				xhr.responseText = doc.body ? doc.body.innerHTML : doc.documentElement ? doc.documentElement.innerHTML : null; 
+                var docRoot = doc.body ? doc.body : doc.documentElement;
+                xhr.responseText = docRoot ? docRoot.innerHTML : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				if (isXml)
 					s.dataType = 'xml';
@@ -373,6 +374,11 @@ $.fn.ajaxSubmit = function(options) {
 					var headers = {'content-type': s.dataType};
 					return headers[header];
 				};
+                // support for XHR 'status' & 'statusText' emulation :
+                if (docRoot) {
+                    xhr.status = Number( docRoot.getAttribute('status') ) || xhr.status;
+                    xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
+                }
 
 				var scr = /(json|script|text)/.test(s.dataType.toLowerCase());
 				if (scr || s.textarea) {
@@ -380,6 +386,9 @@ $.fn.ajaxSubmit = function(options) {
 					var ta = doc.getElementsByTagName('textarea')[0];
 					if (ta) {
 						xhr.responseText = ta.value;
+                        // support for XHR 'status' & 'statusText' emulation :
+                        xhr.status = Number( ta.getAttribute('status') ) || xhr.status;
+                        xhr.statusText = ta.getAttribute('statusText') || xhr.statusText;
 					}
 					else if (scr) {
 						// account for browsers injecting pre around json response
@@ -391,40 +400,54 @@ $.fn.ajaxSubmit = function(options) {
 						else if (b) {
 							xhr.responseText = b.innerHTML;
 						}
-					}			  
+					}
 				}
 				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
-				
-				data = httpData(xhr, s.dataType, s);
+
+                try {
+                    data = httpData(xhr, s.dataType, s);
+                }
+                catch (e) {
+                    status = 'parsererror';
+                    xhr.error = errMsg = (e || status);
+                }
 			}
-			catch(e){
-				log('error caught:',e);
-				ok = false;
-				xhr.error = e;
-				s.error && s.error.call(s.context, xhr, 'error', e);
-				g && $.event.trigger("ajaxError", [xhr, s, e]);
-			}
-			
-			if (xhr.aborted) {
-				log('upload aborted');
-				ok = false;
+			catch (e) {
+				log('error caught',e);
+				status = 'error';
+                xhr.error = errMsg = (e || status);
 			}
 
+			if (xhr.aborted) {
+				log('upload aborted');
+				status = null;
+			}
+
+            if (xhr.status) { // we've set xhr.status
+                status = (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) ? 'success' : 'error';
+            }
+
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
-			if (ok) {
+			if (status === 'success') {
 				s.success && s.success.call(s.context, data, 'success', xhr);
 				g && $.event.trigger("ajaxSuccess", [xhr, s]);
 			}
-			
+            else if (status) {
+				if (errMsg == undefined)
+					errMsg = xhr.statusText;
+				s.error && s.error.call(s.context, xhr, status, errMsg);
+				g && $.event.trigger("ajaxError", [xhr, s, errMsg]);
+            }
+
 			g && $.event.trigger("ajaxComplete", [xhr, s]);
 
 			if (g && ! --$.active) {
 				$.event.trigger("ajaxStop");
 			}
-			
-			s.complete && s.complete.call(s.context, xhr, ok ? 'success' : 'error');
+
+			s.complete && s.complete.call(s.context, xhr, status);
 
 			callbackProcessed = true;
 			if (s.timeout)
@@ -452,8 +475,9 @@ $.fn.ajaxSubmit = function(options) {
 		var parseJSON = $.parseJSON || function(s) {
 			return window['eval']('(' + s + ')');
 		};
-		
+
 		var httpData = function( xhr, type, s ) { // mostly lifted from jq1.4.4
+
 			var ct = xhr.getResponseHeader('content-type') || '',
 				xml = type === 'xml' || !type && ct.indexOf('xml') >= 0,
 				data = xml ? xhr.responseXML : xhr.responseText;
@@ -506,7 +530,7 @@ $.fn.ajaxForm = function(options) {
 		log('terminating; zero elements found by selector' + ($.isReady ? '' : ' (DOM not ready)'));
 		return this;
 	}
-	
+
 	return this.ajaxFormUnbind().bind('submit.form-plugin', function(e) {
 		if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
 			e.preventDefault();
@@ -570,7 +594,7 @@ $.fn.formToArray = function(semantic) {
 	if (!els) {
 		return a;
 	}
-	
+
 	var i,j,n,v,el,max,jmax;
 	for(i=0, max=els.length; i < max; i++) {
 		el = els[i];
