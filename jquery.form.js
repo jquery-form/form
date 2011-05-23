@@ -422,11 +422,13 @@ $.fn.ajaxSubmit = function(options) {
 
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
 			if (status === 'success') {
-				s.success.call(s.context, data, 'success', xhr);
+				s.success && s.success.call(s.context, data, 'success', xhr);
 				g && $.event.trigger("ajaxSuccess", [xhr, s]);
 			}
             else if (status) {
-				s.error.call(s.context, xhr, status, errMsg);
+				if (errMsg == undefined)
+					errMsg = xhr.statusText;
+				s.error && s.error.call(s.context, xhr, status, errMsg);
 				g && $.event.trigger("ajaxError", [xhr, s, errMsg]);
             }
 
