@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.79 (25-MAY-2011)
+ * version: 2.80 (25-MAY-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -197,7 +197,7 @@ $.fn.ajaxSubmit = function(options) {
 		
 		s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
-		$io, id = 'jqFormIO' + (new Date().getTime());
+		id = 'jqFormIO' + (new Date().getTime());
 		if (s.iframeTarget) {
 			$io = $(s.iframeTarget);
 			n = $io.attr('name');
