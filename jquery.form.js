@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.78 (23-MAY-2011)
+ * version: 2.79 (25-MAY-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -387,7 +387,8 @@ $.fn.ajaxSubmit = function(options) {
                     xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
                 }
 
-				var scr = /(json|script|text)/.test(s.dataType.toLowerCase());
+				var dt = s.dataType || '';
+				var scr = /(json|script|text)/.test(dt.toLowerCase());
 				if (scr || s.textarea) {
 					// see if user embedded response in textarea
 					var ta = doc.getElementsByTagName('textarea')[0];
@@ -850,16 +851,13 @@ $.fn.selected = function(select) {
 };
 
 // helper fn for console logging
-// set $.fn.ajaxSubmit.debug to true to enable debug logging
 function log() {
-	if ($.fn.ajaxSubmit.debug) {
-		var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
-		if (window.console && window.console.log) {
-			window.console.log(msg);
-		}
-		else if (window.opera && window.opera.postError) {
-			window.opera.postError(msg);
-		}
+	var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
+	if (window.console && window.console.log) {
+		window.console.log(msg);
+	}
+	else if (window.opera && window.opera.postError) {
+		window.opera.postError(msg);
 	}
 };
 
