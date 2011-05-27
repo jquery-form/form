@@ -300,7 +300,7 @@ $.fn.ajaxSubmit = function(options) {
 				if (s.extraData) {
 					for (var n in s.extraData) {
 						extraInputs.push(
-							$('<input type="hidden" name="'+n+'" value="'+s.extraData[n]+'" />')
+							$('<input type="hidden" name="'+n+'" />').attr('value',s.extraData[n])
 								.appendTo(form)[0]);
 					}
 				}
