@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.80 (25-MAY-2011)
+ * version: 2.81 (04-JUN-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -228,7 +228,7 @@ $.fn.ajaxSubmit = function(options) {
 				this.aborted = 1;
 				$io.attr('src', s.iframeSrc); // abort op in progress
 				xhr.error = e;
-				s.error && s.error.call(s.context, xhr, e, e);
+				s.error && s.error.call(s.context, xhr, e, status);
 				g && $.event.trigger("ajaxError", [xhr, s, e]);
 				s.complete && s.complete.call(s.context, xhr, e);
 			}
@@ -266,7 +266,15 @@ $.fn.ajaxSubmit = function(options) {
 				}
 			}
 		}
+		
+		var CLIENT_TIMEOUT_ABORT = 1;
+		var SERVER_ABORT = 2;
 
+		function getDoc(frame) {
+			var doc = frame.contentWindow ? frame.contentWindow.document : frame.contentDocument ? frame.contentDocument : frame.document;
+			return doc;
+		}
+		
 		// take a breath so that pending repaints get some cpu time before the upload starts
 		function doSubmit() {
 			// make sure form attrs are set
@@ -291,7 +299,23 @@ $.fn.ajaxSubmit = function(options) {
 
 			// support timout
 			if (s.timeout) {
-				timeoutHandle = setTimeout(function() { timedOut = true; cb(true); }, s.timeout);
+				timeoutHandle = setTimeout(function() { timedOut = true; cb(CLIENT_TIMEOUT_ABORT); }, s.timeout);
+			}
+			
+			// look for server aborts
+			function checkState() {
+				try {
+					var state = getDoc(io).readyState;
+					log('state = ' + state);
+					if (state.toLowerCase() == 'uninitialized')
+						setTimeout(checkState,50);
+				}
+				catch(e) {
+					log('Server abort: ' , e, ' (', e.name, ')');
+					cb(SERVER_ABORT);
+					timeoutHandle && clearTimeout(timeoutHandle);
+					timeoutHandle = undefined;
+				}
 			}
 
 			// add "extra" data to form if provided in options
@@ -310,6 +334,7 @@ $.fn.ajaxSubmit = function(options) {
 					$io.appendTo('body');
 	                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
 				}
+				setTimeout(checkState,15);
 				form.submit();
 			}
 			finally {
@@ -337,12 +362,22 @@ $.fn.ajaxSubmit = function(options) {
 			if (xhr.aborted || callbackProcessed) {
 				return;
 			}
-			if (e === true && xhr) {
+			try {
+				doc = getDoc(io);
+			}
+			catch(ex) {
+				log('cannot access response document: ', ex);
+				e = SERVER_ABORT;
+			}
+			if (e === CLIENT_TIMEOUT_ABORT && xhr) {
 				xhr.abort('timeout');
 				return;
 			}
+			else if (e == SERVER_ABORT && xhr) {
+				xhr.abort('server abort');
+				return;
+			}
 
-			var doc = io.contentWindow ? io.contentWindow.document : io.contentDocument ? io.contentDocument : io.document;
 			if (!doc || doc.location.href == s.iframeSrc) {
 				// response not received yet
 				if (!timedOut)
@@ -423,7 +458,7 @@ $.fn.ajaxSubmit = function(options) {
                 }
 			}
 			catch (e) {
-				log('error caught',e);
+				log('error caught: ',e);
 				status = 'error';
                 xhr.error = errMsg = (e || status);
 			}
