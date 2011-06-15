@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.81 (04-JUN-2011)
+ * version: 2.82 (15-JUN-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -291,15 +291,15 @@ $.fn.ajaxSubmit = function(options) {
 
 			// update form attrs in IE friendly way
 			form.setAttribute('target',id);
-			if (form.getAttribute('method') != 'POST') {
+			if (!method) {
 				form.setAttribute('method', 'POST');
 			}
-			if (form.getAttribute('action') != s.url) {
+			if (a != s.url) {
 				form.setAttribute('action', s.url);
 			}
 
 			// ie borks in some cases when setting encoding
-			if (! s.skipEncodingOverride) {
+			if (! s.skipEncodingOverride && (!method || /post/i.test(method))) {
 				$form.attr({
 					encoding: 'multipart/form-data',
 					enctype:  'multipart/form-data'
