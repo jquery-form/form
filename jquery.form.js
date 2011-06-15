@@ -822,9 +822,10 @@ $.fn.clearForm = function() {
  * Clears the selected form elements.
  */
 $.fn.clearFields = $.fn.clearInputs = function() {
+	var re = /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 	return this.each(function() {
-		var t = this.type, tag = this.tagName.toLowerCase();
-		if (t == 'text' || t == 'password' || tag == 'textarea') {
+		var t = this.type;
+		if (re.test(t) || this.tagName.toLowerCase() == 'textarea') {
 			this.value = '';
 		}
 		else if (t == 'checkbox' || t == 'radio') {
