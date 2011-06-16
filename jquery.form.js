@@ -50,7 +50,7 @@ $.fn.ajaxSubmit = function(options) {
 		return this;
 	}
 	
-	var method, action, url, $form = this;;
+	var method, action, url, $form = this;
 
 	if (typeof options == 'function') {
 		options = { success: options };
