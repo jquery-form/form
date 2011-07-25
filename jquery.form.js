@@ -192,11 +192,18 @@ $.fn.ajaxSubmit = function(options) {
         var useProp = !!$.fn.prop;
 
         if (a) {
-        	// ensure that every serialized input is still enabled
-          	for (i=0; i < a.length; i++) {
-                el = $(form[a[i].name]);
-                el[ useProp ? 'prop' : 'attr' ]('disabled', false);
-          	}
+            if ( useProp ) {
+            	// ensure that every serialized input is still enabled
+              	for (i=0; i < a.length; i++) {
+                    el = $(form[a[i].name]);
+                    el.prop('disabled', false);
+              	}
+            } else {
+              	for (i=0; i < a.length; i++) {
+                    el = $(form[a[i].name]);
+                    el.removeAttr('disabled');
+              	}
+            };
         }
 
 		if ($(':input[name=submit],:input[id=submit]', form).length) {
