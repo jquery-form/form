@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.83 (11-JUL-2011)
+ * version: 2.84 (12-AUG-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -91,7 +91,7 @@ $.fn.ajaxSubmit = function(options) {
 	if (options.data) {
 		options.extraData = options.data;
 		for (n in options.data) {
-			if(options.data[n] instanceof Array) {
+			if( $.isArray(options.data[n]) ) {
 				for (var k in options.data[n]) {
 					a.push( { name: n, value: options.data[n][k] } );
 				}
