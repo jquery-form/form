@@ -91,7 +91,7 @@ $.fn.ajaxSubmit = function(options) {
 	if (options.data) {
 		options.extraData = options.data;
 		for (n in options.data) {
-			if(options.data[n] instanceof Array) {
+			if($.isArray(options.data[n])) {
 				for (var k in options.data[n]) {
 					a.push( { name: n, value: options.data[n][k] } );
 				}
