@@ -666,7 +666,7 @@ $.fn.formToArray = function(semantic) {
 			continue;
 		}
 
-		v = $.fieldValue(el, true);
+		v = $.fieldValue(el, options.successful);
 		if (v && v.constructor == Array) {
 			for(j=0, jmax=v.length; j < jmax; j++) {
 				a.push({name: n, value: v[j]});
