@@ -87,7 +87,7 @@ $.fn.ajaxSubmit = function(options) {
 		return this;
 	}
 
-	var n,v,a = this.formToArray(options.semantic);
+	var n,v,a = this.formToArray(options);
 	if (options.data) {
 		options.extraData = options.data;
 		for (n in options.data) {
@@ -196,6 +196,9 @@ $.fn.ajaxSubmit = function(options) {
           	for (i=0; i < a.length; i++) {
                 el = $(form[a[i].name]);
                 el[ useProp ? 'prop' : 'attr' ]('disabled', false);
+					 if (a[i].value == 'false' && el.attr('type') === 'checkbox') {
+					 	$('<input type="hidden" name="' + a[i].name + '" value="false">').appendTo(form);
+					 }
           	}
         }
 
@@ -637,14 +640,14 @@ $.fn.ajaxFormUnbind = function() {
  * It is this array that is passed to pre-submit callback functions provided to the
  * ajaxSubmit() and ajaxForm() methods.
  */
-$.fn.formToArray = function(semantic) {
+$.fn.formToArray = function(options) {
 	var a = [];
 	if (this.length === 0) {
 		return a;
 	}
 
 	var form = this[0];
-	var els = semantic ? form.getElementsByTagName('*') : form.elements;
+	var els = options.semantic ? form.getElementsByTagName('*') : form.elements;
 	if (!els) {
 		return a;
 	}
@@ -657,8 +660,8 @@ $.fn.formToArray = function(semantic) {
 			continue;
 		}
 
-		if (semantic && form.clk && el.type == "image") {
-			// handle image inputs on the fly when semantic == true
+		if (options.semantic && form.clk && el.type == "image") {
+			// handle image inputs on the fly when options.semantic == true
 			if(!el.disabled && form.clk == el) {
 				a.push({name: n, value: $(el).val()});
 				a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
@@ -675,9 +678,12 @@ $.fn.formToArray = function(semantic) {
 		else if (v !== null && typeof v != 'undefined') {
 			a.push({name: n, value: v});
 		}
+		else if (v == null && el.type == "checkbox") {
+			a.push({name: n, value: 'false'});
+		}
 	}
 
-	if (!semantic && form.clk) {
+	if (!options.semantic && form.clk) {
 		// input type=='image' are not found in elements array! handle it here
 		var $input = $(form.clk), input = $input[0];
 		n = input.name;
@@ -695,7 +701,7 @@ $.fn.formToArray = function(semantic) {
  */
 $.fn.formSerialize = function(semantic) {
 	//hand off to jQuery.param for proper encoding
-	return $.param(this.formToArray(semantic));
+	return $.param(this.formToArray({ semantic: semantic }));
 };
 
 /**
