@@ -433,8 +433,8 @@ $.fn.ajaxSubmit = function(options) {
                     xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
                 }
 
-				var dt = s.dataType || '';
-				var scr = /(json|script|text)/.test(dt.toLowerCase());
+				var dt = (s.dataType || '').toLowerCase();
+				var scr = /(json|script|text)/.test(dt);
 				if (scr || s.textarea) {
 					// see if user embedded response in textarea
 					var ta = doc.getElementsByTagName('textarea')[0];
@@ -456,12 +456,12 @@ $.fn.ajaxSubmit = function(options) {
 						}
 					}
 				}
-				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
+				else if (dt == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
 
                 try {
-                    data = httpData(xhr, s.dataType, s);
+                    data = httpData(xhr, dt, s);
                 }
                 catch (e) {
                     status = 'parsererror';
