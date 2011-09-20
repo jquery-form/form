@@ -419,7 +419,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				//log('response detected');
                 var docRoot = doc.body ? doc.body : doc.documentElement;
-                xhr.responseText = docRoot ? docRoot.innerHTML : null;
+                xhr.responseText = docRoot ? docRoot.innerText : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				if (isXml)
 					s.dataType = 'xml';
@@ -449,10 +449,10 @@ $.fn.ajaxSubmit = function(options) {
 						var pre = doc.getElementsByTagName('pre')[0];
 						var b = doc.getElementsByTagName('body')[0];
 						if (pre) {
-							xhr.responseText = pre.textContent ? pre.textContent : pre.innerHTML;
+							xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
 						}
 						else if (b) {
-							xhr.responseText = b.innerHTML;
+							xhr.responseText = b.innerText;
 						}
 					}
 				}
