@@ -419,7 +419,7 @@ $.fn.ajaxSubmit = function(options) {
 
 				//log('response detected');
                 var docRoot = doc.body ? doc.body : doc.documentElement;
-                xhr.responseText = docRoot ? docRoot.innerText : null;
+                xhr.responseText = docRoot ? docRoot.innerHTML : null;
 				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
 				if (isXml)
 					s.dataType = 'xml';
@@ -452,7 +452,7 @@ $.fn.ajaxSubmit = function(options) {
 							xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
 						}
 						else if (b) {
-							xhr.responseText = b.innerText;
+							xhr.responseText = b.textContent ? b.textContent : b.innerText;
 						}
 					}
 				}
