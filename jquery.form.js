@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.84 (12-AUG-2011)
+ * version: 2.85 (23-SEP-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -173,7 +173,7 @@ $.fn.ajaxSubmit = function(options) {
    }
    else {
 		// IE7 massage (see issue 57)
-		if ($.browser.msie && method == 'get') { 
+		if ($.browser.msie && method == 'get' && typeof options.type === "undefined") {
 			var ieMeth = $form[0].getAttribute('method');
 			if (typeof ieMeth === 'string')
 				options.type = ieMeth;
@@ -897,8 +897,13 @@ $.fn.selected = function(select) {
 	});
 };
 
+// expose debug var
+$.fn.ajaxSubmit.debug = false;
+
 // helper fn for console logging
 function log() {
+	if (!$.fn.ajaxSubmit.debug) 
+		return;
 	var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
 	if (window.console && window.console.log) {
 		window.console.log(msg);
