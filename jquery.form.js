@@ -433,8 +433,8 @@ $.fn.ajaxSubmit = function(options) {
                     xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
                 }
 
-				var dt = s.dataType || '';
-				var scr = /(json|script|text)/.test(dt.toLowerCase());
+				var dt = (s.dataType || '').toLowerCase();
+				var scr = /(json|script|text)/.test(dt);
 				if (scr || s.textarea) {
 					// see if user embedded response in textarea
 					var ta = doc.getElementsByTagName('textarea')[0];
@@ -449,19 +449,19 @@ $.fn.ajaxSubmit = function(options) {
 						var pre = doc.getElementsByTagName('pre')[0];
 						var b = doc.getElementsByTagName('body')[0];
 						if (pre) {
-							xhr.responseText = pre.textContent ? pre.textContent : pre.innerHTML;
+							xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
 						}
 						else if (b) {
-							xhr.responseText = b.innerHTML;
+							xhr.responseText = b.textContent ? b.textContent : b.innerText;
 						}
 					}
 				}
-				else if (s.dataType == 'xml' && !xhr.responseXML && xhr.responseText != null) {
+				else if (dt == 'xml' && !xhr.responseXML && xhr.responseText != null) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
 
                 try {
-                    data = httpData(xhr, s.dataType, s);
+                    data = httpData(xhr, dt, s);
                 }
                 catch (e) {
                     status = 'parsererror';
