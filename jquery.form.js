@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.84 (12-AUG-2011)
+ * version: 2.85 (23-SEP-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -9,6 +9,8 @@
  *   http://www.gnu.org/licenses/gpl.html
  */
 ;(function($) {
+
+	var debug = 0;
 
 /*
 	Usage Note:
@@ -899,6 +901,8 @@ $.fn.selected = function(select) {
 
 // helper fn for console logging
 function log() {
+	if (!debug) return;
+
 	var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
 	if (window.console && window.console.log) {
 		window.console.log(msg);
