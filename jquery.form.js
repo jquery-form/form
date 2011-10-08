@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.85 (23-SEP-2011)
+ * version: 2.86 (08-OCT-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -87,21 +87,15 @@ $.fn.ajaxSubmit = function(options) {
 		return this;
 	}
 
-	var n,v,a = this.formToArray(options.semantic);
+   var traditional = options.traditional;
+   if ( traditional === undefined ) {
+      traditional = $.ajaxSettings.traditional;
+   }
+   
+	var qx,n,v,a = this.formToArray(options.semantic);
 	if (options.data) {
 		options.extraData = options.data;
-		for (n in options.data) {
-			if( $.isArray(options.data[n]) ) {
-				for (var k in options.data[n]) {
-					a.push( { name: n, value: options.data[n][k] } );
-				}
-			}
-			else {
-				v = options.data[n];
-				v = $.isFunction(v) ? v() : v; // if value is fn, invoke it
-				a.push( { name: n, value: v } );
-			}
-		}
+      qx = $.param(options.data, traditional);
 	}
 
 	// give pre-submit callback an opportunity to abort the submit
@@ -117,7 +111,9 @@ $.fn.ajaxSubmit = function(options) {
 		return this;
 	}
 
-	var q = $.param(a);
+	var q = $.param(a, traditional);
+   if (qx)
+      q = ( q ? (q + '&' + qx) : qx );
 
 	if (options.type.toUpperCase() == 'GET') {
 		options.url += (options.url.indexOf('?') >= 0 ? '&' : '?') + q;
