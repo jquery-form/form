@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.86 (08-OCT-2011)
+ * version: 2.87 (20-OCT-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -128,7 +128,7 @@ $.fn.ajaxSubmit = function(options) {
 		callbacks.push(function() { $form.resetForm(); });
 	}
 	if (options.clearForm) {
-		callbacks.push(function() { $form.clearForm(); });
+		callbacks.push(function() { $form.clearForm(options.includeHidden); });
 	}
 
 	// perform a load on the target only if dataType is not provided
@@ -826,20 +826,20 @@ $.fieldValue = function(el, successful) {
  *  - inputs of type submit, button, reset, and hidden will *not* be effected
  *  - button elements will *not* be effected
  */
-$.fn.clearForm = function() {
+$.fn.clearForm = function(includeHidden) {
 	return this.each(function() {
-		$('input,select,textarea', this).clearFields();
+		$('input,select,textarea', this).clearFields(includeHidden);
 	});
 };
 
 /**
  * Clears the selected form elements.
  */
-$.fn.clearFields = $.fn.clearInputs = function() {
+$.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
 	var re = /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 	return this.each(function() {
 		var t = this.type, tag = this.tagName.toLowerCase();
-		if (re.test(t) || tag == 'textarea') {
+		if (re.test(t) || tag == 'textarea' || (includeHidden && /hidden/.test(t)) ) {
 			this.value = '';
 		}
 		else if (t == 'checkbox' || t == 'radio') {
