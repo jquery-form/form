@@ -346,7 +346,7 @@ $.fn.ajaxSubmit = function(options) {
 				if (!s.iframeTarget) {
 					// add iframe to doc and submit the form
 					$io.appendTo('body');
-			io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+					io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
 				}
 				setTimeout(checkState,15);
 				form.submit();
