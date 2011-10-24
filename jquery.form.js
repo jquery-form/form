@@ -49,7 +49,7 @@ $.fn.ajaxSubmit = function(options) {
 		log('ajaxSubmit: skipping submit process - no element selected');
 		return this;
 	}
-	
+
 	var method, action, url, $form = this;
 
 	if (typeof options == 'function') {
@@ -87,15 +87,15 @@ $.fn.ajaxSubmit = function(options) {
 		return this;
 	}
 
-   var traditional = options.traditional;
-   if ( traditional === undefined ) {
-      traditional = $.ajaxSettings.traditional;
-   }
-   
+	var traditional = options.traditional;
+	if ( traditional === undefined ) {
+	   traditional = $.ajaxSettings.traditional;
+	}
+
 	var qx,n,v,a = this.formToArray(options.semantic);
 	if (options.data) {
 		options.extraData = options.data;
-      qx = $.param(options.data, traditional);
+		qx = $.param(options.data, traditional);
 	}
 
 	// give pre-submit callback an opportunity to abort the submit
@@ -112,8 +112,8 @@ $.fn.ajaxSubmit = function(options) {
 	}
 
 	var q = $.param(a, traditional);
-   if (qx)
-      q = ( q ? (q + '&' + qx) : qx );
+	if (qx)
+	   q = ( q ? (q + '&' + qx) : qx );
 
 	if (options.type.toUpperCase() == 'GET') {
 		options.url += (options.url.indexOf('?') >= 0 ? '&' : '?') + q;
@@ -144,7 +144,7 @@ $.fn.ajaxSubmit = function(options) {
 	}
 
 	options.success = function(data, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
-		var context = options.context || options;   // jQuery 1.4+ supports scope context 
+		var context = options.context || options;   // jQuery 1.4+ supports scope context
 		for (var i=0, max=callbacks.length; i < max; i++) {
 			callbacks[i].apply(context, [data, status, xhr || $form, $form]);
 		}
@@ -157,25 +157,25 @@ $.fn.ajaxSubmit = function(options) {
 
 	// options.iframe allows user to force iframe mode
 	// 06-NOV-09: now defaulting to iframe mode if file input is detected
-   if (options.iframe !== false && (fileInputs || options.iframe || multipart)) {
-	   // hack to fix Safari hang (thanks to Tim Molendijk for this)
-	   // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-	   if (options.closeKeepAlive) {
-		   $.get(options.closeKeepAlive, function() { fileUpload(a); });
-		}
-	   else {
-		   fileUpload(a);
-		}
-   }
-   else {
-		// IE7 massage (see issue 57)
-		if ($.browser.msie && method == 'get' && typeof options.type === "undefined") {
-			var ieMeth = $form[0].getAttribute('method');
-			if (typeof ieMeth === 'string')
-				options.type = ieMeth;
-		}
-		$.ajax(options);
-   }
+	if (options.iframe !== false && (fileInputs || options.iframe || multipart)) {
+		// hack to fix Safari hang (thanks to Tim Molendijk for this)
+		// see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
+		if (options.closeKeepAlive) {
+			$.get(options.closeKeepAlive, function() { fileUpload(a); });
+		     }
+		else {
+			fileUpload(a);
+		     }
+	}
+	else {
+		     // IE7 massage (see issue 57)
+		     if ($.browser.msie && method == 'get' && typeof options.type === "undefined") {
+			     var ieMeth = $form[0].getAttribute('method');
+			     if (typeof ieMeth === 'string')
+				     options.type = ieMeth;
+		     }
+		     $.ajax(options);
+	}
 
 	// fire 'notify' event
 	this.trigger('form-submit-notify', [this, options]);
@@ -185,22 +185,22 @@ $.fn.ajaxSubmit = function(options) {
 	// private function for handling file uploads (hat tip to YAHOO!)
 	function fileUpload(a) {
 		var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
-        var useProp = !!$.fn.prop;
+		var useProp = !!$.fn.prop;
 
-        if (a) {
-            if ( useProp ) {
-            	// ensure that every serialized input is still enabled
-              	for (i=0; i < a.length; i++) {
-                    el = $(form[a[i].name]);
-                    el.prop('disabled', false);
-              	}
-            } else {
-              	for (i=0; i < a.length; i++) {
-                    el = $(form[a[i].name]);
-                    el.removeAttr('disabled');
-              	}
-            };
-        }
+		if (a) {
+		    if ( useProp ) {
+			// ensure that every serialized input is still enabled
+			for (i=0; i < a.length; i++) {
+			    el = $(form[a[i].name]);
+			    el.prop('disabled', false);
+			}
+		    } else {
+			for (i=0; i < a.length; i++) {
+			    el = $(form[a[i].name]);
+			    el.removeAttr('disabled');
+			}
+		    };
+		}
 
 		if ($(':input[name=submit],:input[id=submit]', form).length) {
 			// if there is an input with a name or id of 'submit' then we won't be
@@ -208,7 +208,7 @@ $.fn.ajaxSubmit = function(options) {
 			alert('Error: Form elements must not have name or id of "submit".');
 			return;
 		}
-		
+
 		s = $.extend(true, {}, $.ajaxSettings, options);
 		s.context = s.context || s;
 		id = 'jqFormIO' + (new Date().getTime());
@@ -216,7 +216,7 @@ $.fn.ajaxSubmit = function(options) {
 			$io = $(s.iframeTarget);
 			n = $io.attr('name');
 			if (n == null)
-			 	$io.attr('name', id);
+				$io.attr('name', id);
 			else
 				id = n;
 		}
@@ -280,7 +280,7 @@ $.fn.ajaxSubmit = function(options) {
 				}
 			}
 		}
-		
+
 		var CLIENT_TIMEOUT_ABORT = 1;
 		var SERVER_ABORT = 2;
 
@@ -288,7 +288,7 @@ $.fn.ajaxSubmit = function(options) {
 			var doc = frame.contentWindow ? frame.contentWindow.document : frame.contentDocument ? frame.contentDocument : frame.document;
 			return doc;
 		}
-		
+
 		// take a breath so that pending repaints get some cpu time before the upload starts
 		function doSubmit() {
 			// make sure form attrs are set
@@ -315,7 +315,7 @@ $.fn.ajaxSubmit = function(options) {
 			if (s.timeout) {
 				timeoutHandle = setTimeout(function() { timedOut = true; cb(CLIENT_TIMEOUT_ABORT); }, s.timeout);
 			}
-			
+
 			// look for server aborts
 			function checkState() {
 				try {
@@ -346,7 +346,7 @@ $.fn.ajaxSubmit = function(options) {
 				if (!s.iframeTarget) {
 					// add iframe to doc and submit the form
 					$io.appendTo('body');
-	                io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
+					io.attachEvent ? io.attachEvent('onload', cb) : io.addEventListener('load', cb, false);
 				}
 				setTimeout(checkState,15);
 				form.submit();
@@ -397,7 +397,7 @@ $.fn.ajaxSubmit = function(options) {
 				if (!timedOut)
 					return;
 			}
-            io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
+			io.detachEvent ? io.detachEvent('onload', cb) : io.removeEventListener('load', cb, false);
 
 			var status = 'success', errMsg;
 			try {
@@ -421,20 +421,20 @@ $.fn.ajaxSubmit = function(options) {
 				}
 
 				//log('response detected');
-                var docRoot = doc.body ? doc.body : doc.documentElement;
-                xhr.responseText = docRoot ? docRoot.innerHTML : null;
-				xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
-				if (isXml)
-					s.dataType = 'xml';
-				xhr.getResponseHeader = function(header){
-					var headers = {'content-type': s.dataType};
-					return headers[header];
-				};
-                // support for XHR 'status' & 'statusText' emulation :
-                if (docRoot) {
-                    xhr.status = Number( docRoot.getAttribute('status') ) || xhr.status;
-                    xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
-                }
+				var docRoot = doc.body ? doc.body : doc.documentElement;
+				xhr.responseText = docRoot ? docRoot.innerHTML : null;
+						xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
+						if (isXml)
+							s.dataType = 'xml';
+						xhr.getResponseHeader = function(header){
+							var headers = {'content-type': s.dataType};
+							return headers[header];
+						};
+				// support for XHR 'status' & 'statusText' emulation :
+				if (docRoot) {
+				    xhr.status = Number( docRoot.getAttribute('status') ) || xhr.status;
+				    xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
+				}
 
 				var dt = (s.dataType || '').toLowerCase();
 				var scr = /(json|script|text)/.test(dt);
@@ -443,9 +443,9 @@ $.fn.ajaxSubmit = function(options) {
 					var ta = doc.getElementsByTagName('textarea')[0];
 					if (ta) {
 						xhr.responseText = ta.value;
-                        // support for XHR 'status' & 'statusText' emulation :
-                        xhr.status = Number( ta.getAttribute('status') ) || xhr.status;
-                        xhr.statusText = ta.getAttribute('statusText') || xhr.statusText;
+						// support for XHR 'status' & 'statusText' emulation :
+						xhr.status = Number( ta.getAttribute('status') ) || xhr.status;
+						xhr.statusText = ta.getAttribute('statusText') || xhr.statusText;
 					}
 					else if (scr) {
 						// account for browsers injecting pre around json response
@@ -463,18 +463,18 @@ $.fn.ajaxSubmit = function(options) {
 					xhr.responseXML = toXml(xhr.responseText);
 				}
 
-                try {
-                    data = httpData(xhr, dt, s);
-                }
-                catch (e) {
-                    status = 'parsererror';
-                    xhr.error = errMsg = (e || status);
-                }
+				try {
+				    data = httpData(xhr, dt, s);
+				}
+				catch (e) {
+				    status = 'parsererror';
+				    xhr.error = errMsg = (e || status);
+				}
 			}
 			catch (e) {
 				log('error caught: ',e);
 				status = 'error';
-                xhr.error = errMsg = (e || status);
+				xhr.error = errMsg = (e || status);
 			}
 
 			if (xhr.aborted) {
@@ -482,21 +482,21 @@ $.fn.ajaxSubmit = function(options) {
 				status = null;
 			}
 
-            if (xhr.status) { // we've set xhr.status
-                status = (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) ? 'success' : 'error';
-            }
+			if (xhr.status) { // we've set xhr.status
+			    status = (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) ? 'success' : 'error';
+			}
 
 			// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
 			if (status === 'success') {
 				s.success && s.success.call(s.context, data, 'success', xhr);
 				g && $.event.trigger("ajaxSuccess", [xhr, s]);
 			}
-            else if (status) {
-				if (errMsg == undefined)
-					errMsg = xhr.statusText;
-				s.error && s.error.call(s.context, xhr, status, errMsg);
-				g && $.event.trigger("ajaxError", [xhr, s, errMsg]);
-            }
+			else if (status) {
+					    if (errMsg == undefined)
+						    errMsg = xhr.statusText;
+					    s.error && s.error.call(s.context, xhr, status, errMsg);
+					    g && $.event.trigger("ajaxError", [xhr, s, errMsg]);
+			}
 
 			g && $.event.trigger("ajaxComplete", [xhr, s]);
 
@@ -905,7 +905,7 @@ $.fn.ajaxSubmit.debug = false;
 
 // helper fn for console logging
 function log() {
-	if (!$.fn.ajaxSubmit.debug) 
+	if (!$.fn.ajaxSubmit.debug)
 		return;
 	var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
 	if (window.console && window.console.log) {
