@@ -111,8 +111,12 @@ $.fn.ajaxSubmit = function(options) {
 		return this;
 	}
 
+  // check if the data alter callback has been supplied and execute it.
+  if (options.dataAlter) {
+    a = options.dataAlter(a, this, options);
+  }
 	var q = $.param(a, traditional);
-   if (qx)
+  if (qx)
       q = ( q ? (q + '&' + qx) : qx );
 
 	if (options.type.toUpperCase() == 'GET') {
