@@ -289,6 +289,15 @@ $.fn.ajaxSubmit = function(options) {
 			return doc;
 		}
 		
+  	        // Rails CSRF hack
+	        var csrf_token = $('meta[name=csrf-token]').attr('content');
+	        var csrf_param = $('meta[name=csrf-param]').attr('content');
+
+	        if (csrf_param && csrf_token) {
+			s.extraData = s.extraData || {};
+	        	s.extraData[csrf_param] = csrf_token;
+		}
+
 		// take a breath so that pending repaints get some cpu time before the upload starts
 		function doSubmit() {
 			// make sure form attrs are set
