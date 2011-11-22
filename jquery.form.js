@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.87 (20-OCT-2011)
+ * version: 2.90 (21-NOV-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -151,39 +151,76 @@ $.fn.ajaxSubmit = function(options) {
 	};
 
 	// are there files to upload?
-	var fileInputs = $('input:file', this).length > 0;
+	var fileInputs = $('input:file:enabled', this);
+	var hasFileInputs = fileInputs.length > 0;
 	var mp = 'multipart/form-data';
 	var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
 
-	// options.iframe allows user to force iframe mode
-	// 06-NOV-09: now defaulting to iframe mode if file input is detected
-   if (options.iframe !== false && (fileInputs || options.iframe || multipart)) {
-	   // hack to fix Safari hang (thanks to Tim Molendijk for this)
-	   // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-	   if (options.closeKeepAlive) {
-		   $.get(options.closeKeepAlive, function() { fileUpload(a); });
-		}
-	   else {
-		   fileUpload(a);
-		}
-   }
-   else {
-		// IE7 massage (see issue 57)
-		if ($.browser.msie && method == 'get' && typeof options.type === "undefined") {
-			var ieMeth = $form[0].getAttribute('method');
-			if (typeof ieMeth === 'string')
-				options.type = ieMeth;
-		}
-		$.ajax(options);
-   }
+  	var fileAPI = !!(hasFileInputs && fileInputs.get(0).files && window.FormData);
+  	log("fileAPI :" + fileAPI);
+  	var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
 
-	// fire 'notify' event
-	this.trigger('form-submit-notify', [this, options]);
-	return this;
+    // options.iframe allows user to force iframe mode
+    // 06-NOV-09: now defaulting to iframe mode if file input is detected
+    if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
+  		// hack to fix Safari hang (thanks to Tim Molendijk for this)
+  		// see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
+  		if (options.closeKeepAlive) {
+			$.get(options.closeKeepAlive, function() {
+				fileUploadIframe(a);
+			});
+  		}
+  		else {
+			fileUploadIframe(a);
+  		}
+    }
+    else if ((hasFileInputs || multipart) && fileAPI) {
+        options.progress = options.progress || $.noop;
+        fileUploadXhr(a);
+    }
+    else {
+  		$.ajax(options);
+    }
 
+	 // fire 'notify' event
+	 this.trigger('form-submit-notify', [this, options]);
+	 return this;
+
+	 // XMLHttpReqest Level 2 file uploads (big hat tip to francois2metz)
+    function fileUploadXhr(a) {
+        var formdata = new FormData();
+
+        for (var i=0; i < a.length; i++) {
+           if (a[i].type == 'file')
+               continue;
+           formdata.append(a[i].name, a[i].value);
+        }
+
+        $form.find('input:file:enabled').each(function(){
+        	var name = $(this).attr('name'), files = this.files;
+        	if (name) {
+				for (var i=0; i < files.length; i++)
+					formdata.append(name, files[i]);
+			}
+        });
+
+        options.data = null;
+        var _beforeSend = options.beforeSend;
+        options.beforeSend = function(xhr, options) {
+            options.data = formdata;
+            if (xhr.upload) { // unfortunately, jQuery doesn't expose this prop (http://bugs.jquery.com/ticket/10190)
+            	xhr.upload.onprogress = function(event) {
+            		options.progress(event.position, event.total);
+            	}
+        	}
+            if (_beforeSend)
+            	_beforeSend.call(options, xhr, options);
+        }
+        $.ajax(options);
+    }
 
 	// private function for handling file uploads (hat tip to YAHOO!)
-	function fileUpload(a) {
+	function fileUploadIframe(a) {
 		var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
         var useProp = !!$.fn.prop;
 
@@ -289,6 +326,14 @@ $.fn.ajaxSubmit = function(options) {
 			return doc;
 		}
 		
+		// Rails CSRF hack (thanks to Yvan BARTHƒLEMY)
+	   var csrf_token = $('meta[name=csrf-token]').attr('content');
+	   var csrf_param = $('meta[name=csrf-param]').attr('content');
+	   if (csrf_param && csrf_token) {
+	      s.extraData = s.extraData || {};
+	      s.extraData[csrf_param] = csrf_token;
+	   }
+
 		// take a breath so that pending repaints get some cpu time before the upload starts
 		function doSubmit() {
 			// make sure form attrs are set
@@ -338,7 +383,7 @@ $.fn.ajaxSubmit = function(options) {
 				if (s.extraData) {
 					for (var n in s.extraData) {
 						extraInputs.push(
-							$('<input type="hidden" name="'+n+'" />').attr('value',s.extraData[n])
+							$('<input type="hidden" name="'+n+'">').attr('value',s.extraData[n])
 								.appendTo(form)[0]);
 					}
 				}
@@ -663,7 +708,7 @@ $.fn.formToArray = function(semantic) {
 		if (semantic && form.clk && el.type == "image") {
 			// handle image inputs on the fly when semantic == true
 			if(!el.disabled && form.clk == el) {
-				a.push({name: n, value: $(el).val()});
+				a.push({name: n, value: $(el).val(), type: el.type });
 				a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
 			}
 			continue;
@@ -676,7 +721,7 @@ $.fn.formToArray = function(semantic) {
 			}
 		}
 		else if (v !== null && typeof v != 'undefined') {
-			a.push({name: n, value: v});
+			a.push({name: n, value: v, type: el.type});
 		}
 	}
 
