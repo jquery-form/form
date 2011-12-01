@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.92 (22-NOV-2011)
+ * version: 2.93 (30-NOV-2011)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -203,6 +203,11 @@ $.fn.ajaxSubmit = function(options) {
 					formdata.append(name, files[i]);
 			}
 		});
+
+		if (options.extraData) {
+			for (var k in options.extraData)
+				formdata.append(k, options.extraData[k])
+		}
 
 		options.data = null;
 		var _beforeSend = options.beforeSend;
