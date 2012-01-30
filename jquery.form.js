@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.94 (13-DEC-2011)
+ * version: 2.95 (30-JAN-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -218,7 +218,7 @@ $.fn.ajaxSubmit = function(options) {
 			type: 'POST'
 		});
 
-      s.context = s.context || s;
+      //s.context = s.context || s;
 
       s.data = null;
       var beforeSend = s.beforeSend;
