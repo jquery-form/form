@@ -649,40 +649,63 @@ $.fn.ajaxForm = function(options) {
 		return this;
 	}
 
-	return this.ajaxFormUnbind().bind('submit.form-plugin', function(e) {
-		if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
-			e.preventDefault();
-			$(this).ajaxSubmit(options);
-		}
-	}).bind('click.form-plugin', function(e) {
-		var target = e.target;
-		var $el = $(target);
-		if (!($el.is(":submit,input:image"))) {
-			// is this a child element of the submit el?  (ex: a span within a button)
-			var t = $el.closest(':submit');
-			if (t.length == 0) {
-				return;
-			}
-			target = t[0];
-		}
-		var form = this;
-		form.clk = target;
-		if (target.type == 'image') {
-			if (e.offsetX != undefined) {
-				form.clk_x = e.offsetX;
-				form.clk_y = e.offsetY;
-			} else if (typeof $.fn.offset == 'function') { // try to use dimensions plugin
-				var offset = $el.offset();
-				form.clk_x = e.pageX - offset.left;
-				form.clk_y = e.pageY - offset.top;
-			} else {
-				form.clk_x = e.pageX - target.offsetLeft;
-				form.clk_y = e.pageY - target.offsetTop;
-			}
-		}
-		// clear form vars
-		setTimeout(function() { form.clk = form.clk_x = form.clk_y = null; }, 100);
-	});
+    function onSubmitForm(e) {
+        if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
+            e.preventDefault();
+            $(this).ajaxSubmit(options);
+        }
+    }
+
+    function onClickForm(e) {
+        var target = e.target;
+        var $el = $(target);
+        if (!($el.is(":submit,input:image"))) {
+            // is this a child element of the submit el?  (ex: a span within a button)
+            var t = $el.closest(':submit');
+            if (t.length == 0) {
+                return;
+            }
+            target = t[0];
+        }
+        var form = this;
+        form.clk = target;
+        if (target.type == 'image') {
+            if (e.offsetX != undefined) {
+                form.clk_x = e.offsetX;
+                form.clk_y = e.offsetY;
+            } else if (typeof $.fn.offset == 'function') { // try to use dimensions plugin
+                var offset = $el.offset();
+                form.clk_x = e.pageX - offset.left;
+                form.clk_y = e.pageY - offset.top;
+            } else {
+                form.clk_x = e.pageX - target.offsetLeft;
+                form.clk_y = e.pageY - target.offsetTop;
+            }
+        }
+        // clear form vars
+        setTimeout(function () {
+            form.clk = form.clk_x = form.clk_y = null;
+        }, 100);
+    }
+
+    return this.each(function() {
+        if (!$(this).is('form')) {
+            return $(this)
+                .ajaxFormUndelegate()
+                .delegate('form', 'submit.form-plugin', onSubmitForm)
+                .delegate('form', 'click.form-plugin', onClickForm);
+        }
+        else {
+            return $(this)
+                .ajaxFormUnbind()
+                .bind('submit.form-plugin', onSubmitForm)
+                .bind('click.form-plugin', onClickForm);
+        }
+    });
+};
+
+$.fn.ajaxFormUndelegate = function() {
+    return this.undelegate('form', 'submit.form-plugin click.form-plugin');
 };
 
 // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
