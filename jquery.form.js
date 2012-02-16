@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.95 (30-JAN-2012)
+ * version: 2.96 (16-FEB-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -14,7 +14,7 @@
 	Usage Note:
 	-----------
 	Do not use both ajaxSubmit and ajaxForm on the same form.  These
-	functions are intended to be exclusive.  Use ajaxSubmit if you want
+	functions are mutually exclusive.  Use ajaxSubmit if you want
 	to bind your own submit handler to the form.  For example,
 
 	$(document).ready(function() {
@@ -34,7 +34,15 @@
 			target: '#output'
 		});
 	});
+	
+	You can also use ajaxForm with delegation (requires jQuery v1.7+), so the
+	form does not have to exist when you invoke ajaxForm:
 
+	$('#myForm').ajaxForm({
+		delegation: true,
+		target: '#output'
+	});
+	
 	When using ajaxForm, the ajaxSubmit function will be invoked for you
 	at the appropriate time.
 */
@@ -634,8 +642,11 @@ $.fn.ajaxSubmit = function(options) {
  * the form itself.
  */
 $.fn.ajaxForm = function(options) {
+	options = options || {};
+	options.delegation = options.delegation && $.isFunction($.fn.on);
+	
 	// in jQuery 1.3+ we can fix mistakes with the ready state
-	if (this.length === 0) {
+	if (!options.delegation && this.length === 0) {
 		var o = { s: this.selector, c: this.context };
 		if (!$.isReady && o.s) {
 			log('DOM not ready, queuing ajaxForm');
@@ -649,41 +660,59 @@ $.fn.ajaxForm = function(options) {
 		return this;
 	}
 
-	return this.ajaxFormUnbind().bind('submit.form-plugin', function(e) {
-		if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
-			e.preventDefault();
-			$(this).ajaxSubmit(options);
-		}
-	}).bind('click.form-plugin', function(e) {
-		var target = e.target;
-		var $el = $(target);
-		if (!($el.is(":submit,input:image"))) {
-			// is this a child element of the submit el?  (ex: a span within a button)
-			var t = $el.closest(':submit');
-			if (t.length == 0) {
-				return;
-			}
-			target = t[0];
-		}
-		var form = this;
-		form.clk = target;
-		if (target.type == 'image') {
-			if (e.offsetX != undefined) {
-				form.clk_x = e.offsetX;
-				form.clk_y = e.offsetY;
-			} else if (typeof $.fn.offset == 'function') { // try to use dimensions plugin
-				var offset = $el.offset();
-				form.clk_x = e.pageX - offset.left;
-				form.clk_y = e.pageY - offset.top;
-			} else {
-				form.clk_x = e.pageX - target.offsetLeft;
-				form.clk_y = e.pageY - target.offsetTop;
-			}
-		}
-		// clear form vars
-		setTimeout(function() { form.clk = form.clk_x = form.clk_y = null; }, 100);
-	});
+	if ( options.delegation ) {
+		$(document)
+			.off('submit.form-plugin', this.selector, doAjaxSubmit)
+			.off('click.form-plugin', this.selector, captureSubmittingElement)
+			.on('submit.form-plugin', this.selector, options, doAjaxSubmit)
+			.on('click.form-plugin', this.selector, options, captureSubmittingElement);
+		return this;
+	}
+
+	return this.ajaxFormUnbind()
+		.bind('submit.form-plugin', options, doAjaxSubmit)
+		.bind('click.form-plugin', options, captureSubmittingElement);
 };
+
+// private event handlers	
+function doAjaxSubmit(e) {
+	var options = e.data;
+	if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
+		e.preventDefault();
+		$(this).ajaxSubmit(options);
+	}
+}
+	
+function captureSubmittingElement(e) {
+	var target = e.target;
+	var $el = $(target);
+	if (!($el.is(":submit,input:image"))) {
+		// is this a child element of the submit el?  (ex: a span within a button)
+		var t = $el.closest(':submit');
+		if (t.length == 0) {
+			return;
+		}
+		target = t[0];
+	}
+	var form = this;
+	form.clk = target;
+	if (target.type == 'image') {
+		if (e.offsetX != undefined) {
+			form.clk_x = e.offsetX;
+			form.clk_y = e.offsetY;
+		} else if (typeof $.fn.offset == 'function') {
+			var offset = $el.offset();
+			form.clk_x = e.pageX - offset.left;
+			form.clk_y = e.pageY - offset.top;
+		} else {
+			form.clk_x = e.pageX - target.offsetLeft;
+			form.clk_y = e.pageY - target.offsetTop;
+		}
+	}
+	// clear form vars
+	setTimeout(function() { form.clk = form.clk_x = form.clk_y = null; }, 100);
+};
+
 
 // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
 $.fn.ajaxFormUnbind = function() {
