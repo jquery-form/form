@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.96 (16-FEB-2012)
+ * version: 2.97 (05-MAR-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
