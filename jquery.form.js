@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.01 (06-MAR-2012)
+ * version: 3.02 (07-MAR-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -233,7 +233,9 @@ $.fn.ajaxSubmit = function(options) {
 				var xhr = jQuery.ajaxSettings.xhr();
 				if (xhr.upload) {
 					xhr.upload.onprogress = function(event) {
-						var percent = parseInt((event.position / event.total) * 100, 10);
+						var percent = 0;
+						if (event.lengthComputable)
+							percent = parseInt((event.position / event.total) * 100, 10);
 						options.uploadProgress(event, event.position, event.total, percent);
 					}
 				}
