@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 2.99 (06-MAR-2012)
+ * version: 3.00 (06-MAR-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -194,7 +194,6 @@ $.fn.ajaxSubmit = function(options) {
           }
     }
     else if ((hasFileInputs || multipart) && fileAPI) {
-        options.progress = options.progress || $.noop;
         fileUploadXhr(a);
     }
     else {
@@ -228,22 +227,29 @@ $.fn.ajaxSubmit = function(options) {
             type: 'POST'
         });
 
-      //s.context = s.context || s;
+		if (options.progress) {
+			// workaround because jqXHR does not expose upload property
+			s.xhr = function() {
+				var xhr = jQuery.ajaxSettings.xhr();
+				if (xhr.upload) {
+					xhr.upload.onprogress = function(event) {
+						var percent = parseInt((event.position / event.total) * 100, 10);
+						options.progress(event, event.position, event.total, percent);
+					}
+				}
+				return xhr;
+			}
+		}
 
-      s.data = null;
-      var beforeSend = s.beforeSend;
-      s.beforeSend = function(xhr, o) {
-          o.data = formdata;
-          if(xhr.upload) { // unfortunately, jQuery doesn't expose this prop (http://bugs.jquery.com/ticket/10190)
-              xhr.upload.onprogress = function(event) {
-                  o.progress(event.position, event.total);
-              };
-          }
-          if(beforeSend)
-              beforeSend.call(o, xhr, options);
-      };
-      $.ajax(s);
-   }
+      	s.data = null;
+      	var beforeSend = s.beforeSend;
+      	s.beforeSend = function(xhr, o) {
+          	o.data = formdata;
+            if(beforeSend)
+                beforeSend.call(o, xhr, options);
+      	};
+      	$.ajax(s);
+   	 }
 
     // private function for handling file uploads (hat tip to YAHOO!)
     function fileUploadIframe(a) {
