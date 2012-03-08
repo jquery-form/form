@@ -14,7 +14,7 @@ Prepares a form to be submitted via AJAX by adding all of the necessary event li
 Use ajaxForm when you want the plugin to manage all the event binding for you.
 
 ````javascript
-// 
+// prepare all forms for ajax submission
 $('form').ajaxForm({
 	target: '#myResultsDiv'
 });
@@ -25,8 +25,9 @@ Immediately submits the form via AJAX. In the most common use case this is invok
 Use ajaxSubmit if you want to bind your own submit handler to the form.
 
 ````javascript
+// bind submit handler to form
 $('form').on('submit', function(e) {
-	e.preventDefault();
+	e.preventDefault(); // prevent native submit
 	$(this).ajaxSubmit({
 		target: 'myResultsDiv'
 	})
@@ -55,7 +56,8 @@ beforeSubmit: function(arr, $form, options) {
     // form data array is an array of objects with name and value properties
     // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ] 
 	// return false to cancel submit                  
-}````
+}
+````
 
 ###clearForm
 Boolean flag indicating whether the form should be cleared if the submit is successful
@@ -74,6 +76,16 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 * 'json': server response will be evaluted and passed to the 'success' callback, if specified
 * 'script': server response is evaluated in the global context
 
+###delegation
+true to enable support for event delegation
+*requires jQuery v1.7+*
+
+````javascript
+// prepare all existing and future forms for ajax submission
+$('form').ajaxForm({
+    delegation: true
+});
+````
 
 ###error
 Callback function to be invoked upon error.
@@ -163,8 +175,9 @@ The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/X
 
 ##Copyright and License
 Dual licensed under the MIT and GPL licenses:
-http://www.opensource.org/licenses/mit-license.php
-http://www.gnu.org/licenses/gpl.html
+
+* http://www.opensource.org/licenses/mit-license.php
+* http://www.gnu.org/licenses/gpl.html
 
 ---
 
