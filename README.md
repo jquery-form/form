@@ -179,6 +179,14 @@ Dual licensed under the MIT and GPL licenses:
 * http://www.opensource.org/licenses/mit-license.php
 * http://www.gnu.org/licenses/gpl.html
 
+You may use the jQuery Form Plugin under the terms of either the MIT License or the GNU General Public License (GPL) Version 2.
+The MIT License is recommended for most projects. It is simple and easy to understand and it places almost no restrictions on what you can do with the plugin.
+
+If the GPL suits your project better you are also free to use the plugin under that license.
+
+You don't have to do anything special to choose one license or the other and you don't have to notify anyone which license you are using. You are free to use the jQuery Form Plugin in commercial projects as long as the copyright header is left intact.
+
+
 ---
 
 Additional documentation and examples at: http://malsup.com/jquery/form/
