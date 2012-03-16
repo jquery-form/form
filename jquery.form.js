@@ -227,22 +227,26 @@ $.fn.ajaxSubmit = function(options) {
             cache: false,
             type: 'POST'
         });
-
-		if (options.uploadProgress) {
-			// workaround because jqXHR does not expose upload property
-			s.xhr = function() {
-				var xhr = jQuery.ajaxSettings.xhr();
-				if (xhr.upload) {
-					xhr.upload.onprogress = function(event) {
-						var percent = 0;
-						if (event.lengthComputable)
-							percent = parseInt((event.position / event.total) * 100, 10);
-						options.uploadProgress(event, event.position, event.total, percent);
-					}
-				}
-				return xhr;
-			}
-		}
+        
+        if (options.uploadProgress) {
+            // workaround because jqXHR does not expose upload property
+            s.xhr = function() {
+                var xhr = jQuery.ajaxSettings.xhr();
+                if (xhr.upload) {
+                    xhr.upload.onprogress = function(event) {
+                        var percent = 0;
+                        var position = event.loaded || /*event.position is deprecated*/event.position;
+                        var total = event.total;
+                        if (event.lengthComputable) {
+                            // have to use Math.ceil to avoid 99% in Fx (uploaded 999 / total 1000)
+                            percent = Math.ceil(position / total * 100);
+                        }
+                        options.uploadProgress(event, position, total, percent);
+                    }
+                }
+                return xhr;
+            }
+        }
 
       	s.data = null;
       	var beforeSend = s.beforeSend;
