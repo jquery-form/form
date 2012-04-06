@@ -232,7 +232,7 @@ $.fn.ajaxSubmit = function(options) {
             cache: false,
             type: 'POST'
         });
-
+        
         if (options.uploadProgress) {
             // workaround because jqXHR does not expose upload property
             s.xhr = function() {
@@ -240,19 +240,22 @@ $.fn.ajaxSubmit = function(options) {
                 if (xhr.upload) {
                     xhr.upload.onprogress = function(event) {
                         var percent = 0;
-                        if (event.lengthComputable)
-                            percent = parseInt((event.position / event.total) * 100, 10);
-                        options.uploadProgress(event, event.position, event.total, percent);
-                    };
+                        var position = event.loaded || event.position; /*event.position is deprecated*/
+                        var total = event.total;
+                        if (event.lengthComputable) {
+                            percent = Math.ceil(position / total * 100);
+                        }
+                        options.uploadProgress(event, position, total, percent);
+                    }
                 }
                 return xhr;
-            };
+            }
         }
 
-        s.data = null;
-        var beforeSend = s.beforeSend;
-        s.beforeSend = function(xhr, o) {
-            o.data = formdata;
+      	s.data = null;
+      	var beforeSend = s.beforeSend;
+      	s.beforeSend = function(xhr, o) {
+          	o.data = formdata;
             if(beforeSend)
                 beforeSend.call(o, xhr, options);
         };
