@@ -815,7 +815,7 @@ $.fn.formToArray = function(semantic, elements) {
         else if (v !== null && typeof v != 'undefined') {
             if (elements) 
                 elements.push(el);
-            a.push({name: n, value: v, type: el.type});
+            a.push({name: n, value: v, type: el.type, required: el.required});
         }
     }
 
