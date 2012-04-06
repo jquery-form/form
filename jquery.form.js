@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.04 (03-APR-2012)
+ * version: 3.05 (06-APR-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -978,7 +978,7 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
     var re = /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
     return this.each(function() {
         var t = this.type, tag = this.tagName.toLowerCase();
-        if (re.test(t) || tag == 'textarea' || (includeHidden && /hidden/.test(t)) ) {
+        if (re.test(t) || tag == 'textarea') {
             this.value = '';
         }
         else if (t == 'checkbox' || t == 'radio') {
@@ -986,6 +986,15 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
         }
         else if (tag == 'select') {
             this.selectedIndex = -1;
+        }
+        else if (includeHidden) {
+            // includeHidden can be the valud true, or it can be a selector string
+            // indicating a special test; for example:
+            //  $('#myForm').clearForm('.special:hidden')
+            // the above would clean hidden inputs that have the class of 'special'
+            if ( (includeHidden === true && /hidden/.test(t)) ||
+                 (typeof includeHidden == 'string' && $(this).is(includeHidden)) )
+                this.value = '';
         }
     });
 };
