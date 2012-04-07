@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.07 (06-APR-2012)
+ * version: 3.08 (07-APR-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -246,16 +246,16 @@ $.fn.ajaxSubmit = function(options) {
                             percent = Math.ceil(position / total * 100);
                         }
                         options.uploadProgress(event, position, total, percent);
-                    }
+                    };
                 }
                 return xhr;
-            }
+            };
         }
 
-      	s.data = null;
-      	var beforeSend = s.beforeSend;
-      	s.beforeSend = function(xhr, o) {
-          	o.data = formdata;
+        s.data = null;
+          var beforeSend = s.beforeSend;
+          s.beforeSend = function(xhr, o) {
+              o.data = formdata;
             if(beforeSend)
                 beforeSend.call(o, xhr, options);
         };
