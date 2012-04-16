@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.08 (07-APR-2012)
+ * version: 3.09 (16-APR-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -21,7 +21,7 @@
     to bind your own submit handler to the form.  For example,
 
     $(document).ready(function() {
-        $('#myForm').bind('submit', function(e) {
+        $('#myForm').on('submit', function(e) {
             e.preventDefault(); // <-- important
             $(this).ajaxSubmit({
                 target: '#output'
@@ -808,8 +808,14 @@ $.fn.formToArray = function(semantic, elements) {
             if (elements) 
                 elements.push(el);
             var files = el.files;
-            for (j=0; j < files.length; j++) {
-                a.push({name: n, value: files[j], type: el.type});
+            if (files.length) {
+                for (j=0; j < files.length; j++) {
+                    a.push({name: n, value: files[j], type: el.type});
+                }
+            }
+            else {
+                // #180
+                a.push({ name: n, value: '', type: el.type });
             }
         }
         else if (v !== null && typeof v != 'undefined') {
