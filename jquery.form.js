@@ -210,6 +210,19 @@ $.fn.ajaxSubmit = function(options) {
     this.trigger('form-submit-notify', [this, options]);
     return this;
 
+    // This is a utility function to fix deep serialization issues when doing file uploads
+    // eg params show up as "[object Object]" rather than what it should be
+    function formDeepSerialize(extraData){
+      var serialized = $.param(extraData).split('&');
+      var result = {};
+      var n;
+      for(var i=0, l=serialized.length; i < l; i++){
+        n = serialized[i].split('=')
+        result[decodeURIComponent(n[0])] = decodeURIComponent(n[1])
+      }
+      return result;
+    }
+
      // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
     function fileUploadXhr(a) {
         var formdata = new FormData();
@@ -219,9 +232,10 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         if (options.extraData) {
-            for (var p in options.extraData)
-                if (options.extraData.hasOwnProperty(p))
-                    formdata.append(p, options.extraData[p]);
+            var serializedData = formDeepSerialize(options.extraData);
+            for (var p in serializedData)
+                if (serializedData.hasOwnProperty(p))
+                    formdata.append(p, serializedData[p]);
         }
 
         options.data = null;
