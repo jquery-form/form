@@ -213,7 +213,7 @@ $.fn.ajaxSubmit = function(options) {
     // This is a utility function to fix deep serialization issues when doing file uploads
     // eg params show up as "[object Object]" rather than what it should be
     function formDeepSerialize(extraData){
-      var serialized = $.param(extraData).split('&');
+      var serialized = $.param(extraData).replace(/\+/g, '%20').split('&');
       var result = {};
       var n;
       for(var i=0, l=serialized.length; i < l; i++){
