@@ -426,9 +426,16 @@ $.fn.ajaxSubmit = function(options) {
                 if (s.extraData) {
                     for (var n in s.extraData) {
                         if (s.extraData.hasOwnProperty(n)) {
-                            extraInputs.push(
+                            // if using the $.param format that allows for multiple values with the same name
+                            if($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
+                                extraInputs.push(
+                                $('<input type="hidden" name="'+s.extraData[n].name+'">').attr('value',s.extraData[n].value)
+                                    .appendTo(form)[0]);
+                            } else {
+                                extraInputs.push(
                                 $('<input type="hidden" name="'+n+'">').attr('value',s.extraData[n])
                                     .appendTo(form)[0]);
+                            }
                         }
                     }
                 }
