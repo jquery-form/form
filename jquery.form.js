@@ -997,7 +997,7 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
             this.selectedIndex = -1;
         }
         else if (includeHidden) {
-            // includeHidden can be the valud true, or it can be a selector string
+            // includeHidden can be the value true, or it can be a selector string
             // indicating a special test; for example:
             //  $('#myForm').clearForm('.special:hidden')
             // the above would clean hidden inputs that have the class of 'special'
