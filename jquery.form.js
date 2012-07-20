@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.09 (16-APR-2012)
+ * version: 3.11 (20-JUL-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -210,17 +210,17 @@ $.fn.ajaxSubmit = function(options) {
     this.trigger('form-submit-notify', [this, options]);
     return this;
 
-    // This is a utility function to fix deep serialization issues when doing file uploads
-    // eg params show up as "[object Object]" rather than what it should be
-    function formDeepSerialize(extraData){
-      var serialized = $.param(extraData).split('&');
-      var result = {};
-      var n;
-      for(var i=0, l=serialized.length; i < l; i++){
-        n = serialized[i].split('=')
-        result[decodeURIComponent(n[0])] = decodeURIComponent(n[1])
-      }
-      return result;
+    // utility fn for deep serialization
+    function deepSerialize(extraData){
+        var serialized = $.param(extraData).split('&');
+        var len = serialized.length;
+        var result = {};
+        var i, part;
+        for (i=0; i < len; i++) {
+            part = serialized[i].split('=');
+            result[decodeURIComponent(part[0])] = decodeURIComponent(part[1]);
+        }
+        return result;
     }
 
      // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
@@ -232,7 +232,7 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         if (options.extraData) {
-            var serializedData = formDeepSerialize(options.extraData);
+            var serializedData = deepSerialize(options.extraData);
             for (var p in serializedData)
                 if (serializedData.hasOwnProperty(p))
                     formdata.append(p, serializedData[p]);
@@ -267,11 +267,11 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         s.data = null;
-          var beforeSend = s.beforeSend;
-          s.beforeSend = function(xhr, o) {
-              o.data = formdata;
-            if(beforeSend)
-                beforeSend.call(o, xhr, options);
+            var beforeSend = s.beforeSend;
+            s.beforeSend = function(xhr, o) {
+                o.data = formdata;
+                if(beforeSend)
+                    beforeSend.call(this, xhr, o);
         };
         $.ajax(s);
     }
