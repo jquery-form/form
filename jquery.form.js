@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.09 (16-APR-2012)
+ * version: 3.10 (20-JUL-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -253,11 +253,11 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         s.data = null;
-          var beforeSend = s.beforeSend;
-          s.beforeSend = function(xhr, o) {
-              o.data = formdata;
-            if(beforeSend)
-                beforeSend.call(o, xhr, options);
+            var beforeSend = s.beforeSend;
+            s.beforeSend = function(xhr, o) {
+                o.data = formdata;
+                if(beforeSend)
+                    beforeSend.call(this, xhr, o);
         };
         $.ajax(s);
     }
