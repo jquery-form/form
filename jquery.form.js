@@ -76,7 +76,12 @@ $.fn.ajaxSubmit = function(options) {
         options = { success: options };
     }
 
-    method = this.attr('method');
+	if ($.browser.msie && $.browser.version == 8 && !this[0].attributes.method.specified) {
+		method = undefined;
+	}
+	else {
+		method = this.attr('method');
+	}
     action = this.attr('action');
     url = (typeof action === 'string') ? $.trim(action) : '';
     url = url || window.location.href || '';
