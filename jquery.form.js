@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.10 (20-JUL-2012)
+ * version: 3.11 (20-JUL-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -165,7 +165,7 @@ $.fn.ajaxSubmit = function(options) {
     }
 
     options.success = function(data, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
-        var context = options.context || options;    // jQuery 1.4+ supports scope context 
+        var context = options.context || this ;    // jQuery 1.4+ supports scope context 
         for (var i=0, max=callbacks.length; i < max; i++) {
             callbacks[i].apply(context, [data, status, xhr || $form, $form]);
         }
