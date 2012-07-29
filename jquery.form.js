@@ -316,6 +316,13 @@ $.fn.ajaxSubmit = function(options) {
                 var e = (status === 'timeout' ? 'timeout' : 'aborted');
                 log('aborting upload... ' + e);
                 this.aborted = 1;
+                // #214
+                if (io.contentWindow.document.execCommand) { // IE browsers
+                    io.contentWindow.document.execCommand('Stop');
+                }
+                else if (io.contentWindow.stop) { // other browsers
+                    io.contentWindow.stop();
+                }
                 $io.attr('src', s.iframeSrc); // abort op in progress
                 xhr.error = e;
                 if (s.error)
