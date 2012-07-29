@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.12 (20-JUL-2012)
+ * version: 3.13 (29-JUL-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -433,9 +433,16 @@ $.fn.ajaxSubmit = function(options) {
                 if (s.extraData) {
                     for (var n in s.extraData) {
                         if (s.extraData.hasOwnProperty(n)) {
-                            extraInputs.push(
-                                $('<input type="hidden" name="'+n+'">').attr('value',s.extraData[n])
-                                    .appendTo(form)[0]);
+                           // if using the $.param format that allows for multiple values with the same name
+                           if($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
+                               extraInputs.push(
+                               $('<input type="hidden" name="'+s.extraData[n].name+'">').attr('value',s.extraData[n].value)
+                                   .appendTo(form)[0]);
+                           } else {
+                               extraInputs.push(
+                               $('<input type="hidden" name="'+n+'">').attr('value',s.extraData[n])
+                                   .appendTo(form)[0]);
+                           }
                         }
                     }
                 }
