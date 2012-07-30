@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.13 (29-JUL-2012)
+ * version: 3.14 (30-JUL-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -317,11 +317,10 @@ $.fn.ajaxSubmit = function(options) {
                 log('aborting upload... ' + e);
                 this.aborted = 1;
                 // #214
-                if (io.contentWindow.document.execCommand) { // IE browsers
-                    io.contentWindow.document.execCommand('Stop');
-                }
-                else if (io.contentWindow.stop) { // other browsers
-                    io.contentWindow.stop();
+                if (io.contentWindow.document.execCommand) {
+                    try { // #214
+                        io.contentWindow.document.execCommand('Stop');
+                    } catch(ignore) {}
                 }
                 $io.attr('src', s.iframeSrc); // abort op in progress
                 xhr.error = e;
