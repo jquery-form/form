@@ -59,6 +59,16 @@ beforeSubmit: function(arr, $form, options) {
 }
 ````
 
+###filtering
+Callback function invoked before processing fiels. This provides a way to filter elements.
+````javascript
+filtering: function(el, index) {
+	if ( !$(el).hasClass('ignore') ) {
+		return el;
+	}
+}
+````
+
 ###clearForm
 Boolean flag indicating whether the form should be cleared if the submit is successful
 
@@ -179,7 +189,7 @@ The jQuery Form plugin is dual licensed under the MIT and GPL licenses:
 * [MIT](http://malsup.github.com/mit-license.txt)
 * [GPL](http://malsup.github.com/gpl-license-v2.txt)
 
-You may use either license.  The MIT License is recommended for most projects because it is simple and easy to understand and it places almost no restrictions on what you can do with the plugin.
+You may use either license. The MIT License is recommended for most projects because it is simple and easy to understand and it places almost no restrictions on what you can do with the plugin.
 
 If the GPL suits your project better you are also free to use the plugin under that license.
 

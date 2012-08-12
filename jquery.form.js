@@ -113,7 +113,7 @@ $.fn.ajaxSubmit = function(options) {
     }
     
     var elements = [];
-    var qx, a = this.formToArray(options.semantic, elements);
+    var qx, a = this.formToArray(options.semantic, elements, options.filtering);
     if (options.data) {
         options.extraData = options.data;
         qx = $.param(options.data, traditional);
@@ -780,7 +780,7 @@ $.fn.ajaxFormUnbind = function() {
  * It is this array that is passed to pre-submit callback functions provided to the
  * ajaxSubmit() and ajaxForm() methods.
  */
-$.fn.formToArray = function(semantic, elements) {
+$.fn.formToArray = function(semantic, elements, filtering) {
     var a = [];
     if (this.length === 0) {
         return a;
@@ -790,6 +790,10 @@ $.fn.formToArray = function(semantic, elements) {
     var els = semantic ? form.getElementsByTagName('*') : form.elements;
     if (!els) {
         return a;
+    }
+    
+    if ($.isFunction(filtering)) {
+    	var els = $.map(els, filtering);
     }
 
     var i,j,n,v,el,max,jmax;
