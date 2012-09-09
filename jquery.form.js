@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.14 (30-JUL-2012)
+ * version: 3.15 (09-SEP-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -210,6 +210,19 @@ $.fn.ajaxSubmit = function(options) {
     this.trigger('form-submit-notify', [this, options]);
     return this;
 
+    // utility fn for deep serialization
+    function deepSerialize(extraData){
+        var serialized = $.param(extraData).split('&');
+        var len = serialized.length;
+        var result = {};
+        var i, part;
+        for (i=0; i < len; i++) {
+            part = serialized[i].split('=');
+            result[decodeURIComponent(part[0])] = decodeURIComponent(part[1]);
+        }
+        return result;
+    }
+
      // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
     function fileUploadXhr(a) {
         var formdata = new FormData();
@@ -219,9 +232,10 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         if (options.extraData) {
-            for (var p in options.extraData)
-                if (options.extraData.hasOwnProperty(p))
-                    formdata.append(p, options.extraData[p]);
+            var serializedData = deepSerialize(options.extraData);
+            for (var p in serializedData)
+                if (serializedData.hasOwnProperty(p))
+                    formdata.append(p, serializedData[p]);
         }
 
         options.data = null;
