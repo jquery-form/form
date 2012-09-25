@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.15 (09-SEP-2012)
+ * version: 3.16 (25-SEP-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -196,10 +196,10 @@ $.fn.ajaxSubmit = function(options) {
           }
     }
     else if ((hasFileInputs || multipart) && fileAPI) {
-        fileUploadXhr(a);
+        options.jqxhr = fileUploadXhr(a);
     }
     else {
-        $.ajax(options);
+        options.jqxhr = $.ajax(options);
     }
 
     // clear element array
@@ -273,7 +273,7 @@ $.fn.ajaxSubmit = function(options) {
                 if(beforeSend)
                     beforeSend.call(this, xhr, o);
         };
-        $.ajax(s);
+        return $.ajax(s);
     }
 
     // private function for handling file uploads (hat tip to YAHOO!)
