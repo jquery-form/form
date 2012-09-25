@@ -244,7 +244,7 @@ $.fn.ajaxSubmit = function(options) {
             contentType: false,
             processData: false,
             cache: false,
-            type: 'POST'
+            type: method || 'POST'
         });
         
         if (options.uploadProgress) {
