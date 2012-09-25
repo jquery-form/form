@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.16 (25-SEP-2012)
+ * version: 3.17 (25-SEP-2012)
  * @requires jQuery v1.3.2 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -244,7 +244,7 @@ $.fn.ajaxSubmit = function(options) {
             contentType: false,
             processData: false,
             cache: false,
-            type: 'POST'
+            type: method || 'POST'
         });
         
         if (options.uploadProgress) {
