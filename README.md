@@ -9,6 +9,18 @@ No special markup is needed, just a normal form.  Submitting a form with AJAX do
  
 ##API
 
+###jqXHR
+The jqXHR object is stored in element <em>data</em>-cache with the <code>jqxhr</code> key after each <code>ajaxSubmit</code>
+call.  It can be accessed like this:
+````javascript
+var form = $('#myForm').ajaxSubmit({ /* options */ });
+var xhr = form.data('jqxhr');
+
+xhr.done(function() {
+...
+});
+````
+
 ###ajaxForm( options )
 Prepares a form to be submitted via AJAX by adding all of the necessary event listeners. It does **not** submit the form. Use `ajaxForm` in your document's `ready` function to prepare existing forms for AJAX submission, or with the `delegation` option to handle forms not yet added to the DOM.  
 Use ajaxForm when you want the plugin to manage all the event binding for you.
