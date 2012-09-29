@@ -1,7 +1,7 @@
 /*!
  * jQuery Form Plugin
- * version: 3.17 (25-SEP-2012)
- * @requires jQuery v1.3.2 or later
+ * version: 3.18 (28-SEP-2012)
+ * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
  * Project repository: https://github.com/malsup/form
@@ -181,6 +181,8 @@ $.fn.ajaxSubmit = function(options) {
     log("fileAPI :" + fileAPI);
     var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
 
+    var jqxhr;
+
     // options.iframe allows user to force iframe mode
     // 06-NOV-09: now defaulting to iframe mode if file input is detected
     if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
@@ -188,19 +190,21 @@ $.fn.ajaxSubmit = function(options) {
         // see:  http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
         if (options.closeKeepAlive) {
             $.get(options.closeKeepAlive, function() {
-                fileUploadIframe(a);
+                jqxhr = fileUploadIframe(a);
             });
         }
-          else {
-            fileUploadIframe(a);
-          }
+        else {
+            jqxhr = fileUploadIframe(a);
+        }
     }
     else if ((hasFileInputs || multipart) && fileAPI) {
-        options.jqxhr = fileUploadXhr(a);
+        jqxhr = fileUploadXhr(a);
     }
     else {
-        options.jqxhr = $.ajax(options);
+        jqxhr = $.ajax(options);
     }
+
+    $form.removeData('jqxhr').data('jqxhr', jqxhr);
 
     // clear element array
     for (var k=0; k < elements.length; k++)
@@ -280,12 +284,14 @@ $.fn.ajaxSubmit = function(options) {
     function fileUploadIframe(a) {
         var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
         var useProp = !!$.fn.prop;
+        var deferred = $.Deferred();
 
         if ($(':input[name=submit],:input[id=submit]', form).length) {
             // if there is an input with a name or id of 'submit' then we won't be
             // able to invoke the submit fn on the form (at least not x-browser)
             alert('Error: Form elements must not have name or id of "submit".');
-            return;
+            deferred.reject();
+            return deferred;
         }
         
         if (a) {
@@ -360,10 +366,12 @@ $.fn.ajaxSubmit = function(options) {
             if (s.global) {
                 $.active--;
             }
-            return;
+            deferred.reject();
+            return deferred;
         }
         if (xhr.aborted) {
-            return;
+            deferred.reject();
+            return deferred;
         }
 
         // add submitting element to data if we know it
@@ -505,10 +513,12 @@ $.fn.ajaxSubmit = function(options) {
             }
             if (e === CLIENT_TIMEOUT_ABORT && xhr) {
                 xhr.abort('timeout');
+                deferred.reject(xhr, 'timeout');
                 return;
             }
             else if (e == SERVER_ABORT && xhr) {
                 xhr.abort('server abort');
+                deferred.reject(xhr, 'error', 'server abort');
                 return;
             }
 
@@ -613,6 +623,7 @@ $.fn.ajaxSubmit = function(options) {
             if (status === 'success') {
                 if (s.success)
                     s.success.call(s.context, data, 'success', xhr);
+                deferred.resolve(xhr.responseText, 'success', xhr);
                 if (g)
                     $.event.trigger("ajaxSuccess", [xhr, s]);
             }
@@ -621,6 +632,7 @@ $.fn.ajaxSubmit = function(options) {
                     errMsg = xhr.statusText;
                 if (s.error)
                     s.error.call(s.context, xhr, status, errMsg);
+                deferred.reject(xhr, 'error', errMsg);
                 if (g)
                     $.event.trigger("ajaxError", [xhr, s, errMsg]);
             }
@@ -685,6 +697,8 @@ $.fn.ajaxSubmit = function(options) {
             }
             return data;
         };
+
+        return deferred;
     }
 };
 
