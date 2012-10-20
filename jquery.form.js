@@ -76,8 +76,8 @@ $.fn.ajaxSubmit = function(options) {
         options = { success: options };
     }
 
-    method = this.attr('method');
-    action = this.attr('action');
+    method = this.prop('method');
+    action = this.prop('action');
     url = (typeof action === 'string') ? $.trim(action) : '';
     url = url || window.location.href || '';
     if (url) {
