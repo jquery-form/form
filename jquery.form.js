@@ -285,15 +285,19 @@ $.fn.ajaxSubmit = function(options) {
         var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
         var useProp = !!$.fn.prop;
         var deferred = $.Deferred();
+        var submitMethod,
+            $idSubmit = $(':input[id=submit]', form),
+            $nameSubmit = $(':input[name=submit]', form);
 
-        if ($(':input[name=submit],:input[id=submit]', form).length) {
-            // if there is an input with a name or id of 'submit' then we won't be
-            // able to invoke the submit fn on the form (at least not x-browser)
-            alert('Error: Form elements must not have name or id of "submit".');
-            deferred.reject();
-            return deferred;
-        }
-        
+        // if there is an input with a name or id of 'submit' then we won't be
+        // able to invoke the submit fn on the form (at least not x-browser).
+        // We temporarily rename, fetch the submit method and rename back.
+        $idSubmit.attr({id: 'submit_temporarily_renamed'});
+        $nameSubmit.attr({name: 'submit_temporarily_renamed'});
+        submitMethod = form.submit;
+        $idSubmit.attr({id: 'submit'});
+        $nameSubmit.attr({name: 'submit'});
+
         if (a) {
             // ensure that every serialized input is still enabled
             for (i=0; i < elements.length; i++) {
@@ -477,7 +481,7 @@ $.fn.ajaxSubmit = function(options) {
                         io.addEventListener('load', cb, false);
                 }
                 setTimeout(checkState,15);
-                form.submit();
+                submitMethod.call(form);
             }
             finally {
                 // reset attrs and remove "extra" input elements
