@@ -172,7 +172,7 @@ $.fn.ajaxSubmit = function(options) {
     };
 
     // are there files to upload?
-    var fileInputs = $('input:file:enabled[value]', this); // [value] (issue #113)
+    var fileInputs = $('input[type=file]:enabled[value]', this); // [value] (issue #113)
     var hasFileInputs = fileInputs.length > 0;
     var mp = 'multipart/form-data';
     var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
@@ -286,7 +286,7 @@ $.fn.ajaxSubmit = function(options) {
         var useProp = !!$.fn.prop;
         var deferred = $.Deferred();
 
-        if ($(':input[name=submit],:input[id=submit]', form).length) {
+        if ($('[name=submit],[id=submit]', form).length) {
             // if there is an input with a name or id of 'submit' then we won't be
             // able to invoke the submit fn on the form (at least not x-browser)
             alert('Error: Form elements must not have name or id of "submit".');
@@ -764,9 +764,9 @@ function captureSubmittingElement(e) {
     /*jshint validthis:true */
     var target = e.target;
     var $el = $(target);
-    if (!($el.is(":submit,input:image"))) {
+    if (!($el.is("[type=submit],[type=image]"))) {
         // is this a child element of the submit el?  (ex: a span within a button)
-        var t = $el.closest(':submit');
+        var t = $el.closest('[type=submit]');
         if (t.length === 0) {
             return;
         }
@@ -924,19 +924,19 @@ $.fn.fieldSerialize = function(successful) {
  *      <input name="C" type="radio" value="C2" />
  *  </fieldset></form>
  *
- *  var v = $(':text').fieldValue();
+ *  var v = $('input[type=text]').fieldValue();
  *  // if no values are entered into the text inputs
  *  v == ['','']
  *  // if values entered into the text inputs are 'foo' and 'bar'
  *  v == ['foo','bar']
  *
- *  var v = $(':checkbox').fieldValue();
+ *  var v = $('input[type=checkbox]').fieldValue();
  *  // if neither checkbox is checked
  *  v === undefined
  *  // if both checkboxes are checked
  *  v == ['B1', 'B2']
  *
- *  var v = $(':radio').fieldValue();
+ *  var v = $('input[type=radio]').fieldValue();
  *  // if neither radio is checked
  *  v === undefined
  *  // if first radio is checked
