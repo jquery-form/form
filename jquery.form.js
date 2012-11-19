@@ -764,9 +764,9 @@ function captureSubmittingElement(e) {
     /*jshint validthis:true */
     var target = e.target;
     var $el = $(target);
-    if (!($el.is(":submit,input:image"))) {
+    if (!($el.is("[type=submit],input:image"))) {
         // is this a child element of the submit el?  (ex: a span within a button)
-        var t = $el.closest(':submit');
+        var t = $el.closest('[type=submit]');
         if (t.length === 0) {
             return;
         }
