@@ -924,19 +924,19 @@ $.fn.fieldSerialize = function(successful) {
  *      <input name="C" type="radio" value="C2" />
  *  </fieldset></form>
  *
- *  var v = $(':text').fieldValue();
+ *  var v = $('input[type=text]').fieldValue();
  *  // if no values are entered into the text inputs
  *  v == ['','']
  *  // if values entered into the text inputs are 'foo' and 'bar'
  *  v == ['foo','bar']
  *
- *  var v = $(':checkbox').fieldValue();
+ *  var v = $('input[type=checkbox]').fieldValue();
  *  // if neither checkbox is checked
  *  v === undefined
  *  // if both checkboxes are checked
  *  v == ['B1', 'B2']
  *
- *  var v = $(':radio').fieldValue();
+ *  var v = $('input[type=radio]').fieldValue();
  *  // if neither radio is checked
  *  v === undefined
  *  // if first radio is checked
