@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.19 (19-NOV-2012)
+ * version: 3.20 (20-NOV-2012)
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -172,7 +172,11 @@ $.fn.ajaxSubmit = function(options) {
     };
 
     // are there files to upload?
-    var fileInputs = $('input[type=file]:enabled[value]', this); // [value] (issue #113)
+
+    // [value] (issue #113), also see comment:
+    // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
+    var fileInputs = $('input[type=file]:enabled[value!=""]', this); 
+
     var hasFileInputs = fileInputs.length > 0;
     var mp = 'multipart/form-data';
     var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
