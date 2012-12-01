@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.20 (20-NOV-2012)
+ * version: 3.21 (1-DEC-2012)
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -225,6 +225,8 @@ $.fn.ajaxSubmit = function(options) {
         var result = {};
         var i, part;
         for (i=0; i < len; i++) {
+            // #252; undo param space replacement
+            serialized[i] = serialized[i].replace(/\+/g,' ');
             part = serialized[i].split('=');
             result[decodeURIComponent(part[0])] = decodeURIComponent(part[1]);
         }
