@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.22 (1-DEC-2012)
+ * version: 3.23 (11-DEC-2012)
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -342,12 +342,14 @@ $.fn.ajaxSubmit = function(options) {
                 var e = (status === 'timeout' ? 'timeout' : 'aborted');
                 log('aborting upload... ' + e);
                 this.aborted = 1;
-                // #214
-                if (io.contentWindow.document.execCommand) {
-                    try { // #214
+
+                try { // #214, #257
+                    if (io.contentWindow.document.execCommand) {
                         io.contentWindow.document.execCommand('Stop');
-                    } catch(ignore) {}
-                }
+                    }
+                } 
+                catch(ignore) {}
+
                 $io.attr('src', s.iframeSrc); // abort op in progress
                 xhr.error = e;
                 if (s.error)
