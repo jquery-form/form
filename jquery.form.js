@@ -315,7 +315,7 @@ $.fn.ajaxSubmit = function(options) {
         s.context = s.context || s;
         id = 'jqFormIO' + (new Date().getTime());
         if (s.iframeTarget) {
-            $io = $(s.iframeTarget);
+            $io = $(s.iframeTarget, form.ownerDocument);
             n = $io.attr('name');
             if (!n)
                  $io.attr('name', id);
@@ -323,7 +323,7 @@ $.fn.ajaxSubmit = function(options) {
                 id = n;
         }
         else {
-            $io = $('<iframe name="' + id + '" src="'+ s.iframeSrc +'" />');
+            $io = $('<iframe name="' + id + '" src="'+ s.iframeSrc +'" />', form.ownerDocument);
             $io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
         }
         io = $io[0];
@@ -465,11 +465,11 @@ $.fn.ajaxSubmit = function(options) {
                            // if using the $.param format that allows for multiple values with the same name
                            if($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
                                extraInputs.push(
-                               $('<input type="hidden" name="'+s.extraData[n].name+'">').attr('value',s.extraData[n].value)
+                               $('<input type="hidden" name="'+s.extraData[n].name+'">', form.ownerDocument).attr('value',s.extraData[n].value)
                                    .appendTo(form)[0]);
                            } else {
                                extraInputs.push(
-                               $('<input type="hidden" name="'+n+'">').attr('value',s.extraData[n])
+                               $('<input type="hidden" name="'+n+'">', form.ownerDocument).attr('value',s.extraData[n])
                                    .appendTo(form)[0]);
                            }
                         }
@@ -478,12 +478,14 @@ $.fn.ajaxSubmit = function(options) {
 
                 if (!s.iframeTarget) {
                     // add iframe to doc and submit the form
-                    $io.appendTo('body');
-                    if (io.attachEvent)
-                        io.attachEvent('onload', cb);
-                    else
-                        io.addEventListener('load', cb, false);
+                    $io.appendTo($form.closest('body'));
                 }
+                
+            	if (io.attachEvent)
+            		io.attachEvent('onload', cb);
+            	else
+            		io.addEventListener('load', cb, false);
+                	                	
                 setTimeout(checkState,15);
                 form.submit();
             }
