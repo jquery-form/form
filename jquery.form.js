@@ -115,8 +115,14 @@ $.fn.ajaxSubmit = function(options) {
     var elements = [];
     var qx, a = this.formToArray(options.semantic, elements);
     if (options.data) {
-        options.extraData = options.data;
-        qx = $.param(options.data, traditional);
+    	var extraData;
+        if ($.isFunction(options.data)) {
+            extraData = options.data(a);
+        } else {
+            extraData = options.data;
+        }
+        options.extraData = extraData;
+        qx = $.param(extraData, traditional);
     }
 
     // give pre-submit callback an opportunity to abort the submit
