@@ -115,14 +115,9 @@ $.fn.ajaxSubmit = function(options) {
     var elements = [];
     var qx, a = this.formToArray(options.semantic, elements);
     if (options.data) {
-    	var extraData;
-        if ($.isFunction(options.data)) {
-            extraData = options.data(a);
-        } else {
-            extraData = options.data;
-        }
-        options.extraData = extraData;
-        qx = $.param(extraData, traditional);
+        var optionsData = $.isFunction(options.data) ? options.data(a) : options.data;
+        options.extraData = optionsData;
+        qx = $.param(optionsData, traditional);
     }
 
     // give pre-submit callback an opportunity to abort the submit
@@ -224,22 +219,7 @@ $.fn.ajaxSubmit = function(options) {
     this.trigger('form-submit-notify', [this, options]);
     return this;
 
-    // utility fn for deep serialization
-    function deepSerialize(extraData){
-        var serialized = $.param(extraData).split('&');
-        var len = serialized.length;
-        var result = {};
-        var i, part;
-        for (i=0; i < len; i++) {
-            // #252; undo param space replacement
-            serialized[i] = serialized[i].replace(/\+/g,' ');
-            part = serialized[i].split('=');
-            result[decodeURIComponent(part[0])] = decodeURIComponent(part[1]);
-        }
-        return result;
-    }
-
-     // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
+    // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
     function fileUploadXhr(a) {
         var formdata = new FormData();
 
@@ -248,10 +228,9 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         if (options.extraData) {
-            var serializedData = deepSerialize(options.extraData);
-            for (var p in serializedData)
-                if (serializedData.hasOwnProperty(p))
-                    formdata.append(p, serializedData[p]);
+            $.each(options.extraData, function (key, value) {
+                formdata.append(key, value);
+            });
         }
 
         options.data = null;
