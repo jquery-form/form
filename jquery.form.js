@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.24 (26-DEC-2012)
+ * version: 3.25 (16-JAN-2013)
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -1046,7 +1046,7 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
             this.selectedIndex = -1;
         }
 		else if (t == "file") {
-			if ($.browser.msie) {
+			if (/MSIE/.test(navigator.userAgent)) {
 				$(this).replaceWith($(this).clone());
 			} else {
 				$(this).val('');
