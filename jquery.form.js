@@ -292,14 +292,6 @@ $.fn.ajaxSubmit = function(options) {
         var useProp = !!$.fn.prop;
         var deferred = $.Deferred();
 
-        if ($('[name=submit],[id=submit]', form).length) {
-            // if there is an input with a name or id of 'submit' then we won't be
-            // able to invoke the submit fn on the form (at least not x-browser)
-            alert('Error: Form elements must not have name or id of "submit".');
-            deferred.reject();
-            return deferred;
-        }
-        
         if (a) {
             // ensure that every serialized input is still enabled
             for (i=0; i < elements.length; i++) {
@@ -485,7 +477,9 @@ $.fn.ajaxSubmit = function(options) {
                         io.addEventListener('load', cb, false);
                 }
                 setTimeout(checkState,15);
-                form.submit();
+                // just in case form has element with name/id of 'submit'
+                var submitFn = document.createElement('form').submit;
+                submitFn.apply(form);
             }
             finally {
                 // reset attrs and remove "extra" input elements
