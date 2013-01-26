@@ -28,6 +28,15 @@
   "download": "http://malsup.github.com/jquery.form.js",
   "dependencies": {
     "jquery": ">=1.5"
+  },
+  "jam": {
+    "main": "jquery.form.js",
+    "dependencies": {
+      "jquery": ">=1.4.2"
+    },
+    "shim": {
+      "deps": ["jquery"]
+    }
   }
 }
 
