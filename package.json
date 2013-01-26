@@ -1,5 +1,5 @@
 {
-  "name": "form",
+  "name": "patterns-jquery-form",
   "title": "Form",
   "description": "A simple way to AJAX-ify any form on your page; with file upload and progress support.",
   "keywords": [
