@@ -1,5 +1,5 @@
 {
-  "name": "form",
+  "name": "patterns-jquery-form",
   "title": "Form",
   "description": "A simple way to AJAX-ify any form on your page; with file upload and progress support.",
   "keywords": [
@@ -28,6 +28,15 @@
   "download": "http://malsup.github.com/jquery.form.js",
   "dependencies": {
     "jquery": ">=1.5"
+  },
+  "jam": {
+    "main": "jquery.form.js",
+    "dependencies": {
+      "jquery": ">=1.4.2"
+    },
+    "shim": {
+      "deps": ["jquery"]
+    }
   }
 }
 
