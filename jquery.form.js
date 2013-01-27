@@ -37,7 +37,7 @@
             target: '#output'
         });
     });
-    
+
     You can also use ajaxForm with delegation (requires jQuery v1.7+), so the
     form does not have to exist when you invoke ajaxForm:
 
@@ -45,7 +45,7 @@
         delegation: true,
         target: '#output'
     });
-    
+
     When using ajaxForm, the ajaxSubmit function will be invoked for you
     at the appropriate time.
 */
@@ -69,7 +69,7 @@ $.fn.ajaxSubmit = function(options) {
         log('ajaxSubmit: skipping submit process - no element selected');
         return this;
     }
-    
+
     var method, action, url, $form = this;
 
     if (typeof options == 'function') {
@@ -111,7 +111,7 @@ $.fn.ajaxSubmit = function(options) {
     if ( traditional === undefined ) {
         traditional = $.ajaxSettings.traditional;
     }
-    
+
     var elements = [];
     var qx, a = this.formToArray(options.semantic, elements);
     if (options.data) {
@@ -135,7 +135,7 @@ $.fn.ajaxSubmit = function(options) {
     var q = $.param(a, traditional);
     if (qx) {
         q = ( q ? (q + '&' + qx) : qx );
-    }    
+    }
     if (options.type.toUpperCase() == 'GET') {
         options.url += (options.url.indexOf('?') >= 0 ? '&' : '?') + q;
         options.data = null;  // data is null for 'get'
@@ -165,7 +165,7 @@ $.fn.ajaxSubmit = function(options) {
     }
 
     options.success = function(data, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
-        var context = options.context || this ;    // jQuery 1.4+ supports scope context 
+        var context = options.context || this ;    // jQuery 1.4+ supports scope context
         for (var i=0, max=callbacks.length; i < max; i++) {
             callbacks[i].apply(context, [data, status, xhr || $form, $form]);
         }
@@ -175,7 +175,7 @@ $.fn.ajaxSubmit = function(options) {
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
-    var fileInputs = $('input[type=file]:enabled[value!=""]', this); 
+    var fileInputs = $('input[type=file]:enabled[value!=""]', this);
 
     var hasFileInputs = fileInputs.length > 0;
     var mp = 'multipart/form-data';
@@ -222,13 +222,14 @@ $.fn.ajaxSubmit = function(options) {
     function deepSerialize(extraData){
         var serialized = $.param(extraData).split('&');
         var len = serialized.length;
-        var result = {};
+        var result = [];
         var i, part;
         for (i=0; i < len; i++) {
             // #252; undo param space replacement
             serialized[i] = serialized[i].replace(/\+/g,' ');
             part = serialized[i].split('=');
-            result[decodeURIComponent(part[0])] = decodeURIComponent(part[1]);
+            // #278; use array instead of object storage, favoring array serializations
+            result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
         }
         return result;
     }
@@ -243,9 +244,9 @@ $.fn.ajaxSubmit = function(options) {
 
         if (options.extraData) {
             var serializedData = deepSerialize(options.extraData);
-            for (var p in serializedData)
-                if (serializedData.hasOwnProperty(p))
-                    formdata.append(p, serializedData[p]);
+            for (var i=0; i < serializedData.length; i++)
+                if (serializedData[i])
+                    formdata.append(serializedData[i][0], serializedData[i][1]);
         }
 
         options.data = null;
@@ -256,7 +257,7 @@ $.fn.ajaxSubmit = function(options) {
             cache: false,
             type: method || 'POST'
         });
-        
+
         if (options.uploadProgress) {
             // workaround because jqXHR does not expose upload property
             s.xhr = function() {
@@ -299,7 +300,7 @@ $.fn.ajaxSubmit = function(options) {
             deferred.reject();
             return deferred;
         }
-        
+
         if (a) {
             // ensure that every serialized input is still enabled
             for (i=0; i < elements.length; i++) {
@@ -347,7 +348,7 @@ $.fn.ajaxSubmit = function(options) {
                     if (io.contentWindow.document.execCommand) {
                         io.contentWindow.document.execCommand('Stop');
                     }
-                } 
+                }
                 catch(ignore) {}
 
                 $io.attr('src', s.iframeSrc); // abort op in progress
@@ -395,7 +396,7 @@ $.fn.ajaxSubmit = function(options) {
                 }
             }
         }
-        
+
         var CLIENT_TIMEOUT_ABORT = 1;
         var SERVER_ABORT = 2;
 
@@ -403,7 +404,7 @@ $.fn.ajaxSubmit = function(options) {
             var doc = frame.contentWindow ? frame.contentWindow.document : frame.contentDocument ? frame.contentDocument : frame.document;
             return doc;
         }
-        
+
         // Rails CSRF hack (thanks to Yvan Barthelemy)
         var csrf_token = $('meta[name=csrf-token]').attr('content');
         var csrf_param = $('meta[name=csrf-param]').attr('content');
@@ -438,7 +439,7 @@ $.fn.ajaxSubmit = function(options) {
             if (s.timeout) {
                 timeoutHandle = setTimeout(function() { timedOut = true; cb(CLIENT_TIMEOUT_ABORT); }, s.timeout);
             }
-            
+
             // look for server aborts
             function checkState() {
                 try {
@@ -537,7 +538,7 @@ $.fn.ajaxSubmit = function(options) {
             }
             if (io.detachEvent)
                 io.detachEvent('onload', cb);
-            else    
+            else
                 io.removeEventListener('load', cb, false);
 
             var status = 'success', errMsg;
@@ -728,7 +729,7 @@ $.fn.ajaxSubmit = function(options) {
 $.fn.ajaxForm = function(options) {
     options = options || {};
     options.delegation = options.delegation && $.isFunction($.fn.on);
-    
+
     // in jQuery 1.3+ we can fix mistakes with the ready state
     if (!options.delegation && this.length === 0) {
         var o = { s: this.selector, c: this.context };
@@ -758,7 +759,7 @@ $.fn.ajaxForm = function(options) {
         .bind('click.form-plugin', options, captureSubmittingElement);
 };
 
-// private event handlers    
+// private event handlers
 function doAjaxSubmit(e) {
     /*jshint validthis:true */
     var options = e.data;
@@ -767,7 +768,7 @@ function doAjaxSubmit(e) {
         $(this).ajaxSubmit(options);
     }
 }
-    
+
 function captureSubmittingElement(e) {
     /*jshint validthis:true */
     var target = e.target;
@@ -847,14 +848,14 @@ $.fn.formToArray = function(semantic, elements) {
 
         v = $.fieldValue(el, true);
         if (v && v.constructor == Array) {
-            if (elements) 
+            if (elements)
                 elements.push(el);
             for(j=0, jmax=v.length; j < jmax; j++) {
                 a.push({name: n, value: v[j]});
             }
         }
         else if (feature.fileapi && el.type == 'file' && !el.disabled) {
-            if (elements) 
+            if (elements)
                 elements.push(el);
             var files = el.files;
             if (files.length) {
@@ -868,7 +869,7 @@ $.fn.formToArray = function(semantic, elements) {
             }
         }
         else if (v !== null && typeof v != 'undefined') {
-            if (elements) 
+            if (elements)
                 elements.push(el);
             a.push({name: n, value: v, type: el.type, required: el.required});
         }
@@ -1118,7 +1119,7 @@ $.fn.ajaxSubmit.debug = false;
 
 // helper fn for console logging
 function log() {
-    if (!$.fn.ajaxSubmit.debug) 
+    if (!$.fn.ajaxSubmit.debug)
         return;
     var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
     if (window.console && window.console.log) {
