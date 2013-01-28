@@ -593,10 +593,10 @@ $.fn.ajaxSubmit = function(options) {
                         var pre = doc.getElementsByTagName('pre')[0];
                         var b = doc.getElementsByTagName('body')[0];
                         if (pre) {
-                            xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
+                            xhr.responseText = pre.textContent ? pre.textContent : pre.innerHTML;
                         }
                         else if (b) {
-                            xhr.responseText = b.textContent ? b.textContent : b.innerText;
+                            xhr.responseText = b.textContent ? b.textContent : b.innerHTML;
                         }
                     }
                 }
