@@ -219,6 +219,19 @@ $.fn.ajaxSubmit = function(options) {
     this.trigger('form-submit-notify', [this, options]);
     return this;
 
+    // utility fn for deep serialization
+    function deepSerialize(extraData){
+        var serialized = $.param(extraData).split('&');
+        var len = serialized.length;
+        var result = {};
+        var i, part;
+        for (i=0; i < len; i++) {
+            part = serialized[i].split('=');
+            result[decodeURIComponent(part[0])] = decodeURIComponent(part[1]);
+        }
+        return result;
+    }
+
     // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
     function fileUploadXhr(a) {
         var formdata = new FormData();
@@ -228,9 +241,10 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         if (options.extraData) {
-            $.each(options.extraData, function (key, value) {
-                formdata.append(key, value);
-            });
+            var serializedData = deepSerialize(options.extraData);
+            for (var p in serializedData)
+                if (serializedData.hasOwnProperty(p))
+                    formdata.append(p, serializedData[p]);
         }
 
         options.data = null;
