@@ -263,7 +263,7 @@ $.fn.ajaxSubmit = function(options) {
             s.xhr = function() {
                 var xhr = jQuery.ajaxSettings.xhr();
                 if (xhr.upload) {
-                    xhr.upload.onprogress = function(event) {
+                    xhr.upload.addEventListener('progress', function(event) {
                         var percent = 0;
                         var position = event.loaded || event.position; /*event.position is deprecated*/
                         var total = event.total;
@@ -271,7 +271,7 @@ $.fn.ajaxSubmit = function(options) {
                             percent = Math.ceil(position / total * 100);
                         }
                         options.uploadProgress(event, position, total, percent);
-                    };
+                    }, false);
                 }
                 return xhr;
             };
