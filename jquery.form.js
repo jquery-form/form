@@ -391,6 +391,7 @@ $.fn.ajaxSubmit = function(options) {
 
         var CLIENT_TIMEOUT_ABORT = 1;
         var SERVER_ABORT = 2;
+        var CHECK_IFRAME_LOAD = 3;
 
         function getDoc(frame) {
             var doc = frame.contentWindow ? frame.contentWindow.document : frame.contentDocument ? frame.contentDocument : frame.document;
@@ -472,10 +473,10 @@ $.fn.ajaxSubmit = function(options) {
                 if (!s.iframeTarget) {
                     // add iframe to doc and submit the form
                     $io.appendTo('body');
-                    if (io.attachEvent)
-                        io.attachEvent('onload', cb);
-                    else
-                        io.addEventListener('load', cb, false);
+
+                    setTimeout(function () {
+                      cb(CHECK_IFRAME_LOAD);
+                    }, 200);
                 }
                 setTimeout(checkState,15);
                 // just in case form has element with name/id of 'submit'
@@ -526,9 +527,13 @@ $.fn.ajaxSubmit = function(options) {
             }
 
             if (!doc || doc.location.href == s.iframeSrc) {
-                // response not received yet
-                if (!timedOut)
-                    return;
+                if (e === CHECK_IFRAME_LOAD) {
+                  setTimeout(function () {
+                    cb(CHECK_IFRAME_LOAD);
+                  }, 200);
+                } else if (!timedOut) {
+                  return;
+                }
             }
             if (io.detachEvent)
                 io.detachEvent('onload', cb);
