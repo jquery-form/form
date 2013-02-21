@@ -763,6 +763,10 @@ function doAjaxSubmit(e) {
     }
 }
 
+// disable this when form submissions are to slow (and are cleared before actual
+//  submission) and the form gets replaced anyway.
+$.fn.ajaxSubmit.clearFormVariables = true; 
+
 function captureSubmittingElement(e) {
     /*jshint validthis:true */
     var target = e.target;
@@ -791,7 +795,9 @@ function captureSubmittingElement(e) {
         }
     }
     // clear form vars
-    setTimeout(function() { form.clk = form.clk_x = form.clk_y = null; }, 100);
+    if($.fn.ajaxSubmit.clearFormVariables) {
+        setTimeout(function() { form.clk = form.clk_x = form.clk_y = null; }, 100);
+    }
 }
 
 
@@ -1040,7 +1046,7 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
         else if (tag == 'select') {
             this.selectedIndex = -1;
         }
-		else if (t == "file") {
+    	else if (t == "file") {
 			if (/MSIE/.test(navigator.userAgent)) {
 				$(this).replaceWith($(this).clone());
 			} else {
