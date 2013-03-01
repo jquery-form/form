@@ -178,8 +178,7 @@ $.fn.ajaxSubmit = function(options) {
     var fileInputs = $('input[type=file]:enabled[value!=""]', this);
 
     var hasFileInputs = fileInputs.length > 0;
-    var mp = 'multipart/form-data';
-    var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
+    var multipart = $form.attr('enctype').indexOf("multipart") != -1;
 
     var fileAPI = feature.fileapi && feature.formdata;
     log("fileAPI :" + fileAPI);
@@ -252,7 +251,6 @@ $.fn.ajaxSubmit = function(options) {
         options.data = null;
 
         var s = $.extend(true, {}, $.ajaxSettings, options, {
-            contentType: false,
             processData: false,
             cache: false,
             type: method || 'POST'
