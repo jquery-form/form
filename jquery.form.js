@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.27.0-2013.02.06
+ * version: 3.28.0-2013.02.06
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -478,9 +478,14 @@ $.fn.ajaxSubmit = function(options) {
                         io.addEventListener('load', cb, false);
                 }
                 setTimeout(checkState,15);
-                // just in case form has element with name/id of 'submit'
-                var submitFn = document.createElement('form').submit;
-                submitFn.apply(form);
+
+                try {
+                    form.submit();
+                } catch(err) {
+                    // just in case form has element with name/id of 'submit'
+                    var submitFn = document.createElement('form').submit;
+                    submitFn.apply(form);
+                }
             }
             finally {
                 // reset attrs and remove "extra" input elements
@@ -602,15 +607,15 @@ $.fn.ajaxSubmit = function(options) {
                 try {
                     data = httpData(xhr, dt, s);
                 }
-                catch (e) {
+                catch (err) {
                     status = 'parsererror';
-                    xhr.error = errMsg = (e || status);
+                    xhr.error = errMsg = (err || status);
                 }
             }
-            catch (e) {
-                log('error caught: ',e);
+            catch (err) {
+                log('error caught: ',err);
                 status = 'error';
-                xhr.error = errMsg = (e || status);
+                xhr.error = errMsg = (err || status);
             }
 
             if (xhr.aborted) {
