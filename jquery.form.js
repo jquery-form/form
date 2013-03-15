@@ -899,7 +899,7 @@ $.fn.formSerialize = function(semantic) {
  * Serializes all field elements in the jQuery object into a query string.
  * This method will return a string in the format: name1=value1&amp;name2=value2
  */
-$.fn.fieldSerialize = function(successful) {
+$.fn.fieldSerializeArray = function(successful) {
     var a = [];
     this.each(function() {
         var n = this.name;
@@ -917,7 +917,11 @@ $.fn.fieldSerialize = function(successful) {
         }
     });
     //hand off to jQuery.param for proper encoding
-    return $.param(a);
+    return a;
+};
+
+$.fn.fieldSerialize = function(successful) {
+    return $.param(this.fieldSerializeArray(successful));
 };
 
 /**
