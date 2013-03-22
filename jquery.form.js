@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.30.0-2013.03.22
+ * version: 3.31.0-2013.03.22
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -847,13 +847,13 @@ $.fn.formToArray = function(semantic, elements) {
     for(i=0, max=els.length; i < max; i++) {
         el = els[i];
         n = el.name;
-        if (!n) {
+        if (!n || el.disabled) {
             continue;
         }
 
         if (semantic && form.clk && el.type == "image") {
             // handle image inputs on the fly when semantic == true
-            if(!el.disabled && form.clk == el) {
+            if(form.clk == el) {
                 a.push({name: n, value: $(el).val(), type: el.type });
                 a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
             }
@@ -868,7 +868,7 @@ $.fn.formToArray = function(semantic, elements) {
                 a.push({name: n, value: v[j]});
             }
         }
-        else if (feature.fileapi && el.type == 'file' && !el.disabled) {
+        else if (feature.fileapi && el.type == 'file') {
             if (elements)
                 elements.push(el);
             var files = el.files;
