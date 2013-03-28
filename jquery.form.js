@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.31.0-2013.03.22
+ * version: 3.31.0-2013.03.27
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -63,7 +63,7 @@ var hasProp = !!$.fn.prop;
 // an expected string.  this accounts for the case where a form 
 // contains inputs with names like "action" or "method"; in those
 // cases "prop" returns the element
-$.fn.attr2 = function(a, b) {
+$.fn.attr2 = function() {
     if ( ! hasProp )
         return this.attr.apply(this, arguments);
     var val = this.prop.apply(this, arguments);
