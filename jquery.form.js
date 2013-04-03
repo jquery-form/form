@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.31.0-2013.03.27
+ * version: 3.32.0-2013.04.03
  * @requires jQuery v1.5 or later
  *
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -9,7 +9,7 @@
  *    http://malsup.github.com/mit-license.txt
  *    http://malsup.github.com/gpl-license-v2.txt
  */
-/*global ActiveXObject alert */
+/*global ActiveXObject */
 ;(function($) {
 "use strict";
 
