@@ -24,5 +24,17 @@
   ],
   "require": {
     "components/jquery": ">=1.5"
+  },
+  "extra": {
+    "component": {
+      "scripts": [
+        "jquery.form.js"
+      ],
+      "shim": {
+        "deps": [
+          "jquery"
+        ]
+      }
+    }
   }
 }
