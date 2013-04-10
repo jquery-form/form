@@ -187,6 +187,7 @@ The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/X
 
 ##Copyright and License
 Copyright 2006-2013 (c) M. Alsup
+
 All versions, present and past, of the jQuery Form plugin are dual licensed under the MIT and GPL licenses:
 
 * [MIT](http://malsup.github.com/mit-license.txt)
