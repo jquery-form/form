@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.34.0-2013.05.17
+ * version: 3.35.0-2013.05.23
  * @requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -251,7 +251,7 @@ $.fn.ajaxSubmit = function(options) {
 
     // utility fn for deep serialization
     function deepSerialize(extraData){
-        var serialized = $.param(extraData).split('&');
+        var serialized = $.param(extraData, options.traditional).split('&');
         var len = serialized.length;
         var result = [];
         var i, part;
