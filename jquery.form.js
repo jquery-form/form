@@ -1187,4 +1187,4 @@ function log() {
     }
 }
 
-})(jQuery);
+})(window.jQuery||window.Zepto);
