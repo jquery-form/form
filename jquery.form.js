@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.35.0-2013.05.23
+ * version: 3.36.0-2013.06.16
  * @requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -292,7 +292,7 @@ $.fn.ajaxSubmit = function(options) {
         if (options.uploadProgress) {
             // workaround because jqXHR does not expose upload property
             s.xhr = function() {
-                var xhr = jQuery.ajaxSettings.xhr();
+                var xhr = $.ajaxSettings.xhr();
                 if (xhr.upload) {
                     xhr.upload.addEventListener('progress', function(event) {
                         var percent = 0;
