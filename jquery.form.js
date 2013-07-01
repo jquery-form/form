@@ -96,7 +96,7 @@ $.fn.ajaxSubmit = function(options) {
     url = (typeof action === 'string') ? $.trim(action) : '';
     url = url || window.location.href || '';
     if (url) {
-        // clean url (don't include hash vaue)
+        // clean url (don't include hash value)
         url = (url.match(/^([^#]+)/)||[])[1];
     }
 
