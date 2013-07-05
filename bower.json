@@ -4,7 +4,7 @@
   "author": "M. Alsup",
   "dependencies": {
     "jquery": ">=1.5"
-  }
+  },
   "ignore": [
     "README.md",
     "composer.json",
