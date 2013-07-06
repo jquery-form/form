@@ -1,5 +1,6 @@
 {
   "name": "jquery-form",
+  "version": "3.36.0",
   "main": "jquery.form.js",
   "author": "M. Alsup",
   "dependencies": {
