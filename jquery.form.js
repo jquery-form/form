@@ -96,7 +96,7 @@ $.fn.ajaxSubmit = function(options) {
     url = (typeof action === 'string') ? $.trim(action) : '';
     url = url || window.location.href || '';
     if (url) {
-        // clean url (don't include hash vaue)
+        // clean url (don't include hash value)
         url = (url.match(/^([^#]+)/)||[])[1];
     }
 
@@ -206,7 +206,9 @@ $.fn.ajaxSubmit = function(options) {
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
-    var fileInputs = $('input[type=file]:enabled[value!=""]', this);
+    var fileInputs = $('input[type=file]:enabled', this).filter(function () {
+        return $(this).val();
+    });
 
     var hasFileInputs = fileInputs.length > 0;
     var mp = 'multipart/form-data';
