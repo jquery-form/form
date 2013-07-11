@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.36.0-2013.06.16
+ * version: 3.37.0-2013.07.11
  * @requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -88,6 +88,9 @@ $.fn.ajaxSubmit = function(options) {
 
     if (typeof options == 'function') {
         options = { success: options };
+    }
+    else if ( options === undefined ) {
+        options = {};
     }
 
     method = options.type || this.attr2('method');
