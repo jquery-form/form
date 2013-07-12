@@ -767,7 +767,7 @@ $.fn.ajaxSubmit = function(options) {
             return data;
         };
 
-        return deferred;
+        return xhr;
     }
 };
 
