@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.38.0-2013.07.31
+ * version: 3.39.0-2013.07.31
  * @requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -1195,4 +1195,4 @@ function log() {
     }
 }
 
-})(window.jQuery || window.Zepto);
+})( (typeof(jQuery) != 'undefined') ? jQuery : window.Zepto );
