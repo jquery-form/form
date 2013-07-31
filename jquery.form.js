@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.37.0-2013.07.11
+ * version: 3.38.0-2013.07.31
  * @requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -209,7 +209,7 @@ $.fn.ajaxSubmit = function(options) {
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
-    var fileInputs = $('input[type=file]:enabled[value!=""]', this);
+    var fileInputs = $('input[type=file]:enabled:not([value=""])', this);
 
     var hasFileInputs = fileInputs.length > 0;
     var mp = 'multipart/form-data';
@@ -325,6 +325,11 @@ $.fn.ajaxSubmit = function(options) {
     function fileUploadIframe(a) {
         var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
         var deferred = $.Deferred();
+
+        // #341
+        deferred.abort = function(status) {
+            xhr.abort(status);
+        };
 
         if (a) {
             // ensure that every serialized input is still enabled
@@ -1190,4 +1195,4 @@ function log() {
     }
 }
 
-})(jQuery);
+})(window.jQuery || window.Zepto);
