@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.41.0-2013.09.02
+ * version: 3.42.0-2013.09.02
  * Requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -479,7 +479,7 @@ $.fn.ajaxSubmit = function(options) {
 
             // update form attrs in IE friendly way
             form.setAttribute('target',id);
-            if (!method) {
+            if (!method || /post/i.test(method) ) {
                 form.setAttribute('method', 'POST');
             }
             if (a != s.url) {
