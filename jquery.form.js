@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.42.0-2013.09.02
+ * version: 3.43.0-2013.09.03
  * Requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -539,11 +539,11 @@ $.fn.ajaxSubmit = function(options) {
                 if (!s.iframeTarget) {
                     // add iframe to doc and submit the form
                     $io.appendTo('body');
-                    if (io.attachEvent)
-                        io.attachEvent('onload', cb);
-                    else
-                        io.addEventListener('load', cb, false);
                 }
+                if (io.attachEvent)
+                    io.attachEvent('onload', cb);
+                else
+                    io.addEventListener('load', cb, false);
                 setTimeout(checkState,15);
 
                 try {
@@ -729,6 +729,8 @@ $.fn.ajaxSubmit = function(options) {
             setTimeout(function() {
                 if (!s.iframeTarget)
                     $io.remove();
+                else  //adding else to clean up existing iframe response.
+                    $io.attr('src', s.iframeSrc);
                 xhr.responseXML = null;
             }, 100);
         }
