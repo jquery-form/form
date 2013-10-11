@@ -314,7 +314,13 @@ $.fn.ajaxSubmit = function(options) {
         s.data = null;
             var beforeSend = s.beforeSend;
             s.beforeSend = function(xhr, o) {
-                o.data = formdata;
+            	//Send FormData() provided by user
+            	if (options.formData) 
+                {
+                    o.data = options.formData;
+                } else {
+                    o.data = formdata;
+                }
                 if(beforeSend)
                     beforeSend.call(this, xhr, o);
         };
