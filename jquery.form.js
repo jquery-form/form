@@ -314,10 +314,7 @@ $.fn.ajaxSubmit = function(options) {
         s.data = null;
             var beforeSend = s.beforeSend;
             s.beforeSend = function(xhr, o) {
-            /*
-            for multiple file upload, we don't get individual progress for each file.
-			I am splitting the file upload. So I need option in plugin to send FormData().
-            */
+            	//Send FormData() provided by user
             	if (options.formData) 
                 {
                     o.data = options.formData;
