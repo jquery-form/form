@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.44.0-2013.09.15
+ * version: 3.45.0-2013.10.17
  * Requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -312,17 +312,15 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         s.data = null;
-            var beforeSend = s.beforeSend;
-            s.beforeSend = function(xhr, o) {
-            	//Send FormData() provided by user
-            	if (options.formData) 
-                {
-                    o.data = options.formData;
-                } else {
-                    o.data = formdata;
-                }
-                if(beforeSend)
-                    beforeSend.call(this, xhr, o);
+        var beforeSend = s.beforeSend;
+        s.beforeSend = function(xhr, o) {
+            //Send FormData() provided by user
+            if (options.formData)
+                o.data = options.formData;
+            else
+                o.data = formdata;
+            if(beforeSend)
+                beforeSend.call(this, xhr, o);
         };
         return $.ajax(s);
     }
