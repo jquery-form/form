@@ -907,7 +907,13 @@ $.fn.formToArray = function(semantic, elements) {
     }
 
     var form = this[0];
-    var els = semantic ? form.getElementsByTagName('*') : form.elements;
+    var els;
+    var formId = form.getAttribute('id');
+    if (formId !== null && $('[form="' + formId + '"]').length) {
+        els = $('[form="' + formId + '"], #' + formId + ' *').toArray();
+    } else {
+        els = semantic ? form.getElementsByTagName('*') : form.elements;
+    }
     if (!els) {
         return a;
     }
