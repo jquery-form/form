@@ -912,8 +912,21 @@ $.fn.formToArray = function(semantic, elements) {
     }
 
     var form = this[0];
+    var formId = this.attr('id');
     var els = semantic ? form.getElementsByTagName('*') : form.elements;
-    if (!els) {
+    var els2;
+
+    if ( els )
+        els = $(els).get();  // convert to standard array
+
+    // #386; account for inputs outside the form which use the 'form' attribute
+    if ( formId ) {
+        els2 = $(':input[form=' + formId + ']').get();
+        if ( els2.length )
+            els = (els || []).concat(els2);
+    }
+
+    if (!els || !els.length) {
         return a;
     }
 
