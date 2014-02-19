@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.49.0-2014.02.05
+ * version: 3.50.0-2014.02.05
  * Requires jQuery v1.5 or later
  * Copyright (c) 2013 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
@@ -950,7 +950,7 @@ $.fn.formToArray = function(semantic, elements) {
     var els = semantic ? form.getElementsByTagName('*') : form.elements;
     var els2;
 
-    if (els && !/MSIE 8/.test(navigator.userAgent)) { // #390
+    if (els && !/MSIE [678]/.test(navigator.userAgent)) { // #390
         els = $(els).get();  // convert to standard array
     }
 
