@@ -307,7 +307,8 @@ $.fn.ajaxSubmit = function(options) {
             contentType: false,
             processData: false,
             cache: false,
-            type: method || 'POST'
+            type: method || 'POST',
+            fileDownload: false,
         });
 
         if (options.uploadProgress) {
@@ -348,7 +349,7 @@ $.fn.ajaxSubmit = function(options) {
 
     // private function for handling file uploads (hat tip to YAHOO!)
     function fileUploadIframe(a) {
-        var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle;
+        var form = $form[0], el, i, s, g, id, $io, io, xhr, sub, n, timedOut, timeoutHandle, checkDownloadHandle;
         var deferred = $.Deferred();
 
         // #341
@@ -461,6 +462,7 @@ $.fn.ajaxSubmit = function(options) {
 
         var CLIENT_TIMEOUT_ABORT = 1;
         var SERVER_ABORT = 2;
+        var FILE_DOWNLOAD_SUCCESS = 3;
                 
         function getDoc(frame) {
             /* it looks like contentWindow or contentDocument do not
@@ -550,6 +552,20 @@ $.fn.ajaxSubmit = function(options) {
                         clearTimeout(timeoutHandle);
                     }
                     timeoutHandle = undefined;
+                    if (checkDownloadHandle) {
+                        clearTimeout(checkDownloadHandle);
+                    }
+                    checkDownloadHandle = undefined;
+                }
+            }
+            
+            function checkDownload() {
+                if (s.fileDownload && document.cookie.indexOf("jQueryFormFileDownload=true") != -1) {
+                    log('Download cookie found');
+                    document.cookie = "jQueryFormFileDownload=; expires=" + new Date(1000).toUTCString() + "; path=/";
+                    cb(FILE_DOWNLOAD_SUCCESS);
+                } else {
+                    checkDownloadHandle = setTimeout(checkDownload,100);
                 }
             }
 
@@ -584,6 +600,9 @@ $.fn.ajaxSubmit = function(options) {
                     io.addEventListener('load', cb, false);
                 }
                 setTimeout(checkState,15);
+                
+                if (s.fileDownload)
+                    checkDownloadHandle = setTimeout(checkDownload, 15);
 
                 try {
                     form.submit();
@@ -776,6 +795,8 @@ $.fn.ajaxSubmit = function(options) {
             if (s.timeout) {
                 clearTimeout(timeoutHandle);
             }
+            if (s.fileDownload)
+                clearTimeout(checkDownloadHandle);
 
             // clean up
             setTimeout(function() {
@@ -1188,13 +1209,13 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
         else if (tag == 'select') {
             this.selectedIndex = -1;
         }
-		else if (t == "file") {
-			if (/MSIE/.test(navigator.userAgent)) {
-				$(this).replaceWith($(this).clone(true));
-			} else {
-				$(this).val('');
-			}
-		}
+        else if (t == "file") {
+            if (/MSIE/.test(navigator.userAgent)) {
+                $(this).replaceWith($(this).clone(true));
+            } else {
+                $(this).val('');
+            }
+        }
         else if (includeHidden) {
             // includeHidden can be the value true, or it can be a selector string
             // indicating a special test; for example:
