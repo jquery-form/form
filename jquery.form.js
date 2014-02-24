@@ -657,7 +657,7 @@ $.fn.ajaxSubmit = function(options) {
 
             if (!doc || doc.location.href == s.iframeSrc) {
                 // response not received yet
-                if (!timedOut) {
+                if (!timedOut && e !== FILE_DOWNLOAD_SUCCESS) {
                     return;
                 }
             }
