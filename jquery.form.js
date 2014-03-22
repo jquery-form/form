@@ -89,8 +89,13 @@ $.fn.attr2 = function() {
 /**
  * ajaxSubmit() provides a mechanism for immediately submitting
  * an HTML form using AJAX.
+ * 
+ * @param  object|string   options  jquery.form.js parameters or custom url for submission
+ * @param  object          data     extraData
+ * @param  string          dataType ajax dataType
+ * @param  function        onSuccess ajax success callback function 
  */
-$.fn.ajaxSubmit = function(options) {
+$.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
     /*jshint scripturl:true */
 
     // fast fail if nothing selected (http://dev.jquery.com/ticket/2752)
@@ -98,11 +103,22 @@ $.fn.ajaxSubmit = function(options) {
         log('ajaxSubmit: skipping submit process - no element selected');
         return this;
     }
-
     var method, action, url, $form = this;
 
     if (typeof options == 'function') {
         options = { success: options };
+    }
+    else if ( typeof options == 'string' || ( options === false && arguments.length > 0 ) ) {
+        options = {
+        	'url' : options,
+        	'data' : data,
+        	'dataType' : dataType,
+        };
+
+        if(typeof onSuccess == 'function')
+        {
+        	options.success = onSuccess;
+        }
     }
     else if ( options === undefined ) {
         options = {};
@@ -117,14 +133,16 @@ $.fn.ajaxSubmit = function(options) {
         // clean url (don't include hash vaue)
         url = (url.match(/^([^#]+)/)||[])[1];
     }
-
+    
     options = $.extend(true, {
         url:  url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
+        resetForm : $form.attr2('data-reset'),
+        clearForm : $form.attr2('data-clear'),
         iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
     }, options);
-
+    
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
     var veto = {};
@@ -848,10 +866,24 @@ $.fn.ajaxSubmit = function(options) {
  * passes the options argument along after properly binding events for submit elements and
  * the form itself.
  */
-$.fn.ajaxForm = function(options) {
-    options = options || {};
-    options.delegation = options.delegation && $.isFunction($.fn.on);
+$.fn.ajaxForm = function(options, data, dataType, onSuccess) {
+	
+	if ( typeof options == 'string' || ( options === false && arguments.length > 0 ) ) {
+        options = {
+        	'url' : options,
+        	'data' : data,
+        	'dataType' : dataType,
+        };
 
+        if(typeof onSuccess == 'function')
+        {
+        	options.success = onSuccess;
+        }
+    }
+	
+	options = options || {};
+    options.delegation = options.delegation && $.isFunction($.fn.on);
+	
     // in jQuery 1.3+ we can fix mistakes with the ready state
     if (!options.delegation && this.length === 0) {
         var o = { s: this.selector, c: this.context };
@@ -885,6 +917,7 @@ $.fn.ajaxForm = function(options) {
 function doAjaxSubmit(e) {
     /*jshint validthis:true */
     var options = e.data;
+    
     if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
         e.preventDefault();
         $(e.target).ajaxSubmit(options); // #365
