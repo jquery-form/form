@@ -138,11 +138,11 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
         url:  url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
-        resetForm : $form.attr2('data-reset'),
-        clearForm : $form.attr2('data-clear'),
+        resetForm : ($form.attr2('data-reset') === 'true'),
+        clearForm : ($form.attr2('data-clear') === 'true'),
         iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
     }, options);
-    
+
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
     var veto = {};
