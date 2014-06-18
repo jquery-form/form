@@ -955,7 +955,7 @@ $.fn.formToArray = function(semantic, elements) {
     }
 
     // #386; account for inputs outside the form which use the 'form' attribute
-    // #XXX: Fix selectors with dotted-path form id's with jQuery 1.9.
+    // #419: Fix selectors with dotted-path form id's with jQuery 1.9.
     //     > $(':input[form="a.dotted.path"]').get();
     //     []
     //     > $(':input[form=a.dotted.path]').get();
