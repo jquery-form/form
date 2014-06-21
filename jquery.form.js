@@ -1,8 +1,8 @@
 /*!
  * jQuery Form Plugin
- * version: 3.50.0-2014.02.05
+ * version: 3.51.0-2014.06.20
  * Requires jQuery v1.5 or later
- * Copyright (c) 2013 M. Alsup
+ * Copyright (c) 2014 M. Alsup
  * Examples and documentation at: http://malsup.com/jquery/form/
  * Project repository: https://github.com/malsup/form
  * Dual licensed under the MIT and GPL licenses.
@@ -956,7 +956,7 @@ $.fn.formToArray = function(semantic, elements) {
 
     // #386; account for inputs outside the form which use the 'form' attribute
     if ( formId ) {
-        els2 = $(':input[form=' + formId + ']').get();
+        els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
         if ( els2.length ) {
             els = (els || []).concat(els2);
         }
@@ -1188,13 +1188,13 @@ $.fn.clearFields = $.fn.clearInputs = function(includeHidden) {
         else if (tag == 'select') {
             this.selectedIndex = -1;
         }
-		else if (t == "file") {
-			if (/MSIE/.test(navigator.userAgent)) {
-				$(this).replaceWith($(this).clone(true));
-			} else {
-				$(this).val('');
-			}
-		}
+        else if (t == "file") {
+            if (/MSIE/.test(navigator.userAgent)) {
+                $(this).replaceWith($(this).clone(true));
+            } else {
+                $(this).val('');
+            }
+        }
         else if (includeHidden) {
             // includeHidden can be the value true, or it can be a selector string
             // indicating a special test; for example:
@@ -1275,4 +1275,3 @@ function log() {
 }
 
 }));
-
