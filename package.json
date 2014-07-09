@@ -1,6 +1,6 @@
 {
-  "name": "form",
-  "title": "Form",
+  "name": "jquery-form",
+  "title": "jQuery Form Plugin",
   "description": "A simple way to AJAX-ify any form on your page; with file upload and progress support.",
   "keywords": [
     "form",
@@ -28,6 +28,18 @@
   "download": "http://malsup.github.com/jquery.form.js",
   "dependencies": {
     "jquery": ">=1.5"
+  },
+  "jam": {
+    "main": "jquery.form.js",
+    "dependencies": {
+      "jquery": ">=1.5.0"
+    }
+  },
+  "devDependencies": {
+    "gulp-util": "~2.2.14",
+    "gulp": "~3.5.2",
+    "gulp-uglify": "~0.2.1",
+    "gulp-concat": "~2.1.7",
+    "gulp-jshint": "~1.4.2"
   }
 }
-

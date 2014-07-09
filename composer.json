@@ -1,0 +1,40 @@
+{
+  "name": "malsup/form",
+  "description": "A simple way to AJAX-ify any form on your page; with file upload and progress support.",
+  "type": "component",
+  "homepage": "http://jquery.malsup.com/form/",
+  "keywords": [
+    "form",
+    "upload",
+    "ajax"
+  ],
+  "support": {
+    "issues": "https://github.com/malsup/form/issues",
+    "wiki": "http://jquery.malsup.com/form/"
+  },
+  "authors": [
+    {
+      "name": "M. Alsup",
+      "homepage": "http://jquery.malsup.com"
+    }
+  ],
+  "license": [
+    "MIT",
+    "GPL-2.0"
+  ],
+  "require": {
+    "components/jquery": ">=1.5"
+  },
+  "extra": {
+    "component": {
+      "scripts": [
+        "jquery.form.js"
+      ],
+      "shim": {
+        "deps": [
+          "jquery"
+        ]
+      }
+    }
+  }
+}
