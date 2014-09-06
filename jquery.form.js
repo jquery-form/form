@@ -146,7 +146,7 @@ $.fn.ajaxSubmit = function(options) {
     }
 
     var elements = [];
-    var qx, a = this.formToArray(options.semantic, elements);
+    var qx = undefined, a = this.formToArray(options.semantic, elements);
     if (options.data) {
         options.extraData = options.data;
         qx = $.param(options.data, traditional);
@@ -166,7 +166,7 @@ $.fn.ajaxSubmit = function(options) {
     }
 
     var q = $.param(a, traditional);
-    if (qx) {
+    if (qx !== undefined) {
         q = ( q ? (q + '&' + qx) : qx );
     }
     if (options.type.toUpperCase() == 'GET') {
