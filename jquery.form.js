@@ -579,9 +579,11 @@ $.fn.ajaxSubmit = function(options) {
                 }
                 if (io.attachEvent) {
                     io.attachEvent('onload', cb);
+                    io.attachEvent('onerror', onIframeJSError);
                 }
                 else {
                     io.addEventListener('load', cb, false);
+                    io.addEventListener('error', onIframeJSError, false);
                 }
                 setTimeout(checkState,15);
 
@@ -614,6 +616,10 @@ $.fn.ajaxSubmit = function(options) {
         }
 
         var data, doc, domCheckCount = 50, callbackProcessed;
+
+        function onIframeJSError(e) {
+            return true;
+        }
 
         function cb(e) {
             if (xhr.aborted || callbackProcessed) {
