@@ -903,7 +903,7 @@ function captureSubmittingElement(e) {
         }
         target = t[0];
     }
-    var form = this;
+    var form = target.form;
     form.clk = target;
     if (target.type == 'image') {
         if (e.offsetX !== undefined) {
