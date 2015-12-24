@@ -187,6 +187,7 @@ The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/X
 
 ##CDN Support
 `<script src="//oss.maxcdn.com/jquery.form/3.50/jquery.form.min.js"></script>`
+`<script src="//cdnjs.cloudflare.com/ajax/libs/jquery.form/3.50/jquery.form.min.js"></script>`
 
 ##Copyright and License
 Copyright 2006-2013 (c) M. Alsup
