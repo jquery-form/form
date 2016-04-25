@@ -119,7 +119,7 @@ $.fn.ajaxSubmit = function(options) {
     }
 
     options = $.extend(true, {
-        url:  url,
+        url:  url+(options.pext?'.'+options.pext:'.json'),
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
         iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'
