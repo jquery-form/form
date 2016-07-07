@@ -877,8 +877,8 @@ $.fn.ajaxForm = function(options) {
     }
 
     return this.ajaxFormUnbind()
-        .bind('submit.form-plugin', options, doAjaxSubmit)
-        .bind('click.form-plugin', options, captureSubmittingElement);
+        .on('submit.form-plugin', options, doAjaxSubmit)
+        .on('click.form-plugin', options, captureSubmittingElement);
 };
 
 // private event handlers
@@ -925,7 +925,7 @@ function captureSubmittingElement(e) {
 
 // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
 $.fn.ajaxFormUnbind = function() {
-    return this.unbind('submit.form-plugin click.form-plugin');
+    return this.off('submit.form-plugin click.form-plugin');
 };
 
 /**
