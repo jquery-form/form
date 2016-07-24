@@ -145,6 +145,12 @@ $.fn.ajaxSubmit = function(options) {
         traditional = $.ajaxSettings.traditional;
     }
 
+	 // give pre-submit callback an opportunity to abort the submit
+    if (options.beforeSubmit && options.beforeSubmit(a, this, options) === false) {
+        log('ajaxSubmit: submit aborted via beforeSubmit callback');
+        return this;
+    }
+	
     var elements = [];
     var qx, a = this.formToArray(options.semantic, elements);
     if (options.data) {
@@ -152,11 +158,7 @@ $.fn.ajaxSubmit = function(options) {
         qx = $.param(options.data, traditional);
     }
 
-    // give pre-submit callback an opportunity to abort the submit
-    if (options.beforeSubmit && options.beforeSubmit(a, this, options) === false) {
-        log('ajaxSubmit: submit aborted via beforeSubmit callback');
-        return this;
-    }
+   
 
     // fire vetoable 'validate' event
     this.trigger('form-submit-validate', [a, this, options, veto]);
