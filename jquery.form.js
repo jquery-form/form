@@ -16,7 +16,7 @@
 	if (typeof define === 'function' && define.amd) {
 		// using AMD; register as anon module
 		define(['jquery'], factory);
-	} if (typeof module !== 'undefined' {
+	} if (typeof module !== 'undefined') {
 		factory(require('jquery'));
 	} else {
 		// no AMD; invoke directly
@@ -115,7 +115,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
 		options = {
 			'url' : options,
 			'data' : data,
-			'dataType' : dataType,
+			'dataType' : dataType
 		};
 
 		if(typeof onSuccess == 'function')
@@ -877,7 +877,7 @@ $.fn.ajaxForm = function(options, data, dataType, onSuccess) {
 		options = {
 			'url' : options,
 			'data' : data,
-			'dataType' : dataType,
+			'dataType' : dataType
 		};
 
 		if (typeof onSuccess == 'function') {
@@ -1003,7 +1003,7 @@ $.fn.formToArray = function(semantic, elements, filtering) {
 	}
 
 	if ($.isFunction(filtering)) {
-		var els = $.map(els, filtering);
+		els = $.map(els, filtering);
 	}
 
 	var i,j,n,v,el,max,jmax;
