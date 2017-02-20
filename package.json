@@ -2,6 +2,7 @@
   "name": "jquery-form",
   "title": "jQuery Form Plugin",
   "description": "A simple way to AJAX-ify any form on your page; with file upload and progress support.",
+  "main": "./jquery.form.js",
   "keywords": [
     "form",
     "upload",
