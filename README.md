@@ -11,6 +11,9 @@ Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) 
 ###Code of Conduct
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
+##Requirements
+Requires jQuery 1.7+.
+
 ---
 
 ##API
