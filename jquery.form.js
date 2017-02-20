@@ -538,7 +538,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
                 form.setAttribute('action', s.url);
             }
 
-            // ie borks in some cases when setting encoding
+            // ie breaks in some cases when setting encoding
             if (! s.skipEncodingOverride && (!method || /post/i.test(method))) {
                 $form.attr({
                     encoding: 'multipart/form-data',
@@ -546,7 +546,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
                 });
             }
 
-            // support timout
+            // client timeout support
             if (s.timeout) {
                 timeoutHandle = setTimeout(function() { timedOut = true; cb(CLIENT_TIMEOUT_ABORT); }, s.timeout);
             }
