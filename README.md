@@ -14,6 +14,23 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 ##Requirements
 Requires jQuery 1.7+.
 
+##Download
+* **Development:** [src/jquery.form.js
+](https://github.com/jquery-form/form/blob/master/src/jquery.form.js)
+* **Production/Minified:** [dist/jquery.form.min.js
+](https://github.com/jquery-form/form/blob/master/dist/jquery.form.min.js)
+
+###CDN
+* **v4.0.0**
+`<script src="https://cdn.rawgit.com/jquery-form/form/v4.0.0/dist/jquery.form.min.js" integrity="sha384-VbVFC0lW+zWNPASj3BNeyyhq8bfMBuPS/oKvruIvimT8gB9mee2oQtrFarxCzL5m" crossorigin="anonymous"></script>`
+
+* **v3.51.0**
+`<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js" integrity="sha384-PtoF94KNPetQqtyWrt7MCIFhajxLf9jnI6qysmzN5x7hcSRpKj7hML3cJi+BgBne" crossorigin="anonymous"></script>`
+or
+`<script src="https://oss.maxcdn.com/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>`
+or
+`<script src="https://cdn.jsdelivr.net/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>`
+
 ---
 
 ##API
@@ -205,10 +222,6 @@ Clears selected field elements. This is handy when you need to clear only a part
 The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/XMLHttpRequest/") and [FormData](https://developer.mozilla.org/en/XMLHttpRequest/FormData) objects on browsers that support these features.  As of today (March 2012) that includes Chrome, Safari, and Firefox.  On these browsers (and future Opera and IE10) files uploads will occur seamlessly through the XHR object and progress updates are available as the upload proceeds.  For older browsers, a fallback technology is used which involves iframes.  [More Info](http://malsup.com/jquery/form/#file-upload)
 
 ---
-
-##CDN Support
-`<script src="//oss.maxcdn.com/jquery.form/3.50/jquery.form.min.js"></script>`
-
 
 ##Contributors
 This project has transferred from [github.com/malsup/form](https://github.com/malsup/form/), courtesy of [Mike Alsup](https://github.com/malsup).  
