@@ -924,7 +924,7 @@ function doAjaxSubmit(e) {
     
     if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
         e.preventDefault();
-        $(e.target).ajaxSubmit(options); // #365
+        $(e.target).closest('form').ajaxSubmit(options); // #365
     }
 }
 
