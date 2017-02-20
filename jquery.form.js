@@ -855,7 +855,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
             return data;
         };
 
-        return deferred;
+        return xhr;
     }
 };
 
