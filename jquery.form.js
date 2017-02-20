@@ -366,8 +366,9 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
                 o.data = formdata;
             }
             if(beforeSend) {
-                beforeSend.call(this, xhr, o);
+                return beforeSend.call(this, xhr, o);
             }
+            return true;
         };
         return $.ajax(s);
     }
