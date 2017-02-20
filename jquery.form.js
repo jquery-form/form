@@ -1187,7 +1187,7 @@ $.fieldValue = function(el, successful) {
         var max = (one ? index+1 : ops.length);
         for(var i=(one ? index : 0); i < max; i++) {
             var op = ops[i];
-            if (op.selected) {
+            if (op.selected && !op.disabled) {
                 var v = op.value;
                 if (!v) { // extra pain for IE...
                     v = (op.attributes && op.attributes.value && !(op.attributes.value.specified)) ? op.text : op.value;
