@@ -20,7 +20,7 @@
 		factory(require('jquery'));
     } else {
         // no AMD; invoke directly
-        factory( (typeof(jQuery) != 'undefined') ? jQuery : window.Zepto );
+        factory( (typeof jQuery != 'undefined') ? jQuery : window.Zepto );
     }
 }
 
