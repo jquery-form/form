@@ -12,6 +12,7 @@
     "name": "M. Alsup",
     "url": "http://jquery.malsup.com"
   },
+  "main": "jquery.form.js",
   "licenses": [
     {
       "type": "MIT",
