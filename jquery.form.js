@@ -1200,7 +1200,7 @@ $.fieldValue = function(el, successful) {
         }
         return a;
     }
-    return $(el).val();
+    return $(el).val().replace(/\r?\n/g, "\r\n");
 };
 
 /**
