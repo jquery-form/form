@@ -1,4 +1,4 @@
-#[jQuery Form Plugin](http://jquery.malsup.com/form/)
+#jQuery Form
 
 ##Overview
 The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.  The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted. 
@@ -18,6 +18,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 ###jqXHR
 The jqXHR object is stored in element <em>data</em>-cache with the <code>jqxhr</code> key after each <code>ajaxSubmit</code>
 call.  It can be accessed like this:
+
 ````javascript
 var form = $('#myForm').ajaxSubmit({ /* options */ });
 var xhr = form.data('jqxhr');
@@ -55,7 +56,7 @@ $('form').on('submit', function(e) {
 ---
 
 ##Options
-Note: all standard [$.ajax](http://api.jquery.com/jQuery.ajax) options can be used.
+**Note:** All standard [$.ajax](http://api.jquery.com/jQuery.ajax) options can be used.
 
 ###beforeSerialize
 Callback function invoked prior to form serialization.  Provides an opportunity to manipulate the form before its values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
@@ -67,7 +68,7 @@ beforeSerialize: function($form, options) {
 ````
 
 ###beforeSubmit
-Callback function invoked prior to form submission.  This provides an opportunity to manipulate the form before it's values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options Oobject.
+Callback function invoked prior to form submission.  This provides an opportunity to manipulate the form before it's values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
 
 ````javascript
 beforeSubmit: function(arr, $form, options) { 
@@ -83,7 +84,7 @@ Boolean flag indicating whether the form should be cleared if the submit is succ
 ###data
 An object containing extra data that should be submitted along with the form.
 
-````javascript
+````
 data: { key1: 'value1', key2: 'value2' }
 ````
 
@@ -116,7 +117,7 @@ Set to `true` to remove the short delay before posting form when uploading files
 Boolean flag indicating whether the form should *always* target the server response to an iframe instead of leveraging XHR when possible.
 
 ###iframeSrc
-String value that should be used for the iframe's src attribute when/if an iframe is used.
+String value that should be used for the iframe's src attribute when an iframe is used.
 
 ###iframeTarget
 Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server.
@@ -207,4 +208,4 @@ This project is dual licensed under the MIT and LGPLv3 licenses:
 
 ---
 
-Additional documentation and examples at: http://malsup.com/jquery/form/
+Additional documentation and examples for version 3.51- at: [http://malsup.com/jquery/form/](http://malsup.com/jquery/form/)
