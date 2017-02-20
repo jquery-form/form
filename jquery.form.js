@@ -720,10 +720,10 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
                         var pre = doc.getElementsByTagName('pre')[0];
                         var b = doc.getElementsByTagName('body')[0];
                         if (pre) {
-                            xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
+                          xhr.responseText = pre.innerHTML ? pre.innerHTML : pre.textContent;
                         }
                         else if (b) {
-                            xhr.responseText = b.textContent ? b.textContent : b.innerText;
+                          xhr.responseText = b.innerHTML ? b.innerHTML : b.textContent;  
                         }
                     }
                 }
