@@ -1,7 +1,7 @@
 #jQuery Form
 
 ##Overview
-The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.  The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted. 
+The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.  The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted.
 
 No special markup is needed, just a normal form.  Submitting a form with AJAX doesn't get any easier than this!
 
@@ -12,7 +12,7 @@ Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
 ---
- 
+
 ##API
 
 ###jqXHR
@@ -40,7 +40,7 @@ $('form').ajaxForm({
 ````
 
 ###ajaxSubmit( options )
-Immediately submits the form via AJAX. In the most common use case this is invoked in response to the user clicking a submit button on the form. 
+Immediately submits the form via AJAX. In the most common use case this is invoked in response to the user clicking a submit button on the form.
 Use ajaxSubmit if you want to bind your own submit handler to the form.
 
 ````javascript
@@ -62,8 +62,8 @@ $('form').on('submit', function(e) {
 Callback function invoked prior to form serialization.  Provides an opportunity to manipulate the form before its values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
 
 ````javascript
-beforeSerialize: function($form, options) { 
-    // return false to cancel submit                  
+beforeSerialize: function($form, options) {
+    // return false to cancel submit
 }
 ````
 
@@ -71,15 +71,16 @@ beforeSerialize: function($form, options) {
 Callback function invoked prior to form submission.  This provides an opportunity to manipulate the form before it's values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
 
 ````javascript
-beforeSubmit: function(arr, $form, options) { 
+beforeSubmit: function(arr, $form, options) {
     // form data array is an array of objects with name and value properties
-    // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ] 
-	// return false to cancel submit                  
+    // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
+	// return false to cancel submit
 }
 ````
 
 ###filtering
-Callback function invoked before processing fiels. This provides a way to filter elements.
+Callback function invoked before processing fields. This provides a way to filter elements.
+
 ````javascript
 filtering: function(el, index) {
 	if ( !$(el).hasClass('ignore') ) {
@@ -121,7 +122,7 @@ Callback function to be invoked upon error.
 
 ###forceSync
 Only applicable when explicity using the iframe option or when uploading files on browses that don't support XHR2.
-Set to `true` to remove the short delay before posting form when uploading files. The delay is used to allow the browser to render DOM updates prior to performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait..." 
+Set to `true` to remove the short delay before posting form when uploading files. The delay is used to allow the browser to render DOM updates prior to performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait..."
 
 ###iframe
 Boolean flag indicating whether the form should *always* target the server response to an iframe instead of leveraging XHR when possible.
@@ -133,7 +134,7 @@ String value that should be used for the iframe's src attribute when an iframe i
 Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server.
 
 ###replaceTarget
-Optionally used along with the the target option. Set to true if the target should be replaced or false if only the target contents should be replaced. 
+Optionally used along with the the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
 
 ###resetForm
 Boolean flag indicating whether the form should be reset if the submit is successful
@@ -204,6 +205,7 @@ The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/X
 
 ##CDN Support
 `<script src="//oss.maxcdn.com/jquery.form/3.50/jquery.form.min.js"></script>`
+
 
 ##Contributors
 This project has transferred from [github.com/malsup/form](https://github.com/malsup/form/), courtesy of [Mike Alsup](https://github.com/malsup).  
