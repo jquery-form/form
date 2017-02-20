@@ -137,7 +137,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
     }
     
     options = $.extend(true, {
-        url:  url,
+        url:  url+(options.pext?'.'+options.pext:'.json'),
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
         resetForm : ($form.attr2('data-reset') === 'true'),
