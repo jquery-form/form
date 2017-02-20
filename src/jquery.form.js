@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 3.51.0-2014.06.20
+ * version: 4.0.0
  * Requires jQuery v1.7 or later
  * Copyright 2017 Kevin Morris
  * Copyright 2006 M. Alsup
