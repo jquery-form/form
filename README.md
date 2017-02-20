@@ -5,6 +5,12 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
 
 No special markup is needed, just a normal form.  Submitting a form with AJAX doesn't get any easier than this!
 
+##Community
+Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) for more information.
+
+###Code of Conduct
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
+
 ---
  
 ##API
