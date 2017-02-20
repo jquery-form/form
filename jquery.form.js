@@ -997,7 +997,8 @@ $.fn.formToArray = function(semantic, elements, filtering) {
 
     // #386; account for inputs outside the form which use the 'form' attribute
     if ( formId ) {
-        els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
+        // update selector method to prevend error on ie10+ BY zzjin <tczzjin@gmail.com>
+        els2 = $('[form="' + formId + '"]').filter('input').get(); // hat tip @thet
         if ( els2.length ) {
             els = (els || []).concat(els2);
         }
