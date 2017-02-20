@@ -78,6 +78,16 @@ beforeSubmit: function(arr, $form, options) {
 }
 ````
 
+###filtering
+Callback function invoked before processing fiels. This provides a way to filter elements.
+````javascript
+filtering: function(el, index) {
+	if ( !$(el).hasClass('ignore') ) {
+		return el;
+	}
+}
+````
+
 ###clearForm
 Boolean flag indicating whether the form should be cleared if the submit is successful
 
