@@ -188,20 +188,16 @@ The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/X
 ##CDN Support
 `<script src="//oss.maxcdn.com/jquery.form/3.50/jquery.form.min.js"></script>`
 
-##Copyright and License
-Copyright 2006-2013 (c) M. Alsup
+##Contributors
+This project has transferred from [github.com/malsup/form](https://github.com/malsup/form/), courtesy of [Mike Alsup](https://github.com/malsup).  
+See [CONTRIBUTORS](CONTRIBUTORS.md) for details.
 
-All versions, present and past, of the jQuery Form plugin are dual licensed under the MIT and GPL licenses:
+##License
 
-* [MIT](http://malsup.github.com/mit-license.txt)
-* [GPL](http://malsup.github.com/gpl-license-v2.txt)
+This project is dual licensed under the MIT and LGPLv3 licenses:
 
-You may use either license.  The MIT License is recommended for most projects because it is simple and easy to understand and it places almost no restrictions on what you can do with the plugin.
-
-If the GPL suits your project better you are also free to use the plugin under that license.
-
-You don't have to do anything special to choose one license or the other and you don't have to notify anyone which license you are using. You are free to use the jQuery Form Plugin in commercial projects as long as the copyright header is left intact.
-
+* [MIT](LICENSE)
+* [GNU Lesser General Public License v3.0](LICENSE-LGPLv3)
 
 ---
 
