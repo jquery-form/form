@@ -146,7 +146,7 @@ $.fn.ajaxSubmit = function(options) {
     }
 
     var elements = [];
-    var qx, a = this.formToArray(options.semantic, elements);
+    var qx = null, a = this.formToArray(options.semantic, elements);
     if (options.data) {
         options.extraData = options.data;
         qx = $.param(options.data, traditional);
