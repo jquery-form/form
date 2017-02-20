@@ -174,7 +174,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
     }
 
     // give pre-submit callback an opportunity to abort the submit
-    if (options.beforeSubmit && options.beforeSubmit(a, this, options) === false) {
+    if (options.beforeSubmit && options.beforeSubmit.call(this, a, options) === false) {
         log('ajaxSubmit: submit aborted via beforeSubmit callback');
         return this;
     }
