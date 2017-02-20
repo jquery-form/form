@@ -213,7 +213,12 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
         });
     }
     else if (options.success) {
-        $.isArray(options.success) ? callbacks.push.apply(callbacks, options.success) : callbacks.push(options.success);
+    	if ($.isArray(options.success)) {
+    		$.merge(callbacks, options.success);
+    	}
+    	else {
+    		callbacks.push(options.success);
+    	}
     }
 
     options.success = function(data, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
