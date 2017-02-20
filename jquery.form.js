@@ -313,10 +313,23 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
     // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
     function fileUploadXhr(a) {
         var formdata = new FormData();
-
-        for (var i=0; i < a.length; i++) {
-            formdata.append(a[i].name, a[i].value);
-        }
+		var fields = {};
+	    for (var i = 0; i < a.length; i++) {
+			if(fields[a[i].name]){
+				fields[a[i].name].push(a[i].value);
+			}else{
+				fields[a[i].name] = [a[i].value];
+			}
+		}
+		$.each(fields,function(name,data){
+			if(data.length == 1){
+				formdata.append(name, data[0]);
+			} else {
+				for (var i = 0; i < data.length; i++) {
+					formdata.append([name,'[',i,']'].join(''), data[i]);
+				}						
+			}
+		});
 
         if (options.extraData) {
             var serializedData = deepSerialize(options.extraData);
