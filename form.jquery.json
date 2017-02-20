@@ -25,7 +25,7 @@
   "bugs": "https://github.com/jquery-form/form/issues",
   "homepage": "https://github.com/jquery-form/form/",
   "docs": "https://github.com/jquery-form/form/",
-  "download": "https://github.com/jquery-form/form/blob/master/jquery.form.js",
+  "download": "https://github.com/jquery-form/form/blob/master/src/jquery.form.js",
   "dependencies": {
     "jquery": ">=1.7"
   }

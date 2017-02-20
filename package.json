@@ -28,9 +28,9 @@
   "dependencies": {
     "jquery": ">=1.7"
   },
-  "main": "jquery.form.js",
+  "main": "src/jquery.form.js",
   "jam": {
-    "main": "jquery.form.js",
+    "main": "src/jquery.form.js",
     "dependencies": {
       "jquery": ">=1.7"
     }

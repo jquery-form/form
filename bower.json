@@ -1,6 +1,6 @@
 {
   "name": "jquery-form",
-  "main": "jquery.form.js",
+  "main": "src/jquery.form.js",
   "author": "Kevin Morris",
   "dependencies": {
     "jquery": ">=1.7"
