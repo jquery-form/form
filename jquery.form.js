@@ -126,8 +126,8 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
         options = {};
     }
 
-    method = options.type || this.attr2('method');
-    action = options.url  || this.attr2('action');
+    method = (options && options.type) || this.attr2('method');
+    action = (options && options.url)  || this.attr2('action');
 
     url = (typeof action === 'string') ? $.trim(action) : '';
     url = url || window.location.href || '';
