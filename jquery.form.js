@@ -605,9 +605,11 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
                 }
                 if (io.attachEvent) {
                     io.attachEvent('onload', cb);
+                    io.attachEvent('onerror', onIframeJSError);
                 }
                 else {
                     io.addEventListener('load', cb, false);
+                    io.addEventListener('error', onIframeJSError, false);
                 }
                 setTimeout(checkState,15);
 
@@ -640,6 +642,10 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
         }
 
         var data, doc, domCheckCount = 50, callbackProcessed;
+
+        function onIframeJSError(e) {
+            return true;
+        }
 
         function cb(e) {
             if (xhr.aborted || callbackProcessed) {
