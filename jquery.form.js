@@ -127,7 +127,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
     }
 
     method = options.type || this.attr2('method');
-    action = options.url  || this.attr2('action');
+    action = options.url  || this.attr('action');
 
     url = (typeof action === 'string') ? $.trim(action) : '';
     url = url || window.location.href || '';
@@ -534,7 +534,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
         function doSubmit() {
             // make sure form attrs are set
             var t = $form.attr2('target'), 
-                a = $form.attr2('action'), 
+                a = $form.attr('action'), 
                 mp = 'multipart/form-data',
                 et = $form.attr('enctype') || $form.attr('encoding') || mp;
 
