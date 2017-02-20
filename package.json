@@ -37,6 +37,9 @@
     }
   },
   "devDependencies": {
+    "grunt": "~1",
+    "grunt-contrib-uglify": "~2",
+
     "gulp": "~3",
     "gulp-util": "~3",
     "gulp-uglify": "~2",
