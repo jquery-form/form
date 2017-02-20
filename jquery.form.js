@@ -148,8 +148,9 @@ $.fn.ajaxSubmit = function(options) {
     var elements = [];
     var qx, a = this.formToArray(options.semantic, elements, options.filtering);
     if (options.data) {
-        options.extraData = options.data;
-        qx = $.param(options.data, traditional);
+        var optionsData = $.isFunction(options.data) ? options.data(a) : options.data;
+        options.extraData = optionsData;
+        qx = $.param(optionsData, traditional);
     }
 
     // give pre-submit callback an opportunity to abort the submit
@@ -275,8 +276,6 @@ $.fn.ajaxSubmit = function(options) {
         var result = [];
         var i, part;
         for (i=0; i < len; i++) {
-            // #252; undo param space replacement
-            serialized[i] = serialized[i].replace(/\+/g,' ');
             part = serialized[i].split('=');
             // #278; use array instead of object storage, favoring array serializations
             result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
@@ -284,7 +283,7 @@ $.fn.ajaxSubmit = function(options) {
         return result;
     }
 
-     // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
+    // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
     function fileUploadXhr(a) {
         var formdata = new FormData();
 
