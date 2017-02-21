@@ -1,9 +1,9 @@
 #jQuery Form
 
 ##Overview
-The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.  The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted.
+The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX. The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted.
 
-No special markup is needed, just a normal form.  Submitting a form with AJAX doesn't get any easier than this!
+No special markup is needed, just a normal form. Submitting a form with AJAX doesn't get any easier than this!
 
 ##Community
 Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) for more information.
@@ -25,11 +25,11 @@ Requires jQuery 1.7+.
 `<script src="https://cdn.rawgit.com/jquery-form/form/v4.0.0/dist/jquery.form.min.js" integrity="sha384-VbVFC0lW+zWNPASj3BNeyyhq8bfMBuPS/oKvruIvimT8gB9mee2oQtrFarxCzL5m" crossorigin="anonymous"></script>`
 
 * **v3.51.0**
-`<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js" integrity="sha384-PtoF94KNPetQqtyWrt7MCIFhajxLf9jnI6qysmzN5x7hcSRpKj7hML3cJi+BgBne" crossorigin="anonymous"></script>`
-or
-`<script src="https://oss.maxcdn.com/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>`
-or
-`<script src="https://cdn.jsdelivr.net/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>`
+`<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js" integrity="sha384-PtoF94KNPetQqtyWrt7MCIFhajxLf9jnI6qysmzN5x7hcSRpKj7hML3cJi+BgBne" crossorigin="anonymous"></script>`  
+or  
+`<script src="https://oss.maxcdn.com/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>`  
+or  
+`<script src="https://cdn.jsdelivr.net/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>`  
 
 ---
 
@@ -37,7 +37,7 @@ or
 
 ###jqXHR
 The jqXHR object is stored in element <em>data</em>-cache with the <code>jqxhr</code> key after each <code>ajaxSubmit</code>
-call.  It can be accessed like this:
+call. It can be accessed like this:
 
 ````javascript
 var form = $('#myForm').ajaxSubmit({ /* options */ });
@@ -79,7 +79,7 @@ $('form').on('submit', function(e) {
 **Note:** All standard [$.ajax](http://api.jquery.com/jQuery.ajax) options can be used.
 
 ###beforeSerialize
-Callback function invoked prior to form serialization.  Provides an opportunity to manipulate the form before its values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
+Callback function invoked prior to form serialization. Provides an opportunity to manipulate the form before its values are retrieved. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
 
 ````javascript
 beforeSerialize: function($form, options) {
@@ -88,13 +88,13 @@ beforeSerialize: function($form, options) {
 ````
 
 ###beforeSubmit
-Callback function invoked prior to form submission.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
+Callback function invoked prior to form submission. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
 
 ````javascript
 beforeSubmit: function(arr, $form, options) {
     // form data array is an array of objects with name and value properties
     // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
-	// return false to cancel submit
+    // return false to cancel submit
 }
 ````
 
@@ -163,7 +163,7 @@ Boolean flag indicating whether the form should be reset if the submit is succes
 Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order with the exception of input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
 
 ###success
-Callback function to be invoked after the form has been submitted. If a `success` callback function is provided it is invoked after the response has been returned from the server.  It is passed the following arguments:
+Callback function to be invoked after the form has been submitted. If a `success` callback function is provided it is invoked after the response has been returned from the server. It is passed the following arguments:
 
 1. responseText or responseXML value (depending on the value of the dataType option).
 2. statusText
@@ -205,13 +205,13 @@ var queryString = $('#myFormId .specialFields').fieldSerialize();
 ````
 
 ###fieldValue
-Returns the value(s) of the element(s) in the matched set in an array.  This method always returns an array.  If no valid value can be determined the array will be empty, otherwise it will contain one or more values.
+Returns the value(s) of the element(s) in the matched set in an array. This method always returns an array. If no valid value can be determined the array will be empty, otherwise it will contain one or more values.
 
 ###resetForm
 Resets the form to its original state by invoking the form element's native DOM method.
 
 ###clearForm
-Clears the form elements. This method emptys all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs.  It does *not* clear hidden field values.
+Clears the form elements. This method emptys all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs. It does *not* clear hidden field values.
 
 ###clearFields
 Clears selected field elements. This is handy when you need to clear only a part of the form.
@@ -219,7 +219,7 @@ Clears selected field elements. This is handy when you need to clear only a part
 ---
 
 ##File Uploads
-The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/XMLHttpRequest/") and [FormData](https://developer.mozilla.org/en/XMLHttpRequest/FormData) objects on browsers that support these features.  As of today (March 2012) that includes Chrome, Safari, and Firefox.  On these browsers (and future Opera and IE10) files uploads will occur seamlessly through the XHR object and progress updates are available as the upload proceeds.  For older browsers, a fallback technology is used which involves iframes.  [More Info](http://malsup.com/jquery/form/#file-upload)
+The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/XMLHttpRequest/") and [FormData](https://developer.mozilla.org/en/XMLHttpRequest/FormData) objects on browsers that support these features. As of today (March 2012) that includes Chrome, Safari, and Firefox. On these browsers (and future Opera and IE10) files uploads will occur seamlessly through the XHR object and progress updates are available as the upload proceeds. For older browsers, a fallback technology is used which involves iframes. [More Info](http://malsup.com/jquery/form/#file-upload)
 
 ---
 
