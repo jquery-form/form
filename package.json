@@ -1,39 +1,22 @@
 {
   "name": "jquery-form",
-  "title": "jQuery Form Plugin",
-  "description": "A simple way to AJAX-ify any form on your page; with file upload and progress support.",
+  "version": "4.0.0",
+  "description": "The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.",
+  "keywords": [ "jquery", "ajax", "jquery-plugin", "json", "json-form", "html-form", "form", "jquery-form" ],
+  "homepage": "https://github.com/jquery-form/form",
+  "bugs": "https://github.com/jquery-form/form/issues",
+  "license": "(MIT OR LGPL-3.0)",
+  "contributors": [
+    { "name": "Kevin Morris" },
+    { "name": "Mike Alsup" }
+  ],
+  "main": "src/jquery.form.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:jquery-form/form.git"
+    "url": "https://github.com/jquery-form/form.git"
   },
-  "keywords": [
-    "form",
-    "upload",
-    "ajax"
-  ],
-  "version": "4.0.0",
-  "contributors": [
-    {
-      "name": "Kevin Morris",
-      "url": "https://github.com/kevindb"
-    },
-    {
-      "name": "M. Alsup",
-      "url": "http://jquery.malsup.com"
-    }
-  ],
-  "license": "(MIT OR LGPL-3.0)",
-  "bugs": "https://github.com/jquery-form/form/issues",
-  "homepage": "https://github.com/jquery-form/form",
   "dependencies": {
-    "jquery": ">=1.7"
-  },
-  "main": "src/jquery.form.js",
-  "jam": {
-    "main": "src/jquery.form.js",
-    "dependencies": {
-      "jquery": ">=1.7"
-    }
+    "jquery": ">=1.7 <3"
   },
   "devDependencies": {
     "grunt": "~1",
@@ -44,5 +27,11 @@
     "gulp-uglify": "~2",
     "gulp-concat": "~2",
     "gulp-jshint": "~2"
+  },
+  "jam": {
+    "main": "src/jquery.form.js",
+    "dependencies": {
+      "jquery": ">=1.7 <3"
+    }
   }
 }
