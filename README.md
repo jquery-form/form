@@ -88,7 +88,7 @@ beforeSerialize: function($form, options) {
 ````
 
 ###beforeSubmit
-Callback function invoked prior to form submission.  This provides an opportunity to manipulate the form before it's values are retrieved.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
+Callback function invoked prior to form submission.  Returning `false` from the callback will prevent the form from being submitted.  The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
 
 ````javascript
 beforeSubmit: function(arr, $form, options) {
