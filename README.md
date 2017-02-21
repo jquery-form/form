@@ -23,7 +23,7 @@ Requires jQuery 1.7+.
 ###CDN
 * **v4.0.1**
     ```html
-    <script src="https://cdn.rawgit.com/jquery-form/form/v4.0.1/dist/jquery.form.min.js" integrity="sha384-eIw3uO9TejyQiveIsW3Ef1uac3R0Qcol9rSMRjhvx2v75FvdQ+lT3bgnOnMFPrF2" crossorigin="anonymous"></script>
+    <script src="https://cdn.rawgit.com/jquery-form/form/v4.0.1/dist/jquery.form.min.js" integrity="sha384-MSBAlvUdugJfNRlgXmRfwPbw7SNanf6IaKgQBi1ajJdWoZ9oUYhxC79B5n4gp3y5" crossorigin="anonymous"></script>
     ```
 
 * **v3.51.0**
