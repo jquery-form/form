@@ -981,7 +981,7 @@ $.fn.formToArray = function(semantic, elements, filtering) {
 
 	var form = this[0];
 	var formId = this.attr('id');
-	var els = semantic ? form.getElementsByTagName('*') : form.elements;
+	var els = (semantic || form.elements === undefined) ? form.getElementsByTagName('*') : form.elements;
 	var els2;
 
 	if (els) {
