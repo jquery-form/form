@@ -5,6 +5,13 @@ module.exports = function(grunt) {
 			banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
 		},
 
+		mocha: {
+			test: {
+				src: ['test/**/*.html'],
+				dest: './test/output/xunit.out',
+			},
+		},
+
 		// Minifies JS files
 		uglify: {
 			options: {
@@ -25,7 +32,8 @@ module.exports = function(grunt) {
 
 	// Load tasks
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-mocha');
 
 	// Default task.
-	grunt.registerTask('default', [ 'uglify' ]);
+	grunt.registerTask('default', [ 'mocha', 'uglify' ]);
 };
