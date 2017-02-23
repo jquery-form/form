@@ -1,9 +1,8 @@
 ---
-layout: default
 title: jQuery Form Plugin
 ---
 
-#jQuery Form Plugin
+# jQuery Form Plugin
 
 Getting Started  
 [API](http://malsup.com/jquery/form/#api)  
@@ -13,11 +12,11 @@ Getting Started
 [FAQ](http://malsup.com/jquery/form/#faq)  
 [Download]({{ site.github.url }}#download)  
 
-##Getting Started
-###Overview
+## Getting Started
+### Overview
 The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX. The main methods, `ajaxForm` and `ajaxSubmit`, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted. Submitting a form with AJAX doesn't get any easier than this!
 
-###Quick Start Guide
+### Quick Start Guide
 1. Add a form to your page. Just a normal form, no special markup required:
     ```html
     <form id="myForm" action="comment.php" method="post"> 
