@@ -1,5 +1,4 @@
 ---
-title: jQuery Form Plugin
 ---
 
 <div class="nav">

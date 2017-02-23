@@ -1,4 +1,5 @@
 name: jQuery Form
+title: jQuery Form Plugin
 description: The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX
 theme: jekyll-theme-tactile
 url: https://jquery-form.github.io
