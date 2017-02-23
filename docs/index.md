@@ -2,15 +2,19 @@
 title: jQuery Form Plugin
 ---
 
-# jQuery Form Plugin
-
-Getting Started  
-[API](http://malsup.com/jquery/form/#api)  
-[Options](http://malsup.com/jquery/form/#options-object)  
-[Examples](http://malsup.com/jquery/form/#ajaxForm)  
-[Form Fields](http://malsup.com/jquery/form/#fields)  
-[FAQ](http://malsup.com/jquery/form/#faq)  
-[Download]({{ site.github.url }}#download)  
+<div class="nav">
+  <nav>
+    <ul>
+      <li class="active"><a href="/">Getting Started</a></li>
+      <li><a href="http://malsup.com/jquery/form/#api">API</a></li>
+      <li><a href="http://malsup.com/jquery/form/#options-object">Options</a></li>
+      <li><a href="http://malsup.com/jquery/form/#ajaxForm">Examples</a></li>
+      <li><a href="http://malsup.com/jquery/form/#fields">Form Fields</a></li>
+      <li><a href="http://malsup.com/jquery/form/#faq">FAQ</a></li>
+      <li><a href="{{ site.github.url }}#download">Download</a></li>
+    </ul>
+  </nav>
+</div>
 
 ## Getting Started
 ### Overview

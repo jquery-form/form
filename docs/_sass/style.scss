@@ -1,0 +1,29 @@
+.inner {
+  width: 700px;
+}
+nav {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+nav:after {
+  content: "";
+  display: block;
+  height: 1px;
+  background: transparent url("../images/hr.png") 50% 0 no-repeat;
+  padding-bottom: 1em;
+  line-height: 1px;
+}
+nav ul {
+  list-style: none;
+}
+nav li {
+  display: inline;
+}
+nav li.active {
+  font-weight: bold;
+}
+nav a {
+  display: inline-block;
+  padding: 2px 5px;
+}
