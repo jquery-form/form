@@ -51,4 +51,4 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
 
 When this form is submitted the _name_ and _comment_ fields will be posted to _comment.php_. If the server returns a success status then the user will see a "Thank you" message.
 
-*[AJAX]: Asynchronous JavaScript and XML. Despite what its name implies, AJAX neither has to run in an asynchronous manner (in the background), nor does it need to use XML. In fact, JavaScript object notation is more often used.
+*[AJAX]: Asynchronous JavaScript and XML
