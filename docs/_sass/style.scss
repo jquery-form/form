@@ -6,14 +6,6 @@ nav {
   padding: 0;
   text-align: center;
 }
-nav:after {
-  content: "";
-  display: block;
-  height: 1px;
-  background: transparent url("../images/hr.png") 50% 0 no-repeat;
-  padding-bottom: 1em;
-  line-height: 1px;
-}
 nav ul {
   list-style: none;
 }

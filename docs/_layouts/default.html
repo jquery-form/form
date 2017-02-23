@@ -31,6 +31,20 @@
 
         <hr>
 
+		<nav>
+			<ul>
+				<li class="{% if page.url == "/" %}active{% endif %}"><a href="{{ site.baseurl }}/">Getting Started</a></li>
+				<li><a href="http://malsup.com/jquery/form/#api">API</a></li>
+				<li><a href="http://malsup.com/jquery/form/#options-object">Options</a></li>
+				<li><a href="http://malsup.com/jquery/form/#ajaxForm">Examples</a></li>
+				<li><a href="http://malsup.com/jquery/form/#fields">Form Fields</a></li>
+				<li><a href="http://malsup.com/jquery/form/#faq">FAQ</a></li>
+				<li><a href="{{ site.github.url }}#download">Download</a></li>
+			</ul>
+		</nav>
+
+        <hr>
+
         <section id="main_content">
           {{ content }}
         </section>
