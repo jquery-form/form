@@ -12,5 +12,12 @@ repository: https://github.com/jquery-form/form
 markdown: kramdown
 highlighter: rouge
 
+defaults:
+  -
+    scope:
+      path: "" # an empty string here means all files in the project
+    values:
+      layout: "default"
+
 exclude:
   - .gitignore
