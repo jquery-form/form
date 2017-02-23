@@ -1,4 +1,5 @@
 ---
+layout: default
 title: jQuery Form Plugin
 ---
 
