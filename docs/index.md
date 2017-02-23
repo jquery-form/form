@@ -22,28 +22,28 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
 ### Quick Start Guide
 1. Add a form to your page. Just a normal form, no special markup required:
     ```html
-    <form id="myForm" action="comment.php" method="post"> 
-    Name: <input type="text" name="name"> 
-    Comment: <textarea name="comment"></textarea> 
-    <input type="submit" value="Submit Comment"> 
+    <form id="myForm" action="comment.php" method="post">
+      Name: <input type="text" name="name">
+      Comment: <textarea name="comment"></textarea>
+      <input type="submit" value="Submit Comment">
     </form>
     ```
 2. Include jQuery and the Form Plugin external script files and a short script to initialize the form when the DOM is ready:
     ```html
-    <html> 
-    <head> 
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script> 
-        <script src="http://malsup.github.com/jquery.form.js"></script> 
-     
-        <script> 
-            // wait for the DOM to be loaded 
-            $(document).ready(function() { 
-                // bind 'myForm' and provide a simple callback function 
-                $('#myForm').ajaxForm(function() { 
-                    alert("Thank you for your comment!"); 
-                }); 
-            }); 
-        </script> 
+    <html>
+    <head>
+      <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+      <script src="http://malsup.github.com/jquery.form.js"></script>
+
+      <script>
+        // wait for the DOM to be loaded
+        $(document).ready(function() {
+          // bind 'myForm' and provide a simple callback function
+          $('#myForm').ajaxForm(function() {
+              alert("Thank you for your comment!");
+          });
+        });
+      </script>
     </head>
     ```
 
