@@ -6,12 +6,9 @@ baseurl: /form
 permalink: pretty
 timezone: America/New_York
 
-repository: https://github.com/jquery-form/form
+repository: jquery-form/form
 
 # Dependencies
-markdown: kramdown
-highlighter: rouge
-
 defaults:
   -
     scope:
