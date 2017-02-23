@@ -1,3 +1,7 @@
+---
+title: jQuery Form Plugin
+---
+
 #jQuery Form Plugin
 
 Getting Started  
@@ -6,7 +10,7 @@ Getting Started
 [Examples](http://malsup.com/jquery/form/#ajaxForm)  
 [Form Fields](http://malsup.com/jquery/form/#fields)  
 [FAQ](http://malsup.com/jquery/form/#faq)  
-[Download](https://github.com/jquery-form/form#download)  
+[Download]({{ site.github.url }}#download)  
 
 ##Getting Started
 ###Overview
