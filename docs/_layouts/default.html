@@ -34,7 +34,7 @@
 		<nav>
 			<ul>
 				<li class="{% if page.url == "/" %}active{% endif %}"><a href="{{ site.baseurl }}/">Getting Started</a></li>
-				<li><a href="http://malsup.com/jquery/form/#api">API</a></li>
+				<li class="{% if page.url == "/api/" %}active{% endif %}"><a href="{{ site.baseurl }}/api/">API</a></li>
 				<li><a href="http://malsup.com/jquery/form/#options-object">Options</a></li>
 				<li><a href="http://malsup.com/jquery/form/#ajaxForm">Examples</a></li>
 				<li><a href="http://malsup.com/jquery/form/#fields">Form Fields</a></li>
