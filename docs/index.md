@@ -19,11 +19,11 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
     <html>
     <head>
       <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
-      <script src="http://malsup.github.com/jquery.form.js"></script>
+      <script src="https://cdn.rawgit.com/jquery-form/form/v4.0.1/dist/jquery.form.min.js" integrity="sha384-MSBAlvUdugJfNRlgXmRfwPbw7SNanf6IaKgQBi1ajJdWoZ9oUYhxC79B5n4gp3y5" crossorigin="anonymous"></script>
 
       <script>
         // wait for the DOM to be loaded
-        $(document).ready(function() {
+        $(function() {
           // bind 'myForm' and provide a simple callback function
           $('#myForm').ajaxForm(function() {
               alert("Thank you for your comment!");
