@@ -21,19 +21,9 @@ Requires jQuery 1.7+.
 ](https://github.com/jquery-form/form/blob/master/dist/jquery.form.min.js)
 
 ###CDN
-* **v4.0.1**
-    ```html
-    <script src="https://cdn.rawgit.com/jquery-form/form/v4.0.1/dist/jquery.form.min.js" integrity="sha384-MSBAlvUdugJfNRlgXmRfwPbw7SNanf6IaKgQBi1ajJdWoZ9oUYhxC79B5n4gp3y5" crossorigin="anonymous"></script>
-    ```
-
-* **v3.51.0**
-    ```html
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js" integrity="sha384-PtoF94KNPetQqtyWrt7MCIFhajxLf9jnI6qysmzN5x7hcSRpKj7hML3cJi+BgBne" crossorigin="anonymous"></script>
-    ```
-    or
-    ```html
-    <script src="https://cdn.jsdelivr.net/jquery.form/3.51/jquery.form.min.js" integrity="sha384-+MH/JJ/f/MpqUtleUQmbvWeijy4xwPHS7BTjaTaBYGhAvgLxeSQqxDYkainJGDee" crossorigin="anonymous"></script>
-    ```
+```html
+<script src="https://cdn.jsdelivr.net/jquery.form/4.0.1/jquery.form.min.js" integrity="sha384-MSBAlvUdugJfNRlgXmRfwPbw7SNanf6IaKgQBi1ajJdWoZ9oUYhxC79B5n4gp3y5" crossorigin="anonymous"></script>
+```
 
 ---
 
