@@ -64,6 +64,8 @@
 	at the appropriate time.
 */
 
+var rCRLF = /\r?\n/g;
+
 /**
  * Feature detection
  */
@@ -1193,7 +1195,7 @@ $.fieldValue = function(el, successful) {
 		}
 		return a;
 	}
-	return $(el).val();
+	return $(el).val().replace(rCRLF, "\r\n");
 };
 
 /**
