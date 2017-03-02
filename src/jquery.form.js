@@ -167,7 +167,7 @@ $.fn.ajaxSubmit = function(options, data, dataType, onSuccess) {
 	}
 
 	var elements = [];
-	var qx, a = this.formToArray(options.semantic, elements, options.filtering);
+	var qx, a = this.serializeArray(this.formToArray(options.semantic, elements, options.filtering));
 	if (options.data) {
 		var optionsData = $.isFunction(options.data) ? options.data(a) : options.data;
 		options.extraData = optionsData;
