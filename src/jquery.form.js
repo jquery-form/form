@@ -81,7 +81,7 @@
 	 * Feature detection
 	 */
 	var feature = {};
-	feature.fileapi = $("<input type='file'/>").get(0).files !== undefined;
+	feature.fileapi = $('<input type="file">').get(0).files !== undefined;
 	feature.formdata = window.FormData !== undefined;
 
 	var hasProp = !!$.fn.prop;
@@ -121,17 +121,17 @@
 
 		var method, action, url, $form = this;
 
-		if (typeof options == 'function') {
+		if (typeof options === 'function') {
 			options = { success: options };
 
-		} else if ( typeof options == 'string' || ( options === false && arguments.length > 0 ) ) {
+		} else if ( typeof options === 'string' || ( options === false && arguments.length > 0 ) ) {
 			options = {
 				'url' : options,
 				'data' : data,
 				'dataType' : dataType
 			};
 
-			if(typeof onSuccess == 'function')
+			if(typeof onSuccess === 'function')
 			{
 				options.success = onSuccess;
 			}
@@ -202,7 +202,7 @@
 		if (qx) {
 			q = ( q ? (q + '&' + qx) : qx );
 		}
-		if (options.type.toUpperCase() == 'GET') {
+		if (options.type.toUpperCase() === 'GET') {
 			options.url += (options.url.indexOf('?') >= 0 ? '&' : '?') + q;
 			options.data = null;	// data is null for 'get'
 		}
@@ -265,10 +265,10 @@
 
 		var hasFileInputs = fileInputs.length > 0;
 		var mp = 'multipart/form-data';
-		var multipart = ($form.attr('enctype') == mp || $form.attr('encoding') == mp);
+		var multipart = ($form.attr('enctype') === mp || $form.attr('encoding') === mp);
 
 		var fileAPI = feature.fileapi && feature.formdata;
-		log("fileAPI :" + fileAPI);
+		log('fileAPI :' + fileAPI);
 		var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
 
 		var jqxhr;
@@ -451,7 +451,7 @@
 						s.error.call(s.context, xhr, e, status);
 					}
 					if (g) {
-						$.event.trigger("ajaxError", [xhr, s, e]);
+						$.event.trigger('ajaxError', [xhr, s, e]);
 					}
 					if (s.complete) {
 						s.complete.call(s.context, xhr, e);
@@ -462,10 +462,10 @@
 			g = s.global;
 			// trigger ajax global events so that activity/block indicators work like normal
 			if (g && 0 === $.active++) {
-				$.event.trigger("ajaxStart");
+				$.event.trigger('ajaxStart');
 			}
 			if (g) {
-				$.event.trigger("ajaxSend", [xhr, s]);
+				$.event.trigger('ajaxSend', [xhr, s]);
 			}
 
 			if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
@@ -487,7 +487,7 @@
 				if (n && !sub.disabled) {
 					s.extraData = s.extraData || {};
 					s.extraData[n] = sub.value;
-					if (sub.type == "image") {
+					if (sub.type === 'image') {
 						s.extraData[n+'.x'] = form.clk_x;
 						s.extraData[n+'.y'] = form.clk_y;
 					}
@@ -552,7 +552,7 @@
 				if (!method || /post/i.test(method) ) {
 					form.setAttribute('method', 'POST');
 				}
-				if (a != s.url) {
+				if (a !== s.url) {
 					form.setAttribute('action', s.url);
 				}
 
@@ -574,7 +574,7 @@
 					try {
 						var state = getDoc(io).readyState;
 						log('state = ' + state);
-						if (state && state.toLowerCase() == 'uninitialized') {
+						if (state && state.toLowerCase() === 'uninitialized') {
 							setTimeout(checkState,50);
 						}
 					}
@@ -665,13 +665,13 @@
 					deferred.reject(xhr, 'timeout');
 					return;
 				}
-				else if (e == SERVER_ABORT && xhr) {
+				else if (e === SERVER_ABORT && xhr) {
 					xhr.abort('server abort');
 					deferred.reject(xhr, 'error', 'server abort');
 					return;
 				}
 
-				if (!doc || doc.location.href == s.iframeSrc) {
+				if (!doc || doc.location.href === s.iframeSrc) {
 					// response not received yet
 					if (!timedOut) {
 						return;
@@ -690,7 +690,7 @@
 						throw 'timeout';
 					}
 
-					var isXml = s.dataType == 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
+					var isXml = s.dataType === 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
 					log('isXml='+isXml);
 					if (!isXml && window.opera && (doc.body === null || !doc.body.innerHTML)) {
 						if (--domCheckCount) {
@@ -745,7 +745,7 @@
 							}
 						}
 					}
-					else if (dt == 'xml' && !xhr.responseXML && xhr.responseText) {
+					else if (dt === 'xml' && !xhr.responseXML && xhr.responseText) {
 						xhr.responseXML = toXml(xhr.responseText);
 					}
 
@@ -779,7 +779,7 @@
 					}
 					deferred.resolve(xhr.responseText, 'success', xhr);
 					if (g) {
-						$.event.trigger("ajaxSuccess", [xhr, s]);
+						$.event.trigger('ajaxSuccess', [xhr, s]);
 					}
 				}
 				else if (status) {
@@ -791,16 +791,16 @@
 					}
 					deferred.reject(xhr, 'error', errMsg);
 					if (g) {
-						$.event.trigger("ajaxError", [xhr, s, errMsg]);
+						$.event.trigger('ajaxError', [xhr, s, errMsg]);
 					}
 				}
 
 				if (g) {
-					$.event.trigger("ajaxComplete", [xhr, s]);
+					$.event.trigger('ajaxComplete', [xhr, s]);
 				}
 
 				if (g && ! --$.active) {
-					$.event.trigger("ajaxStop");
+					$.event.trigger('ajaxStop');
 				}
 
 				if (s.complete) {
@@ -833,7 +833,7 @@
 				else {
 					doc = (new DOMParser()).parseFromString(s, 'text/xml');
 				}
-				return (doc && doc.documentElement && doc.documentElement.nodeName != 'parsererror') ? doc : null;
+				return (doc && doc.documentElement && doc.documentElement.nodeName !== 'parsererror') ? doc : null;
 			};
 			var parseJSON = $.parseJSON || function(s) {
 				/*jslint evil:true */
@@ -857,7 +857,7 @@
 				if (typeof data === 'string') {
 					if (type === 'json' || !type && ct.indexOf('json') >= 0) {
 						data = parseJSON(data);
-					} else if (type === "script" || !type && ct.indexOf("javascript") >= 0) {
+					} else if (type === 'script' || !type && ct.indexOf('javascript') >= 0) {
 						$.globalEval(data);
 					}
 				}
@@ -873,7 +873,7 @@
 	 *
 	 * The advantages of using this method instead of ajaxSubmit() are:
 	 *
-	 * 1: This method will include coordinates for <input type="image" /> elements (if the element
+	 * 1: This method will include coordinates for <input type="image"> elements (if the element
 	 *	is used to submit the form).
 	 * 2. This method will include the submit element's name/value data (for the element that was
 	 *	used to submit the form).
@@ -884,14 +884,14 @@
 	 * the form itself.
 	 */
 	$.fn.ajaxForm = function(options, data, dataType, onSuccess) {
-		if (typeof options == 'string' || (options === false && arguments.length > 0)) {
+		if (typeof options === 'string' || (options === false && arguments.length > 0)) {
 			options = {
 				'url' : options,
 				'data' : data,
 				'dataType' : dataType
 			};
 
-			if (typeof onSuccess == 'function') {
+			if (typeof onSuccess === 'function') {
 				options.success = onSuccess;
 			}
 		}
@@ -942,7 +942,7 @@
 		/*jshint validthis:true */
 		var target = e.target;
 		var $el = $(target);
-		if (!($el.is("[type=submit],[type=image]"))) {
+		if (!($el.is('[type=submit],[type=image]'))) {
 			// is this a child element of the submit el?  (ex: a span within a button)
 			var t = $el.closest('[type=submit]');
 			if (t.length === 0) {
@@ -952,11 +952,11 @@
 		}
 		var form = target.form;
 		form.clk = target;
-		if (target.type == 'image') {
+		if (target.type === 'image') {
 			if (e.offsetX !== undefined) {
 				form.clk_x = e.offsetX;
 				form.clk_y = e.offsetY;
-			} else if (typeof $.fn.offset == 'function') {
+			} else if (typeof $.fn.offset === 'function') {
 				var offset = $el.offset();
 				form.clk_x = e.pageX - offset.left;
 				form.clk_y = e.pageY - offset.top;
@@ -1025,9 +1025,9 @@
 				continue;
 			}
 
-			if (semantic && form.clk && el.type == "image") {
+			if (semantic && form.clk && el.type === 'image') {
 				// handle image inputs on the fly when semantic == true
-				if(form.clk == el) {
+				if(form.clk === el) {
 					a.push({name: n, value: $(el).val(), type: el.type });
 					a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
 				}
@@ -1035,7 +1035,7 @@
 			}
 
 			v = $.fieldValue(el, true);
-			if (v && v.constructor == Array) {
+			if (v && v.constructor === Array) {
 				if (elements) {
 					elements.push(el);
 				}
@@ -1043,7 +1043,7 @@
 					a.push({name: n, value: v[j]});
 				}
 			}
-			else if (feature.fileapi && el.type == 'file') {
+			else if (feature.fileapi && el.type === 'file') {
 				if (elements) {
 					elements.push(el);
 				}
@@ -1058,7 +1058,7 @@
 					a.push({ name: n, value: '', type: el.type });
 				}
 			}
-			else if (v !== null && typeof v != 'undefined') {
+			else if (v !== null && typeof v !== 'undefined') {
 				if (elements) {
 					elements.push(el);
 				}
@@ -1070,7 +1070,7 @@
 			// input type=='image' are not found in elements array! handle it here
 			var $input = $(form.clk), input = $input[0];
 			n = input.name;
-			if (n && !input.disabled && input.type == 'image') {
+			if (n && !input.disabled && input.type === 'image') {
 				a.push({name: n, value: $input.val()});
 				a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
 			}
@@ -1099,12 +1099,12 @@
 				return;
 			}
 			var v = $.fieldValue(this, successful);
-			if (v && v.constructor == Array) {
+			if (v && v.constructor === Array) {
 				for (var i=0,max=v.length; i < max; i++) {
 					a.push({name: n, value: v[i]});
 				}
 			}
-			else if (v !== null && typeof v != 'undefined') {
+			else if (v !== null && typeof v !== 'undefined') {
 				a.push({name: this.name, value: v});
 			}
 		});
@@ -1116,31 +1116,31 @@
 	 * Returns the value(s) of the element in the matched set. For example, consider the following form:
 	 *
 	 *	<form><fieldset>
-	 *		<input name="A" type="text" />
-	 *		<input name="A" type="text" />
-	 *		<input name="B" type="checkbox" value="B1" />
-	 *		<input name="B" type="checkbox" value="B2"/>
-	 *		<input name="C" type="radio" value="C1" />
-	 *		<input name="C" type="radio" value="C2" />
+	 *		<input name="A" type="text">
+	 *		<input name="A" type="text">
+	 *		<input name="B" type="checkbox" value="B1">
+	 *		<input name="B" type="checkbox" value="B2">
+	 *		<input name="C" type="radio" value="C1">
+	 *		<input name="C" type="radio" value="C2">
 	 *	</fieldset></form>
 	 *
 	 *	var v = $('input[type=text]').fieldValue();
 	 *	// if no values are entered into the text inputs
-	 *	v == ['','']
+	 *	v === ['','']
 	 *	// if values entered into the text inputs are 'foo' and 'bar'
-	 *	v == ['foo','bar']
+	 *	v === ['foo','bar']
 	 *
 	 *	var v = $('input[type=checkbox]').fieldValue();
 	 *	// if neither checkbox is checked
 	 *	v === undefined
 	 *	// if both checkboxes are checked
-	 *	v == ['B1', 'B2']
+	 *	v === ['B1', 'B2']
 	 *
 	 *	var v = $('input[type=radio]').fieldValue();
 	 *	// if neither radio is checked
 	 *	v === undefined
 	 *	// if first radio is checked
-	 *	v == ['C1']
+	 *	v === ['C1']
 	 *
 	 * The successful argument controls whether or not the field element must be 'successful'
 	 * (per http://www.w3.org/TR/html4/interact/forms.html#successful-controls).
@@ -1154,10 +1154,10 @@
 		for (var val=[], i=0, max=this.length; i < max; i++) {
 			var el = this[i];
 			var v = $.fieldValue(el, successful);
-			if (v === null || typeof v == 'undefined' || (v.constructor == Array && !v.length)) {
+			if (v === null || typeof v === 'undefined' || (v.constructor === Array && !v.length)) {
 				continue;
 			}
-			if (v.constructor == Array) {
+			if (v.constructor === Array) {
 				$.merge(val, v);
 			}
 			else {
@@ -1176,20 +1176,20 @@
 			successful = true;
 		}
 
-		if (successful && (!n || el.disabled || t == 'reset' || t == 'button' ||
-			(t == 'checkbox' || t == 'radio') && !el.checked ||
-			(t == 'submit' || t == 'image') && el.form && el.form.clk != el ||
-			tag == 'select' && el.selectedIndex == -1)) {
+		if (successful && (!n || el.disabled || t === 'reset' || t === 'button' ||
+			(t === 'checkbox' || t === 'radio') && !el.checked ||
+			(t === 'submit' || t === 'image') && el.form && el.form.clk !== el ||
+			tag === 'select' && el.selectedIndex === -1)) {
 				return null;
 		}
 
-		if (tag == 'select') {
+		if (tag === 'select') {
 			var index = el.selectedIndex;
 			if (index < 0) {
 				return null;
 			}
 			var a = [], ops = el.options;
-			var one = (t == 'select-one');
+			var one = (t === 'select-one');
 			var max = (one ? index+1 : ops.length);
 			for(var i=(one ? index : 0); i < max; i++) {
 				var op = ops[i];
@@ -1206,7 +1206,7 @@
 			}
 			return a;
 		}
-		return $(el).val().replace(rCRLF, "\r\n");
+		return $(el).val().replace(rCRLF, '\r\n');
 	};
 
 	/**
@@ -1230,16 +1230,16 @@
 		var re = /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 		return this.each(function() {
 			var t = this.type, tag = this.tagName.toLowerCase();
-			if (re.test(t) || tag == 'textarea') {
+			if (re.test(t) || tag === 'textarea') {
 				this.value = '';
 			}
-			else if (t == 'checkbox' || t == 'radio') {
+			else if (t === 'checkbox' || t === 'radio') {
 				this.checked = false;
 			}
-			else if (tag == 'select') {
+			else if (tag === 'select') {
 				this.selectedIndex = -1;
 			}
-			else if (t == "file") {
+			else if (t === 'file') {
 				if (/MSIE/.test(navigator.userAgent)) {
 					$(this).replaceWith($(this).clone(true));
 				} else {
@@ -1252,7 +1252,7 @@
 				// $('#myForm').clearForm('.special:hidden')
 				// the above would clean hidden inputs that have the class of 'special'
 				if ( (includeHidden === true && /hidden/.test(t)) ||
-					 (typeof includeHidden == 'string' && $(this).is(includeHidden)) ) {
+					 (typeof includeHidden === 'string' && $(this).is(includeHidden)) ) {
 					this.value = '';
 				}
 			}
@@ -1285,10 +1285,14 @@
 				case 'optgroup':
 					var select = el.parents('select');
 					if (select.length && select[0].multiple) {
-						if (tag == 'option') this.selected = this.defaultSelected;
-						else				 el.find('option').resetForm();
+						if (tag === 'option') {
+							this.selected = this.defaultSelected;
+						} else {
+							el.find('option').resetForm();
+						}
+					} else {
+						select.resetForm();
 					}
-					else select.resetForm();
 					return true;
 				case 'select':
 					el.find('option').each(function(i) {
@@ -1302,14 +1306,17 @@
 				case 'label':
 					var forEl = $(el.attr('for'));
 					var list = el.find('input,select,textarea');
-					if (forEl[0]) list.unshift( forEl[0] );
+					if (forEl[0]) {
+						list.unshift( forEl[0] );
+					}
 					list.resetForm();
 					return true;
 				case 'form':
 					// guard against an input with the name of 'reset'
 					// note that IE reports the reset function as an 'object'
-					if (typeof this.reset == 'function' || (typeof this.reset == 'object' && !this.reset.nodeType))
+					if (typeof this.reset === 'function' || (typeof this.reset === 'object' && !this.reset.nodeType)) {
 						this.reset();
+					}
 					return true;
 				default:
 					el.find('form,input,label,select,textarea').resetForm();
@@ -1340,12 +1347,12 @@
 		}
 		return this.each(function() {
 			var t = this.type;
-			if (t == 'checkbox' || t == 'radio') {
+			if (t === 'checkbox' || t === 'radio') {
 				this.checked = select;
 			}
-			else if (this.tagName.toLowerCase() == 'option') {
+			else if (this.tagName.toLowerCase() === 'option') {
 				var $sel = $(this).parent('select');
-				if (select && $sel[0] && $sel[0].type == 'select-one') {
+				if (select && $sel[0] && $sel[0].type === 'select-one') {
 					// deselect all other options
 					$sel.find('option').selected(false);
 				}
