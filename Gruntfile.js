@@ -5,6 +5,17 @@ module.exports = function(grunt) {
 			banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
 		},
 
+		mochaTest: {
+			test: {
+				options: {
+
+					reporter: 'spec',
+					clearRequireCache: true
+				},
+				src: ['test/**/*.js']
+			},
+		},
+
 		// Minifies JS files
 		uglify: {
 			options: {
@@ -20,12 +31,14 @@ module.exports = function(grunt) {
 					extDot:	'last'
 				}]
 			}
-		},
+		}
 	});
 
 	// Load tasks
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-mocha-test');
 
 	// Default task.
-	grunt.registerTask('default', [ 'uglify' ]);
+	grunt.registerTask('test', [ 'mochaTest' ]);
+	grunt.registerTask('default', [ 'test', 'uglify' ]);
 };

@@ -21,12 +21,17 @@
   "devDependencies": {
     "grunt": "~1",
     "grunt-contrib-uglify": "~2",
+    "grunt-mocha-test": "*",
+
+    "chai": "*",
+    "mocha": "*",
 
     "gulp": "~3",
     "gulp-util": "~3",
     "gulp-uglify": "~2",
     "gulp-concat": "~2",
-    "gulp-jshint": "~2"
+    "gulp-jshint": "~2",
+    "jshint": "~2"
   },
   "jam": {
     "main": "src/jquery.form.js",
