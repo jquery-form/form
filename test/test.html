@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Example Mocha Test</title>
+	<link href="../node_modules/mocha/mocha.css" rel="stylesheet">
+</head>
+<body>
+	<!-- Required for browser reporter -->
+	<div id="mocha"></div>
+
+	<!-- mocha -->
+	<script src="../node_modules/mocha/mocha.js"></script>
+	<script src="../node_modules/chai/chai.js"></script>
+	<script>
+		// This will be overridden by mocha-helper if you run with grunt
+		mocha.setup('bdd');
+		mocha.reporter('html');
+	</script>
+
+	<script src="test.js"></script>
+
+	<!-- run mocha -->
+	<script>
+		// Only tests run in real browser, injected script run if options.run == true
+		if (navigator.userAgent.indexOf('PhantomJS') < 0) {
+			mocha.run();
+		}
+	</script>
+</body>
+</html>

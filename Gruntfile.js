@@ -5,15 +5,13 @@ module.exports = function(grunt) {
 			banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
 		},
 
-		mochaTest: {
-			test: {
-				options: {
-
-					reporter: 'spec',
-					clearRequireCache: true
-				},
-				src: ['test/**/*.js']
+		mocha: {
+			all: {
+				src: ['test/**/*.html'],
 			},
+			options: {
+				run: true
+			}
 		},
 
 		// Minifies JS files
@@ -36,9 +34,9 @@ module.exports = function(grunt) {
 
 	// Load tasks
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-mocha-test');
+	grunt.loadNpmTasks('grunt-mocha');
 
 	// Default task.
-	grunt.registerTask('test', [ 'mochaTest' ]);
+	grunt.registerTask('test', [ 'mocha' ]);
 	grunt.registerTask('default', [ 'test', 'uglify' ]);
 };
