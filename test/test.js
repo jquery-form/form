@@ -44,4 +44,12 @@ describe('form', function() {
 		assert.strictEqual(arrayValue(a, 'action'), '1', 'input name=action');
 		assert.strictEqual(arrayValue(a, 'method'), '2', 'input name=method');
 	});
+
+	it('formToArray: semantic test', function() {
+	    var formData = $('#form2').formToArray(true);
+	    var testData = ['a','b','c','d','e','f'];
+	    for (var i=0; i < 6; i++) {
+	        assert.strictEqual(formData[i].name, testData[i], 'match value at index=' + i);
+	    }
+	});
 });
