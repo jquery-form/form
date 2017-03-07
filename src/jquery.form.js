@@ -627,11 +627,11 @@
 								// if using the $.param format that allows for multiple values with the same name
 								if($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
 									extraInputs.push(
-									$('<input type="hidden" name="'+s.extraData[n].name+'">', ownerDocument).val(s.extraData[n].value)
+									$('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument).val(s.extraData[n].value)
 										.appendTo(form)[0]);
 								} else {
 									extraInputs.push(
-									$('<input type="hidden" name="'+n+'">', ownerDocument).val(s.extraData[n])
+									$('<input type="hidden" name="' + n + '">', ownerDocument).val(s.extraData[n])
 										.appendTo(form)[0]);
 								}
 							}
@@ -721,7 +721,7 @@
 					}
 
 					var isXml = s.dataType === 'xml' || doc.XMLDocument || $.isXMLDoc(doc);
-					log('isXml='+isXml);
+					log('isXml=' + isXml);
 					if (!isXml && window.opera && (doc.body === null || !doc.body.innerHTML)) {
 						if (--domCheckCount) {
 							// in some browsers (Opera) the iframe DOM is not always traversable when
@@ -1059,7 +1059,7 @@
 		}
 
 		var i,j,n,v,el,max,jmax;
-		for(i=0, max=els.length; i < max; i++) {
+		for(i = 0, max = els.length; i < max; i++) {
 			el = els[i];
 			n = el.name;
 			if (!n || el.disabled) {
@@ -1070,7 +1070,7 @@
 				// handle image inputs on the fly when semantic == true
 				if(form.clk === el) {
 					a.push({name: n, value: $(el).val(), type: el.type});
-					a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
+					a.push({name: n + '.x', value: form.clk_x}, {name: n + '.y', value: form.clk_y});
 				}
 				continue;
 			}
@@ -1080,7 +1080,7 @@
 				if (elements) {
 					elements.push(el);
 				}
-				for(j=0, jmax=v.length; j < jmax; j++) {
+				for(j = 0, jmax = v.length; j < jmax; j++) {
 					a.push({name: n, value: v[j]});
 				}
 
@@ -1090,7 +1090,7 @@
 				}
 				var files = el.files;
 				if (files.length) {
-					for (j=0; j < files.length; j++) {
+					for (j = 0; j < files.length; j++) {
 						a.push({name: n, value: files[j], type: el.type});
 					}
 				} else {
@@ -1112,7 +1112,7 @@
 			n = input.name;
 			if (n && !input.disabled && input.type === 'image') {
 				a.push({name: n, value: $input.val()});
-				a.push({name: n+'.x', value: form.clk_x}, {name: n+'.y', value: form.clk_y});
+				a.push({name: n + '.x', value: form.clk_x}, {name: n + '.y', value: form.clk_y});
 			}
 		}
 
@@ -1141,7 +1141,7 @@
 			}
 			var v = $.fieldValue(this, successful);
 			if (v && v.constructor === Array) {
-				for (var i=0,max=v.length; i < max; i++) {
+				for (var i = 0,max = v.length; i < max; i++) {
 					a.push({name: n, value: v[i]});
 				}
 
