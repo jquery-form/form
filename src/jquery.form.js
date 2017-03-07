@@ -98,7 +98,7 @@
 			return this.attr.apply(this, arguments);
 		}
 		var val = this.prop.apply(this, arguments);
-		if (( val && val.jquery ) || typeof val === 'string') {
+		if ((val && val.jquery) || typeof val === 'string') {
 			return val;
 		}
 
@@ -128,7 +128,7 @@
 		if (typeof options === 'function') {
 			options = {success: options};
 
-		} else if ( typeof options === 'string' || ( options === false && arguments.length > 0 ) ) {
+		} else if (typeof options === 'string' || (options === false && arguments.length > 0)) {
 			options = {
 				'url' : options,
 				'data' : data,
@@ -178,7 +178,7 @@
 		}
 
 		var traditional = options.traditional;
-		if ( traditional === undefined ) {
+		if (traditional === undefined) {
 			traditional = $.ajaxSettings.traditional;
 		}
 
@@ -207,7 +207,7 @@
 
 		var q = $.param(a, traditional);
 		if (qx) {
-			q = ( q ? (q + '&' + qx) : qx );
+			q = (q ? (q + '&' + qx) : qx);
 		}
 		if (options.type.toUpperCase() === 'GET') {
 			options.url += (options.url.indexOf('?') >= 0 ? '&' : '?') + q;
@@ -417,7 +417,7 @@
 				// ensure that every serialized input is still enabled
 				for (i = 0; i < elements.length; i++) {
 					el = $(elements[i]);
-					if ( hasProp ) {
+					if (hasProp) {
 						el.prop('disabled', false);
 					} else {
 						el.removeAttr('disabled');
@@ -577,7 +577,7 @@
 
 				// update form attrs in IE friendly way
 				form.setAttribute('target', id);
-				if (!method || /post/i.test(method) ) {
+				if (!method || /post/i.test(method)) {
 					form.setAttribute('method', 'POST');
 				}
 				if (a !== s.url) {
@@ -750,7 +750,7 @@
 					};
 					// support for XHR 'status' & 'statusText' emulation :
 					if (docRoot) {
-						xhr.status = Number( docRoot.getAttribute('status') ) || xhr.status;
+						xhr.status = Number(docRoot.getAttribute('status')) || xhr.status;
 						xhr.statusText = docRoot.getAttribute('statusText') || xhr.statusText;
 					}
 
@@ -762,7 +762,7 @@
 						if (ta) {
 							xhr.responseText = ta.value;
 							// support for XHR 'status' & 'statusText' emulation :
-							xhr.status = Number( ta.getAttribute('status') ) || xhr.status;
+							xhr.status = Number(ta.getAttribute('status')) || xhr.status;
 							xhr.statusText = ta.getAttribute('statusText') || xhr.statusText;
 
 						} else if (scr) {
@@ -874,7 +874,7 @@
 				return window['eval']('(' + s + ')');			// eslint-disable-line dot-notation
 			};
 
-			var httpData = function( xhr, type, s ) { // mostly lifted from jq1.4.4
+			var httpData = function(xhr, type, s) { // mostly lifted from jq1.4.4
 
 				var ct = xhr.getResponseHeader('content-type') || '',
 					xml = ((type === 'xml' || !type) && ct.indexOf('xml') >= 0),
@@ -951,7 +951,7 @@
 			return this;
 		}
 
-		if ( options.delegation ) {
+		if (options.delegation) {
 			$(document)
 				.off('submit.form-plugin', this.selector, doAjaxSubmit)
 				.off('click.form-plugin', this.selector, captureSubmittingElement)
@@ -1045,7 +1045,7 @@
 		// FinesseRus: in non-IE browsers outside fields are already included in form.elements.
 		if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
 			els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
-			if ( els2.length ) {
+			if (els2.length) {
 				els = (els || []).concat(els2);
 			}
 		}
@@ -1298,8 +1298,8 @@
 				// indicating a special test; for example:
 				// $('#myForm').clearForm('.special:hidden')
 				// the above would clean hidden inputs that have the class of 'special'
-				if ( (includeHidden === true && /hidden/.test(t)) ||
-					(typeof includeHidden === 'string' && $(this).is(includeHidden)) ) {
+				if ((includeHidden === true && /hidden/.test(t)) ||
+					(typeof includeHidden === 'string' && $(this).is(includeHidden))) {
 					this.value = '';
 				}
 			}
@@ -1358,7 +1358,7 @@
 				var forEl = $(el.attr('for'));
 				var list = el.find('input,select,textarea');
 				if (forEl[0]) {
-					list.unshift( forEl[0] );
+					list.unshift(forEl[0]);
 				}
 				list.resetForm();
 
