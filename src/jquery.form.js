@@ -576,7 +576,7 @@
 					et = $form.attr('enctype') || $form.attr('encoding') || mp;
 
 				// update form attrs in IE friendly way
-				form.setAttribute('target',id);
+				form.setAttribute('target', id);
 				if (!method || /post/i.test(method) ) {
 					form.setAttribute('method', 'POST');
 				}
@@ -605,11 +605,11 @@
 						var state = getDoc(io).readyState;
 						log('state = ' + state);
 						if (state && state.toLowerCase() === 'uninitialized') {
-							setTimeout(checkState,50);
+							setTimeout(checkState, 50);
 						}
 
 					} catch (e) {
-						log('Server abort: ' , e, ' (', e.name, ')');
+						log('Server abort: ', e, ' (', e.name, ')');
 						cb(SERVER_ABORT);
 						if (timeoutHandle) {
 							clearTimeout(timeoutHandle);
@@ -648,7 +648,7 @@
 					} else {
 						io.addEventListener('load', cb, false);
 					}
-					setTimeout(checkState,15);
+					setTimeout(checkState, 15);
 
 					try {
 						form.submit();
@@ -660,7 +660,7 @@
 
 				} finally {
 					// reset attrs and remove "extra" input elements
-					form.setAttribute('action',a);
+					form.setAttribute('action', a);
 					form.setAttribute('enctype', et); // #380
 					if(t) {
 						form.setAttribute('target', t);
@@ -790,7 +790,7 @@
 					}
 
 				} catch (err) {
-					log('error caught: ',err);
+					log('error caught: ', err);
 					status = 'error';
 					xhr.error = errMsg = (err || status);
 				}
@@ -940,7 +940,7 @@
 			if (!$.isReady && o.s) {
 				log('DOM not ready, queuing ajaxForm');
 				$(function() {
-					$(o.s,o.c).ajaxForm(options);
+					$(o.s, o.c).ajaxForm(options);
 				});
 
 				return this;
@@ -1058,7 +1058,7 @@
 			els = $.map(els, filtering);
 		}
 
-		var i,j,n,v,el,max,jmax;
+		var i, j, n, v, el, max, jmax;
 		for(i = 0, max = els.length; i < max; i++) {
 			el = els[i];
 			n = el.name;
@@ -1141,7 +1141,7 @@
 			}
 			var v = $.fieldValue(this, successful);
 			if (v && v.constructor === Array) {
-				for (var i = 0,max = v.length; i < max; i++) {
+				for (var i = 0, max = v.length; i < max; i++) {
 					a.push({name: n, value: v[i]});
 				}
 
@@ -1422,7 +1422,7 @@
 		if (!$.fn.ajaxSubmit.debug) {
 			return;
 		}
-		var msg = '[jquery.form] ' + Array.prototype.join.call(arguments,'');
+		var msg = '[jquery.form] ' + Array.prototype.join.call(arguments, '');
 		if (window.console && window.console.log) {
 			window.console.log(msg);
 
