@@ -22,6 +22,7 @@
     "grunt": "~1",
     "grunt-contrib-uglify": "~2",
     "grunt-mocha": "*",
+    "grunt-eslint": "*",
 
     "chai": "*",
     "mocha": "*",
