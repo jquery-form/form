@@ -68,4 +68,9 @@ describe('form', function() {
 			assert.strictEqual(a[i].value, expected[i].value, 'Value: ' + a[i].value + ' = ' + expected[i].value);
 		}
 	});
+
+	it('formToArray: outside fields', function() {
+		var formData = $('#form8').formToArray();
+		assert.strictEqual(formData.length, 2, 'There are two "successful" elements of the form');
+	});
 });

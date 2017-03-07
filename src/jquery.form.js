@@ -1002,7 +1002,8 @@
 		}
 
 		// #386; account for inputs outside the form which use the 'form' attribute
-		if ( formId ) {
+		// FinesseRus: in non-IE browsers outside fields are already included in form.elements.
+		if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
 			els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
 			if ( els2.length ) {
 				els = (els || []).concat(els2);
