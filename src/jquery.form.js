@@ -801,7 +801,7 @@
 				}
 
 				if (xhr.status) { // we've set xhr.status
-					status = (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) ? 'success' : 'error';
+					status = ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) ? 'success' : 'error';
 				}
 
 				// ordering of these callbacks/triggers is odd, but that's how $.ajax does it
@@ -833,7 +833,7 @@
 					$.event.trigger('ajaxComplete', [xhr, s]);
 				}
 
-				if (g && ! --$.active) {
+				if (g && !--$.active) {
 					$.event.trigger('ajaxStop');
 				}
 
@@ -877,7 +877,7 @@
 			var httpData = function( xhr, type, s ) { // mostly lifted from jq1.4.4
 
 				var ct = xhr.getResponseHeader('content-type') || '',
-					xml = type === 'xml' || !type && ct.indexOf('xml') >= 0,
+					xml = ((type === 'xml' || !type) && ct.indexOf('xml') >= 0),
 					data = xml ? xhr.responseXML : xhr.responseText;
 
 				if (xml && data.documentElement.nodeName === 'parsererror') {
@@ -889,9 +889,9 @@
 					data = s.dataFilter(data, type);
 				}
 				if (typeof data === 'string') {
-					if (type === 'json' || !type && ct.indexOf('json') >= 0) {
+					if ((type === 'json' || !type) && ct.indexOf('json') >= 0) {
 						data = parseJSON(data);
-					} else if (type === 'script' || !type && ct.indexOf('javascript') >= 0) {
+					} else if ((type === 'script' || !type) && ct.indexOf('javascript') >= 0) {
 						$.globalEval(data);
 					}
 				}
@@ -1149,6 +1149,7 @@
 				a.push({name: this.name, value: v});
 			}
 		});
+
 		// hand off to jQuery.param for proper encoding
 		return $.param(a);
 	};
@@ -1296,7 +1297,7 @@
 				// $('#myForm').clearForm('.special:hidden')
 				// the above would clean hidden inputs that have the class of 'special'
 				if ( (includeHidden === true && /hidden/.test(t)) ||
-					 (typeof includeHidden === 'string' && $(this).is(includeHidden)) ) {
+					(typeof includeHidden === 'string' && $(this).is(includeHidden)) ) {
 					this.value = '';
 				}
 			}
@@ -1321,7 +1322,7 @@
 			switch (tag) {
 			case 'input':
 				this.checked = this.defaultChecked;
-					// fall-through
+					// fall through
 			case 'textarea':
 				this.value = this.defaultValue;
 
