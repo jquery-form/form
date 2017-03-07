@@ -610,7 +610,7 @@
 
 					} catch (e) {
 						log('Server abort: ', e, ' (', e.name, ')');
-						cb(SERVER_ABORT);
+						cb(SERVER_ABORT);				// eslint-disable-line callback-return
 						if (timeoutHandle) {
 							clearTimeout(timeoutHandle);
 						}
@@ -778,11 +778,11 @@
 						}
 
 					} else if (dt === 'xml' && !xhr.responseXML && xhr.responseText) {
-						xhr.responseXML = toXml(xhr.responseText);
+						xhr.responseXML = toXml(xhr.responseText);			// eslint-disable-line no-use-before-define
 					}
 
 					try {
-						data = httpData(xhr, dt, s);
+						data = httpData(xhr, dt, s);						// eslint-disable-line no-use-before-define
 
 					} catch (err) {
 						status = 'parsererror';
@@ -871,7 +871,7 @@
 			};
 			var parseJSON = $.parseJSON || function(s) {
 				/* jslint evil:true */
-				return window['eval']('(' + s + ')');
+				return window['eval']('(' + s + ')');			// eslint-disable-line dot-notation
 			};
 
 			var httpData = function( xhr, type, s ) { // mostly lifted from jq1.4.4
@@ -1218,10 +1218,12 @@
 			successful = true;
 		}
 
+		/* eslint-disable no-mixed-operators */
 		if (successful && (!n || el.disabled || t === 'reset' || t === 'button' ||
 			(t === 'checkbox' || t === 'radio') && !el.checked ||
 			(t === 'submit' || t === 'image') && el.form && el.form.clk !== el ||
 			tag === 'select' && el.selectedIndex === -1)) {
+		/* eslint-enable no-mixed-operators */
 			return null;
 		}
 
@@ -1342,7 +1344,7 @@
 
 				return true;
 			case 'select':
-				el.find('option').each(function(i) {
+				el.find('option').each(function(i) {				// eslint-disable-line consistent-return
 					this.selected = this.defaultSelected;
 					if (this.defaultSelected && !el[0].multiple) {
 						el[0].selectedIndex = i;
