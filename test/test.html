@@ -75,6 +75,20 @@
 			<input name="f" type="text">
 			<input type="reset" name="resetButton" value="Reset">
 		</div></form>
+
+		<!-- form6, 'option' testing -->
+		<form id="form6" action="text.php" method="get"><div>
+			<select name="A">
+				<option value="" selected="selected">EMPTY_STRING</option>	<!-- TEST A: value === empty string -->
+			</select>
+			<select name="B">
+				<option selected="selected">MISSING_ATTR</option>			<!-- TEST B: no value attr -->
+			</select>
+			<select name="C" multiple="multiple">
+				<option value="" selected="selected">EMPTY_STRING</option>
+				<option selected="selected">MISSING_ATTR</option>
+			</select>
+		</div></form>
 	</div>
 
 

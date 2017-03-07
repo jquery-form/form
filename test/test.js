@@ -46,10 +46,26 @@ describe('form', function() {
 	});
 
 	it('formToArray: semantic test', function() {
-	    var formData = $('#form2').formToArray(true);
-	    var testData = ['a','b','c','d','e','f'];
-	    for (var i=0; i < 6; i++) {
-	        assert.strictEqual(formData[i].name, testData[i], 'match value at index=' + i);
-	    }
+		var formData = $('#form2').formToArray(true);
+		var testData = ['a','b','c','d','e','f'];
+		for (var i=0; i < 6; i++) {
+			assert.strictEqual(formData[i].name, testData[i], 'match value at index=' + i);
+		}
+	});
+
+	it('formToArray: text promotion for missing value attributes', function() {
+		var expected = [
+			{ name: 'A', value: ''},
+			{ name: 'B', value: 'MISSING_ATTR'},
+			{ name: 'C', value: ''},
+			{ name: 'C', value: 'MISSING_ATTR'}
+		];
+		var a = $('#form6').formToArray(true);
+
+		// verify all the option values
+		for (var i=0; i < a.length; i++) {
+			assert.strictEqual(a[i].name, expected[i].name, 'Name: '  + a[i].name  + ' = ' + expected[i].name);
+			assert.strictEqual(a[i].value, expected[i].value, 'Value: ' + a[i].value + ' = ' + expected[i].value);
+		}
 	});
 });
