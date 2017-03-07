@@ -732,11 +732,11 @@
 							return;
 						}
 						// let this fall through because server response could be an empty document
-						//log('Could not access iframe DOM after mutiple tries.');
-						//throw 'DOMException: not available';
+						// log('Could not access iframe DOM after mutiple tries.');
+						// throw 'DOMException: not available';
 					}
 
-					//log('response detected');
+					// log('response detected');
 					var docRoot = doc.body ? doc.body : doc.documentElement;
 					xhr.responseText = docRoot ? docRoot.innerHTML : null;
 					xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
@@ -850,7 +850,7 @@
 				setTimeout(function() {
 					if (!s.iframeTarget) {
 						$io.remove();
-					} else { //adding else to clean up existing iframe response.
+					} else { // adding else to clean up existing iframe response.
 						$io.attr('src', s.iframeSrc);
 					}
 					xhr.responseXML = null;
@@ -870,7 +870,7 @@
 				return (doc && doc.documentElement && doc.documentElement.nodeName !== 'parsererror') ? doc : null;
 			};
 			var parseJSON = $.parseJSON || function(s) {
-				/*jslint evil:true */
+				/* jslint evil:true */
 				return window['eval']('(' + s + ')');
 			};
 
@@ -968,7 +968,7 @@
 
 	// private event handlers
 	function doAjaxSubmit(e) {
-		/*jshint validthis:true */
+		/* jshint validthis:true */
 		var options = e.data;
 		if (!e.isDefaultPrevented()) { // if event has been canceled, don't proceed
 			e.preventDefault();
@@ -977,7 +977,7 @@
 	}
 
 	function captureSubmittingElement(e) {
-		/*jshint validthis:true */
+		/* jshint validthis:true */
 		var target = e.target;
 		var $el = $(target);
 		if (!($el.is('[type=submit],[type=image]'))) {
@@ -1124,7 +1124,7 @@
 	 * in the format: name1=value1&amp;name2=value2
 	 */
 	$.fn.formSerialize = function(semantic) {
-		//hand off to jQuery.param for proper encoding
+		// hand off to jQuery.param for proper encoding
 		return $.param(this.formToArray(semantic));
 	};
 
@@ -1149,7 +1149,7 @@
 				a.push({name: this.name, value: v});
 			}
 		});
-		//hand off to jQuery.param for proper encoding
+		// hand off to jQuery.param for proper encoding
 		return $.param(a);
 	};
 
