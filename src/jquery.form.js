@@ -407,8 +407,10 @@
 			s = $.extend(true, {}, $.ajaxSettings, options);
 			s.context = s.context || s;
 			id = 'jqFormIO' + (new Date().getTime());
+			var ownerDocument = form.ownerDocument;
+			var $body = $form.closest('body');
 			if (s.iframeTarget) {
-				$io = $(s.iframeTarget, form.ownerDocument);
+				$io = $(s.iframeTarget, ownerDocument);
 				n = $io.attr2('name');
 				if (!n) {
 					$io.attr2('name', id);
@@ -418,7 +420,7 @@
 				}
 			}
 			else {
-				$io = $('<iframe name="' + id + '" src="'+ s.iframeSrc +'" />', form.ownerDocument);
+				$io = $('<iframe name="' + id + '" src="'+ s.iframeSrc +'" />', ownerDocument);
 				$io.css({ position: 'absolute', top: '-1000px', left: '-1000px' });
 			}
 			io = $io[0];
@@ -597,11 +599,11 @@
 								// if using the $.param format that allows for multiple values with the same name
 								if($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
 									extraInputs.push(
-									$('<input type="hidden" name="'+s.extraData[n].name+'">', form.ownerDocument).val(s.extraData[n].value)
+									$('<input type="hidden" name="'+s.extraData[n].name+'">', ownerDocument).val(s.extraData[n].value)
 										.appendTo(form)[0]);
 								} else {
 									extraInputs.push(
-									$('<input type="hidden" name="'+n+'">', form.ownerDocument).val(s.extraData[n])
+									$('<input type="hidden" name="'+n+'">', ownerDocument).val(s.extraData[n])
 										.appendTo(form)[0]);
 								}
 							}
@@ -610,7 +612,7 @@
 
 					if (!s.iframeTarget) {
 						// add iframe to doc and submit the form
-						$io.appendTo($form.closest('body'));
+						$io.appendTo($body);
 					}
 					if (io.attachEvent) {
 						io.attachEvent('onload', cb);
