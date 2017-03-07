@@ -625,7 +625,7 @@
 						for (var n in s.extraData) {
 							if (s.extraData.hasOwnProperty(n)) {
 								// if using the $.param format that allows for multiple values with the same name
-								if($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
+								if ($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
 									extraInputs.push(
 									$('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument).val(s.extraData[n].value)
 										.appendTo(form)[0]);
@@ -662,7 +662,7 @@
 					// reset attrs and remove "extra" input elements
 					form.setAttribute('action', a);
 					form.setAttribute('enctype', et); // #380
-					if(t) {
+					if (t) {
 						form.setAttribute('target', t);
 					} else {
 						$form.removeAttr('target');
@@ -685,7 +685,7 @@
 				}
 
 				doc = getDoc(io);
-				if(!doc) {
+				if (!doc) {
 					log('cannot access response document');
 					e = SERVER_ABORT;
 				}
@@ -1059,7 +1059,7 @@
 		}
 
 		var i, j, n, v, el, max, jmax;
-		for(i = 0, max = els.length; i < max; i++) {
+		for (i = 0, max = els.length; i < max; i++) {
 			el = els[i];
 			n = el.name;
 			if (!n || el.disabled) {
@@ -1068,7 +1068,7 @@
 
 			if (semantic && form.clk && el.type === 'image') {
 				// handle image inputs on the fly when semantic == true
-				if(form.clk === el) {
+				if (form.clk === el) {
 					a.push({name: n, value: $(el).val(), type: el.type});
 					a.push({name: n + '.x', value: form.clk_x}, {name: n + '.y', value: form.clk_y});
 				}
@@ -1080,7 +1080,7 @@
 				if (elements) {
 					elements.push(el);
 				}
-				for(j = 0, jmax = v.length; j < jmax; j++) {
+				for (j = 0, jmax = v.length; j < jmax; j++) {
 					a.push({name: n, value: v[j]});
 				}
 
@@ -1232,7 +1232,7 @@
 			var a = [], ops = el.options;
 			var one = (t === 'select-one');
 			var max = (one ? index + 1 : ops.length);
-			for(var i = (one ? index : 0); i < max; i++) {
+			for (var i = (one ? index : 0); i < max; i++) {
 				var op = ops[i];
 				if (op.selected && !op.disabled) {
 					var v = op.value;
