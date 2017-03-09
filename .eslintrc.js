@@ -69,7 +69,7 @@ module.exports = {
 		"id-blacklist": "error",
 		"id-length": [
 			"warn",
-			{ "exceptions": ["i","j","k","l"] }
+			{ "exceptions": ["$","e","i","j"] }
 		],
 		"id-match": "error",
 		"indent": [
