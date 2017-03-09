@@ -67,7 +67,7 @@ describe('form', function() {
 
 		// verify all the option values
 		for (var i=0; i < a.length; i++) {
-			assert.strictEqual(a[i].name, expected[i].name, 'Name: '  + a[i].name  + ' = ' + expected[i].name);
+			assert.strictEqual(a[i].name, expected[i].name, 'Name: ' + a[i].name + ' = ' + expected[i].name);
 			assert.strictEqual(a[i].value, expected[i].value, 'Value: ' + a[i].value + ' = ' + expected[i].value);
 		}
 	});
