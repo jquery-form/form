@@ -18,7 +18,7 @@
 	} else if (typeof module === 'object' && module.exports) {
 		// Node/CommonJS
 		module.exports = function( root, jQuery ) {
-			if ( jQuery === undefined ) {
+			if (typeof jQuery === 'undefined') {
 				// require('jQuery') returns a factory that requires window to build a jQuery instance, we normalize how we use modules
 				// that require this pattern but the window provided is a noop if it's defined (how jquery works)
 				if (typeof window !== 'undefined') {
@@ -85,7 +85,7 @@
 	var feature = {};
 
 	feature.fileapi = $('<input type="file">').get(0).files !== undefined;
-	feature.formdata = window.FormData !== undefined;
+	feature.formdata = (typeof window.FormData !== 'undefined');
 
 	var hasProp = !!$.fn.prop;
 
@@ -141,7 +141,7 @@
 				options.success = onSuccess;
 			}
 
-		} else if (options === undefined) {
+		} else if (typeof options === 'undefined') {
 			options = {};
 		}
 
@@ -183,7 +183,7 @@
 
 		var traditional = options.traditional;
 
-		if (traditional === undefined) {
+		if (typeof traditional === 'undefined') {
 			traditional = $.ajaxSettings.traditional;
 		}
 
@@ -849,7 +849,7 @@
 					}
 
 				} else if (status) {
-					if (errMsg === undefined) {
+					if (typeof errMsg === 'undefined') {
 						errMsg = xhr.statusText;
 					}
 					if (s.error) {
@@ -1031,7 +1031,7 @@
 		form.clk = target;
 
 		if (target.type === 'image') {
-			if (e.offsetX !== undefined) {
+			if (typeof e.offsetX !== 'undefined') {
 				form.clk_x = e.offsetX;
 				form.clk_y = e.offsetY;
 
@@ -1078,7 +1078,7 @@
 
 		var form = this[0];
 		var formId = this.attr('id');
-		var els = (semantic || form.elements === undefined) ? form.getElementsByTagName('*') : form.elements;
+		var els = (semantic || typeof form.elements === 'undefined') ? form.getElementsByTagName('*') : form.elements;
 		var els2;
 
 		if (els) {
@@ -1270,7 +1270,7 @@
 	$.fieldValue = function(el, successful) {
 		var n = el.name, t = el.type, tag = el.tagName.toLowerCase();
 
-		if (successful === undefined) {
+		if (typeof successful === 'undefined') {
 			successful = true;
 		}
 
@@ -1457,7 +1457,7 @@
 	 * Enables or disables any matching elements.
 	 */
 	$.fn.enable = function(b) {
-		if (b === undefined) {
+		if (typeof b === 'undefined') {
 			b = true;
 		}
 
@@ -1471,7 +1471,7 @@
 	 * selects/deselects and matching option elements.
 	 */
 	$.fn.selected = function(select) {
-		if (select === undefined) {
+		if (typeof select === 'undefined') {
 			select = true;
 		}
 
