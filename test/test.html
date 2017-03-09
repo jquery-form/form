@@ -14,7 +14,7 @@
 	<!-- Test HTML -->
 	<div id="main" style="display: none;">
 		<!-- form1 -->
-		<form id="form1" action="text.php" method="get">
+		<form id="form1" action="ajax/text.html" method="get">
 			<div>
 				<input type="hidden" name="Hidden" value="hiddenValue">
 				<input name="Name" type="text" value="MyName1">
@@ -66,7 +66,7 @@
 		</form>
 
 		<!-- form2 -->
-		<form id="form2" action="text.php" method="get">
+		<form id="form2" action="ajax/text.html" method="get">
 			<div>
 				<input name="a" type="text">
 				<textarea name="b" rows="1" cols="1"></textarea>
@@ -79,34 +79,34 @@
 		</form>
 
 		<!-- form3 -->
-		<form id="form3" action="text.php" method="post">
+		<form id="form3" action="ajax/text.html" method="post">
 			<div>
 				<input name="a" type="text">
 			</div>
 		</form>
 
 		<!-- form4 -->
-		<form id="form4" action="text.php" method="get">
+		<form id="form4" action="ajax/text.html" method="get">
 			<div>
 				<input name="a" type="text">
 				<input type="submit" id="submitForm4">
 				<input type="submit" id="submitForm4withName" name="form4inputName">
-				<input type="image"  id="form4imageSubmit" name="myImage" src="submit.gif">
+				<input type="image"  id="form4imageSubmit" name="myImage" src="img/submit.gif">
 			</div>
 		</form>
 
 		<!-- form5 -->
-		<form id="form5" action="text.php?test=form" method="get">
+		<form id="form5" action="ajax/text.html?test=form" method="get">
 			<div>
 				<input name="a" type="text">
 				<input type="submit">
 				<input type="submit" name="form5inputName">
-				<input type="image"  id="form5imageSubmit" name="myImage" src="submit.gif">
+				<input type="image"  id="form5imageSubmit" name="myImage" src="img/submit.gif">
 			</div>
 		</form>
 
 		<!-- form6, 'option' testing -->
-		<form id="form6" action="text.php" method="get">
+		<form id="form6" action="ajax/text.html" method="get">
 			<div>
 				<select name="A">
 					<option value="" selected="selected">EMPTY_STRING</option>	<!-- TEST A: value === empty string -->
@@ -122,20 +122,20 @@
 		</form>
 
 		<!-- form7, 'enctype' testing -->
-		<form id="form7" action="text.php" method="post" enctype="text/css">
+		<form id="form7" action="ajax/text.html" method="post" enctype="text/css">
 			<div>
 				<textarea name="doc">body { padding: 0}</textarea>
 			</div>
 		</form>
 
-		<form id="form8" action="text.php" method="post">
+		<form id="form8" action="ajax/text.html" method="post">
 			<div>
 				<textarea name="ta">blah</textarea>
 				<input type="submit" id="submitForm8">
 			</div>
 		</form>
 
-		<form id="form9" action="text.php" method="post">
+		<form id="form9" action="ajax/text.html" method="post">
 			<div>
 				<textarea name="ta">blah</textarea>
 				<input type="submit" id="submitForm9">
@@ -160,7 +160,7 @@
 			<input type="submit" value="button">
 		</div>
 
-		<form style="display:none" id="fieldTest" action="text.php" method="post">
+		<form style="display:none" id="fieldTest" action="ajax/text.html" method="post">
 			<div>
 				<select name="A">
 					<option value="1" selected="selected">ONE</option>

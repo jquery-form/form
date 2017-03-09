@@ -1,4 +1,4 @@
-/* global chai */
+/* global chai, scriptCount */
 
 'use strict';
 
@@ -39,7 +39,7 @@ describe('form', function() {
 
 	it('"action" and "method" form attributes', function() {
 		var f = $('#form1');
-		assert.strictEqual(f.attr('action'), 'text.php', 'form "action"');
+		assert.strictEqual(f.attr('action'), 'ajax/text.html', 'form "action"');
 		assert.strictEqual(f.attr('method'), 'get', 'form "method"');
 	});
 
@@ -212,7 +212,6 @@ describe('form', function() {
 		assert.ok(!el.checked, 'success: ' + el.checked);
 	});
 
-
 	// test clearForm
 	it('clearForm (radio)', function() {
 		var el = $('#form1 input:radio:checked')[0];
@@ -283,7 +282,7 @@ describe('form', function() {
 
 		var opts = {
 			target: '#targetDiv',
-			url:	'doc-with-scripts.html?' + new Date().getTime(),
+			url:	'ajax/doc-with-scripts.html?' + new Date().getTime(),
 			success: function(responseText) { // post-callback
 				assert.ok(true, 'success-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
@@ -367,7 +366,7 @@ describe('form', function() {
 		// stop();
 
 		var opts = {
-			url: 'json.json',
+			url: 'ajax/json.json',
 			dataType: 'json',
 			success: function(data, statusText) { // post-submit callback
 				// assert that the json data was evaluated
@@ -387,7 +386,7 @@ describe('form', function() {
 		// stop();
 
 		var opts = {
-			url: 'script.txt?' + new Date().getTime(), // don't let ie cache it
+			url: 'ajax/script.txt?' + new Date().getTime(), // don't let ie cache it
 			dataType: 'script',
 			success: function(responseText, statusText) { // post-submit callback
 				assert.ok(typeof formScriptTest == 'function', 'script evaluated');
@@ -405,7 +404,7 @@ describe('form', function() {
 		// stop();
 
 		var opts = {
-			url: 'test.xml',
+			url: 'ajax/test.xml',
 			dataType: 'xml',
 			success: function(responseXML, statusText) { // post-submit callback
 				assert.ok(typeof responseXML == 'object', 'data type xml');
@@ -471,7 +470,7 @@ describe('form', function() {
 			},
 			// url and method must be provided for a pseudo form since they can
 			// not be extracted from the markup
-			url:  'text.php',
+			url:  'ajax/text.html',
 			type: 'post'
 		};
 
@@ -490,7 +489,7 @@ describe('form', function() {
 				assert.ok(data.name == 'jquery-test', 'evaled response');
 				// start();
 			},
-			url: 'json.txt'
+			url: 'ajax/json.txt'
 		};
 
 		// expect(2);
@@ -617,7 +616,7 @@ describe('form', function() {
 		// stop();
 
 		var opts = {
-			url: 'bogus.php',
+			url: 'ajax/404.html',
 			error: function() {
 				assert.ok(true, 'error-callback');
 				// start();
