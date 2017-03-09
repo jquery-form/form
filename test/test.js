@@ -24,10 +24,19 @@ var arrayValue = function(arr, key) {
 };
 
 
-//	var assert = require('chai').assert;
 var assert = chai.assert;
+var fixture;
 
 describe('form', function() {
+	before(function() {
+		fixture = $('#main').html();
+	});
+
+	beforeEach(function() {
+		$('#main').html(fixture);
+	});
+
+
 	it('"action" and "method" form attributes', function() {
 		var f = $('#form1');
 		assert.strictEqual(f.attr('action'), 'text.php', 'form "action"');
@@ -164,7 +173,7 @@ describe('form', function() {
 		assert.ok('' == val, 'success: ' + val);
 	});
 
-	// test resetForm
+	// test clearForm
 	it('clearForm (select)', function() {
 		var $el = $('#form1 select[name=Single]');
 		var val = $el.val();
