@@ -624,6 +624,8 @@ describe('form', function() {
 
 
 	it('fieldValue(true)', function() {
+		var i;
+
 		assert.ok('5'  == $('#fieldTest input').fieldValue(true)[0], 'input');
 		assert.ok('1'  == $('#fieldTest :input').fieldValue(true)[0], ':input');
 		assert.ok('5'  == $('#fieldTest input:hidden').fieldValue(true)[0], ':hidden');
@@ -634,19 +636,21 @@ describe('form', function() {
 		var expected = ['8','10'];
 		var result = $('#fieldTest :checkbox').fieldValue(true);
 		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
+		for (i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
 		}
 
 		expected = ['3','4'];
 		result = $('#fieldTest [name=B]').fieldValue(true);
 		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
+		for (i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
 		}
 	});
 
 	it('fieldValue(false)', function() {
+		var i;
+
 		assert.ok('5'  == $('#fieldTest input').fieldValue(false)[0], 'input');
 		assert.ok('1'  == $('#fieldTest :input').fieldValue(false)[0], ':input');
 		assert.ok('5'  == $('#fieldTest input:hidden').fieldValue(false)[0], ':hidden');
@@ -656,21 +660,21 @@ describe('form', function() {
 		var expected = ['8','9','10'];
 		var result = $('#fieldTest :checkbox').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
+		for (i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
 		}
 
 		expected = ['11','12','13'];
 		result = $('#fieldTest :radio').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (radio): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
+		for (i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
 		}
 
 		expected = ['3','4'];
 		result = $('#fieldTest [name=B]').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
+		for (i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
 		}
 	});
@@ -809,11 +813,13 @@ describe('form', function() {
 
 		// expect(0);
 		// multiple binds
-		$('#form9').ajaxForm(opts).submit(function(){return false;});
+		$('#form9').ajaxForm(opts).submit(function() {
+			return false;
+		});
 		$('#form9').ajaxFormUnbind(opts);
 		$('#submitForm9')[0].click();
 
-		setTimeout(start, 500);
+		// setTimeout(start, 500);
 	});
 
 	it('naked hash', function() {
@@ -850,12 +856,14 @@ describe('form', function() {
 	});
 
 	it('success callback params', function() {
+		var $testForm;
+
 		$('#targetDiv').empty();
 		// stop();
 
 		if (/^1\.3/.test($.fn.jquery)) {
 			// expect(3);
-			var $testForm = $('#form3').ajaxSubmit({
+			$testForm = $('#form3').ajaxSubmit({
 				success: function(data, status, $form) { // jQuery 1.4+ signature
 					assert.ok(true, 'success callback invoked');
 					assert.ok(status === 'success', 'status === success');
@@ -863,10 +871,10 @@ describe('form', function() {
 					// start();
 				}
 			});
-		}
-		else { //if (/^1\.4/.test($.fn.jquery)) {
+
+		} else {	// if (/^1\.4/.test($.fn.jquery)) {
 			// expect(6);
-			var $testForm = $('#form3').ajaxSubmit({
+			$testForm = $('#form3').ajaxSubmit({
 				success: function(data, status, xhr, $form) { // jQuery 1.4+ signature
 					assert.ok(true, 'success callback invoked');
 					assert.ok(status === 'success', 'status === success');
