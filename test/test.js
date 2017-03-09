@@ -5,7 +5,7 @@
 // helper method
 var arrayCount = function(arr, key) {
 	var count = 0;
-	for (var i=0; i < arr.length; i++) {
+	for (var i = 0; i < arr.length; i++) {
 		if (arr[i].name === key) {
 			count++;
 		}
@@ -15,7 +15,7 @@ var arrayCount = function(arr, key) {
 
 // helper method
 var arrayValue = function(arr, key) {
-	for (var i=0; i < arr.length; i++) {
+	for (var i = 0; i < arr.length; i++) {
 		if (arr[i].name === key) {
 			return arr[i].value;
 		}
@@ -51,7 +51,7 @@ describe('form', function() {
 	it('formToArray: semantic test', function() {
 		var formData = $('#form2').formToArray(true);
 		var testData = ['a','b','c','d','e','f'];
-		for (var i=0; i < 6; i++) {
+		for (var i = 0; i < 6; i++) {
 			assert.strictEqual(formData[i].name, testData[i], 'match value at index=' + i);
 		}
 	});
@@ -66,7 +66,7 @@ describe('form', function() {
 		var a = $('#form6').formToArray(true);
 
 		// verify all the option values
-		for (var i=0; i < a.length; i++) {
+		for (var i = 0; i < a.length; i++) {
 			assert.strictEqual(a[i].name, expected[i].name, 'Name: ' + a[i].name + ' = ' + expected[i].name);
 			assert.strictEqual(a[i].value, expected[i].value, 'Value: ' + a[i].value + ' = ' + expected[i].value);
 		}
@@ -343,8 +343,8 @@ describe('form', function() {
 				assert.ok(true, 'pre-submit callback');
 				assert.ok(a.constructor == Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				for (var i=0; i < a.length; i++) {
-					assert.ok(a[i].name == testData[i], 'match value at index='+i);
+				for (var i = 0; i < a.length; i++) {
+					assert.ok(a[i].name == testData[i], 'match value at index=' + i);
 				}
 			}
 		};
@@ -477,7 +477,7 @@ describe('form', function() {
 		var opts = {
 			success: function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
-				var data = eval.call(window, '('+responseText+')');
+				var data = eval.call(window, '(' + responseText + ')');
 				assert.ok(data.name == 'jquery-test', 'evaled response');
 				start();
 			},
@@ -634,13 +634,13 @@ describe('form', function() {
 		var expected = ['8','10'];
 		var result = $('#fieldTest :checkbox').fieldValue(true);
 		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i]);
 
 		expected = ['3','4'];
 		result = $('#fieldTest [name=B]').fieldValue(true);
 		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i]);
 	});
 
@@ -654,19 +654,19 @@ describe('form', function() {
 		var expected = ['8','9','10'];
 		var result = $('#fieldTest :checkbox').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i]);
 
 		expected = ['11','12','13'];
 		result = $('#fieldTest :radio').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (radio): ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i]);
 
 		expected = ['3','4'];
 		result = $('#fieldTest [name=B]').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i]);
 	});
 
@@ -677,7 +677,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -688,7 +688,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -699,7 +699,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -710,7 +710,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -721,7 +721,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -732,7 +732,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -743,7 +743,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -754,7 +754,7 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i=0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++)
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
 	});
 
@@ -806,7 +806,7 @@ describe('form', function() {
 	it('naked hash', function() {
 		$('#actionTest1').ajaxSubmit({
 			beforeSerialize: function($f, opts) {
-				assert.ok(true, 'url='+opts.url);
+				assert.ok(true, 'url=' + opts.url);
 			}
 		});
 		assert.ok(true, 'ajaxSubmit passed');
@@ -814,7 +814,7 @@ describe('form', function() {
 	it('hash only', function() {
 		$('#actionTest2').ajaxSubmit({
 			beforeSerialize: function($f, opts) {
-				assert.ok(true, 'url='+opts.url);
+				assert.ok(true, 'url=' + opts.url);
 			}
 		});
 		assert.ok(true, 'ajaxSubmit passed');
@@ -822,7 +822,7 @@ describe('form', function() {
 	it('empty action', function() {
 		$('#actionTest3').ajaxSubmit({
 			beforeSerialize: function($f, opts) {
-				assert.ok(true, 'url='+opts.url);
+				assert.ok(true, 'url=' + opts.url);
 			}
 		});
 		assert.ok(true, 'ajaxSubmit passed');
@@ -830,7 +830,7 @@ describe('form', function() {
 	it('missing action', function() {
 		$('#actionTest4').ajaxSubmit({
 			beforeSerialize: function($f, opts) {
-				assert.ok(true, 'url='+opts.url);
+				assert.ok(true, 'url=' + opts.url);
 			}
 		});
 		assert.ok(true, 'ajaxSubmit passed');
