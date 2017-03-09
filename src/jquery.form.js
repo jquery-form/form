@@ -12,29 +12,29 @@
 
 /* eslint-disable */
 (function (factory) {
-    if (typeof define === 'function' && define.amd) {
-        // AMD. Register as an anonymous module.
-        define(['jquery'], factory);
-    } else if (typeof module === 'object' && module.exports) {
-        // Node/CommonJS
-        module.exports = function( root, jQuery ) {
-            if ( jQuery === undefined ) {
-                // require('jQuery') returns a factory that requires window to build a jQuery instance, we normalize how we use modules
-                // that require this pattern but the window provided is a noop if it's defined (how jquery works)
-                if ( typeof window !== 'undefined' ) {
-                    jQuery = require('jquery');
-                }
-                else {
-                    jQuery = require('jquery')(root);
-                }
-            }
-            factory(jQuery);
-            return jQuery;
-        };
-    } else {
-        // Browser globals
-        factory(jQuery);
-    }
+	if (typeof define === 'function' && define.amd) {
+		// AMD. Register as an anonymous module.
+		define(['jquery'], factory);
+	} else if (typeof module === 'object' && module.exports) {
+		// Node/CommonJS
+		module.exports = function( root, jQuery ) {
+			if ( jQuery === undefined ) {
+				// require('jQuery') returns a factory that requires window to build a jQuery instance, we normalize how we use modules
+				// that require this pattern but the window provided is a noop if it's defined (how jquery works)
+				if (typeof window !== 'undefined') {
+					jQuery = require('jquery');
+				}
+				else {
+					jQuery = require('jquery')(root);
+				}
+			}
+			factory(jQuery);
+			return jQuery;
+		};
+	} else {
+		// Browser globals
+		factory(jQuery);
+	}
 
 }(function ($) {
 /* eslint-enable */
@@ -132,8 +132,8 @@
 
 		} else if (typeof options === 'string' || (options === false && arguments.length > 0)) {
 			options = {
-				'url' : options,
-				'data' : data,
+				'url'      : options,
+				'data'     : data,
 				'dataType' : dataType
 			};
 
@@ -156,10 +156,10 @@
 		}
 
 		options = $.extend(true, {
-			url: url,
-			success: $.ajaxSettings.success,
-			type: method || $.ajaxSettings.type,
-			iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'		// eslint-disable-line no-script-url
+			url       : url,
+			success   : $.ajaxSettings.success,
+			type      : method || $.ajaxSettings.type,
+			iframeSrc : /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'		// eslint-disable-line no-script-url
 		}, options);
 
 		// hook for manipulating the form data before it is extracted;
@@ -372,10 +372,10 @@
 			options.data = null;
 
 			var s = $.extend(true, {}, $.ajaxSettings, options, {
-				contentType: false,
-				processData: false,
-				cache: false,
-				type: method || 'POST'
+				contentType : false,
+				processData : false,
+				cache       : false,
+				type        : method || 'POST'
 			});
 
 			if (options.uploadProgress) {
@@ -466,15 +466,15 @@
 
 
 			xhr = { // mock object
-				aborted: 0,
-				responseText: null,
-				responseXML: null,
-				status: 0,
-				statusText: 'n/a',
-				getAllResponseHeaders: function() {},
-				getResponseHeader: function() {},
-				setRequestHeader: function() {},
-				abort: function(status) {
+				aborted               : 0,
+				responseText          : null,
+				responseXML           : null,
+				status                : 0,
+				statusText            : 'n/a',
+				getAllResponseHeaders : function() {},
+				getResponseHeader     : function() {},
+				setRequestHeader      : function() {},
+				abort                 : function(status) {
 					var e = (status === 'timeout' ? 'timeout' : 'aborted');
 
 					log('aborting upload... ' + e);
@@ -607,8 +607,8 @@
 				// ie borks in some cases when setting encoding
 				if (!s.skipEncodingOverride && (!method || /post/i.test(method))) {
 					$form.attr({
-						encoding: 'multipart/form-data',
-						enctype: 'multipart/form-data'
+						encoding : 'multipart/form-data',
+						enctype  : 'multipart/form-data'
 					});
 				}
 
@@ -953,8 +953,8 @@
 	$.fn.ajaxForm = function(options, data, dataType, onSuccess) {
 		if (typeof options === 'string' || (options === false && arguments.length > 0)) {
 			options = {
-				'url' : options,
-				'data' : data,
+				'url'      : options,
+				'data'     : data,
 				'dataType' : dataType
 			};
 
