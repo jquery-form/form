@@ -634,14 +634,16 @@ describe('form', function() {
 		var expected = ['8','10'];
 		var result = $('#fieldTest :checkbox').fieldValue(true);
 		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
+		}
 
 		expected = ['3','4'];
 		result = $('#fieldTest [name=B]').fieldValue(true);
 		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
+		}
 	});
 
 	it('fieldValue(false)', function() {
@@ -654,20 +656,23 @@ describe('form', function() {
 		var expected = ['8','9','10'];
 		var result = $('#fieldTest :checkbox').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
+		}
 
 		expected = ['11','12','13'];
 		result = $('#fieldTest :radio').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (radio): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
+		}
 
 		expected = ['3','4'];
 		result = $('#fieldTest [name=B]').fieldValue(false);
 		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i]);
+		}
 	});
 
 	it('fieldSerialize(true) input', function() {
@@ -677,8 +682,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(true) :input', function() {
@@ -688,8 +694,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(false) :input', function() {
@@ -699,8 +706,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(true) select-mulitple', function() {
@@ -710,8 +718,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(true) :checkbox', function() {
@@ -721,8 +730,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(false) :checkbox', function() {
@@ -732,8 +742,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(true) :radio', function() {
@@ -743,8 +754,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('fieldSerialize(false) :radio', function() {
@@ -754,8 +766,9 @@ describe('form', function() {
 		result = result.split('&');
 
 		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++)
+		for (var i = 0; i < result.length; i++) {
 			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		}
 	});
 
 	it('ajaxForm - auto unbind', function() {
