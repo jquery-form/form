@@ -20,7 +20,8 @@ var arrayValue = function(arr, key) {
 			return arr[i].value;
 		}
 	}
-}
+	return undefined;
+};
 
 
 //	var assert = require('chai').assert;
