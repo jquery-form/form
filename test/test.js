@@ -1,3 +1,5 @@
+/* global chai */
+
 'use strict';
 
 // helper method

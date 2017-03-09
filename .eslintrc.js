@@ -3,8 +3,7 @@ module.exports = {
 		"browser": true,
 		"jquery": true,
 		"node": true,
-		"amd": true,
-		"mocha": true
+		"amd": true
 	},
 	"parserOptions": {
 		"ecmaVersion": 5,
