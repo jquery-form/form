@@ -215,23 +215,23 @@ describe('form', function() {
 	// test ajaxSubmit target update
 	it('ajaxSubmit: target == String', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 		var opts = {
 			target: '#targetDiv',
 			success: function() { // post-callback
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
-				start();
+				// start();
 			}
 		};
 
-		expect(2);
+		// expect(2);
 		$('#form3').ajaxSubmit(opts);
 	});
 
 	// test passing jQuery object as the target
 	it('ajaxSubmit: target == jQuery object', function() {
-		stop();
+		// stop();
 		var target = $('#targetDiv');
 		target.empty();
 
@@ -240,17 +240,17 @@ describe('form', function() {
 			success: function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
-				start();
+				// start();
 			}
 		};
 
-		expect(2);
+		// expect(2);
 		$('#form2').ajaxSubmit(opts);
 	});
 
 	// test passing DOM element as the target
 	it('ajaxSubmit: target == DOM element', function() {
-		stop();
+		// stop();
 		$('#targetDiv').empty();
 		var el = $('#targetDiv')[0];
 
@@ -259,17 +259,17 @@ describe('form', function() {
 			success: function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
-				start();
+				// start();
 			}
 		};
 
-		expect(2);
+		// expect(2);
 		$('#form2').ajaxSubmit(opts);
 	});
 
 	// test simulated $.load behavior
 	it('ajaxSubmit: load target with scripts', function() {
-		stop();
+		// stop();
 		$('#targetDiv').empty();
 
 		var opts = {
@@ -282,11 +282,11 @@ describe('form', function() {
 				assert.ok(typeof unitTestVariable2 != 'undefined', 'second script block executed');
 				assert.ok(typeof scriptCount != 'undefined', 'third script block executed');
 				assert.ok(scriptCount == 1, 'scripts executed once: ' + scriptCount);
-				start();
+				// start();
 			}
 		};
 
-		expect(6);
+		// expect(6);
 		$('#form2').ajaxSubmit(opts);
 	});
 
@@ -301,35 +301,35 @@ describe('form', function() {
 			}
 		};
 
-		expect(4);
+		// expect(4);
 		$('#form3').ajaxSubmit(opts);
 	});
 
 	// test ajaxSubmit post-submit callback for response and status text
 	it('ajaxSubmit: post-submit callback', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			success: function(responseText, statusText) { // post-submit callback
 				assert.ok(true, 'post-submit callback');
 				assert.ok(responseText.match('Lorem ipsum'), 'responseText');
 				assert.ok(statusText == 'success', 'statusText');
-				start();
+				// start();
 			}
 		};
 
-		expect(3);
+		// expect(3);
 		$('#form3').ajaxSubmit(opts);
 	});
 
 	// test ajaxSubmit with function argument
 	it('ajaxSubmit: function arg', function() {
-		stop();
+		// stop();
 
-		expect(1);
+		// expect(1);
 		$('#form3').ajaxSubmit(function() {
 			assert.ok(true, 'callback hit');
-			start();
+			// start();
 		});
 	});
 
@@ -349,13 +349,13 @@ describe('form', function() {
 			}
 		};
 
-		expect(9);
+		// expect(9);
 		$('#form2').ajaxSubmit(opts);
 	});
 
 	// test json datatype
 	it('ajaxSubmit: dataType == json', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			url: 'json.json',
@@ -364,18 +364,18 @@ describe('form', function() {
 				// assert that the json data was evaluated
 				assert.ok(typeof data == 'object', 'json data type');
 				assert.ok(data.name == 'jquery-test', 'json data contents');
-				start();
+				// start();
 			}
 		};
 
-		expect(2);
+		// expect(2);
 		$('#form2').ajaxSubmit(opts);
 	});
 
 
 	// test script datatype
 	it('ajaxSubmit: dataType == script', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			url: 'script.txt?' + new Date().getTime(), // don't let ie cache it
@@ -383,17 +383,17 @@ describe('form', function() {
 			success: function(responseText, statusText) { // post-submit callback
 				assert.ok(typeof formScriptTest == 'function', 'script evaluated');
 				assert.ok(responseText.match('formScriptTest'), 'script returned');
-				start();
+				// start();
 			}
 		};
 
-		//expect(2);
+		// expect(2);
 		$('#form2').ajaxSubmit(opts);
 	});
 
 	// test xml datatype
 	it('ajaxSubmit: dataType == xml', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			url: 'test.xml',
@@ -401,11 +401,11 @@ describe('form', function() {
 			success: function(responseXML, statusText) { // post-submit callback
 				assert.ok(typeof responseXML == 'object', 'data type xml');
 				assert.ok($('test', responseXML).size() == 3, 'xml data query');
-				start();
+				// start();
 			}
 		};
 
-		expect(2);
+		// expect(2);
 		$('#form2').ajaxSubmit(opts);
 	});
 
@@ -413,16 +413,16 @@ describe('form', function() {
 	// test that args embedded in the action are honored; no real way
 	// to assert this so successful callback is used to signal success
 	it('ajaxSubmit: existing args in action attr', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			success: function() { // post-submit callback
 				assert.ok(true, 'post callback');
-				start();
+				// start();
 			}
 		};
 
-		expect(1);
+		// expect(1);
 		$('#form5').ajaxSubmit(opts);
 	});
 
@@ -441,13 +441,13 @@ describe('form', function() {
 			}
 		};
 
-		expect(3);
+		// expect(3);
 		$('#form3').ajaxSubmit(opts);
 	});
 
 	// test submitting a pseudo-form
 	it('ajaxSubmit: pseudo-form', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			beforeSubmit: function(a, jq) { // pre-submit callback
@@ -458,7 +458,7 @@ describe('form', function() {
 			},
 			success: function() { // post-submit callback
 				assert.ok(true, 'post-submit callback');
-				start();
+				// start();
 			},
 			// url and method must be provided for a pseudo form since they can
 			// not be extracted from the markup
@@ -466,32 +466,32 @@ describe('form', function() {
 			type: 'post'
 		};
 
-		expect(5);
+		// expect(5);
 		$('#pseudo').ajaxSubmit(opts);
 	});
 
 	// test eval of json response
 	it('ajaxSubmit: evaluate response', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			success: function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
 				var data = eval.call(window, '(' + responseText + ')');
 				assert.ok(data.name == 'jquery-test', 'evaled response');
-				start();
+				// start();
 			},
 			url: 'json.txt'
 		};
 
-		expect(2);
+		// expect(2);
 		$('#form2').ajaxSubmit(opts);
 	});
 
 
 	// test pre and post callbacks for ajaxForm
 	it('ajaxForm: pre and post callbacks', function() {
-		stop();
+		// stop();
 
 		var opts = {
 			beforeSubmit: function(a, jq) {	// pre-submit callback
@@ -501,11 +501,11 @@ describe('form', function() {
 			},
 			success: function() {			// post-submit callback
 				assert.ok(true, 'post-submit callback');
-				start();
+				// start();
 			}
 		};
 
-		expect(4);
+		// expect(4);
 		$('#form4').ajaxForm(opts);
 		$('#submitForm4')[0].click();		// trigger the submit button
 	});
@@ -522,7 +522,7 @@ describe('form', function() {
 			}
 		};
 
-		expect(4);
+		// expect(4);
 		$('#form4').ajaxForm(opts);
 		$('#submitForm4withName')[0].click();
 	});
@@ -540,7 +540,7 @@ describe('form', function() {
 			}
 		};
 
-		expect(5);
+		// expect(5);
 		$('#form4').ajaxForm(opts);
 		$('#form4imageSubmit')[0].click();
 	});
@@ -559,7 +559,7 @@ describe('form', function() {
 			}
 		};
 
-		expect(5);
+		// expect(5);
 		$('#form4').ajaxForm(opts);
 		$('#form4imageSubmit')[0].click();
 	});
@@ -567,7 +567,7 @@ describe('form', function() {
 	// test that the targetDiv gets updated
 	it('ajaxForm: update target div', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
 		var opts = {
 			target: '#targetDiv',
@@ -579,46 +579,46 @@ describe('form', function() {
 			success: function() {
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
-				start();
+				// start();
 			}
 		};
 
-		expect(5);
+		// expect(5);
 		$('#form4').ajaxForm(opts);
 		$('#submitForm4')[0].click();
 	});
 
 	it('"success" callback', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
 		var opts = {
 			success: function() {
 				assert.ok(true, 'post-callback');
-				start();
+				// start();
 			}
 		};
 
-		expect(1);
+		// expect(1);
 		$('#form3').ajaxSubmit(opts);
 	});
 
 	it('"error" callback', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
 		var opts = {
 			url: 'bogus.php',
 			error: function() {
 				assert.ok(true, 'error-callback');
-				start();
+				// start();
 			},
 			success: function() { // post-submit callback
 				assert.ok(false, 'should not hit post-submit callback');
 			}
 		};
 
-		expect(1);
+		// expect(1);
 		$('#form3').ajaxSubmit(opts);
 	});
 
@@ -760,7 +760,7 @@ describe('form', function() {
 
 	it('ajaxForm - auto unbind', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
 		var opts = {
 			target: '#targetDiv',
@@ -769,11 +769,11 @@ describe('form', function() {
 			},
 			success: function() {
 				assert.ok(true, 'post-callback');
-				start();
+				// start();
 			}
 		};
 
-		expect(2);
+		// expect(2);
 		// multiple binds
 		$('#form8').ajaxForm(opts).ajaxForm(opts).ajaxForm(opts);
 		$('#submitForm8')[0].click();
@@ -781,7 +781,7 @@ describe('form', function() {
 
 	it('ajaxFormUnbind', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
 		var opts = {
 			target: '#targetDiv',
@@ -790,11 +790,11 @@ describe('form', function() {
 			},
 			success: function() {
 				assert.ok(true, 'post-callback');
-				start();
+				// start();
 			}
 		};
 
-		expect(0);
+		// expect(0);
 		// multiple binds
 		$('#form9').ajaxForm(opts).submit(function(){return false;});
 		$('#form9').ajaxFormUnbind(opts);
@@ -838,21 +838,21 @@ describe('form', function() {
 
 	it('success callback params', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
 		if (/^1\.3/.test($.fn.jquery)) {
-			expect(3);
+			// expect(3);
 			var $testForm = $('#form3').ajaxSubmit({
 				success: function(data, status, $form) { // jQuery 1.4+ signature
 					assert.ok(true, 'success callback invoked');
 					assert.ok(status === 'success', 'status === success');
 					assert.ok($form === $testForm, '$form param is valid');
-					start();
+					// start();
 				}
 			});
 		}
 		else { //if (/^1\.4/.test($.fn.jquery)) {
-			expect(6);
+			// expect(6);
 			var $testForm = $('#form3').ajaxSubmit({
 				success: function(data, status, xhr, $form) { // jQuery 1.4+ signature
 					assert.ok(true, 'success callback invoked');
@@ -861,7 +861,7 @@ describe('form', function() {
 					assert.ok(!!xhr != false, 'xhr != false');
 					assert.ok(xhr.status, 'xhr.status == ' + xhr.status);
 					assert.ok($form === $testForm, '$form param is valid');
-					start();
+					// start();
 				}
 			});
 		}
@@ -869,15 +869,15 @@ describe('form', function() {
 
 	it('forceSync', function() {
 		$('#targetDiv').empty();
-		stop();
+		// stop();
 
-		expect(2);
+		// expect(2);
 		var $testForm = $('#form3').ajaxSubmit({
 			forceSync: true,
 			success: function(data, status, $form) { // jQuery 1.4+ signature
 				assert.ok(true, 'success callback invoked');
 				assert.ok(status === 'success', 'status === success');
-				start();
+				// start();
 			}
 		});
 	});
