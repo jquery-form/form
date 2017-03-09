@@ -518,7 +518,7 @@ describe('form', function() {
 				assert.ok(true, 'pre-callback');
 				assert.ok(a.constructor == Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(arrayValue(a, 'form4inputName') != null, 'submit button');
+				assert.ok(arrayValue(a, 'form4inputName') !== null, 'submit button');
 			}
 		};
 
@@ -535,8 +535,8 @@ describe('form', function() {
 				assert.ok(true, 'pre-callback');
 				assert.ok(a.constructor == Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(arrayValue(a, 'myImage.x') != null, 'x coord');
-				assert.ok(arrayValue(a, 'myImage.y') != null, 'y coord');
+				assert.ok(arrayValue(a, 'myImage.x') !== null, 'x coord');
+				assert.ok(arrayValue(a, 'myImage.y') !== null, 'y coord');
 			}
 		};
 
@@ -554,8 +554,8 @@ describe('form', function() {
 				assert.ok(true, 'pre-callback');
 				assert.ok(a.constructor == Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(arrayValue(a, 'myImage.x') != null, 'x coord');
-				assert.ok(arrayValue(a, 'myImage.y') != null, 'y coord');
+				assert.ok(arrayValue(a, 'myImage.x') !== null, 'x coord');
+				assert.ok(arrayValue(a, 'myImage.y') !== null, 'y coord');
 			}
 		};
 
