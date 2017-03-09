@@ -22,7 +22,7 @@ Requires jQuery 1.7+.
 
 ###CDN
 ```html
-<script src="https://cdn.jsdelivr.net/jquery.form/4.0.1/jquery.form.min.js" integrity="sha384-MSBAlvUdugJfNRlgXmRfwPbw7SNanf6IaKgQBi1ajJdWoZ9oUYhxC79B5n4gp3y5" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/jquery.form/4.1.0/jquery.form.min.js" integrity="sha384-pg7GKHZrgICSnX14mRuztzbN1Bm75xUKyCyzDCUbkOp0nHzgGYqiLsc6XpflqxAc" crossorigin="anonymous"></script>
 ```
 
 ---
