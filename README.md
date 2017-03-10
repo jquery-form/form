@@ -22,6 +22,10 @@ Requires jQuery 1.7+.
 
 ###CDN
 ```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.1.0/jquery.form.min.js" integrity="sha384-pg7GKHZrgICSnX14mRuztzbN1Bm75xUKyCyzDCUbkOp0nHzgGYqiLsc6XpflqxAc" crossorigin="anonymous"></script>
+```
+or
+```html
 <script src="https://cdn.jsdelivr.net/jquery.form/4.1.0/jquery.form.min.js" integrity="sha384-pg7GKHZrgICSnX14mRuztzbN1Bm75xUKyCyzDCUbkOp0nHzgGYqiLsc6XpflqxAc" crossorigin="anonymous"></script>
 ```
 
