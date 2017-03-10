@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 		githooks: {
 			options: {
 				hashbang: '#!/bin/sh',
-				template: 'bin/template/shell.hb',
+				template: 'install/template/shell.hb',
 				startMarker: '# GRUNT-GITHOOKS START',
 				endMarker: '# GRUNT-GITHOOKS END'
 			},

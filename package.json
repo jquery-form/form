@@ -11,9 +11,6 @@
     { "name": "Mike Alsup" }
   ],
   "main": "src/jquery.form.js",
-  "scripts": {
-    "postinstall": "grunt githooks"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jquery-form/form.git"
