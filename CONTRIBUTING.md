@@ -4,7 +4,9 @@ Want to contribute to jQuery Form? That's great! Contributions are most welcome!
 Here are a couple of guidelines that will help you contribute. Before we get started: Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
 #### Overview
+
 * [Contribution workflow](#contribution-workflow)
+* [Testing](#testing)
 * [Reporting a bug](#reporting-a-bug)
 * [Contributing to an existing issue](#contributing-to-an-existing-issue)
 * [Feature Requests](#feature-requests)
@@ -12,27 +14,57 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 
 ## Contribution workflow
 
-* Fork the repository in GitHub with the `Fork` button.
-* Switch to a new branch (ie. `new-feature`), and work from there:  
+1. Fork the repository in GitHub with the `Fork` button.
+2. Switch to a new branch (ie. `new-feature`), and work from there:  
   `git checkout -b new-feature`
-* Make your feature addition or bug fix.
-* Send a pull request (PR). Bonus points for topic branches.
-  * Please make sure all of your commits are atomic (one feature per commit).
-  * Use sensible commit messages.
-    * Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
+3. Make your feature addition or bug fix.
+4. After setting up your [testing enviroment](#testing), run the tests:
 
-```shell
+  ```shell
+  grunt test
+  ```
+
+  If the tests all pass, move on to step 5.
+
+5. Send a pull request (PR). Bonus points for topic branches.
+  * Please make sure all of your commits are atomic (one feature per commit).
+  * Use clear, sensible commit messages. One-line messages are fine for small changes, but bigger changes should look like this:
+
+    ```shell
     $ git commit -m "A brief summary of the commit"
     >
     > A paragraph describing what changed and its impact."
-```
-
+    ```
   * If your PR fixes a separate issue number, include it in the commit message.
 
 ### Things to keep in mind
+
 * Smaller PRs are likely to be merged more quickly than bigger changes.
-* If it is a useful PR it **will** get merged in eventually.
+* If it is a useful PR, it **will** get merged in eventually.
 * This project is using [Semantic Versioning 2.0.0](http://semver.org/)
+
+## Testing
+
+jQuery Form uses [Node.js](https://nodejs.org/), [Grunt](https://gruntjs.com/), [ESLint](http://eslint.org/), [Mocha](https://mochajs.org/), and [Chai](http://chaijs.com/) to automate the building and validation of source code. Here is how to set that up:
+
+1. Get [Node.js](https://nodejs.org/) (includes [NPM](https://www.npmjs.com/), necessary for the next step)
+2. Install Grunt CLI:
+
+  ```shell
+  npm install -g grunt-cli
+  ```
+
+3. Install dependencies:
+
+  ```shell
+  npm install
+  ```
+
+4. Run the tests by opening `test/test.html` in your web browser or using Grunt:
+
+  ```shell
+  grunt test
+  ```
 
 ## Reporting a bug
 
@@ -64,6 +96,7 @@ And if at any point you get stuck: don't hesitate to ask for help.
 We've outlined the contribution workflow [here](#contribution-workflow). If you're a first-timer, don't worry! GitHub has a ton of guides to help you through your first pull request: You can find out more about pull requests [here](https://help.github.com/articles/about-pull-requests/) and about creating a pull request [here](https://help.github.com/articles/creating-a-pull-request/).
 
 ## Feature Requests
+
 * You can _request_ a new feature by [submitting an issue](https://github.com/jquery-form/form/issues).
 * If you would like to _implement_ a new feature:
   * For a **Major Feature**, first open an issue and outline your proposal so that it can be discussed. This will also allow us to better coordinate our efforts, prevent duplication of work, and help you to craft the change so that it is successfully accepted into the project.
