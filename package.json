@@ -11,6 +11,9 @@
     { "name": "Mike Alsup" }
   ],
   "main": "src/jquery.form.js",
+  "scripts": {
+    "postinstall": "grunt githooks"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jquery-form/form.git"
@@ -23,6 +26,7 @@
     "grunt-contrib-uglify": "~2",
     "grunt-mocha": "*",
     "grunt-eslint": "*",
+    "grunt-githooks": "*",
 
     "chai": "*",
     "mocha": "*",

@@ -5,6 +5,18 @@ module.exports = function(grunt) {
 			banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
 		},
 
+		githooks: {
+			options: {
+				hashbang: '#!/bin/sh',
+				template: 'bin/template/shell.hb',
+				startMarker: '# GRUNT-GITHOOKS START',
+				endMarker: '# GRUNT-GITHOOKS END'
+			},
+			all: {
+				'pre-commit': 'pre-commit'
+			}
+		},
+
 		eslint: {
 			options: {
 				quiet: true
@@ -43,8 +55,11 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-mocha');
 	grunt.loadNpmTasks('grunt-eslint');
+	grunt.loadNpmTasks('grunt-githooks');
 
 	// Default task.
-	grunt.registerTask('test', [ 'eslint', 'mocha' ]);
+	grunt.registerTask('lint', [ 'eslint' ]);
+	grunt.registerTask('test', [ 'lint', 'mocha' ]);
+	grunt.registerTask('pre-commit', [ 'test' ]);
 	grunt.registerTask('default', [ 'test', 'uglify' ]);
 };
