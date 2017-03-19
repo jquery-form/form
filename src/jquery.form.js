@@ -243,10 +243,13 @@
 		if (!options.dataType && options.target) {
 			var oldSuccess = options.success || function(){};
 
-			callbacks.push(function(data) {
-				var fn = options.replaceTarget ? 'replaceWith' : 'html';
+			callbacks.push(function(data, textStatus, jqXHR) {
+				var successArguments = arguments,
+					fn = options.replaceTarget ? 'replaceWith' : 'html';
 
-				$(options.target)[fn](data).each(oldSuccess, arguments);
+				$(options.target)[fn](data).each(function(){
+					oldSuccess.apply(this, successArguments);
+				});
 			});
 
 		} else if (options.success) {
