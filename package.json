@@ -16,7 +16,7 @@
     "url": "https://github.com/jquery-form/form.git"
   },
   "dependencies": {
-    "jquery": ">=1.7 <3"
+    "jquery": ">=1.7"
   },
   "devDependencies": {
     "grunt": "~1",
@@ -38,7 +38,7 @@
   "jam": {
     "main": "src/jquery.form.js",
     "dependencies": {
-      "jquery": ">=1.7 <3"
+      "jquery": ">=1.7"
     }
   }
 }

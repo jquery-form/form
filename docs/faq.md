@@ -6,8 +6,7 @@
 The only dependency is jQuery itself.
 
 #### Which versions of jQuery is jQuery Form Plugin compatible with?
-jQuery Form Plugin is compatible with jQuery v1.7 and later.  
-It has not been throughly tested with jQuery 3.
+jQuery Form Plugin is compatible with jQuery v1.7 and later, including jQuery 2.x and 3.x.
 
 #### Is jQuery Form Plugin fast? Does it serialize forms accurately?
 Yes! See our [comparison page](http://malsup.com/jquery/form/comp/) for a look at how jQuery Form Plugin compares to other libraries (including Prototype and dojo).
