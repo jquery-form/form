@@ -12,7 +12,7 @@ Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
 ## Requirements
-Requires jQuery 1.7 or later. Compatible with jQuery 2.x and 3.x.
+Requires jQuery 1.7 or later. Compatible with jQuery 2 and 3.
 
 ## Download
 * **Development:** [src/jquery.form.js
