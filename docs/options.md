@@ -81,6 +81,11 @@ Default: `null`
 Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server. **(version added: 2.76)**
 
 
+### method
+Default: value of form's `method` attribute (or `GET` if none found)  
+The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT'). **(version added: 4.2.0)**
+
+
 ### replaceTarget
 Default: `false`  
 Optionally used along with the the [`target`](#target) option. Set to `true` if the target should be replaced or `false` if only the target _contents_ should be replaced. **(version added: 2.43)**
@@ -113,7 +118,8 @@ Identifies the element(s) in the page to be updated with the server response. Th
 
 ### type
 Default: value of form's `method` attribute (or 'GET' if none found)  
-The method in which the form data should be submitted, 'GET' or 'POST'.
+The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').  
+An alias for `method` option. Overridden by the `method` value if both are present.
 
 
 ### uploadProgress
