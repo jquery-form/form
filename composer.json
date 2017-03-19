@@ -12,7 +12,7 @@
     "issues": "https://github.com/jquery-form/form/issues"
   },
   "require": {
-    "components/jquery": ">=1.7 <3"
+    "components/jquery": ">=1.7"
   },
   "extra": {
     "component": {
