@@ -161,12 +161,12 @@ Boolean flag indicating whether the form should be reset if the submit is succes
 Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order with the exception of input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
 
 ###success
-Callback function to be invoked after the form has been submitted. If a `success` callback function is provided it is invoked after the response has been returned from the server. It is passed the following arguments:
+Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
 
-1. responseText or responseXML value (depending on the value of the dataType option).
-2. statusText
-3. xhr (or the jQuery-wrapped form element if using jQuery < 1.4)
-4. jQuery-wrapped form element (or undefined if using jQuery < 1.4)
+1. `data`, formatted according to the dataType parameter or the dataFilter callback function, if specified
+2. `textStatus`, string
+3. `jqXHR`, object
+4. `$form` jQuery object containing form element
 
 ###target
 Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
