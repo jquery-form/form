@@ -145,7 +145,7 @@
 			options = {};
 		}
 
-		method = options.type || this.attr2('method');
+		method = options.method || options.type || this.attr2('method');
 		action = options.url || this.attr2('action');
 
 		url = (typeof action === 'string') ? $.trim(action) : '';

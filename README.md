@@ -151,6 +151,9 @@ String value that should be used for the iframe's src attribute when an iframe i
 ### iframeTarget
 Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server.
 
+### method
+The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').
+
 ### replaceTarget
 Optionally used along with the the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
 
@@ -172,7 +175,8 @@ Callback function to be invoked after the form has been submitted. If a 'success
 Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
 
 ### type
-The method in which the form data should be submitted, 'GET' or 'POST'.
+The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').  
+An alias for `method` option. Overridden by the `method` value if both are present.
 
 ### uploadProgress
 Callback function to be invoked with upload progress information (if supported by the browser). The callback is passed the following arguments:
