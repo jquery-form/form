@@ -37,7 +37,7 @@
 				<li class="{% if page.url == "/api/" %}active{% endif %}"><a href="{{ site.baseurl }}/api/">API</a></li>
 				<li class="{% if page.url == "/options/" %}active{% endif %}"><a href="{{ site.baseurl }}/options/">Options</a></li>
 				<li><a href="http://malsup.com/jquery/form/#ajaxForm">Examples</a></li>
-				<li><a href="http://malsup.com/jquery/form/#fields">Form Fields</a></li>
+				<li class="{% if page.url == "/form-fields/" %}active{% endif %}"><a href="{{ site.baseurl }}/form-fields/">Form Fields</a></li>
 				<li class="{% if page.url == "/faq/" %}active{% endif %}"><a href="{{ site.baseurl }}/faq/">FAQ</a></li>
 				<li><a href="{{ site.github.repository_url | replace_first: 'http:', 'https:' }}#download">Download</a></li>
 			</ul>
