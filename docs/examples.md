@@ -66,7 +66,7 @@ function showResponse(responseText, statusText, xhr, $form)  {
 }
 ```
 
-<form id="myForm1" action="dummy.php" method="post"><div>
+<form id="myForm1" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
   <input type="hidden" name="Hidden" value="hiddenValue" />
   <table>
   <tr><td>Name:</td><td><input name="Name" type="text" value="MyName1" /></td></tr>
@@ -192,7 +192,7 @@ function showResponse(responseText, statusText, xhr, $form)  {
         '\n\nThe output div should have already been updated with the responseText.');
 }
 ```
-<form id="myForm2" action="dummy2.php" method="post"><div>
+<form id="myForm2" action="http://malsup.com/jquery/form/dummy2.php" method="post"><div>
   <input type="hidden" name="Hidden" value="hiddenValue" />
   <table>
     <tr><td>Name:</td><td><input name="Name" type="text" value="MyName2" /></td></tr>
@@ -253,7 +253,7 @@ The following login form is used for each of the examples that follow.  Each exa
 
 #### Form Markup:
 ```
-  <form id="validationForm" action="dummy.php" method="post">
+  <form id="validationForm" action="http://malsup.com/jquery/form/dummy.php" method="post">
     Username: <input type="text" name="username" />
     Password: <input type="password" name="password" />
     <input type="submit" value="Submit" />
@@ -270,7 +270,7 @@ $(document).ready(function() {
 ```
 
 #### Validate Using the `formData` Argument
-<form id="validateForm1" action="dummy.php" method="post"><div>
+<form id="validateForm1" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
     Username: <input type="text" name="username" />
     Password: <input type="password" name="password" />
     <input type="submit" value="Submit" />
@@ -301,7 +301,7 @@ function validate(formData, jqForm, options) {
 ```
 
 #### Validate Using the `jqForm` Argument
-<form id="validateForm2" action="dummy.php" method="post"><div>
+<form id="validateForm2" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
     Username: <input type="text" name="username" />
     Password: <input type="password" name="password" />
     <input type="submit" value="Submit" />
@@ -324,7 +324,7 @@ function validate(formData, jqForm, options) {
 ```
 
 #### Validate Using the `fieldValue` Method
-<form id="validateForm3" action="dummy.php" method="post"><div>
+<form id="validateForm3" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
     Username: <input type="text" name="username" />
     Password: <input type="password" name="password" />
     <input type="submit" value="Submit" />
@@ -360,12 +360,12 @@ This page shows how to handle JSON data returned from the server. The form below
 
 #### Form markup:
 ```
-<form id="jsonForm" action="json-echo.php" method="post">
+<form id="jsonForm" action="http://malsup.com/jquery/form/json-echo.php" method="post">
     Message: <input type="text" name="message" value="Hello JSON" />
     <input type="submit" value="Echo as JSON" />
 </form>
 ```
-<form id="jsonForm" action="json-echo.php" method="post"><div>
+<form id="jsonForm" action="http://malsup.com/jquery/form/json-echo.php" method="post"><div>
     Message: <input type="text" name="message" value="Hello JSON" />
     <input type="submit" value="Echo as JSON" />
 </div></form>
@@ -406,12 +406,12 @@ This page shows how to handle XML data returned from the server. The form below 
 
 #### Form markup:
 ```
-<form id="xmlForm" action="xml-echo.php" method="post">
+<form id="xmlForm" action="http://malsup.com/jquery/form/xml-echo.php" method="post">
   Message: <input type="text" name="message" value="Hello XML" />
   <input type="submit" value="Echo as XML" />
 </form>
 ```
-<form id="xmlForm" action="xml-echo.php" method="post"><div>
+<form id="xmlForm" action="http://malsup.com/jquery/form/xml-echo.php" method="post"><div>
   Message: <input type="text" name="message" value="Hello XML" />
   <input type="submit" value="Echo as XML" />
 </div></form>
@@ -457,13 +457,13 @@ This page shows how to handle HTML data returned from the server. The form below
 
 #### Form markup:
 ```
-<form id="htmlForm" action="html-echo.php" method="post">
+<form id="htmlForm" action="http://malsup.com/jquery/form/html-echo.php" method="post">
     Message: <input type="text" name="message" value="Hello HTML" />
     <input type="submit" value="Echo as HTML" />
 </form>
 ```
 
-<form id="htmlForm" action="html-echo.php" method="post"><div>
+<form id="htmlForm" action="http://malsup.com/jquery/form/html-echo.php" method="post"><div>
   Message: <input type="text" name="message" value="Hello HTML" />
   <input type="submit" value="Echo as HTML" />
 </div></form>
@@ -526,7 +526,7 @@ if (!$xhr)
 
 The form below provides an input element of type "file" along with a select element to specify the dataType of the response.  The form is submitted to `files.php` which uses the dataType to determine what type of response to return.
 
-<form id="uploadForm" action="files.php" method="POST" enctype="multipart/form-data">
+<form id="uploadForm" action="http://malsup.com/jquery/form/files.php" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="MAX_FILE_SIZE" value="100000" />
     File: <input type="file" name="file" />
     Return Type: <select id="uploadResponseType" name="mimetype">
