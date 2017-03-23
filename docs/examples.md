@@ -114,9 +114,9 @@ function showResponse(responseText, statusText, xhr, $form)  {
   </table>
   <input type="reset"   name="resetButton " value="Reset" />
   <input type="submit"  name="submitButton" value="Submit1" />
-  <input type="image"   name="submitButton" value="Submit2" src="submit.gif" />
-  <input type="image"   name="submitButton" value="Submit3" src="submit.gif" />
-  <input type="image"   name="submitButton" value="Submit4" src="submit.gif" />
+  <input type="image"   name="submitButton" value="Submit2" src="http://malsup.com/jquery/form/submit.gif" />
+  <input type="image"   name="submitButton" value="Submit3" src="http://malsup.com/jquery/form/submit.gif" />
+  <input type="image"   name="submitButton" value="Submit4" src="http://malsup.com/jquery/form/submit.gif" />
   <button type="submit" name="submitButton" value="Submit5"><span>submit 5</span></button>
 </div></form>
 <h1>Output Div (#output1):</h1>
@@ -240,7 +240,7 @@ function showResponse(responseText, statusText, xhr, $form)  {
   </table>
   <input type="reset"   name="resetButton " value="Reset" />
   <input type="submit"  name="submitButton" value="Submit1" />
-  <input type="image"   name="submitButton" value="Submit2" src="submit.gif" />
+  <input type="image"   name="submitButton" value="Submit2" src="http://malsup.com/jquery/form/submit.gif" />
 </div></form>
 <h1>Output Div (#output2):</h1>
 <div id="output2">AJAX response will replace this content.</div>
