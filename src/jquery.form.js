@@ -347,7 +347,7 @@
 
 			for (i = 0; i < len; i++) {
 				// #252; undo param space replacement
-				serialized[i] = serialized[i].replace(/\+/g,' ');
+				serialized[i] = serialized[i].replace(/\+/g, ' ');
 				part = serialized[i].split('=');
 				// #278; use array instead of object storage, favoring array serializations
 				result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
