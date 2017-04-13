@@ -3,4 +3,7 @@ node_js:
   - "node"
 script:
  - grunt test
-cache: yarn
+cache:
+  bundler: true
+  directories:
+  - node_modules # NPM packages
