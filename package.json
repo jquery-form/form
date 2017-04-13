@@ -27,19 +27,6 @@
     "grunt-githooks": "*",
 
     "chai": "*",
-    "mocha": "*",
-
-    "gulp": "~3",
-    "gulp-util": "~3",
-    "gulp-uglify": "~2",
-    "gulp-concat": "~2",
-    "gulp-jshint": "~2",
-    "jshint": "~2"
-  },
-  "jam": {
-    "main": "src/jquery.form.js",
-    "dependencies": {
-      "jquery": ">=1.7"
-    }
+    "mocha": "*"
   }
 }
