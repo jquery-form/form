@@ -20,6 +20,6 @@
     "url": "https://github.com/jquery-form/form.git"
   },
   "dependencies": {
-    "jquery": ">=1.7"
+    "jquery": ">=1.7.2"
   }
 }

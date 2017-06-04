@@ -1,7 +1,7 @@
 /*!
  * jQuery Form Plugin
  * version: 4.2.1
- * Requires jQuery v1.7 or later
+ * Requires jQuery v1.7.2 or later
  * Copyright 2017 Kevin Morris
  * Copyright 2006 M. Alsup
  * Project repository: https://github.com/jquery-form/form
