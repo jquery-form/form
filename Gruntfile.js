@@ -36,7 +36,9 @@ module.exports = function(grunt) {
 		// Minifies JS files
 		uglify: {
 			options: {
-				preserveComments: /^!|@preserve|@license|@cc_on/i,
+				output: {
+					comments: /^!|@preserve|@license|@cc_on/i
+				},
 				sourceMap: true,
 				footer: '\n'
 			},
