@@ -20,7 +20,7 @@
     "jquery": ">=1.7.2"
   },
   "devDependencies": {
-    "chai": "^4.0.1",
+    "chai": "^4.1.0",
     "grunt": "^1.0.1",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-uglify": "^3.0.1",
