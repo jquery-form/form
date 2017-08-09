@@ -3,7 +3,7 @@
   "description": "The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.",
   "main": "src/jquery.form.js",
   "moduleType": [ "globals", "amd", "node" ],
-  "license": "(MIT OR LGPL-3.0)",
+  "license": "(LGPL-2.1+ OR MIT)",
   "ignore": [
     "README.md",
     "composer.json",

@@ -5,7 +5,7 @@
   "keywords": [ "jquery", "ajax", "jquery-plugin", "json", "json-form", "html-form", "form", "jquery-form", "ecosystem:jquery" ],
   "homepage": "https://github.com/jquery-form/form",
   "bugs": "https://github.com/jquery-form/form/issues",
-  "license": "(MIT OR LGPL-3.0)",
+  "license": "(LGPL-2.1+ OR MIT)",
   "contributors": [
     "Mike Alsup",
     "Kevin Morris"

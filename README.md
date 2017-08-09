@@ -231,10 +231,10 @@ See [CONTRIBUTORS](CONTRIBUTORS.md) for details.
 
 ## License
 
-This project is dual licensed under the MIT and LGPLv3 licenses:
+This project is dual licensed under the LGPLv2.1 (or later) or MIT licenses:
 
-* [MIT](LICENSE)
-* [GNU Lesser General Public License v3.0](LICENSE-LGPLv3)
+* [GNU Lesser General Public License v2.1](LICENSE)
+* [MIT](LICENSE-MIT)
 
 ---
 
