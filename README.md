@@ -15,13 +15,13 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 #### Enhancements needed to to be fully compatible with jQuery 3
 jQuery 3 is removing a lot of features that have been depreciated for a long time. Some of these are still in use by jQuery Form.  
 Pull requests and assistance in updating jQuery Form to be compatible with jQuery 3 are greatly appreciated.  
-See issue #544 for more information.
+See [issue #544](https://github.com/jquery-form/form/issues/544) for more information.
 
 ## Compatibility
 * Requires jQuery 1.7.2 or later.  
 * Compatible with jQuery 2.
 * Partially compatible with jQuery 3.
-* **Not** compatible with jQuery 3 Slim. (issue #544)
+* **Not** compatible with jQuery 3 Slim. ([issue #544](https://github.com/jquery-form/form/issues/544))
 
 ## Download
 * **Development:** [src/jquery.form.js
