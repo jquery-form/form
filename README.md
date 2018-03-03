@@ -12,7 +12,7 @@ Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
 ## Requirements
-Requires jQuery 1.7.2 or later. Compatible with jQuery 2.x.x and 3.x.x.
+Requires jQuery 1.7.2 or later. Compatible with jQuery 2.x.x and 3.x.x.  
 **Note:** Not compatible with jQuery 3 Slim, due to jQuery's [removal of Deferred methods from jQuery.ajax](https://jquery.com/upgrade-guide/3.0/#breaking-change-special-case-deferred-methods-removed-from-jquery-ajax).
 
 ## Download
