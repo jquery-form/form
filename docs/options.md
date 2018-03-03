@@ -57,6 +57,7 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 
 
 ### error
+**Deprecated**  
 Callback function to be invoked upon error.
 
 
@@ -102,6 +103,7 @@ Boolean flag indicating whether data must be submitted in strict semantic order 
 
 
 ### success
+**Deprecated**  
 Default: `null`  
 Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
 

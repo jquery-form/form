@@ -13,6 +13,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ## Requirements
 Requires jQuery 1.7.2 or later. Compatible with jQuery 2.x.x and 3.x.x.
+**Note:** Not compatible with jQuery 3 Slim, due to jQuery's [removal of Deferred methods from jQuery.ajax](https://jquery.com/upgrade-guide/3.0/#breaking-change-special-case-deferred-methods-removed-from-jquery-ajax).
 
 ## Download
 * **Development:** [src/jquery.form.js
@@ -136,6 +137,7 @@ $('form').ajaxForm({
 ````
 
 ### error
+**Deprecated**  
 Callback function to be invoked upon error.
 
 ### forceSync
@@ -164,6 +166,7 @@ Boolean flag indicating whether the form should be reset if the submit is succes
 Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order with the exception of input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
 
 ### success
+**Deprecated**  
 Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
 
 1. `data`, formatted according to the dataType parameter or the dataFilter callback function, if specified
