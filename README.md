@@ -11,9 +11,17 @@ Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) 
 ### Code of Conduct
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
-## Requirements
-Requires jQuery 1.7.2 or later. Compatible with jQuery 2.x.x and 3.x.x.  
-**Note:** Not compatible with jQuery 3 Slim, due to jQuery's [removal of Deferred methods from jQuery.ajax](https://jquery.com/upgrade-guide/3.0/#breaking-change-special-case-deferred-methods-removed-from-jquery-ajax).
+### Pull Requests Needed
+#### Enhancements needed to to be fully compatible with jQuery 3
+jQuery 3 is removing a lot of features that have been depreciated for a long time. Some of these are still in use by jQuery Form.  
+Pull requests and assistance in updating jQuery Form to be compatible with jQuery 3 are greatly appreciated.  
+See issue #544 for more information.
+
+## Compatibility
+* Requires jQuery 1.7.2 or later.  
+* Compatible with jQuery 2.
+* Partially compatible with jQuery 3.
+* **Not** compatible with jQuery 3 Slim. (issue #544)
 
 ## Download
 * **Development:** [src/jquery.form.js
