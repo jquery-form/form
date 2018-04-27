@@ -75,7 +75,7 @@ Use ajaxSubmit if you want to bind your own submit handler to the form.
 $('form').on('submit', function(e) {
 	e.preventDefault(); // prevent native submit
 	$(this).ajaxSubmit({
-		target: 'myResultsDiv'
+		target: '#myResultsDiv'
 	})
 });
 ````
