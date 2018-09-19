@@ -129,7 +129,7 @@ data: { key1: 'value1', key2: 'value2' }
 Avaliable value:
 * `json` : post request data with json string in post body.
   * You may need polyfill `JSON` functionality with old browsers, recommending: https://github.com/douglascrockford/JSON-js/blob/master/json2.js
-* `form` : (default) post request body with form http format
+* `form` : (default) post request body with http form (x-www-form-urlencoded) format
   
 
 ### dataType
