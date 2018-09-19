@@ -200,9 +200,10 @@
 
 		var elements = [];
 		var qx, a = this.formToArray(options.semantic, elements, options.filtering);
+		var optionsData;
 
 		if (options.data) {
-			var optionsData = $.isFunction(options.data) ? options.data(a) : options.data;
+			optionsData = $.isFunction(options.data) ? options.data(a) : options.data;
 
 			options.extraData = optionsData;
 			qx = $.param(optionsData, traditional);
@@ -232,7 +233,13 @@
 		if (options.type.toUpperCase() === 'GET') {
 			options.url += (options.url.indexOf('?') >= 0 ? '&' : '?') + q;
 			options.data = null;	// data is null for 'get'
+		} else if (options.requestFormat.toLowerCase() === 'json') {
+			var formData = this.formArrayToJsonData(a);
+			var jsonData = $.extend({}, formData, traditional);
+			options.data = JSON.stringify(jsonData);
+			options.contentType = 'application/json';
 		} else {
+			// form-data post
 			options.data = q;		// data is the query string for 'post'
 		}
 
@@ -1191,6 +1198,19 @@
 	$.fn.formSerialize = function(semantic) {
 		// hand off to jQuery.param for proper encoding
 		return $.param(this.formToArray(semantic));
+	};
+
+	/**
+	 * Transform form array data into json object.
+	 */
+	$.fn.formArrayToJsonData = function (arrayOfData) {
+		var result = {};
+
+		$.each(arrayOfData, function (index, node) {
+			result[node.name] = result[node.value];
+		});
+
+		return result;
 	};
 
 	/**
