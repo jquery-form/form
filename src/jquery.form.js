@@ -170,6 +170,7 @@
 			url       : url,
 			success   : $.ajaxSettings.success,
 			type      : method || $.ajaxSettings.type,
+			requestFormat: 'form',
 			iframeSrc : /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank'		// eslint-disable-line no-script-url
 		}, options);
 
