@@ -303,7 +303,7 @@ module.exports = {
 		"semi": [
 			"error",
 			"always"
-		]
+		],
 		"semi-spacing": "error",
 		"sort-imports": "error",
 		"sort-keys": "warn",
