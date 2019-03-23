@@ -126,10 +126,11 @@ An object containing extra data that should be submitted along with the form.
 data: { key1: 'value1', key2: 'value2' }
 ````
 ### requestFormat
-Avaliable value:
+Available value:
+
+* `form` : post request body with http form (x-www-form-urlencoded) format, this is default option.
 * `json` : post request data with json string in post body.
   * You may need polyfill `JSON` functionality with old browsers, recommending: https://github.com/douglascrockford/JSON-js/blob/master/json2.js
-* `form` : (default) post request body with http form (x-www-form-urlencoded) format
   
 
 ### dataType
