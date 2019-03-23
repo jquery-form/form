@@ -1208,7 +1208,7 @@
 		var result = {};
 
 		$.each(arrayOfData, function (index, node) {
-			result[node.name] = result[node.value];
+			result[node.name] = node.value;
 		});
 
 		return result;
