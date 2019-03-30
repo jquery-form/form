@@ -91,6 +91,18 @@ The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT'). **(version a
 Default: `false`  
 Optionally used along with the the [`target`](#target) option. Set to `true` if the target should be replaced or `false` if only the target _contents_ should be replaced. **(version added: 2.43)**
 
+
+### requestFormat
+Default: `form`  
+The encoding format to use for the request body. **(version added: 4.3.0)**  
+The following values are supported:
+
+**'form'**: HTTP form (x-www-form-urlencoded) format
+
+**'json'**: JSON encoded string
+  * You may need polyfill JSON functionality with old browsers, recommending: https://github.com/douglascrockford/JSON-js/blob/master/json2.js
+
+
 ### resetForm
 Default: `null`  
 Boolean flag indicating whether the form should be reset if the submit is successful
