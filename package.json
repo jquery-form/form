@@ -2,7 +2,17 @@
   "name": "jquery-form",
   "version": "4.2.2",
   "description": "The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.",
-  "keywords": [ "jquery", "ajax", "jquery-plugin", "json", "json-form", "html-form", "form", "jquery-form", "ecosystem:jquery" ],
+  "keywords": [
+    "jquery",
+    "ajax",
+    "jquery-plugin",
+    "json",
+    "json-form",
+    "html-form",
+    "form",
+    "jquery-form",
+    "ecosystem:jquery"
+  ],
   "homepage": "https://github.com/jquery-form/form",
   "bugs": "https://github.com/jquery-form/form/issues",
   "license": "(LGPL-2.1+ OR MIT)",
@@ -20,14 +30,13 @@
     "jquery": ">=1.7.2"
   },
   "devDependencies": {
-    "chai": "^4.1.0",
-    "grunt": "^1.0.1",
-    "grunt-cli": "^1.2.0",
-    "grunt-contrib-uglify": "^3.0.1",
+    "chai": "^4.2.0",
+    "grunt": "^1.0.4",
+    "grunt-cli": "^1.3.2",
+    "grunt-contrib-uglify": "^3.4.0",
     "grunt-eslint": "*",
-    "grunt-githooks": "^0.6.0",
-    "grunt-mocha": "^1.0.4",
+    "grunt-mocha": "^1.2.0",
     "jquery": "^3.0.0",
-    "mocha": "^3.4.2"
+    "mocha": "^6.0.2"
   }
 }

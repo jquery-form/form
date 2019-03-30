@@ -673,12 +673,12 @@
 								// if using the $.param format that allows for multiple values with the same name
 								if ($.isPlainObject(s.extraData[n]) && s.extraData[n].hasOwnProperty('name') && s.extraData[n].hasOwnProperty('value')) {
 									extraInputs.push(
-									$('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument).val(s.extraData[n].value)
-										.appendTo(form)[0]);
+										$('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument).val(s.extraData[n].value)
+											.appendTo(form)[0]);
 								} else {
 									extraInputs.push(
-									$('<input type="hidden" name="' + n + '">', ownerDocument).val(s.extraData[n])
-										.appendTo(form)[0]);
+										$('<input type="hidden" name="' + n + '">', ownerDocument).val(s.extraData[n])
+											.appendTo(form)[0]);
 								}
 							}
 						}
@@ -744,7 +744,8 @@
 
 					return;
 
-				} else if (e === SERVER_ABORT && xhr) {
+				}
+				if (e === SERVER_ABORT && xhr) {
 					xhr.abort('server abort');
 					deferred.reject(xhr, 'error', 'server abort');
 
@@ -1426,7 +1427,7 @@
 			switch (tag) {
 			case 'input':
 				this.checked = this.defaultChecked;
-					// fall through
+				// fall through
 
 			case 'textarea':
 				this.value = this.defaultValue;
@@ -1474,8 +1475,8 @@
 				return true;
 
 			case 'form':
-					// guard against an input with the name of 'reset'
-					// note that IE reports the reset function as an 'object'
+				// guard against an input with the name of 'reset'
+				// note that IE reports the reset function as an 'object'
 				if (typeof this.reset === 'function' || (typeof this.reset === 'object' && !this.reset.nodeType)) {
 					this.reset();
 				}
