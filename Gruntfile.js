@@ -29,7 +29,8 @@ module.exports = function(grunt) {
 				src: ['test/*.html'],
 			},
 			options: {
-				run: true
+				run: true,
+				growlOnSuccess: false
 			}
 		},
 
