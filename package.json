@@ -37,6 +37,6 @@
     "grunt-eslint": "*",
     "grunt-mocha": "^1.2.0",
     "jquery": "^3.4.1",
-    "mocha": "^6.0.2"
+    "mocha": "^6.1.4"
   }
 }
