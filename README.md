@@ -224,7 +224,7 @@ Returns the value(s) of the element(s) in the matched set in an array. This meth
 Resets the form to its original state by invoking the form element's native DOM method.
 
 ### clearForm
-Clears the form elements. This method emptys all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs. It does *not* clear hidden field values.
+Clears the form elements. This method empties all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs. It does *not* clear hidden field values.
 
 ### clearFields
 Clears selected field elements. This is handy when you need to clear only a part of the form.
