@@ -1,7 +1,7 @@
 # jQuery Form [![Build Status](https://travis-ci.org/jquery-form/form.svg?branch=master)](https://travis-ci.org/jquery-form/form)
 
 ## Overview
-The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX. The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allows you to have full control over how the data is submitted.
+The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX. The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allow you to have full control over how the data is submitted.
 
 No special markup is needed, just a normal form. Submitting a form with AJAX doesn't get any easier than this!
 
@@ -13,7 +13,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ### Pull Requests Needed
 #### Enhancements needed to to be fully compatible with jQuery 3
-jQuery 3 is removing a lot of features that have been depreciated for a long time. Some of these are still in use by jQuery Form.  
+jQuery 3 is removing a lot of features that have been deprecated for a long time. Some of these are still in use by jQuery Form.  
 Pull requests and assistance in updating jQuery Form to be compatible with jQuery 3 are greatly appreciated.  
 See [issue #544](https://github.com/jquery-form/form/issues/544) for more information.
 
@@ -62,7 +62,7 @@ Use ajaxForm when you want the plugin to manage all the event binding for you.
 ````javascript
 // prepare all forms for ajax submission
 $('form').ajaxForm({
-	target: '#myResultsDiv'
+    target: '#myResultsDiv'
 });
 ````
 
@@ -73,10 +73,10 @@ Use ajaxSubmit if you want to bind your own submit handler to the form.
 ````javascript
 // bind submit handler to form
 $('form').on('submit', function(e) {
-	e.preventDefault(); // prevent native submit
-	$(this).ajaxSubmit({
-		target: '#myResultsDiv'
-	})
+    e.preventDefault(); // prevent native submit
+    $(this).ajaxSubmit({
+        target: '#myResultsDiv'
+    })
 });
 ````
 
@@ -86,7 +86,7 @@ $('form').on('submit', function(e) {
 **Note:** All standard [$.ajax](http://api.jquery.com/jQuery.ajax) options can be used.
 
 ### beforeSerialize
-Callback function invoked prior to form serialization. Provides an opportunity to manipulate the form before its values are retrieved. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
+Callback function invoked before form serialization. Provides an opportunity to manipulate the form before its values are retrieved. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
 
 ````javascript
 beforeSerialize: function($form, options) {
@@ -95,7 +95,7 @@ beforeSerialize: function($form, options) {
 ````
 
 ### beforeSubmit
-Callback function invoked prior to form submission. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
+Callback function invoked before form submission. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
 
 ````javascript
 beforeSubmit: function(arr, $form, options) {
@@ -110,9 +110,9 @@ Callback function invoked before processing fields. This provides a way to filte
 
 ````javascript
 filtering: function(el, index) {
-	if ( !$(el).hasClass('ignore') ) {
-		return el;
-	}
+    if ( !$(el).hasClass('ignore') ) {
+        return el;
+    }
 }
 ````
 
@@ -130,7 +130,7 @@ data: { key1: 'value1', key2: 'value2' }
 Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The dataType option provides a means for specifying how the server response should be handled. This maps directly to jQuery's dataType method. The following values are supported:
 
 * 'xml': server response is treated as XML and the 'success' callback method, if specified, will be passed the responseXML value
-* 'json': server response will be evaluted and passed to the 'success' callback, if specified
+* 'json': server response will be evaluated and passed to the 'success' callback, if specified
 * 'script': server response is evaluated in the global context
 
 ### delegation
@@ -149,8 +149,8 @@ $('form').ajaxForm({
 Callback function to be invoked upon error.
 
 ### forceSync
-Only applicable when explicity using the iframe option or when uploading files on browses that don't support XHR2.
-Set to `true` to remove the short delay before posting form when uploading files. The delay is used to allow the browser to render DOM updates prior to performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait..."
+Only applicable when explicity using the iframe option or when uploading files on browsers that don't support XHR2.
+Set to `true` to remove the short delay before posting form when uploading files. The delay is used to allow the browser to render DOM updates before performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait..."
 
 ### iframe
 Boolean flag indicating whether the form should *always* target the server response to an iframe instead of leveraging XHR when possible.
@@ -159,19 +159,19 @@ Boolean flag indicating whether the form should *always* target the server respo
 String value that should be used for the iframe's src attribute when an iframe is used.
 
 ### iframeTarget
-Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server.
+Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This option allows you to use an existing iframe if you wish. When using this option the plugin will not attempt handling the response from the server.
 
 ### method
 The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').
 
 ### replaceTarget
-Optionally used along with the the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
+Optionally used along with the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
 
 ### resetForm
 Boolean flag indicating whether the form should be reset if the submit is successful
 
 ### semantic
-Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order with the exception of input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
+Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order except for input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
 
 ### success
 **Deprecated**  
@@ -232,7 +232,7 @@ Clears selected field elements. This is handy when you need to clear only a part
 ---
 
 ## File Uploads
-The Form Plugin supports use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/XMLHttpRequest/") and [FormData](https://developer.mozilla.org/en/XMLHttpRequest/FormData) objects on browsers that support these features. As of today (March 2012) that includes Chrome, Safari, and Firefox. On these browsers (and future Opera and IE10) files uploads will occur seamlessly through the XHR object and progress updates are available as the upload proceeds. For older browsers, a fallback technology is used which involves iframes. [More Info](http://malsup.com/jquery/form/#file-upload)
+The Form Plugin supports the use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/XMLHttpRequest/") and [FormData](https://developer.mozilla.org/en/XMLHttpRequest/FormData) objects on browsers that support these features. As of today (March 2012) that includes Chrome, Safari, and Firefox. On these browsers (and future Opera and IE10) files uploads will occur seamlessly through the XHR object and progress updates are available as the upload proceeds. For older browsers, a fallback technology is used which involves iframes. [More Info](http://malsup.com/jquery/form/#file-upload)
 
 ---
 
@@ -242,7 +242,7 @@ See [CONTRIBUTORS](CONTRIBUTORS.md) for details.
 
 ## License
 
-This project is dual licensed under the LGPLv2.1 (or later) or MIT licenses:
+This project is dual-licensed under the LGPLv2.1 (or later) or MIT licenses:
 
 * [GNU Lesser General Public License v2.1](LICENSE)
 * [MIT](LICENSE-MIT)
