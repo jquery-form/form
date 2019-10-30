@@ -105,6 +105,15 @@ beforeSubmit: function(arr, $form, options) {
 }
 ````
 
+### beforeFormUnbind
+Callback function invoked before form events unbind and bind again. Provides an opportunity to manipulate the form before events will be remounted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
+
+````javascript
+beforeFormUnbind: function($form, options) {
+    // your callback code
+}
+````
+
 ### filtering
 Callback function invoked before processing fields. This provides a way to filter elements.
 
