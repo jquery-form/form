@@ -156,7 +156,7 @@
 		}
 		// IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
 		// Instead of using javascript:false always, let's only apply it for IE.
-		isMsie = /(MSIE|trident)/.test(navigator.userAgent || '');
+		isMsie = /(MSIE|Trident)/.test(navigator.userAgent || '');
 		iframeSrc = (isMsie && /^https/i.test(window.location.href || '')) ? 'javascript:false' : 'about:blank'; // eslint-disable-line no-script-url
 
 		options = $.extend(true, {
