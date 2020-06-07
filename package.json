@@ -36,7 +36,7 @@
     "grunt-contrib-uglify": "^3.4.0",
     "grunt-eslint": "*",
     "grunt-mocha": "^1.2.0",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "mocha": "^6.1.4"
   }
 }
