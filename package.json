@@ -1,44 +1,42 @@
 {
   "name": "jquery-form",
-  "version": "4.1.0",
+  "version": "4.2.2",
   "description": "The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.",
-  "keywords": [ "jquery", "ajax", "jquery-plugin", "json", "json-form", "html-form", "form", "jquery-form" ],
+  "keywords": [
+    "jquery",
+    "ajax",
+    "jquery-plugin",
+    "json",
+    "json-form",
+    "html-form",
+    "form",
+    "jquery-form",
+    "ecosystem:jquery"
+  ],
   "homepage": "https://github.com/jquery-form/form",
   "bugs": "https://github.com/jquery-form/form/issues",
-  "license": "(MIT OR LGPL-3.0)",
+  "license": "(LGPL-2.1+ OR MIT)",
   "contributors": [
-    { "name": "Kevin Morris" },
-    { "name": "Mike Alsup" }
+    "Mike Alsup",
+    "Kevin Morris"
   ],
   "main": "src/jquery.form.js",
+  "browser": "dist/jquery.form.min.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/jquery-form/form.git"
   },
   "dependencies": {
-    "jquery": ">=1.7"
+    "jquery": ">=1.7.2"
   },
   "devDependencies": {
-    "grunt": "~1",
-    "grunt-contrib-uglify": "~2",
-    "grunt-mocha": "*",
+    "chai": "^4.2.0",
+    "grunt": "^1.0.4",
+    "grunt-cli": "^1.3.2",
+    "grunt-contrib-uglify": "^3.4.0",
     "grunt-eslint": "*",
-    "grunt-githooks": "*",
-
-    "chai": "*",
-    "mocha": "*",
-
-    "gulp": "~3",
-    "gulp-util": "~3",
-    "gulp-uglify": "~2",
-    "gulp-concat": "~2",
-    "gulp-jshint": "~2",
-    "jshint": "~2"
-  },
-  "jam": {
-    "main": "src/jquery.form.js",
-    "dependencies": {
-      "jquery": ">=1.7"
-    }
+    "grunt-mocha": "^1.2.0",
+    "jquery": "^3.5.0",
+    "mocha": "^6.1.4"
   }
 }

@@ -29,14 +29,19 @@ module.exports = function(grunt) {
 				src: ['test/*.html'],
 			},
 			options: {
-				run: true
+				run: true,
+				growlOnSuccess: false
 			}
 		},
 
 		// Minifies JS files
 		uglify: {
 			options: {
-				preserveComments: /^!|@preserve|@license|@cc_on/i
+				output: {
+					comments: /^!|@preserve|@license|@cc_on/i
+				},
+				sourceMap: true,
+				footer: '\n'
 			},
 			dist: {
 				files: [{

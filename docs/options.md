@@ -57,6 +57,7 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 
 
 ### error
+**Deprecated** due to incompatiblity with jQuery 3 Slim. ([issue #544](https://github.com/jquery-form/form/issues/544))  
 Callback function to be invoked upon error.
 
 
@@ -102,6 +103,7 @@ Boolean flag indicating whether data must be submitted in strict semantic order 
 
 
 ### success
+**Deprecated** due to incompatiblity with jQuery 3 Slim. ([issue #544](https://github.com/jquery-form/form/issues/544))  
 Default: `null`  
 Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
 

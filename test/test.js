@@ -408,7 +408,7 @@ describe('form', function() {
 			dataType: 'xml',
 			success: function(responseXML, statusText) { // post-submit callback
 				assert.ok(typeof responseXML == 'object', 'data type xml');
-				assert.ok($('test', responseXML).size() == 3, 'xml data query');
+				assert.ok($('test', responseXML).length == 3, 'xml data query');
 				// start();
 			}
 		};

@@ -28,8 +28,8 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 
 5. Send a pull request (PR). Bonus points for topic branches.
   * Please make sure all of your commits are atomic (one feature per commit).
-  * Use clear, sensible commit messages. One-line messages are fine for small changes, but bigger changes should look like this:
-
+  * Use sensible commit messages.
+    * Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
     ```shell
     $ git commit -m "A brief summary of the commit"
     >
@@ -71,6 +71,8 @@ jQuery Form uses [Node.js](https://nodejs.org/), [Grunt](https://gruntjs.com/), 
 So you've found a bug, and want to help us fix it? Before filing a bug report, please double-check the bug hasn't already been reported. You can do so [on our issue tracker](https://github.com/jquery-form/form/issues?q=is%3Aopen+is%3Aissue). If something hasn't been raised, you can go ahead and create a new issue with the following information:
 
 * Which version of the plugin are you using?
+* Which version of the jQuery library are you using?
+* What browsers (and versions) have you tested in?
 * How can the error be reproduced?
 * If possible, include a link to a [JSFiddle](https://jsfiddle.net/) or [CodePen](https://codepen.io/) example of the error.
 
