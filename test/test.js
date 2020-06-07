@@ -65,6 +65,26 @@ describe('form', function() {
 		}
 	});
 
+	it('formToArray: json object', function() {
+		var a = $('#form1').formToArray();
+		var o = $.fn.formArrayToJsonData(a);
+		// console.log(JSON.stringify(o,0,4));
+		assert.strictEqual(o.constructor, Object, 'type check');
+		assert.deepEqual(o, {
+			"Hidden": "hiddenValue",
+			"Name": "MyName1",
+			"Password": "",
+			"Multiple": "six",
+			"Single": "one",
+			"Single2": "A",
+			"Check": "2",
+			"Radio": "2",
+			"action": "1",
+			"method": "2",
+			"Text": "This is Form1"
+		});
+	});
+
 	it('formToArray: text promotion for missing value attributes', function() {
 		var expected = [
 			{ name: 'A', value: ''},

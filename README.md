@@ -134,6 +134,13 @@ An object containing extra data that should be submitted along with the form.
 ````
 data: { key1: 'value1', key2: 'value2' }
 ````
+### requestFormat
+Available value:
+
+* `form` : post request body with http form (x-www-form-urlencoded) format, this is default option.
+* `json` : post request data with json string in post body.
+  * You may need polyfill `JSON` functionality with old browsers, recommending: https://github.com/douglascrockford/JSON-js/blob/master/json2.js
+  
 
 ### dataType
 Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The dataType option provides a means for specifying how the server response should be handled. This maps directly to jQuery's dataType method. The following values are supported:
