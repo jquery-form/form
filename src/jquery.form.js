@@ -1012,6 +1012,10 @@
 			return this;
 		}
 
+		if (options.beforeFormUnbind) {
+			options.beforeFormUnbind(this, options)
+		}
+
 		return this.ajaxFormUnbind()
 			.on('submit.form-plugin', options, doAjaxSubmit)
 			.on('click.form-plugin', options, captureSubmittingElement);
