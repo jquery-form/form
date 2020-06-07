@@ -1,7 +1,7 @@
 {
   "name": "form",
   "title": "jQuery Form",
-  "version": "4.2.2",
+  "version": "4.3.0",
   "author": {
     "name": "Kevin Morris",
     "url": "https://github.com/kevindb/"
@@ -47,7 +47,7 @@
     "grunt-contrib-uglify": "^3.4.0",
     "grunt-eslint": "*",
     "grunt-mocha": "^1.2.0",
-    "jquery": "^3.4.1",
-    "mocha": "^6.0.2"
+    "jquery": "^3.5.0",
+    "mocha": "^6.1.4"
   }
 }
