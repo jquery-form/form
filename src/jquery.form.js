@@ -1017,7 +1017,7 @@
 		}
 
 		if (options.beforeFormUnbind) {
-			options.beforeFormUnbind(this, options)
+			options.beforeFormUnbind(this, options);
 		}
 
 		return this.ajaxFormUnbind()
