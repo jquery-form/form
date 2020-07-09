@@ -33,7 +33,7 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
     ```shell
     $ git commit -m "A brief summary of the commit"
     >
-    > A paragraph describing what changed and its impact."
+    > A paragraph describing what changed and its impact.
     ```
   * If your PR fixes a separate issue number, include it in the commit message.
 

@@ -1,57 +1,60 @@
+'use strict';
+
 module.exports = function(grunt) {
 	grunt.initConfig({
-		pkg: grunt.file.readJSON('package.json'),
-		meta: {
-			banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
+		eslint : {
+			options : {
+				quiet : true
+			},
+			target : ['src/**/*.js']
 		},
 
-		githooks: {
-			options: {
-				hashbang: '#!/bin/sh',
-				template: 'install/template/shell.hb',
-				startMarker: '# GRUNT-GITHOOKS START',
-				endMarker: '# GRUNT-GITHOOKS END'
+		githooks : {
+			all : {
+				'pre-commit' : 'pre-commit'
 			},
-			all: {
-				'pre-commit': 'pre-commit'
+			options : {
+				endMarker   : '# GRUNT-GITHOOKS END',
+				hashbang    : '#!/bin/sh',
+				startMarker : '# GRUNT-GITHOOKS START',
+				template    : 'install/template/shell.hb'
 			}
 		},
 
-		eslint: {
-			options: {
-				quiet: true
-			},
-			target: ['src/**/*.js']
+		meta : {
+			banner : '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
 		},
 
-		mocha: {
-			all: {
-				src: ['test/*.html']
+		mocha : {
+			all : {
+				src : ['test/*.html']
 			},
-			options: {
-				run: true,
-				growlOnSuccess: false
+			options : {
+				growlOnSuccess : false,
+				run            : true
 			}
 		},
+
+		pkg : grunt.file.readJSON('package.json'),
 
 		// Minifies JS files
-		uglify: {
-			options: {
-				output: {
-					comments: /^!|@preserve|@license|@cc_on/i
-				},
-				sourceMap: true,
-				footer: '\n'
-			},
-			dist: {
-				files: [{
-					expand:	true,
-					cwd:	'src',
-					src:	['*.js','!*.min.js'],
-					dest:	'dist',
-					ext:	'.min.js',
-					extDot:	'last'
+		uglify : {
+			dist : {
+				files : [{
+					cwd    :	'src',
+					dest   :	'dist',
+					expand :	true,
+					ext    :	'.min.js',
+					extDot :	'last',
+					src    :	['*.js', '!*.min.js']
 				}]
+			},
+			options : {
+				footer : '\n',
+				output : {
+					comments : /^!|@preserve|@license|@cc_on/i
+				},
+				sourceMap : true
 			}
 		}
 	});
@@ -63,8 +66,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-githooks');
 
 	// Default task.
-	grunt.registerTask('lint', [ 'eslint' ]);
-	grunt.registerTask('test', [ 'lint', 'mocha' ]);
-	grunt.registerTask('pre-commit', [ 'test' ]);
-	grunt.registerTask('default', [ 'test', 'uglify' ]);
+	grunt.registerTask('lint', ['eslint']);
+	grunt.registerTask('test', ['lint', 'mocha']);
+	grunt.registerTask('pre-commit', ['test']);
+	grunt.registerTask('default', ['test', 'uglify']);
 };

@@ -26,6 +26,10 @@
     "type": "git",
     "url": "https://github.com/jquery-form/form.git"
   },
+  "scripts": {
+    "lint": "eslint --report-unused-disable-directives .",
+    "test": "grunt test"
+  },
   "dependencies": {
     "jquery": ">=1.7.2"
   },
@@ -36,6 +40,7 @@
     "grunt-contrib-uglify": "^4.0.1",
     "grunt-eslint": "*",
     "grunt-mocha": "^1.2.0",
+    "eslint": "^7.4.0",
     "jquery": "^3.5.1",
     "mocha": "^7.2.0"
   }

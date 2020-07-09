@@ -3,30 +3,34 @@
 'use strict';
 
 // helper method
-var arrayCount = function(arr, key) {
-	var count = 0;
-	for (var i = 0; i < arr.length; i++) {
+const arrayCount = function(arr, key) {
+	let count = 0;
+
+	for (let i = 0; i < arr.length; i++) {
 		if (arr[i].name === key) {
 			count++;
 		}
 	}
+
 	return count;
 };
 
 // helper method
-var arrayValue = function(arr, key) {
-	for (var i = 0; i < arr.length; i++) {
+const arrayValue = function(arr, key) {
+	for (let i = 0; i < arr.length; i++) {
 		if (arr[i].name === key) {
 			return arr[i].value;
 		}
 	}
+
 	return undefined;
 };
 
 
-var assert = chai.assert;
-var fixture;
+const {assert} = chai;
+let fixture;
 
+// eslint-disable-next-line max-statements
 describe('form', function() {
 	before(function() {
 		fixture = $('#main').html();
@@ -38,112 +42,128 @@ describe('form', function() {
 
 
 	it('"action" and "method" form attributes', function() {
-		var f = $('#form1');
-		assert.strictEqual(f.attr('action'), 'ajax/text.html', 'form "action"');
-		assert.strictEqual(f.attr('method'), 'get', 'form "method"');
+		const form = $('#form1');
+
+		assert.strictEqual(form.attr('action'), 'ajax/text.html', 'form "action"');
+		assert.strictEqual(form.attr('method'), 'get', 'form "method"');
 	});
 
 	it('formToArray: multi-select', function() {
-		var a = $('#form1').formToArray();
-		assert.strictEqual(a.constructor, Array, 'type check');
-		assert.strictEqual(a.length, 13, 'array length');
-		assert.strictEqual(arrayCount(a, 'Multiple'), 3, 'multi-select');
+		const arr = $('#form1').formToArray();
+		const expectedLength = 13;
+		const expectedMultipleCount = 3;
+
+		assert.instanceOf(arr, Array, 'type check');
+		assert.strictEqual(arr.length, expectedLength, 'array length');
+		assert.strictEqual(arrayCount(arr, 'Multiple'), expectedMultipleCount, 'multi-select');
 	});
 
 	it('formToArray: "action" and "method" inputs', function() {
-		var a = $('#form1').formToArray();
-		assert.strictEqual(a.constructor, Array, 'type check');
-		assert.strictEqual(arrayValue(a, 'action'), '1', 'input name=action');
-		assert.strictEqual(arrayValue(a, 'method'), '2', 'input name=method');
+		const arr = $('#form1').formToArray();
+
+		assert.instanceOf(arr, Array, 'type check');
+		assert.strictEqual(arrayValue(arr, 'action'), '1', 'input name=action');
+		assert.strictEqual(arrayValue(arr, 'method'), '2', 'input name=method');
 	});
 
 	it('formToArray: semantic test', function() {
-		var formData = $('#form2').formToArray(true);
-		var testData = ['a','b','c','d','e','f'];
-		for (var i = 0; i < 6; i++) {
+		const formData = $('#form2').formToArray(true);
+		const testData = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+		for (let i = 0; i < testData.length; i++) {
 			assert.strictEqual(formData[i].name, testData[i], 'match value at index=' + i);
 		}
 	});
 
 	it('formToArray: text promotion for missing value attributes', function() {
-		var expected = [
-			{ name: 'A', value: ''},
-			{ name: 'B', value: 'MISSING_ATTR'},
-			{ name: 'C', value: ''},
-			{ name: 'C', value: 'MISSING_ATTR'}
+		const expected = [
+			{name: 'A', value: ''},
+			{name: 'B', value: 'MISSING_ATTR'},
+			{name: 'C', value: ''},
+			{name: 'C', value: 'MISSING_ATTR'}
 		];
-		var a = $('#form6').formToArray(true);
+		const arr = $('#form6').formToArray(true);
 
 		// verify all the option values
-		for (var i = 0; i < a.length; i++) {
-			assert.strictEqual(a[i].name, expected[i].name, 'Name: ' + a[i].name + ' = ' + expected[i].name);
-			assert.strictEqual(a[i].value, expected[i].value, 'Value: ' + a[i].value + ' = ' + expected[i].value);
+		for (let i = 0; i < arr.length; i++) {
+			assert.strictEqual(arr[i].name, expected[i].name, 'Name: ' + arr[i].name + ' = ' + expected[i].name);
+			assert.strictEqual(arr[i].value, expected[i].value, 'Value: ' + arr[i].value + ' = ' + expected[i].value);
 		}
 	});
 
 	it('formToArray: outside fields', function() {
-		var formData = $('#form10').formToArray();
-		assert.strictEqual(formData.length, 2, 'There are two "successful" elements of the form');
+		const formData = $('#form10').formToArray();
+		const expectedLength = 2;
+
+		assert.strictEqual(formData.length, expectedLength, 'There are two "successful" elements of the form');
 	});
 
 	// test string serialization
 	it('serialize: param count', function() {
-		var s = $('#form1').formSerialize();
-		assert.ok(s.constructor == String, 'type check');
-		assert.ok(s.split('&').length == 13, 'string array length');
+		const ser = $('#form1').formSerialize();
+		const expectedStringArrayLength = 13;
+
+		assert.instanceOf(ser, String, 'type check');
+		assert.ok(ser.split('&').length === expectedStringArrayLength, 'string array length');
 	});
 
 	// test support for input elements not contained within a form
 	it('serialize: pseudo form', function() {
-		var s = $('#pseudo *').fieldSerialize();
-		assert.ok(s.constructor == String, 'type check');
-		assert.ok(s.split('&').length == 3, 'string array length');
+		const ser = $('#pseudo *').fieldSerialize();
+		const expectedStringArrayLength = 3;
+
+		assert.instanceOf(ser, String, 'type check');
+		assert.ok(ser.split('&').length === expectedStringArrayLength, 'string array length');
 	});
 
 
 	// test resetForm
 	it('resetForm (text input)', function() {
-		var $el = $('#form1 input[name=Name]');
-		var val = $el.val();
-		assert.ok('MyName1' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 input[name=Name]');
+		let val = $el.val();
+
+		assert.ok(val === 'MyName1', 'beforeSubmit: ' + val);
 		$el.val('test');
 		val = $el.val();
-		assert.ok('test' == $el.val(), 'update: ' + val);
+		assert.ok($el.val() === 'test', 'update: ' + val);
 		$('#form1').resetForm();
 		val = $el.val();
-		assert.ok('MyName1' == val, 'success: ' + val);
+		assert.ok(val === 'MyName1', 'success: ' + val);
 	});
 
 	// test resetForm
 	it('resetForm (select)', function() {
-		var $el = $('#form1 select[name=Single]');
-		var val = $el.val();
-		assert.ok('one' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 select[name=Single]');
+		let val = $el.val();
+
+		assert.ok(val === 'one', 'beforeSubmit: ' + val);
 		$el.val('two');
 		val = $el.val();
-		assert.ok('two' == $el.val(), 'update: ' + val);
+		assert.ok($el.val() === 'two', 'update: ' + val);
 		$('#form1').resetForm();
 		val = $el.val();
-		assert.ok('one' == val, 'success: ' + val);
+		assert.ok(val === 'one', 'success: ' + val);
 	});
 
 	// test resetForm
 	it('resetForm (textarea)', function() {
-		var $el = $('#form1 textarea');
-		var val = $el.val();
-		assert.ok('This is Form1' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 textarea');
+		let val = $el.val();
+
+		assert.ok(val === 'This is Form1', 'beforeSubmit: ' + val);
 		$el.val('test');
 		val = $el.val();
-		assert.ok('test' == val, 'udpate: ' + val);
+		assert.ok(val === 'test', 'udpate: ' + val);
 		$('#form1').resetForm();
 		val = $el.val();
-		assert.ok('This is Form1' == val, 'success: ' + val);
+		assert.ok(val === 'This is Form1', 'success: ' + val);
 	});
 
 	// test resetForm
 	it('resetForm (checkbox)', function() {
-		var el = $('#form1 input:checkbox:checked')[0];
-		var val = el.value;
+		const el = $('#form1 input:checkbox:checked')[0];
+		// const val = el.value;
+
 		assert.ok(el.checked, 'beforeSubmit: ' + el.checked);
 		el.checked = false;
 		assert.ok(!el.checked, 'update: ' + el.checked);
@@ -153,8 +173,9 @@ describe('form', function() {
 
 	// test resetForm
 	it('resetForm (radio)', function() {
-		var el = $('#form1 input:radio:checked')[0];
-		var val = el.value;
+		const el = $('#form1 input:radio:checked')[0];
+		// const val = el.value;
+
 		assert.ok(el.checked, 'beforeSubmit: ' + el.checked);
 		el.checked = false;
 		assert.ok(!el.checked, 'update: ' + el.checked);
@@ -165,19 +186,21 @@ describe('form', function() {
 
 	// test clearForm
 	it('clearForm (text input)', function() {
-		var $el = $('#form1 input[name=Name]');
-		var val = $el.val();
-		assert.ok('MyName1' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 input[name=Name]');
+		let val = $el.val();
+
+		assert.ok(val === 'MyName1', 'beforeSubmit: ' + val);
 		$('#form1').clearForm();
 		val = $el.val();
-		assert.ok('' == val, 'success: ' + val);
+		assert.ok(val === '', 'success: ' + val);
 	});
 
 	// test clearForm
 	it('clearForm (select)', function() {
-		var $el = $('#form1 select[name=Single]');
-		var val = $el.val();
-		assert.ok('one' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 select[name=Single]');
+		let val = $el.val();
+
+		assert.ok(val === 'one', 'beforeSubmit: ' + val);
 		$('#form1').clearForm();
 		val = $el.val();
 		assert.ok(!val, 'success: ' + val);
@@ -185,28 +208,31 @@ describe('form', function() {
 
 	// test clearForm; here we're testing that a hidden field is NOT cleared
 	it('clearForm: (hidden input)', function() {
-		var $el = $('#form1 input:hidden');
-		var val = $el.val();
-		assert.ok('hiddenValue' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 input:hidden');
+		let val = $el.val();
+
+		assert.ok(val === 'hiddenValue', 'beforeSubmit: ' + val);
 		$('#form1').clearForm();
 		val = $el.val();
-		assert.ok('hiddenValue' == val, 'success: ' + val);
+		assert.ok(val === 'hiddenValue', 'success: ' + val);
 	});
 
 
 	// test clearForm; here we're testing that a submit element is NOT cleared
 	it('clearForm: (submit input)', function() {
-		var $el = $('#form1 input:submit');
-		var val = $el.val();
-		assert.ok('Submit1' == val, 'beforeSubmit: ' + val);
+		const $el = $('#form1 input:submit');
+		let val = $el.val();
+
+		assert.ok(val === 'Submit1', 'beforeSubmit: ' + val);
 		$('#form1').clearForm();
 		val = $el.val();
-		assert.ok('Submit1' == val, 'success: ' + val);
+		assert.ok(val === 'Submit1', 'success: ' + val);
 	});
 
 	// test clearForm
 	it('clearForm (checkbox)', function() {
-		var el = $('#form1 input:checkbox:checked')[0];
+		const el = $('#form1 input:checkbox:checked')[0];
+
 		assert.ok(el.checked, 'beforeSubmit: ' + el.checked);
 		$('#form1').clearForm();
 		assert.ok(!el.checked, 'success: ' + el.checked);
@@ -214,7 +240,8 @@ describe('form', function() {
 
 	// test clearForm
 	it('clearForm (radio)', function() {
-		var el = $('#form1 input:radio:checked')[0];
+		const el = $('#form1 input:radio:checked')[0];
+
 		assert.ok(el.checked, 'beforeSubmit: ' + el.checked);
 		$('#form1').clearForm();
 		assert.ok(!el.checked, 'success: ' + el.checked);
@@ -224,13 +251,13 @@ describe('form', function() {
 	it('ajaxSubmit: target == String', function() {
 		$('#targetDiv').empty();
 		// stop();
-		var opts = {
-			target: '#targetDiv',
-			success: function() { // post-callback
+		const opts = {
+			success : function() { // post-callback
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
 				// start();
-			}
+			},
+			target : '#targetDiv'
 		};
 
 		// expect(2);
@@ -240,16 +267,17 @@ describe('form', function() {
 	// test passing jQuery object as the target
 	it('ajaxSubmit: target == jQuery object', function() {
 		// stop();
-		var target = $('#targetDiv');
+		const target = $('#targetDiv');
+
 		target.empty();
 
-		var opts = {
-			target: target,
-			success: function(responseText) { // post-callback
+		const opts = {
+			success : function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
 				// start();
-			}
+			},
+			target : target
 		};
 
 		// expect(2);
@@ -260,15 +288,15 @@ describe('form', function() {
 	it('ajaxSubmit: target == DOM element', function() {
 		// stop();
 		$('#targetDiv').empty();
-		var el = $('#targetDiv')[0];
+		// const el = $('#targetDiv')[0];
 
-		var opts = {
-			target: '#targetDiv',
-			success: function(responseText) { // post-callback
+		const opts = {
+			success : function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
 				// start();
-			}
+			},
+			target : '#targetDiv'
 		};
 
 		// expect(2);
@@ -280,18 +308,18 @@ describe('form', function() {
 		// stop();
 		$('#targetDiv').empty();
 
-		var opts = {
-			target: '#targetDiv',
-			url:	'ajax/doc-with-scripts.html?' + new Date().getTime(),
-			success: function(responseText) { // post-callback
+		const opts = {
+			success : function(responseText) { // post-callback
 				assert.ok(true, 'success-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
-				assert.ok(typeof unitTestVariable1 != 'undefined', 'first script block executed');
-				assert.ok(typeof unitTestVariable2 != 'undefined', 'second script block executed');
-				assert.ok(typeof scriptCount != 'undefined', 'third script block executed');
-				assert.ok(scriptCount == 1, 'scripts executed once: ' + scriptCount);
+				assert.ok(typeof unitTestVariable1 !== 'undefined', 'first script block executed');
+				assert.ok(typeof unitTestVariable2 !== 'undefined', 'second script block executed');
+				assert.ok(typeof scriptCount !== 'undefined', 'third script block executed');
+				assert.ok(scriptCount === 1, 'scripts executed once: ' + scriptCount);
 				// start();
-			}
+			},
+			target : '#targetDiv',
+			url    : 'ajax/doc-with-scripts.html?' + new Date().getTime()
 		};
 
 		// expect(6);
@@ -300,12 +328,12 @@ describe('form', function() {
 
 	// test ajaxSubmit pre-submit callback
 	it('ajaxSubmit: pre-submit callback', function() {
-		var opts = {
-			beforeSubmit: function(a, jq) { // pre-submit callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-submit callback
 				assert.ok(true, 'pre-submit callback');
-				assert.ok(a.constructor == Array, 'type check array');
+				assert.instanceOf(arr, Array, 'type check array');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(jq[0].tagName.toLowerCase() == 'form', 'jQuery arg == "form": ' + jq[0].tagName.toLowerCase());
+				assert.ok(jq[0].tagName.toLowerCase() === 'form', 'jQuery arg == "form": ' + jq[0].tagName.toLowerCase());
 			}
 		};
 
@@ -317,11 +345,11 @@ describe('form', function() {
 	it('ajaxSubmit: post-submit callback', function() {
 		// stop();
 
-		var opts = {
-			success: function(responseText, statusText) { // post-submit callback
+		const opts = {
+			success : function(responseText, statusText) { // post-submit callback
 				assert.ok(true, 'post-submit callback');
 				assert.ok(responseText.match('Lorem ipsum'), 'responseText');
-				assert.ok(statusText == 'success', 'statusText');
+				assert.ok(statusText === 'success', 'statusText');
 				// start();
 			}
 		};
@@ -343,18 +371,18 @@ describe('form', function() {
 
 	// test semantic support via ajaxSubmit's pre-submit callback
 	it('ajaxSubmit: semantic test', function() {
-		var testData = ['a','b','c','d','e','f'];
+		const testData = ['a', 'b', 'c', 'd', 'e', 'f'];
 
-		var opts = {
-			semantic: true,
-			beforeSubmit: function(a, jq) { // pre-submit callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-submit callback
 				assert.ok(true, 'pre-submit callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				for (var i = 0; i < a.length; i++) {
-					assert.ok(a[i].name == testData[i], 'match value at index=' + i);
+				for (let i = 0; i < arr.length; i++) {
+					assert.ok(arr[i].name === testData[i], 'match value at index=' + i);
 				}
-			}
+			},
+			semantic : true
 		};
 
 		// expect(9);
@@ -365,15 +393,15 @@ describe('form', function() {
 	it('ajaxSubmit: dataType == json', function() {
 		// stop();
 
-		var opts = {
-			url: 'ajax/json.json',
-			dataType: 'json',
-			success: function(data, statusText) { // post-submit callback
+		const opts = {
+			dataType : 'json',
+			success  : function(data, statusText) { // post-submit callback
 				// assert that the json data was evaluated
-				assert.ok(typeof data == 'object', 'json data type');
-				assert.ok(data.name == 'jquery-test', 'json data contents');
+				assert.ok(typeof data === 'object', 'json data type');
+				assert.ok(data.name === 'jquery-test', 'json data contents');
 				// start();
-			}
+			},
+			url : 'ajax/json.json'
 		};
 
 		// expect(2);
@@ -385,14 +413,14 @@ describe('form', function() {
 	it('ajaxSubmit: dataType == script', function() {
 		// stop();
 
-		var opts = {
-			url: 'ajax/script.txt?' + new Date().getTime(), // don't let ie cache it
-			dataType: 'script',
-			success: function(responseText, statusText) { // post-submit callback
-				assert.ok(typeof formScriptTest == 'function', 'script evaluated');
+		const opts = {
+			dataType : 'script',
+			success  : function(responseText, statusText) { // post-submit callback
+				assert.ok(typeof formScriptTest === 'function', 'script evaluated');
 				assert.ok(responseText.match('formScriptTest'), 'script returned');
 				// start();
-			}
+			},
+			url : 'ajax/script.txt?' + new Date().getTime() // don't let ie cache it
 		};
 
 		// expect(2);
@@ -403,14 +431,16 @@ describe('form', function() {
 	it('ajaxSubmit: dataType == xml', function() {
 		// stop();
 
-		var opts = {
-			url: 'ajax/test.xml',
-			dataType: 'xml',
-			success: function(responseXML, statusText) { // post-submit callback
-				assert.ok(typeof responseXML == 'object', 'data type xml');
-				assert.ok($('test', responseXML).length == 3, 'xml data query');
+		const opts = {
+			dataType : 'xml',
+			success  : function(responseXML, statusText) { // post-submit callback
+				const expectedLength = 3;
+
+				assert.ok(typeof responseXML === 'object', 'data type xml');
+				assert.ok($('test', responseXML).length === expectedLength, 'xml data query');
 				// start();
-			}
+			},
+			url : 'ajax/test.xml'
 		};
 
 		// expect(2);
@@ -423,8 +453,8 @@ describe('form', function() {
 	it('ajaxSubmit: existing args in action attr', function() {
 		// stop();
 
-		var opts = {
-			success: function() { // post-submit callback
+		const opts = {
+			success : function() { // post-submit callback
 				assert.ok(true, 'post callback');
 				// start();
 			}
@@ -437,14 +467,15 @@ describe('form', function() {
 	// test ajaxSubmit using pre-submit callback to cancel submit
 	it('ajaxSubmit: cancel submit', function() {
 
-		var opts = {
-			beforeSubmit: function(a, jq) {		// pre-submit callback
+		const opts = {
+			beforeSubmit : function(arr, jq) {		// pre-submit callback
 				assert.ok(true, 'pre-submit callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
+
 				return false;		// return false to abort submit
 			},
-			success: function() {	// post-submit callback
+			success : function() {	// post-submit callback
 				assert.ok(false, 'should not hit this post-submit callback');
 			}
 		};
@@ -457,21 +488,21 @@ describe('form', function() {
 	it('ajaxSubmit: pseudo-form', function() {
 		// stop();
 
-		var opts = {
-			beforeSubmit: function(a, jq) { // pre-submit callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-submit callback
 				assert.ok(true, 'pre-submit callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(jq[0].tagName.toLowerCase() == 'div', 'jQuery arg == "div"');
+				assert.ok(jq[0].tagName.toLowerCase() === 'div', 'jQuery arg == "div"');
 			},
-			success: function() { // post-submit callback
+			success : function() { // post-submit callback
 				assert.ok(true, 'post-submit callback');
 				// start();
 			},
+			type : 'post',
 			// url and method must be provided for a pseudo form since they can
 			// not be extracted from the markup
-			url:  'ajax/text.html',
-			type: 'post'
+			url  : 'ajax/text.html'
 		};
 
 		// expect(5);
@@ -482,14 +513,15 @@ describe('form', function() {
 	it('ajaxSubmit: evaluate response', function() {
 		// stop();
 
-		var opts = {
-			success: function(responseText) { // post-callback
+		const opts = {
+			success : function(responseText) { // post-callback
 				assert.ok(true, 'post-callback');
-				var data = eval.call(window, '(' + responseText + ')');
-				assert.ok(data.name == 'jquery-test', 'evaled response');
+				const data = eval.call(window, '(' + responseText + ')');
+
+				assert.ok(data.name === 'jquery-test', 'evaled response');
 				// start();
 			},
-			url: 'ajax/json.txt'
+			url : 'ajax/json.txt'
 		};
 
 		// expect(2);
@@ -501,13 +533,13 @@ describe('form', function() {
 	it('ajaxForm: pre and post callbacks', function() {
 		// stop();
 
-		var opts = {
-			beforeSubmit: function(a, jq) {	// pre-submit callback
+		const opts = {
+			beforeSubmit : function(arr, jq) {	// pre-submit callback
 				assert.ok(true, 'pre-submit callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
 			},
-			success: function() {			// post-submit callback
+			success : function() {			// post-submit callback
 				assert.ok(true, 'post-submit callback');
 				// start();
 			}
@@ -521,12 +553,12 @@ describe('form', function() {
 	// test that the value of the submit button is captured
 	it('ajaxForm: capture submit element', function() {
 
-		var opts = {
-			beforeSubmit: function(a, jq) { // pre-callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-callback
 				assert.ok(true, 'pre-callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(arrayValue(a, 'form4inputName') !== null, 'submit button');
+				assert.ok(arrayValue(arr, 'form4inputName') !== null, 'submit button');
 			}
 		};
 
@@ -538,13 +570,13 @@ describe('form', function() {
 	// test image submit support
 	it('ajaxForm: capture submit image coordinates', function() {
 
-		var opts = {
-			beforeSubmit: function(a, jq) { // pre-callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-callback
 				assert.ok(true, 'pre-callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(arrayValue(a, 'myImage.x') !== null, 'x coord');
-				assert.ok(arrayValue(a, 'myImage.y') !== null, 'y coord');
+				assert.ok(arrayValue(arr, 'myImage.x') !== null, 'x coord');
+				assert.ok(arrayValue(arr, 'myImage.y') !== null, 'y coord');
 			}
 		};
 
@@ -556,15 +588,15 @@ describe('form', function() {
 	// test image submit support
 	it('ajaxForm: capture submit image coordinates (semantic=true)', function() {
 
-		var opts = {
-			semantic: true,
-			beforeSubmit: function(a, jq) { // pre-callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-callback
 				assert.ok(true, 'pre-callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
-				assert.ok(arrayValue(a, 'myImage.x') !== null, 'x coord');
-				assert.ok(arrayValue(a, 'myImage.y') !== null, 'y coord');
-			}
+				assert.ok(arrayValue(arr, 'myImage.x') !== null, 'x coord');
+				assert.ok(arrayValue(arr, 'myImage.y') !== null, 'y coord');
+			},
+			semantic : true
 		};
 
 		// expect(5);
@@ -577,18 +609,18 @@ describe('form', function() {
 		$('#targetDiv').empty();
 		// stop();
 
-		var opts = {
-			target: '#targetDiv',
-			beforeSubmit: function(a, jq) { // pre-callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-callback
 				assert.ok(true, 'pre-callback');
-				assert.ok(a.constructor == Array, 'type check');
+				assert.instanceOf(arr, Array, 'type check');
 				assert.ok(jq.jquery, 'type check jQuery');
 			},
-			success: function() {
+			success : function() {
 				assert.ok(true, 'post-callback');
 				assert.ok($('#targetDiv').text().match('Lorem ipsum'), 'targetDiv updated');
 				// start();
-			}
+			},
+			target : '#targetDiv'
 		};
 
 		// expect(5);
@@ -600,8 +632,8 @@ describe('form', function() {
 		$('#targetDiv').empty();
 		// stop();
 
-		var opts = {
-			success: function() {
+		const opts = {
+			success : function() {
 				assert.ok(true, 'post-callback');
 				// start();
 			}
@@ -615,15 +647,15 @@ describe('form', function() {
 		$('#targetDiv').empty();
 		// stop();
 
-		var opts = {
-			url: 'ajax/404.html',
-			error: function() {
+		const opts = {
+			error : function() {
 				assert.ok(true, 'error-callback');
 				// start();
 			},
-			success: function() { // post-submit callback
+			success : function() { // post-submit callback
 				assert.ok(false, 'should not hit post-submit callback');
-			}
+			},
+			url : 'ajax/404.html'
 		};
 
 		// expect(1);
@@ -632,154 +664,165 @@ describe('form', function() {
 
 
 	it('fieldValue(true)', function() {
-		var i;
+		let i;
 
-		assert.ok('5'  == $('#fieldTest input').fieldValue(true)[0], 'input');
-		assert.ok('1'  == $('#fieldTest :input').fieldValue(true)[0], ':input');
-		assert.ok('5'  == $('#fieldTest input:hidden').fieldValue(true)[0], ':hidden');
-		assert.ok('14' == $('#fieldTest :password').fieldValue(true)[0], ':password');
-		assert.ok('12' == $('#fieldTest :radio').fieldValue(true)[0], ':radio');
-		assert.ok('1'  == $('#fieldTest select').fieldValue(true)[0], 'select');
+		assert.ok($('#fieldTest input').fieldValue(true)[0] === '5', 'input');
+		assert.ok($('#fieldTest :input').fieldValue(true)[0] === '1', ':input');
+		assert.ok($('#fieldTest input:hidden').fieldValue(true)[0] === '5', ':hidden');
+		assert.ok($('#fieldTest :password').fieldValue(true)[0] === '14', ':password');
+		assert.ok($('#fieldTest :radio').fieldValue(true)[0] === '12', ':radio');
+		assert.ok($('#fieldTest select').fieldValue(true)[0] === '1', 'select');
 
-		var expected = ['8','10'];
-		var result = $('#fieldTest :checkbox').fieldValue(true);
-		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
+		let expected = ['8', '10'];
+		let result = $('#fieldTest :checkbox').fieldValue(true);
+
+		assert.ok(result.length === expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
 		for (i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i]);
+			assert.ok(result[i] === expected[i], expected[i]);
 		}
 
-		expected = ['3','4'];
+		expected = ['3', '4'];
 		result = $('#fieldTest [name=B]').fieldValue(true);
-		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
+		assert.ok(result.length === expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
 		for (i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i]);
+			assert.ok(result[i] === expected[i], expected[i]);
 		}
 	});
 
+	// eslint-disable-next-line max-statements
 	it('fieldValue(false)', function() {
-		var i;
+		let i;
 
-		assert.ok('5'  == $('#fieldTest input').fieldValue(false)[0], 'input');
-		assert.ok('1'  == $('#fieldTest :input').fieldValue(false)[0], ':input');
-		assert.ok('5'  == $('#fieldTest input:hidden').fieldValue(false)[0], ':hidden');
-		assert.ok('14' == $('#fieldTest :password').fieldValue(false)[0], ':password');
-		assert.ok('1'  == $('#fieldTest select').fieldValue(false)[0], 'select');
+		assert.ok($('#fieldTest input').fieldValue(false)[0] === '5', 'input');
+		assert.ok($('#fieldTest :input').fieldValue(false)[0] === '1', ':input');
+		assert.ok($('#fieldTest input:hidden').fieldValue(false)[0] === '5', ':hidden');
+		assert.ok($('#fieldTest :password').fieldValue(false)[0] === '14', ':password');
+		assert.ok($('#fieldTest select').fieldValue(false)[0] === '1', 'select');
 
-		var expected = ['8','9','10'];
-		var result = $('#fieldTest :checkbox').fieldValue(false);
-		assert.ok(result.length == expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
+		let expected = ['8', '9', '10'];
+		let result = $('#fieldTest :checkbox').fieldValue(false);
+
+		assert.ok(result.length === expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
 		for (i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i]);
+			assert.ok(result[i] === expected[i], expected[i]);
 		}
 
-		expected = ['11','12','13'];
+		expected = ['11', '12', '13'];
 		result = $('#fieldTest :radio').fieldValue(false);
-		assert.ok(result.length == expected.length, 'result size check (radio): ' + result.length + '=' + expected.length);
+		assert.ok(result.length === expected.length, 'result size check (radio): ' + result.length + '=' + expected.length);
 		for (i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i]);
+			assert.ok(result[i] === expected[i], expected[i]);
 		}
 
-		expected = ['3','4'];
+		expected = ['3', '4'];
 		result = $('#fieldTest [name=B]').fieldValue(false);
-		assert.ok(result.length == expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
+		assert.ok(result.length === expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
 		for (i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i]);
+			assert.ok(result[i] === expected[i], expected[i]);
 		}
 	});
 
 	it('fieldSerialize(true) input', function() {
-		var expected = ['C=5', 'D=6', 'F=8', 'F=10', 'G=12', 'H=14'];
+		const expected = ['C=5', 'D=6', 'F=8', 'F=10', 'G=12', 'H=14'];
 
-		var result = $('#fieldTest input').fieldSerialize(true);
+		let result = $('#fieldTest input').fieldSerialize(true);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(true) :input', function() {
-		var expected = ['A=1','B=3','B=4','C=5','D=6','E=7','F=8','F=10','G=12','H=14'];
+		const expected = ['A=1', 'B=3', 'B=4', 'C=5', 'D=6', 'E=7', 'F=8', 'F=10', 'G=12', 'H=14'];
 
-		var result = $('#fieldTest :input').fieldSerialize(true);
+		let result = $('#fieldTest :input').fieldSerialize(true);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(false) :input', function() {
-		var expected = ['A=1','B=3','B=4','C=5','D=6','E=7','F=8','F=9','F=10','G=11','G=12','G=13','H=14','I=15','J=16'];
+		const expected = ['A=1', 'B=3', 'B=4', 'C=5', 'D=6', 'E=7', 'F=8', 'F=9', 'F=10', 'G=11', 'G=12', 'G=13', 'H=14', 'I=15', 'J=16'];
 
-		var result = $('#fieldTest :input').fieldSerialize(false);
+		let result = $('#fieldTest :input').fieldSerialize(false);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(true) select-mulitple', function() {
-		var expected = ['B=3','B=4'];
+		const expected = ['B=3', 'B=4'];
 
-		var result = $('#fieldTest [name=B]').fieldSerialize(true);
+		let result = $('#fieldTest [name=B]').fieldSerialize(true);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(true) :checkbox', function() {
-		var expected = ['F=8','F=10'];
+		const expected = ['F=8', 'F=10'];
 
-		var result = $('#fieldTest :checkbox').fieldSerialize(true);
+		let result = $('#fieldTest :checkbox').fieldSerialize(true);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(false) :checkbox', function() {
-		var expected = ['F=8','F=9','F=10'];
+		const expected = ['F=8', 'F=9', 'F=10'];
 
-		var result = $('#fieldTest :checkbox').fieldSerialize(false);
+		let result = $('#fieldTest :checkbox').fieldSerialize(false);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(true) :radio', function() {
-		var expected = ['G=12'];
+		const expected = ['G=12'];
 
-		var result = $('#fieldTest :radio').fieldSerialize(true);
+		let result = $('#fieldTest :radio').fieldSerialize(true);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
 	it('fieldSerialize(false) :radio', function() {
-		var expected = ['G=11','G=12','G=13'];
+		const expected = ['G=11', 'G=12', 'G=13'];
 
-		var result = $('#fieldTest :radio').fieldSerialize(false);
+		let result = $('#fieldTest :radio').fieldSerialize(false);
+
 		result = result.split('&');
 
-		assert.ok(result.length == expected.length, 'result size check: ' + result.length + '=' + expected.length);
-		for (var i = 0; i < result.length; i++) {
-			assert.ok(result[i] == expected[i], expected[i] + ' = ' + result[i]);
+		assert.ok(result.length === expected.length, 'result size check: ' + result.length + '=' + expected.length);
+		for (let i = 0; i < result.length; i++) {
+			assert.ok(result[i] === expected[i], expected[i] + ' = ' + result[i]);
 		}
 	});
 
@@ -787,20 +830,21 @@ describe('form', function() {
 		$('#targetDiv').empty();
 		// stop();
 
-		var opts = {
-			target: '#targetDiv',
-			beforeSubmit: function(a, jq) { // pre-callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-callback
 				assert.ok(true, 'pre-callback');
 			},
-			success: function() {
+			success : function() {
 				assert.ok(true, 'post-callback');
 				// start();
-			}
+			},
+			target : '#targetDiv'
 		};
 
 		// expect(2);
 		// multiple binds
-		$('#form8').ajaxForm(opts).ajaxForm(opts).ajaxForm(opts);
+		$('#form8').ajaxForm(opts).ajaxForm(opts)
+			.ajaxForm(opts);
 		$('#submitForm8')[0].click();
 	});
 
@@ -808,15 +852,15 @@ describe('form', function() {
 		$('#targetDiv').empty();
 		// stop();
 
-		var opts = {
-			target: '#targetDiv',
-			beforeSubmit: function(a, jq) { // pre-callback
+		const opts = {
+			beforeSubmit : function(arr, jq) { // pre-callback
 				assert.ok(true, 'pre-callback');
 			},
-			success: function() {
+			success : function() {
 				assert.ok(true, 'post-callback');
 				// start();
-			}
+			},
+			target : '#targetDiv'
 		};
 
 		// expect(0);
@@ -832,7 +876,7 @@ describe('form', function() {
 
 	it('naked hash', function() {
 		$('#actionTest1').ajaxSubmit({
-			beforeSerialize: function($f, opts) {
+			beforeSerialize : function($f, opts) {
 				assert.ok(true, 'url=' + opts.url);
 			}
 		});
@@ -840,7 +884,7 @@ describe('form', function() {
 	});
 	it('hash only', function() {
 		$('#actionTest2').ajaxSubmit({
-			beforeSerialize: function($f, opts) {
+			beforeSerialize : function($f, opts) {
 				assert.ok(true, 'url=' + opts.url);
 			}
 		});
@@ -848,7 +892,7 @@ describe('form', function() {
 	});
 	it('empty action', function() {
 		$('#actionTest3').ajaxSubmit({
-			beforeSerialize: function($f, opts) {
+			beforeSerialize : function($f, opts) {
 				assert.ok(true, 'url=' + opts.url);
 			}
 		});
@@ -856,7 +900,7 @@ describe('form', function() {
 	});
 	it('missing action', function() {
 		$('#actionTest4').ajaxSubmit({
-			beforeSerialize: function($f, opts) {
+			beforeSerialize : function($f, opts) {
 				assert.ok(true, 'url=' + opts.url);
 			}
 		});
@@ -864,7 +908,7 @@ describe('form', function() {
 	});
 
 	it('success callback params', function() {
-		var $testForm;
+		let $testForm;
 
 		$('#targetDiv').empty();
 		// stop();
@@ -872,7 +916,7 @@ describe('form', function() {
 		if (/^1\.3/.test($.fn.jquery)) {
 			// expect(3);
 			$testForm = $('#form3').ajaxSubmit({
-				success: function(data, status, $form) { // jQuery 1.4+ signature
+				success : function(data, status, $form) { // jQuery 1.4+ signature
 					assert.ok(true, 'success callback invoked');
 					assert.ok(status === 'success', 'status === success');
 					assert.ok($form === $testForm, '$form param is valid');
@@ -883,11 +927,11 @@ describe('form', function() {
 		} else {	// if (/^1\.4/.test($.fn.jquery)) {
 			// expect(6);
 			$testForm = $('#form3').ajaxSubmit({
-				success: function(data, status, xhr, $form) { // jQuery 1.4+ signature
+				success : function(data, status, xhr, $form) { // jQuery 1.4+ signature
 					assert.ok(true, 'success callback invoked');
 					assert.ok(status === 'success', 'status === success');
-					assert.ok(true, 'third arg: ' + typeof xhr != undefined);
-					assert.ok(!!xhr != false, 'xhr != false');
+					assert.ok(true, 'third arg: ' + xhr !== undefined);
+					assert.ok(Boolean(xhr) !== false, 'xhr != false');
 					assert.ok(xhr.status, 'xhr.status == ' + xhr.status);
 					assert.ok($form === $testForm, '$form param is valid');
 					// start();
@@ -901,9 +945,9 @@ describe('form', function() {
 		// stop();
 
 		// expect(2);
-		var $testForm = $('#form3').ajaxSubmit({
-			forceSync: true,
-			success: function(data, status, $form) { // jQuery 1.4+ signature
+		/* const $testForm = */ $('#form3').ajaxSubmit({
+			forceSync : true,
+			success   : function(data, status, $form) { // jQuery 1.4+ signature
 				assert.ok(true, 'success callback invoked');
 				assert.ok(status === 'success', 'status === success');
 				// start();
