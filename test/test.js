@@ -6,8 +6,8 @@
 const arrayCount = function(arr, key) {
 	let count = 0;
 
-	for (let i = 0; i < arr.length; i++) {
-		if (arr[i].name === key) {
+	for (const {name} of arr) {
+		if (name === key) {
 			count++;
 		}
 	}
@@ -17,9 +17,9 @@ const arrayCount = function(arr, key) {
 
 // helper method
 const arrayValue = function(arr, key) {
-	for (let i = 0; i < arr.length; i++) {
-		if (arr[i].name === key) {
-			return arr[i].value;
+	for (const {name, value} of arr) {
+		if (name === key) {
+			return value;
 		}
 	}
 
@@ -664,8 +664,6 @@ describe('form', function() {
 
 
 	it('fieldValue(true)', function() {
-		let i;
-
 		assert.ok($('#fieldTest input').fieldValue(true)[0] === '5', 'input');
 		assert.ok($('#fieldTest :input').fieldValue(true)[0] === '1', ':input');
 		assert.ok($('#fieldTest input:hidden').fieldValue(true)[0] === '5', ':hidden');
@@ -677,22 +675,20 @@ describe('form', function() {
 		let result = $('#fieldTest :checkbox').fieldValue(true);
 
 		assert.ok(result.length === expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (i = 0; i < result.length; i++) {
+		for (let i = 0; i < result.length; i++) {
 			assert.ok(result[i] === expected[i], expected[i]);
 		}
 
 		expected = ['3', '4'];
 		result = $('#fieldTest [name=B]').fieldValue(true);
 		assert.ok(result.length === expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (i = 0; i < result.length; i++) {
+		for (let i = 0; i < result.length; i++) {
 			assert.ok(result[i] === expected[i], expected[i]);
 		}
 	});
 
 	// eslint-disable-next-line max-statements
 	it('fieldValue(false)', function() {
-		let i;
-
 		assert.ok($('#fieldTest input').fieldValue(false)[0] === '5', 'input');
 		assert.ok($('#fieldTest :input').fieldValue(false)[0] === '1', ':input');
 		assert.ok($('#fieldTest input:hidden').fieldValue(false)[0] === '5', ':hidden');
@@ -703,21 +699,21 @@ describe('form', function() {
 		let result = $('#fieldTest :checkbox').fieldValue(false);
 
 		assert.ok(result.length === expected.length, 'result size check (checkbox): ' + result.length + '=' + expected.length);
-		for (i = 0; i < result.length; i++) {
+		for (let i = 0; i < result.length; i++) {
 			assert.ok(result[i] === expected[i], expected[i]);
 		}
 
 		expected = ['11', '12', '13'];
 		result = $('#fieldTest :radio').fieldValue(false);
 		assert.ok(result.length === expected.length, 'result size check (radio): ' + result.length + '=' + expected.length);
-		for (i = 0; i < result.length; i++) {
+		for (let i = 0; i < result.length; i++) {
 			assert.ok(result[i] === expected[i], expected[i]);
 		}
 
 		expected = ['3', '4'];
 		result = $('#fieldTest [name=B]').fieldValue(false);
 		assert.ok(result.length === expected.length, 'result size check (select-multiple): ' + result.length + '=' + expected.length);
-		for (i = 0; i < result.length; i++) {
+		for (let i = 0; i < result.length; i++) {
 			assert.ok(result[i] === expected[i], expected[i]);
 		}
 	});

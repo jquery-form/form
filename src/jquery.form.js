@@ -147,7 +147,6 @@
 		}
 
 		/* eslint consistent-this: ["error", "$form"] */
-		let url;
 		const $form = this;
 
 		if (typeof options === 'function') {
@@ -171,7 +170,8 @@
 		const method = options.method || options.type || this.attr2('method');
 		const action = options.url || this.attr2('action');
 
-		url = typeof action === 'string' ? $.trim(action) : '';
+		let url = typeof action === 'string' ? $.trim(action) : '';
+
 		url = url || window.location.href || '';
 		if (url) {
 			// clean url (don't include hash vaue)
@@ -208,15 +208,14 @@
 			return this;
 		}
 
-		let traditional = options.traditional;
-
-		if (typeof traditional === 'undefined') {
-			traditional = $.ajaxSettings.traditional;
-		}
+		const {
+			traditional = $.ajaxSettings.traditional
+		} = options;
 
 		const elements = [];
-		let qx;
 		const arr = this.formToArray(options.semantic, elements, options.filtering);
+
+		let qx;
 
 		if (options.data) {
 			const optionsData = $.isFunction(options.data) ? options.data(arr) : options.data;
@@ -291,8 +290,8 @@
 		options.success = function(dta, status, xhr) { // jQuery 1.4+ passes xhr as 3rd arg
 			const context = options.context || this;		// jQuery 1.4+ supports scope context
 
-			for (let i = 0, max = callbacks.length; i < max; i++) {
-				callbacks[i].apply(context, [dta, status, xhr || $form, $form]);
+			for (const callback of callbacks) {
+				callback.apply(context, [dta, status, xhr || $form, $form]);
 			}
 		};
 
@@ -368,14 +367,12 @@
 		// utility fn for deep serialization
 		function deepSerialize(extraData) {
 			const serialized = $.param(extraData, options.traditional).split('&');
-			const len = serialized.length;
 			const result = [];
-			let i, part;
 
-			for (i = 0; i < len; i++) {
+			for (const ser of serialized) {
 				// #252; undo param space replacement
-				serialized[i] = serialized[i].replace(/\+/g, ' ');
-				part = serialized[i].split('=');
+				const part = ser.replace(/\+/g, ' ').split('=');
+
 				// #278; use array instead of object storage, favoring array serializations
 				result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
 			}
@@ -387,16 +384,16 @@
 		function fileUploadXhr(array) {
 			const formdata = new FormData();
 
-			for (let i = 0; i < array.length; i++) {
-				formdata.append(array[i].name, array[i].value);
+			for (const {name, value} of array) {
+				formdata.append(name, value);
 			}
 
 			if (options.extraData) {
 				const serializedData = deepSerialize(options.extraData);
 
-				for (let i = 0; i < serializedData.length; i++) {
-					if (serializedData[i]) {
-						formdata.append(serializedData[i][0], serializedData[i][1]);
+				for (const serData of serializedData) {
+					if (serData) {
+						formdata.append(serData[0], serData[1]);
 					}
 				}
 			}
@@ -458,12 +455,12 @@
 		// private function for handling file uploads (hat tip to YAHOO!)
 		function fileUploadIframe(array) {
 			const form = $form[0];
-			let $io, el, id, timedOut, timeoutHandle;
 
 			if (array) {
 				// ensure that every serialized input is still enabled
-				for (let i = 0; i < elements.length; i++) {
-					el = $(elements[i]);
+				for (const element of elements) {
+					const el = $(element);
+
 					if (hasProp) {
 						el.prop('disabled', false);
 					} else {
@@ -475,15 +472,16 @@
 			const settings = $.extend(true, {}, $.ajaxSettings, options);
 
 			settings.context = settings.context || settings;
-			id = 'jqFormIO' + new Date().getTime();
+			let id = 'jqFormIO' + new Date().getTime();
 			const ownerDocument = form.ownerDocument;
 			const $body = $form.closest('body');
 
-			let name;
+			let $io;
 
 			if (settings.iframeTarget) {
 				$io = $(settings.iframeTarget, ownerDocument);
-				name = $io.attr2('name');
+				const name = $io.attr2('name');
+
 				if (name) {
 					id = name;
 				} else {
@@ -569,7 +567,8 @@
 			const sub = form.clk;
 
 			if (sub) {
-				name = sub.name;
+				const {name} = sub;
+
 				if (name && !sub.disabled) {
 					settings.extraData = settings.extraData || {};
 					settings.extraData[name] = sub.value;
@@ -626,6 +625,8 @@
 				settings.extraData = settings.extraData || {};
 				settings.extraData[csrfParam] = csrfToken;
 			}
+
+			let timedOut, timeoutHandle;
 
 			// take a breath so that pending repaints get some cpu time before the upload starts
 			function doSubmit() {
@@ -746,11 +747,6 @@
 				setTimeout(doSubmit, timeout); // this lets dom updates render
 			}
 
-			let callbackProcessed, doc, domCheckCount = 50;
-
-			// eslint-disable-next-line prefer-const
-			let httpData;
-
 			const toXml = $.parseXML || function(str, docum) { // use parseXML if available (jQuery 1.5+)
 				if (window.ActiveXObject) {
 					docum = new ActiveXObject('Microsoft.XMLDOM');
@@ -764,12 +760,17 @@
 				return docum && docum.documentElement && docum.documentElement.nodeName !== 'parsererror' ? docum : null;
 			};
 
+			// eslint-disable-next-line prefer-const
+			let httpData;
+			let callbackProcessed, domCheckCount = 50;
+
 			function cb(e) {
 				if (xhr.aborted || callbackProcessed) {
 					return;
 				}
 
-				doc = getDoc(io);
+				const doc = getDoc(io);
+
 				if (!doc) {
 					log('cannot access response document');
 					e = SERVER_ABORT;
@@ -801,9 +802,7 @@
 					io.removeEventListener('load', cb, false);
 				}
 
-				let errMsg, status = 'success';
-
-				let dta;
+				let dta, errMsg, status = 'success';
 
 				try {
 					if (timedOut) {
@@ -1072,7 +1071,7 @@
 	}
 
 	function captureSubmittingElement(e) {
-		let target = e.target;
+		let {target} = e;
 		const $el = $(target);
 
 		if (!$el.is('[type=submit],[type=image]')) {
@@ -1143,7 +1142,6 @@
 		const form = this[0];
 		const formId = this.attr('id');
 		let els = semantic || typeof form.elements === 'undefined' ? form.getElementsByTagName('*') : form.elements;
-		let els2;
 
 		if (els) {
 			els = $.makeArray(els); // convert to standard array
@@ -1152,7 +1150,8 @@
 		// #386; account for inputs outside the form which use the 'form' attribute
 		// FinesseRus: in non-IE browsers outside fields are already included in form.elements.
 		if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-			els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
+			const els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
+
 			if (els2.length) {
 				els = (els || []).concat(els2);
 			}
@@ -1166,11 +1165,9 @@
 			els = $.map(els, filtering);
 		}
 
-		let el, i, j, jmax, max, name;
+		for (const el of els) {
+			const {name} = el;
 
-		for (i = 0, max = els.length; i < max; i++) {
-			el = els[i];
-			name = el.name;
 			if (!name || el.disabled) {
 				// eslint-disable-next-line no-continue
 				continue;
@@ -1188,12 +1185,12 @@
 
 			const val = $.fieldValue(el, true);
 
-			if (val && val.constructor === Array) {
+			if (val && Array.isArray(val)) {
 				if (elements) {
 					elements.push(el);
 				}
-				for (j = 0, jmax = val.length; j < jmax; j++) {
-					arr.push({name: name, value: val[j]});
+				for (const value of val) {
+					arr.push({name: name, value: value});
 				}
 
 			} else if (feature.fileapi && el.type === 'file') {
@@ -1204,8 +1201,8 @@
 				const files = el.files;
 
 				if (files.length) {
-					for (j = 0; j < files.length; j++) {
-						arr.push({name: name, type: el.type, value: files[j]});
+					for (const file of files) {
+						arr.push({name: name, type: el.type, value: file});
 					}
 				} else {
 					// #180
@@ -1224,7 +1221,7 @@
 			// input type=='image' are not found in elements array! handle it here
 			const $input = $(form.clk), input = $input[0];
 
-			name = input.name;
+			const {name} = input;
 
 			if (name && !input.disabled && input.type === 'image') {
 				arr.push({name: name, value: $input.val()});
@@ -1261,9 +1258,9 @@
 
 			const val = $.fieldValue(this, successful);
 
-			if (val && val.constructor === Array) {
-				for (let i = 0, max = val.length; i < max; i++) {
-					arr.push({name: name, value: val[i]});
+			if (val && Array.isArray(val)) {
+				for (const value of val) {
+					arr.push({name: name, value: value});
 				}
 
 			} else if (val !== null && typeof val !== 'undefined') {
@@ -1320,12 +1317,12 @@
 			const el = this[i];
 			const value = $.fieldValue(el, successful);
 
-			if (value === null || typeof value === 'undefined' || (value.constructor === Array && !value.length)) {
+			if (value === null || typeof value === 'undefined' || (Array.isArray(value) && !value.length)) {
 				// eslint-disable-next-line no-continue
 				continue;
 			}
 
-			if (value.constructor === Array) {
+			if (Array.isArray(value)) {
 				$.merge(val, value);
 			} else {
 				val.push(value);
@@ -1370,11 +1367,9 @@
 				const op = ops[i];
 
 				if (op.selected && !op.disabled) {
-					let val = op.value;
-
-					if (!val) { // extra pain for IE...
-						val = op.attributes && op.attributes.value && !op.attributes.value.specified ? op.text : op.value;
-					}
+					const val = op.value ||
+						// extra pain for IE...
+						(op.attributes && op.attributes.value && !op.attributes.value.specified ? op.text : op.value);
 
 					if (one) {
 						return val;
