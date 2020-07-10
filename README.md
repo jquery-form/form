@@ -47,8 +47,8 @@ The jqXHR object is stored in element <em>data</em>-cache with the <code>jqxhr</
 call. It can be accessed like this:
 
 ````javascript
-var form = $('#myForm').ajaxSubmit({ /* options */ });
-var xhr = form.data('jqxhr');
+const form = $('#myForm').ajaxSubmit({ /* options */ });
+const xhr = form.data('jqxhr');
 
 xhr.done(function() {
 ...
@@ -89,7 +89,7 @@ $('form').on('submit', function(e) {
 Callback function invoked before form serialization. Provides an opportunity to manipulate the form before its values are retrieved. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
 
 ````javascript
-beforeSerialize: function($form, options) {
+beforeSerialize ($form, options) {
     // return false to cancel submit
 }
 ````
@@ -98,7 +98,7 @@ beforeSerialize: function($form, options) {
 Callback function invoked before form submission. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
 
 ````javascript
-beforeSubmit: function(arr, $form, options) {
+beforeSubmit (arr, $form, options) {
     // form data array is an array of objects with name and value properties
     // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
     // return false to cancel submit
@@ -109,7 +109,7 @@ beforeSubmit: function(arr, $form, options) {
 Callback function invoked before form events unbind and bind again. Provides an opportunity to manipulate the form before events will be remounted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
 
 ````javascript
-beforeFormUnbind: function($form, options) {
+beforeFormUnbind ($form, options) {
     // your callback code
 }
 ````
@@ -118,7 +118,7 @@ beforeFormUnbind: function($form, options) {
 Callback function invoked before processing fields. This provides a way to filter elements.
 
 ````javascript
-filtering: function(el, index) {
+filtering (el, index) {
     if ( !$(el).hasClass('ignore') ) {
         return el;
     }
@@ -216,14 +216,14 @@ URL to which the form data will be submitted.
 Serializes the form into a query string. This method will return a string in the format: `name1=value1&name2=value2`
 
 ````javascript
-var queryString = $('#myFormId').formSerialize();
+const queryString = $('#myFormId').formSerialize();
 ````
 
 ### fieldSerialize
 Serializes field elements into a query string. This is handy when you need to serialize only part of a form. This method will return a string in the format: `name1=value1&name2=value2`
 
 ````javascript
-var queryString = $('#myFormId .specialFields').fieldSerialize();
+const queryString = $('#myFormId .specialFields').fieldSerialize();
 ````
 
 ### fieldValue
