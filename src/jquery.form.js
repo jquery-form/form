@@ -88,6 +88,10 @@
 		at the appropriate time.
 	*/
 
+	function trim (string) {
+		return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+	}
+
 	var rCRLF = /\r?\n/g;
 
 	/**
@@ -159,7 +163,7 @@
 		method = options.method || options.type || this.attr2('method');
 		action = options.url || this.attr2('action');
 
-		url = (typeof action === 'string') ? $.trim(action) : '';
+		url = (typeof action === 'string') ? trim(action) : '';
 		url = url || window.location.href || '';
 		if (url) {
 			// clean url (don't include hash vaue)
