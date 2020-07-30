@@ -262,6 +262,10 @@
 				var successArguments = arguments,
 					fn = options.replaceTarget ? 'replaceWith' : 'html';
 
+					// Validate `data` through `HTML encoding` when passed `data` is passed 
+					// to `html()`, as suggested in https://github.com/jquery-form/form/issues/464
+					fn == 'html' ? data = $.parseHTML($("<div>").text(data).html()) : '';
+
 				$(options.target)[fn](data).each(function(){
 					oldSuccess.apply(this, successArguments);
 				});
@@ -923,8 +927,12 @@
 				return (doc && doc.documentElement && doc.documentElement.nodeName !== 'parsererror') ? doc : null;
 			};
 			var parseJSON = $.parseJSON || function(s) {
-				/* jslint evil:true */
-				return window['eval']('(' + s + ')');			// eslint-disable-line dot-notation
+
+				// Arise an error resolvable including jquery instead of 
+				// making a new function using unsanitized inputs
+
+				window.console.error('jquery.parseJSON is undefined');
+				return null;
 			};
 
 			var httpData = function(xhr, type, s) { // mostly lifted from jq1.4.4
