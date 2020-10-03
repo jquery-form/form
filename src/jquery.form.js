@@ -1209,7 +1209,7 @@
 					arr.push({name: name, type: el.type, value: ''});
 				}
 
-			} else if (val !== null && typeof v !== 'undefined') {
+			} else if (val !== null && typeof val !== 'undefined') {
 				if (elements) {
 					elements.push(el);
 				}
