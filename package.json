@@ -30,8 +30,11 @@
     "lint": "eslint --report-unused-disable-directives .",
     "test": "grunt test"
   },
+  "engines": {
+    "node": ">=8.0.0"
+  },
   "dependencies": {
-    "jquery": ">=1.7.2"
+    "jquery": ">=1.9.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
