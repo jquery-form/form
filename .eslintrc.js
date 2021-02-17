@@ -1,4 +1,5 @@
 module.exports = {
+	/*########### Edit from Mahmoud #######*/
 	"env": {
 		"browser": true,
 		"jquery": true,
