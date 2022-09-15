@@ -479,7 +479,7 @@
 				}
 
 			} else {
-				$io = $('<iframe name="' + id + '" src="' + s.iframeSrc + '" />', ownerDocument);
+				$io = $('<iframe name="' + id + '" src="' + s.iframeSrc + '" ></iframe>', ownerDocument);
 				$io.css({position: 'absolute', top: '-1000px', left: '-1000px'});
 			}
 			io = $io[0];
