@@ -27,7 +27,7 @@
     "url": "https://github.com/jquery-form/form.git"
   },
   "dependencies": {
-    "jquery": ">=1.7.2"
+    "jquery": "1.11.0-beta3"
   },
   "devDependencies": {
     "chai": "^4.2.0",
@@ -36,7 +36,7 @@
     "grunt-contrib-uglify": "^4.0.1",
     "grunt-eslint": "*",
     "grunt-mocha": "^1.2.0",
-    "jquery": "^3.5.1",
+    "jquery": "1.11.0-beta3",
     "mocha": "^7.2.0"
   }
 }
