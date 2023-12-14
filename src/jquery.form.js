@@ -5,7 +5,7 @@
  * Project repository: https://github.com/jquery-form/form
 
  * Copyright 2017 Kevin Morris
- * Copyright 2006 M. Alsup
+ * Copyright 2006 M. Alsupoooooo
 
  * Dual licensed under the LGPL-2.1+ or MIT licenses
  * https://github.com/jquery-form/form#license
