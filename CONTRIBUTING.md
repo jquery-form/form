@@ -22,7 +22,7 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 4. After setting up your [testing enviroment](#testing), run the tests:
 
   ```shell
-  grunt test
+  npm test
   ```
 
   If the tests all pass, move on to step 5.
@@ -55,26 +55,31 @@ Full rationale: [ADR-0002](docs/adr/0002-branching-and-release.md).
 
 ## Testing
 
-jQuery Form uses [Node.js](https://nodejs.org/), [Grunt](https://gruntjs.com/), [ESLint](http://eslint.org/), [Mocha](https://mochajs.org/), and [Chai](http://chaijs.com/) to automate the building and validation of source code. Here is how to set that up:
+jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/), [ESLint](https://eslint.org/), [Prettier](https://prettier.io/), and [Vitest](https://vitest.dev/) browser mode to build and validate the source. Here is how to set that up:
 
-1. Get [Node.js](https://nodejs.org/) (includes [NPM](https://www.npmjs.com/), necessary for the next step)
-2. Install Grunt CLI:
-
-  ```shell
-  npm install -g grunt-cli
-  ```
-
-3. Install dependencies:
+1. Install the [Node.js](https://nodejs.org/) version in `.nvmrc` (with nvm: `nvm use`).
+2. Install dependencies and the test browser:
 
   ```shell
-  npm install
+  npm ci
+  npx playwright install chromium
   ```
 
-4. Run the tests by opening `test/test.html` in your web browser or using Grunt:
+3. Run lint, the build, and the tests:
 
   ```shell
-  grunt test
+  npm test
   ```
+
+Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
+
+### Git blame
+
+Repo-wide formatting commits are listed in [`.git-blame-ignore-revs`](.git-blame-ignore-revs). To skip them in `git blame`:
+
+```shell
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 ## Reporting a bug
 

@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "**/*.md"]
+  pull_request:
+    paths-ignore: ["docs/**", "**/*.md"]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set timings file path
+        run: echo "TIMINGS=$RUNNER_TEMP/timings.tsv" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: npm ci
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "npm ci" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npm ci
+      - name: Get Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "Install Chromium" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npx playwright install chromium
+      - name: Check the test script matches the CI steps
+        run: |
+          expected="npm run lint && npm run format:check && npm run build && vitest run --coverage"
+          actual=$(node -p "require('./package.json').scripts.test")
+          if [ "$actual" != "$expected" ]; then
+            echo "package.json test script has drifted from the CI steps."
+            echo "expected: $expected"
+            echo "actual:   $actual"
+            exit 1
+          fi
+      - name: npm run lint
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "npm run lint" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npm run lint
+      - name: npm run format:check
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "npm run format:check" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npm run format:check
+      - name: npm run build
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "npm run build" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npm run build
+      - name: vitest run --coverage
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "vitest run --coverage" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npx vitest run --coverage --reporter=default --reporter=json --outputFile.json=vitest-report.json
+      - name: Check committed dist matches the build
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "Check committed dist matches the build" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          git diff --exit-code -- dist
+      - name: Upload Vitest report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-report
+          path: vitest-report.json
+          if-no-files-found: ignore
+      - name: Write step durations to the summary
+        if: always()
+        run: |
+          {
+            echo "| Step | Seconds |"
+            echo "| --- | ---: |"
+            awk -F '\t' '{ printf "| %s | %s |\n", $1, $2 }' "$TIMINGS"
+          } >> "$GITHUB_STEP_SUMMARY"

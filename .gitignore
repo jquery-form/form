@@ -227,3 +227,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/composer,git,laravel,macos,node,phpstorm,pycharm,sublimetext,vim,visualstudiocode,webstorm,windows
+
+### Build and test output ###
+coverage/
+.vitest/

@@ -1,0 +1,11 @@
+/*.md
+coverage/
+dist/
+docs/**/*.css
+docs/**/*.html
+docs/**/*.scss
+node_modules/
+package-lock.json
+prototype/
+test/ajax/
+test/img/

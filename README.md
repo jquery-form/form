@@ -1,4 +1,4 @@
-# jQuery Form [![Build Status](https://travis-ci.org/jquery-form/form.svg?branch=main)](https://travis-ci.org/jquery-form/form)
+# jQuery Form [![CI](https://github.com/jquery-form/form/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jquery-form/form/actions/workflows/ci.yml)
 
 ## Overview
 The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX. The main methods, ajaxForm and ajaxSubmit, gather information from the form element to determine how to manage the submit process. Both of these methods support numerous options which allow you to have full control over how the data is submitted.
@@ -24,8 +24,8 @@ See [issue #544](https://github.com/jquery-form/form/issues/544) for more inform
 * **Not** compatible with jQuery 3 Slim. ([issue #544](https://github.com/jquery-form/form/issues/544))
 
 ## Download
-* **Development:** [src/jquery.form.js
-](https://github.com/jquery-form/form/blob/main/src/jquery.form.js)
+* **Development:** [dist/jquery.form.js
+](https://github.com/jquery-form/form/blob/main/dist/jquery.form.js)
 * **Production/Minified:** [dist/jquery.form.min.js
 ](https://github.com/jquery-form/form/blob/main/dist/jquery.form.min.js)
 
