@@ -1500,6 +1500,16 @@ describe("form", function () {
         });
       }
 
+      function inspectNativeSubmit($form, inspect) {
+        const form = $form[0];
+        const nativeSubmit = form.submit;
+        form.submit = function () {
+          inspect(form);
+          delete form.submit;
+          nativeSubmit.call(form);
+        };
+      }
+
       it("should submit through a generated iframe and clean it up", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const initialFrames = $("iframe").length;
@@ -1528,6 +1538,135 @@ describe("form", function () {
         assert.strictEqual($target.attr("name"), "provided-frame");
         assert.strictEqual($target.attr("src"), "about:blank");
         assert.strictEqual($target.parent().length, 1);
+      });
+
+      it("should name a supplied iframe target that has no name", function () {
+        const $target = $("<iframe></iframe>").appendTo("#main");
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        $form.ajaxSubmit({
+          iframe: true,
+          iframeTarget: $target,
+          beforeSend: function () {
+            return false;
+          },
+        });
+
+        assert.match($target.attr("name"), /^jqFormIO\d+$/);
+      });
+
+      it("should reject when beforeSend aborts the iframe request", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        let xhr;
+
+        $form.ajaxSubmit({
+          iframe: true,
+          beforeSend: function (request) {
+            xhr = request;
+            request.abort("early");
+          },
+        });
+        const deferred = $form.data("jqxhr");
+        const rejected = await new Promise((resolve) => deferred.fail(() => resolve(true)));
+
+        assert.strictEqual(rejected, true);
+        assert.strictEqual(xhr.error, "aborted");
+        assert.strictEqual(xhr.aborted, 1);
+      });
+
+      it("should submit clicked image values and coordinates as hidden inputs", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const image = $('<input type="image" name="map" value="go">').appendTo($form)[0];
+        const submitted = {};
+        $form[0].clk = image;
+        $form[0].clk_x = 12;
+        $form[0].clk_y = 34;
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        await submitThroughIframe($form, { dataType: "text" });
+
+        assert.deepEqual(submitted, { map: "go", "map.x": "12", "map.y": "34" });
+      });
+
+      it("should submit CSRF metadata and remove its temporary input", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
+        const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
+          document.head
+        );
+        let submittedToken;
+        inspectNativeSubmit($form, function (form) {
+          submittedToken = $(form).find('[name="authenticity_token"]').val();
+        });
+
+        try {
+          await submitThroughIframe($form, { dataType: "text" });
+
+          assert.strictEqual(submittedToken, "secret");
+          assert.strictEqual($form.find('[name="authenticity_token"]').length, 0);
+        } finally {
+          $token.remove();
+          $param.remove();
+        }
+      });
+
+      it("should override the action during submission and then restore it", async function () {
+        const $form = createIframeForm("ajax/original.html");
+        let submittedAction;
+        inspectNativeSubmit($form, function (form) {
+          submittedAction = form.getAttribute("action");
+        });
+
+        await submitThroughIframe($form, { url: "ajax/iframe-text.html", dataType: "text" });
+
+        assert.ok(submittedAction.endsWith("ajax/iframe-text.html"));
+        assert.ok($form.attr("action").endsWith("ajax/original.html"));
+      });
+
+      it("should submit both extraData representations and remove temporary inputs", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const submitted = {};
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        await submitThroughIframe($form, {
+          data: {
+            plain: "value",
+            aliased: { name: "actual", value: "represented" },
+          },
+          dataType: "text",
+        });
+
+        assert.deepEqual(submitted, { plain: "value", actual: "represented" });
+        assert.strictEqual($form.find('input[type="hidden"]').length, 0);
+      });
+
+      it("should fall back to native submission when a control shadows form.submit", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        $('<input name="submit" value="shadow">').appendTo($form);
+
+        const result = await submitThroughIframe($form, { dataType: "text" });
+
+        assert.strictEqual(result.success[0].trim(), "iframe response");
+      });
+
+      it("should restore an original form target after submission", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html").attr("target", "original-target");
+
+        await submitThroughIframe($form, { dataType: "text" });
+
+        assert.strictEqual($form.attr("target"), "original-target");
       });
 
       it("should wait for closeKeepAlive before creating the iframe request", async function () {
@@ -1601,6 +1740,42 @@ describe("form", function () {
           result.success[0].getElementsByTagName("transport")[0].textContent,
           "iframe"
         );
+      });
+
+      it("should expose the iframe mock response header methods", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { dataType: "text" });
+        const xhr = result.success[2];
+
+        assert.strictEqual(xhr.getResponseHeader("Content-Type"), "text");
+        assert.strictEqual(xhr.getResponseHeader("Missing"), undefined);
+        assert.strictEqual(xhr.getAllResponseHeaders(), undefined);
+        assert.strictEqual(xhr.setRequestHeader("X-Test", "ignored"), undefined);
+      });
+
+      it("should use the legacy JSON parser fallback when jQuery does not provide one", async function () {
+        const parseJSON = $.parseJSON;
+        const $form = createIframeForm("ajax/iframe-json.html");
+        $.parseJSON = undefined;
+
+        try {
+          const result = await submitThroughIframe($form, { dataType: "json", textarea: true });
+
+          assert.deepEqual(result.success[0], { transport: "iframe" });
+        } finally {
+          $.parseJSON = parseJSON;
+        }
+      });
+
+      it("should clear a pending timeout after a successful response", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { dataType: "text", timeout: 1000 });
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.strictEqual(result.xhr.error, undefined);
       });
 
       it("should report emulated HTTP errors and complete once", async function () {
