@@ -6,6 +6,7 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 #### Overview
 
 * [Contribution workflow](#contribution-workflow)
+* [Branching and releases](#branching-and-releases)
 * [Testing](#testing)
 * [Reporting a bug](#reporting-a-bug)
 * [Contributing to an existing issue](#contributing-to-an-existing-issue)
@@ -15,7 +16,7 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 ## Contribution workflow
 
 1. Fork the repository in GitHub with the `Fork` button.
-2. Switch to a new branch (ie. `new-feature`), and work from there:  
+2. Branch from **`main`** into a short-lived topic branch (e.g. `new-feature`):  
   `git checkout -b new-feature`
 3. Make your feature addition or bug fix.
 4. After setting up your [testing enviroment](#testing), run the tests:
@@ -26,7 +27,7 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 
   If the tests all pass, move on to step 5.
 
-5. Send a pull request (PR). Bonus points for topic branches.
+5. Open a pull request **against `main`**. Topic branches only—do not PR into long-lived integration branches that no longer exist (`develop`, etc.).
   * Please make sure all of your commits are atomic (one feature per commit).
   * Use sensible commit messages.
     * Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
@@ -40,8 +41,17 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 ### Things to keep in mind
 
 * Smaller PRs are likely to be merged more quickly than bigger changes.
-* If it is a useful PR, it **will** get merged in eventually.
+* Every merge needs maintainer review. Feature/community PRs wait until the modernization coverage work is done (see the plan); they are not merged before that gate.
 * This project is using [Semantic Versioning 2.0.0](http://semver.org/)
+
+## Branching and releases
+
+Full rationale: [ADR-0002](docs/adr/0002-branching-and-release.md).
+
+* **`main`** is the only trunk. Work in short-lived branches; open PRs into `main`.
+* **4.x then 5.0** are sequential on `main` (no standing `next` branch). After 5.0, rare 4.x patches use an on-demand `release/4.x` branch cut from the last v4 tag.
+* **npm:** `latest` tracks the current major; after 5.0, 4.x publishes use the `v4` dist-tag.
+* **Releases:** maintainers bump the version, tag `vX.Y.Z`, and publish to npm manually. CI verifies; it does not publish.
 
 ## Testing
 

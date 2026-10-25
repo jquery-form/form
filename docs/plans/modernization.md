@@ -7,9 +7,9 @@ todos:
     status: completed
   - id: grill-branching
     content: "Grill-with-docs session: develop vs trunk, main rename, v4/v5 branch and tag strategy; record ADR"
-    status: pending
+    status: completed
   - id: branch-reconcile
-    content: "Merge master (4.3.0) into develop, rename master to main, prune stale branches, branch protection"
+    content: "Merge develop into master, rename master to main, delete develop, prune stale remotes, close #614, protect main, fix master links"
     status: pending
   - id: prototype
     content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
@@ -55,13 +55,12 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 
 - Two release tracks: 4.x (minor, keeps all compatibility, target 100% coverage including legacy branches) then 5.0 (drops legacy jQuery <3 and IE shims, peer dependency, architecture work, TS discussion).
 - Plain JS for now. Minimal tooling: Vitest only if clearly justified over plain Playwright Test.
-- `master` is 7 commits ahead of `develop` (carries v4.3.0). Reconcile and rename to `main` before writing CI.
-- Whether to keep `develop` depends on whether CI runs on PRs targeting `main`, `next` and version branches. Settled in the branching grill session.
+- Branching settled in ADR-0002: trunk on `main` (no `develop`/`next`); reconcile is merge `develop`→`master`, rename to `main`, prune, protect; community PRs wait until coverage is 100%.
 
 ### Revised order
 
-1. Grill session: branching strategy (and ADR)
-2. Reconcile branches, rename to `main`, prune, protect
+1. ~~Grill session: branching strategy (and ADR)~~ — done (`docs/adr/0002-branching-and-release.md`)
+2. Reconcile branches, rename to `main`, prune, protect (per ADR-0002)
 3. Runner/bundler prototype
 4. Baseline (Phase 1)
 5. Grill session: Prettier (Phase 2)
