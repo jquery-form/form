@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
@@ -33,6 +34,14 @@ const ajaxFixtures = serveFiles(
   (file) => `test/ajax/${file}`
 );
 
+// Iframe documents are only parsed as XML when served with an XML content type.
+const ajaxXmlFixtures = serveFiles(
+  "ajax-xml-fixtures",
+  /\/ajax\/([\w.-]+\.xml)$/,
+  (file) => `test/ajax/${file}`,
+  { "Content-Type": "application/xml" }
+);
+
 // Surface pages must load files as consumers would, without Vite rewriting bare imports.
 const rawFiles = serveFiles(
   "raw-files",
@@ -40,6 +49,8 @@ const rawFiles = serveFiles(
   (file) => file,
   { "Content-Type": "text/javascript" }
 );
+
+const jqueryEsm = new URL("./test/jquery-esm.js", import.meta.url);
 
 const browser = () => ({
   enabled: true,
@@ -54,12 +65,21 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.js"],
       reporter: ["text-summary", "html"],
+      // Below 100% only for the source branches listed in docs/research/coverage-gaps.md.
+      thresholds: {
+        lines: 98.14,
+        branches: 96.41,
+        functions: 98.27,
+        statements: 98.17,
+      },
     },
     projects: [
       {
-        plugins: [ajaxFixtures],
+        plugins: [ajaxXmlFixtures, ajaxFixtures],
         test: {
           name: "suite",
+          // Keeps Vite's CommonJS interop wrapper out of the plugin's coverage.
+          alias: [{ find: /^jquery$/, replacement: fileURLToPath(jqueryEsm) }],
           globals: true,
           include: ["test/test.js"],
           setupFiles: ["test/setup.js"],

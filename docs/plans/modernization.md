@@ -34,7 +34,7 @@ todos:
     status: completed
   - id: coverage
     content: Close coverage gaps to 100% with new tests and enforce threshold in npm test
-    status: pending
+    status: completed
   - id: deps-modernize
     content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
     status: pending
@@ -74,7 +74,8 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 6. ~~Architecture/CI group (Phase 3)~~ — done; decisions below
 7. CI instrumentation (Phase 3B), on the first green CI run of PR #625
 8. ~~Refactor group (Phase 4: Prettier sweep, test rewrite, lint cleanup)~~ — done
-9. Coverage (Phase 5), and so on, on a new branch off `main` once PR #625 is merged
+9. ~~Coverage (Phase 5)~~ — done at the reachable maximum; see Phase 5 below
+10. Dependency modernization (Phase 6), and so on
 
 ### Architecture/CI decisions (Phase 3)
 
@@ -186,6 +187,13 @@ Baseline (`docs/metrics.md`, 6 warm runs and 1 cold, job wall time about 31 s, q
 - Generate the coverage report; list uncovered branches (iframe fallback, FormData/progress, `ajaxSubmit` option variants, `formToArray`/`fieldValue` edge cases, `resetForm`/`clearForm`, `semantic`).
 - Write tests per gap, ordered by risk, in BDD/AAA style. Branches that only exist for unsupported browsers are removed or explicitly documented per the Phase 0 support-floor decision, not silently excluded.
 - Enforce a 100% threshold in `npm test` and CI.
+
+Status: done on `phase-5-coverage`. 100% was not reachable without source changes: 22 branches and
+1 function are dead or contradictory (listed with reasons in `docs/research/coverage-gaps.md`).
+Decision: enforce thresholds at the reachable maximum (98.14% lines, 96.41% branches, 98.27%
+functions, 98.17% statements) and reach 100% when 5.0 removes or fixes those branches. No
+`/* v8 ignore */` comments were added. Bugs found along the way are recorded as `it.fails` tests in
+`docs/research/coverage-findings.md`.
 
 ## Phase 6: Dependency modernization
 
