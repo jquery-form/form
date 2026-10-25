@@ -35,6 +35,9 @@ todos:
   - id: deps-modernize
     content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
     status: pending
+  - id: metrics
+    content: "Keep docs/metrics.md current: before/after numbers (test time, coverage, test count, bundle size, audit, deps) at each phase and for the v4 and v5 releases"
+    status: in_progress
   - id: triage
     content: Triage GitHub issues/PRs via gh into prioritized backlog
     status: pending
@@ -138,7 +141,12 @@ Rationale for order: the harness must exist first so the test rewrite is verifie
 - Review `src/jquery.form.js`: response handling (script/html eval, XSS, iframe parsing), uploads (`target`/iframe, `document.domain`), request construction (URL building, data serialization, prototype pollution), dependency exposure.
 - Identify improvements while preserving the ADR-0001 dual surface (module format, shim removal, API surface, deprecation path). Output a findings doc and ranked issues.
 
+## Metrics (throughout)
+- `docs/metrics.md` is the committed record of before-and-after numbers, used for the v4 and v5 release announcements.
+- The before column is the v4.3.0 baseline. Add a column whenever a phase changes a metric (at minimum after Phase 3, Phase 5, Phase 6, the 4.x release, and 5.0).
+- Track: test count, suite wall time, full `npm test` time, coverage (lines, branches, functions, statements), minified and gzipped size, `npm audit` counts, number of dev deps, supported jQuery versions tested, CI duration, and open issues and PRs.
+- Measure the same way each time, and note the command and machine in the file.
+
 ## Conventions throughout
-- Conventional Commits, 1-3 lines, no trailers.
-- Edit source, never `dist/`.
+- Conventional Commits, 1-3 lines, no trailers.- Edit source, never `dist/`.
 - Flag any change that contradicts ADR-0001 explicitly.
