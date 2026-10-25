@@ -17,7 +17,7 @@
   "extra": {
     "component": {
       "scripts": [
-        "src/jquery.form.js"
+        "dist/jquery.form.js"
       ],
       "shim": {
         "deps": [
