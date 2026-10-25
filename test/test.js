@@ -2323,6 +2323,42 @@ describe("form", function () {
       assert.strictEqual($._data(document, "events"), undefined);
     });
 
+    describe("before the DOM is ready", function () {
+      function withDomNotReady(run) {
+        const isReady = $.isReady;
+        $.isReady = false;
+
+        try {
+          return run();
+        } finally {
+          $.isReady = isReady;
+        }
+      }
+
+      it("should bind once ready when old jQuery selector metadata is present", async function () {
+        const $pending = $(".queued-ajax-form");
+        $pending.selector = ".queued-ajax-form";
+
+        const result = withDomNotReady(() => $pending.ajaxForm());
+        const $form = $('<form class="queued-ajax-form"></form>').appendTo("#main");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual(result, $pending);
+        assert.strictEqual($._data($form[0], "events").submit.length, 1);
+      });
+
+      it("should not queue an empty selection without selector metadata", async function () {
+        const $pending = $(".unqueued-ajax-form");
+
+        const result = withDomNotReady(() => $pending.ajaxForm());
+        const $form = $('<form class="unqueued-ajax-form"></form>').appendTo("#main");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual(result, $pending);
+        assert.strictEqual($._data($form[0], "events"), undefined);
+      });
+    });
+
     it("should call beforeFormUnbind before replacing form handlers", function () {
       const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
       const order = [];
