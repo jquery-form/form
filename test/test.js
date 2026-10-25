@@ -57,6 +57,37 @@ describe("form", function () {
     });
   }
 
+  // Submits through a stubbed $.ajax and returns the settings it received.
+  function captureAjaxOptions($form, options, respond) {
+    const ajax = $.ajax;
+    let settings;
+    $.ajax = function (received) {
+      settings = received;
+      if (respond) {
+        respond(received);
+      }
+      return {};
+    };
+
+    try {
+      $form.ajaxSubmit(options);
+    } finally {
+      $.ajax = ajax;
+    }
+
+    return settings;
+  }
+
+  function withUserAgent(userAgent, run) {
+    Object.defineProperty(navigator, "userAgent", { configurable: true, value: userAgent });
+
+    try {
+      return run();
+    } finally {
+      delete navigator.userAgent;
+    }
+  }
+
   async function withAjaxStub(stub, run) {
     const ajax = $.ajax;
     $.ajax = stub;
@@ -1948,6 +1979,96 @@ describe("form", function () {
 
           assert.ok(url !== null, "beforeSerialize called");
         });
+      });
+
+      it("should use the page URL when a control named action shadows a missing action", function () {
+        const $form = $('<form method="post"><input name="action" value="x"></form>');
+
+        const settings = captureAjaxOptions($form.appendTo("#main"), {});
+
+        assert.strictEqual(settings.url, window.location.href.split("#")[0]);
+      });
+
+      it("should drop a raw action attribute that is only a fragment", function () {
+        const $form = $('<form method="post" action="#fragment"><input name="action"></form>');
+
+        const settings = captureAjaxOptions($form.appendTo("#main"), {});
+
+        assert.strictEqual(settings.url, undefined);
+      });
+
+      it("should use the default AJAX type when a control named method shadows the form", function () {
+        const $form = $('<form action="ajax/text.html"><input name="method" value="x"></form>');
+
+        const settings = captureAjaxOptions($form.appendTo("#main"), {});
+
+        assert.strictEqual(settings.type, $.ajaxSettings.type);
+      });
+
+      [
+        ["an empty user agent", ""],
+        ["IE on a non-HTTPS page", "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0)"],
+      ].forEach(function ([label, userAgent]) {
+        it("should use about:blank as the iframe source for " + label, function () {
+          const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
+
+          const settings = withUserAgent(userAgent, () => captureAjaxOptions($form, {}));
+
+          assert.strictEqual(settings.iframeSrc, "about:blank");
+        });
+      });
+    });
+
+    describe("serialization options", function () {
+      it("should serialize extra data traditionally when asked", function () {
+        const $form = $('<form action="ajax/text.html" method="post"></form>').appendTo("#main");
+
+        const settings = captureAjaxOptions($form, {
+          data: { list: ["a", "b"] },
+          traditional: true,
+        });
+
+        assert.strictEqual(settings.data, "list=a&list=b");
+      });
+
+      it("should submit only extra data when the form has no fields", function () {
+        const $form = $('<form action="ajax/text.html" method="post"></form>').appendTo("#main");
+
+        const settings = captureAjaxOptions($form, { data: { only: "extra" } });
+
+        assert.strictEqual(settings.data, "only=extra");
+      });
+    });
+
+    describe("success without a transport xhr", function () {
+      it("should load the target when no success callback is given", function () {
+        const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
+        const $target = $("<div></div>").appendTo("#main");
+
+        captureAjaxOptions($form, { target: $target }, function (settings) {
+          settings.success("<b>loaded</b>", "success");
+        });
+
+        assert.strictEqual($target.html(), "<b>loaded</b>");
+      });
+
+      it("should pass the form in place of a missing xhr", function () {
+        const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
+        let received;
+
+        captureAjaxOptions(
+          $form,
+          {
+            success: function (_data, _status, xhr) {
+              received = xhr;
+            },
+          },
+          function (settings) {
+            settings.success("ok", "success");
+          }
+        );
+
+        assert.strictEqual(received, $form);
       });
     });
   });
