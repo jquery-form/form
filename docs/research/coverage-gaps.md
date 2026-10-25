@@ -3,8 +3,17 @@
 Baseline: 64 tests (59 suite and 5 surface); 35.95% lines, 33.92% branches, 43.10%
 functions, and 36.77% statements. Full `npm test` wall time: 2.80 s on Node 26.12.1.
 
-Current: 194 tests (188 passing and 6 expected failures that record bugs; see
-`coverage-findings.md`); 98.14% lines, 96.26% branches, 98.27% functions, and 98.17% statements.
+Final: 194 tests (188 passing and 6 expected failures that record bugs; see
+`coverage-findings.md`); 98.14% lines, 96.41% branches, 98.27% functions, and 98.17% statements.
+`npm test` enforces these values as thresholds; 100% waits for the source changes below.
+
+| Coverage of `src` | Original (Phase 4B) | Current (Phase 5) |
+| ----------------- | ------------------- | ----------------- |
+| Lines             | 35.95%              | 98.14%            |
+| Branches          | 33.92%              | 96.41%            |
+| Functions         | 43.10%              | 98.27%            |
+| Statements        | 36.77%              | 98.17%            |
+| Tests             | 64                  | 194               |
 
 The checklist is ordered by behavioral risk. A checked item has behavior assertions and is covered;
 line references are to `src/jquery.form.js` before Phase 5 (the source is not changed in this phase).
@@ -106,15 +115,11 @@ faking a browser state that no real browser produces.
 | 962  | `$.globalEval` branch                                     | The emulated `content-type` equals `s.dataType`, so it only contains `javascript` when the type is `javascript`, but the branch also requires the type to be `script` or empty. Recorded as a bug in `coverage-findings.md`. |
 | 1134 | `\|\| []` fallback                                        | `els` is always an array from `$.makeArray` of `form.elements` or `getElementsByTagName("*")`.                                                                                                                               |
 
-One more uncovered branch is not in the plugin source. Line 1, column 83, is Vite's CommonJS
-interop wrapper (`__esModule ? default : module`) for `import jQuery from "jquery"`, because jQuery
-3.7.1 ships only CommonJS. Aliasing `jquery` to a two-line ESM re-export in the suite project
-removes it; that was verified and then reverted pending a decision.
+A branch reported at line 1, column 83, was Vite's CommonJS interop wrapper
+(`__esModule ? default : module`) for `import jQuery from "jquery"`, because jQuery 3.7.1 ships only
+CommonJS. The suite project now aliases `jquery` to `test/jquery-esm.js`, a two-line ESM re-export,
+so the wrapper is no longer part of the plugin's coverage.
 
-Options for reaching 100% (none applied):
-
-1. Fix the dead and contradictory branches in `src/` (several are the recorded bugs), as a 4.x
-   source change outside Phase 5.
-2. Add `/* v8 ignore */` comments to the lines above in `src/`.
-3. Enforce thresholds at the current honest values, and reach 100% when the branches are removed in
-   5.0.
+Decision: enforce thresholds at the reachable maximum and reach 100% when 5.0 removes or fixes the
+branches above. The alternatives were fixing them in a 4.x source change, or adding
+`/* v8 ignore */` comments; neither was taken.
