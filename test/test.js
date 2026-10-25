@@ -57,6 +57,17 @@ describe("form", function () {
     });
   }
 
+  async function withAjaxStub(stub, run) {
+    const ajax = $.ajax;
+    $.ajax = stub;
+
+    try {
+      return await run();
+    } finally {
+      $.ajax = ajax;
+    }
+  }
+
   describe("form fixture", function () {
     it("should expose the action and method attributes of form1", function () {
       const $form = $("#form1");
@@ -443,6 +454,372 @@ describe("form", function () {
   });
 
   describe("ajaxSubmit", function () {
+    describe("non-upload options", function () {
+      it("should return an empty selection without starting a request", async function () {
+        let requests = 0;
+        const $empty = $(".missing-form");
+
+        await withAjaxStub(
+          function () {
+            requests++;
+          },
+          async function () {
+            const result = $empty.ajaxSubmit();
+            await Promise.resolve();
+
+            assert.strictEqual(result, $empty, "returns the original selection");
+            assert.strictEqual(requests, 0, "does not request");
+          }
+        );
+      });
+
+      it("should accept the url, data, dataType and success shorthand arguments", async function () {
+        const extraData = { source: "shorthand" };
+        let ajaxOptions;
+        let successData;
+
+        await withAjaxStub(
+          function (options) {
+            ajaxOptions = options;
+            options.success("ok", "success", {});
+            return {};
+          },
+          async function () {
+            $("#form3").ajaxSubmit("ajax/shorthand.html", extraData, "text", function (data) {
+              successData = data;
+            });
+            await Promise.resolve();
+
+            assert.strictEqual(ajaxOptions.url, "ajax/shorthand.html", "url");
+            assert.strictEqual(ajaxOptions.dataType, "text", "dataType");
+            assert.ok(ajaxOptions.data.includes("source=shorthand"), "extra data");
+            assert.strictEqual(successData, "ok", "success callback");
+          }
+        );
+      });
+
+      [
+        [false, false],
+        [undefined, "ajax/text.html"],
+      ].forEach(function ([value, expectedUrl]) {
+        it("should normalize the url when options are " + String(value), async function () {
+          let ajaxOptions;
+
+          await withAjaxStub(
+            function (options) {
+              ajaxOptions = options;
+              return {};
+            },
+            async function () {
+              $("#form3").ajaxSubmit(value);
+              await Promise.resolve();
+
+              if (expectedUrl === false) {
+                assert.strictEqual(ajaxOptions.url, false, "explicit false url");
+              } else {
+                assert.ok(ajaxOptions.url.endsWith(expectedUrl), "form action");
+              }
+            }
+          );
+        });
+      });
+
+      it("should allow form-pre-serialize to veto before serialization", async function () {
+        let requests = 0;
+        let serialized = false;
+        const $form = $("#form3");
+        const formToArray = $form.formToArray;
+        $form.one("form-pre-serialize", function (_event, _form, _options, veto) {
+          veto.veto = true;
+        });
+        $form.formToArray = function () {
+          serialized = true;
+          return formToArray.apply(this, arguments);
+        };
+
+        try {
+          await withAjaxStub(
+            function () {
+              requests++;
+            },
+            async function () {
+              $form.ajaxSubmit();
+              await Promise.resolve();
+
+              assert.strictEqual(serialized, false, "does not serialize");
+              assert.strictEqual(requests, 0, "does not request");
+            }
+          );
+        } finally {
+          $form.formToArray = formToArray;
+          $form.off("form-pre-serialize");
+        }
+      });
+
+      it("should allow beforeSerialize to veto the request", async function () {
+        let requests = 0;
+        let callbackForm;
+        const opts = {
+          beforeSerialize: function ($form) {
+            callbackForm = $form;
+            return false;
+          },
+        };
+
+        await withAjaxStub(
+          function () {
+            requests++;
+          },
+          async function () {
+            const $form = $("#form3");
+            $form.ajaxSubmit(opts);
+            await Promise.resolve();
+
+            assert.strictEqual(callbackForm, $form, "callback form");
+            assert.strictEqual(requests, 0, "does not request");
+          }
+        );
+      });
+
+      it("should allow form-submit-validate to veto the request", async function () {
+        let requests = 0;
+        let submittedData;
+        const $form = $("#form3");
+        $form.one("form-submit-validate", function (_event, data, _form, _options, veto) {
+          submittedData = data;
+          veto.veto = true;
+        });
+
+        try {
+          await withAjaxStub(
+            function () {
+              requests++;
+            },
+            async function () {
+              $form.ajaxSubmit();
+              await Promise.resolve();
+
+              assert.ok(Array.isArray(submittedData), "validation receives form data");
+              assert.strictEqual(requests, 0, "does not request");
+            }
+          );
+        } finally {
+          $form.off("form-submit-validate");
+        }
+      });
+
+      [
+        ["object", { source: "object" }],
+        [
+          "function",
+          function (formData) {
+            assert.ok(Array.isArray(formData), "function receives form data");
+            return { source: "function" };
+          },
+        ],
+      ].forEach(function ([label, data]) {
+        it("should append extra data supplied as an " + label, async function () {
+          let ajaxOptions;
+
+          await withAjaxStub(
+            function (options) {
+              ajaxOptions = options;
+              return {};
+            },
+            async function () {
+              $("#form3").ajaxSubmit({ data: data, type: "post" });
+              await Promise.resolve();
+
+              assert.ok(ajaxOptions.data.includes("source=" + label), "serialized extra data");
+              assert.deepEqual(ajaxOptions.extraData, { source: label }, "retains extra data");
+            }
+          );
+        });
+      });
+
+      it("should append serialized data to a GET url and clear the request body", async function () {
+        let ajaxOptions;
+
+        await withAjaxStub(
+          function (options) {
+            ajaxOptions = options;
+            return {};
+          },
+          async function () {
+            $("#form3").ajaxSubmit({ type: "get", url: "ajax/text.html?existing=1" });
+            await Promise.resolve();
+
+            assert.ok(ajaxOptions.url.includes("?existing=1&"), "preserves existing query");
+            assert.ok(ajaxOptions.url.includes("a="), "appends form data");
+            assert.strictEqual(ajaxOptions.data, null, "clears request body");
+          }
+        );
+      });
+
+      it("should put serialized data in the POST request body", async function () {
+        let ajaxOptions;
+
+        await withAjaxStub(
+          function (options) {
+            ajaxOptions = options;
+            return {};
+          },
+          async function () {
+            $("#form3").ajaxSubmit({ type: "post" });
+            await Promise.resolve();
+
+            assert.strictEqual(ajaxOptions.type, "post", "request method");
+            assert.ok(ajaxOptions.data.includes("a="), "request body");
+          }
+        );
+      });
+
+      it("should reset and clear the form before running success", async function () {
+        const $form = $("#form3");
+        const $name = $form.find("[name=a]");
+        const seen = [];
+        $name.val("changed");
+
+        await withAjaxStub(
+          function (options) {
+            options.success("ok", "success", {});
+            return {};
+          },
+          async function () {
+            $form.ajaxSubmit({
+              resetForm: true,
+              clearForm: true,
+              success: function () {
+                seen.push($name.val());
+              },
+            });
+            await Promise.resolve();
+
+            assert.deepEqual(seen, [""], "maintenance callbacks precede success");
+          }
+        );
+      });
+
+      it("should replace the target and call success with the replacement as context", async function () {
+        const $target = $("#targetDiv").html("old");
+        let callbackContext;
+
+        await withAjaxStub(
+          function (options) {
+            options.success("<div id='replacement'>new</div>", "success", {});
+            return {};
+          },
+          async function () {
+            $("#form3").ajaxSubmit({
+              target: $target,
+              replaceTarget: true,
+              success: function () {
+                callbackContext = this;
+              },
+            });
+            await Promise.resolve();
+
+            assert.strictEqual($("#targetDiv").length, 0, "removes old target");
+            assert.strictEqual($("#replacement").text(), "new", "inserts response");
+            assert.strictEqual(callbackContext.id, "targetDiv", "original target context");
+          }
+        );
+      });
+
+      it("should run a success callback array with the configured context and form", async function () {
+        const context = { name: "callback context" };
+        const calls = [];
+        const $form = $("#form3");
+
+        await withAjaxStub(
+          function (options) {
+            options.success("ok", "success", {});
+            return {};
+          },
+          async function () {
+            $form.ajaxSubmit({
+              context: context,
+              success: [
+                function (_data, _status, _xhr, callbackForm) {
+                  calls.push({ context: this, form: callbackForm });
+                },
+                function (_data, _status, _xhr, callbackForm) {
+                  calls.push({ context: this, form: callbackForm });
+                },
+              ],
+            });
+            await Promise.resolve();
+
+            assert.strictEqual(calls.length, 2, "all success callbacks");
+            assert.strictEqual(calls[0].context.name, context.name, "first context");
+            assert.strictEqual(calls[1].context, calls[0].context, "shared context");
+            assert.strictEqual(calls[0].form, $form, "form argument");
+          }
+        );
+      });
+
+      it("should wrap error and complete with context and the form argument", async function () {
+        const context = { name: "callback context" };
+        const xhr = { status: 500 };
+        const seen = {};
+        const $form = $("#form3");
+
+        await withAjaxStub(
+          function (options) {
+            options.error(xhr, "error", "broken");
+            options.complete(xhr, "error");
+            return xhr;
+          },
+          async function () {
+            $form.ajaxSubmit({
+              context: context,
+              error: function () {
+                seen.error = { context: this, args: Array.from(arguments) };
+              },
+              complete: function () {
+                seen.complete = { context: this, args: Array.from(arguments) };
+              },
+            });
+            await Promise.resolve();
+
+            assert.strictEqual(seen.error.context.name, context.name, "error context");
+            assert.deepEqual(seen.error.args, [xhr, "error", "broken", $form], "error arguments");
+            assert.strictEqual(seen.complete.context, seen.error.context, "complete context");
+            assert.deepEqual(seen.complete.args, [xhr, "error", $form], "complete arguments");
+          }
+        );
+      });
+
+      it("should store the jqXHR and notify listeners after starting the request", async function () {
+        const jqXHR = { readyState: 1 };
+        let notified;
+        const $form = $("#form3");
+        $form.one("form-submit-notify", function (_event, form, options) {
+          notified = { form: form, options: options, stored: $form.data("jqxhr") };
+        });
+
+        try {
+          await withAjaxStub(
+            function () {
+              return jqXHR;
+            },
+            async function () {
+              const opts = { type: "post" };
+              $form.ajaxSubmit(opts);
+              await Promise.resolve();
+
+              assert.strictEqual($form.data("jqxhr"), jqXHR, "stored jqXHR");
+              assert.strictEqual(notified.form, $form, "notified form");
+              assert.strictEqual(notified.stored, jqXHR, "stores before notify");
+              assert.strictEqual(notified.options.type, "post", "notified options");
+            }
+          );
+        } finally {
+          $form.off("form-submit-notify").removeData("jqxhr");
+        }
+      });
+    });
+
     describe("target", function () {
       it("should load the response into a target given as a selector", async function () {
         $("#targetDiv").empty();
