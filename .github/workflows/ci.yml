@@ -12,7 +12,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "TIMINGS=$RUNNER_TEMP/timings.tsv" >> "$GITHUB_ENV"
+      - name: Set timings file path
+        run: echo "TIMINGS=$RUNNER_TEMP/timings.tsv" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
