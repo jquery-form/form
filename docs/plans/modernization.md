@@ -31,7 +31,7 @@ todos:
     status: completed
   - id: test-rewrite
     content: "Refactor group: migrate/rename existing tests to BDD names and AAA shape, behavior unchanged"
-    status: pending
+    status: completed
   - id: coverage
     content: Close coverage gaps to 100% with new tests and enforce threshold in npm test
     status: pending
@@ -73,7 +73,8 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
 6. ~~Architecture/CI group (Phase 3)~~ — done; decisions below
 7. CI instrumentation (Phase 3B), on the first green CI run of PR #625
-8. Refactor group (Phase 4), then coverage (Phase 5), and so on
+8. ~~Refactor group (Phase 4: Prettier sweep, test rewrite, lint cleanup)~~ — done
+9. Coverage (Phase 5), and so on, on a new branch off `main` once PR #625 is merged
 
 ### Architecture/CI decisions (Phase 3)
 
@@ -81,8 +82,8 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 - `src/jquery.form.js` is an ES module: `import jQuery from 'jquery'`, the plugin body byte-identical, `export default jQuery`. Rollup builds `dist/jquery.form.mjs` (module), `dist/jquery.form.js` (classic), and `dist/jquery.form.min.js` plus source map. The classic build re-wraps the body in the original UMD header from `rollup.config.mjs` and restores the `'use strict'` directive Rollup drops from modules.
 - Package entries: `main` is `dist/jquery.form.js` (was `src/jquery.form.js`), `module` is `dist/jquery.form.mjs`, `browser` is unchanged. No `exports` map, so deep paths keep resolving. `bower.json`, `composer.json`, and `form.jquery.json` now point at `dist/jquery.form.js`. ADR-0001 flag: anyone deep-requiring `jquery-form/src/jquery.form.js` now gets ESM; the package entries are unaffected.
 - `dist/` stays committed; CI fails if it differs from a fresh build. The AMD module still defines no value (unchanged).
-- Vitest projects: `suite` (unmodified `test/test.js` in Chromium; `test/setup.js` maps `before` and `chai.assert`), `surfaces` (script tag, AMD via RequireJS, native ESM with jQuery 4, bundled ESM with CommonJS jQuery 3), `commonjs` (Node `require` returns the 2-argument factory). `test/test.html` is now only the fixture source.
-- ESLint keeps the old config's error-level non-style rules for `src` (the body passes all of them) plus `recommended`; `no-prototype-builtins` stays a warning. Warn-level preferences that Grunt hid with `quiet` are dropped. `test/test.js` turns off `no-unused-vars` and `no-constant-binary-expression` until the Phase 4 test rewrite. Unused `eslint-disable` comments in `src` are not reported; remove them in Phase 4.
+- Vitest projects: `suite` (`test/test.js` in Chromium, rewritten in Phase 4B to BDD/AAA with awaited async tests; the `before` and `chai` shims are gone), `surfaces` (script tag, AMD via RequireJS, native ESM with jQuery 4, bundled ESM with CommonJS jQuery 3), `commonjs` (Node `require` returns the 2-argument factory). `test/test.html` is now only the fixture source.
+- ESLint keeps the old config's error-level non-style rules for `src` (the body passes all of them) plus `recommended`; `no-prototype-builtins` stays a warning. Warn-level preferences that Grunt hid with `quiet` are dropped. Both rules are on for `test/test.js` again (Phase 4B), and unused `eslint-disable` directives are errors (stale ones in `src` were removed). Three `no-prototype-builtins` warnings remain in `src`; they are left for Phase 8.
 - Grunt, Travis, CircleCI, `.editorconfig`, `install/` (Grunt githooks), and `prototype/` are removed.
 
 ### Prettier decisions (Phase 2)
