@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: grill-prettier
     content: Grill-with-docs session to decide Prettier deviations from defaults; record in config/ADR/GLOSSARY as warranted
-    status: pending
+    status: completed
   - id: toolchain-ci
     content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
     status: pending
@@ -67,8 +67,17 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 2. ~~Reconcile branches, rename to `main`, prune, protect (per ADR-0002)~~ — done
 3. ~~Runner/bundler prototype~~ — done (`docs/research/runner-bundler-prototype.md`)
 4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
-5. Grill session: Prettier (Phase 2)
+5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
 6. Architecture/CI group (Phase 3), then refactor group (Phase 4), then coverage (Phase 5), and so on
+
+### Prettier decisions (Phase 2)
+
+- Prettier defaults (2-space indent, double quotes, semicolons, `bracketSpacing`, LF) except `trailingComma: "es5"` (v4 classic build ships source as written; revisit for v5) and `printWidth: 100`. No ADR, no new GLOSSARY terms.
+- `.prettierrc.json` holds only those two overrides; Prettier pinned to an exact version in `devDependencies`.
+- Format `src/`, `test/test.js`, `test/test.html`, config files, `docs/**/*.md`. `.prettierignore`: `dist/`, `package-lock.json`, `test/ajax/`, `test/img/`, `prototype/`, `node_modules/`. Root Markdown (`README.md` etc.) is left out of the sweep.
+- ESLint drops all stylistic rules and adds `eslint-config-prettier`; Prettier owns formatting. Which non-style rules survive is a Phase 3 decision.
+- Phase 3 adds config, `.prettierignore`, and `format` / `format:check` scripts without wiring the check into `npm test`. The Phase 4A sweep commit runs `format` and adds `format:check` to `npm test`.
+- After the sweep, a separate `chore` commit adds `.git-blame-ignore-revs` with the sweep SHA, and `CONTRIBUTING.md` documents `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 ### Model recommendations
 
