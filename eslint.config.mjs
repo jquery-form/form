@@ -87,8 +87,7 @@ export default [
       sourceType: "module",
       globals: { ...globals.browser },
     },
-    // Stale disable comments in the plugin body stay until the format sweep cleans them up.
-    linterOptions: { reportUnusedDisableDirectives: "off" },
+    linterOptions: { reportUnusedDisableDirectives: "error" },
     rules: sourceRules,
   },
   {

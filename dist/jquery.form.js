@@ -677,7 +677,7 @@
             }
           } catch (e) {
             log("Server abort: ", e, " (", e.name, ")");
-            cb(SERVER_ABORT); // eslint-disable-line callback-return
+            cb(SERVER_ABORT);
             if (timeoutHandle) {
               clearTimeout(timeoutHandle);
             }
@@ -1340,7 +1340,6 @@
       successful = true;
     }
 
-    /* eslint-disable no-mixed-operators */
     if (
       successful &&
       (!n ||
@@ -1351,7 +1350,6 @@
         ((t === "submit" || t === "image") && el.form && el.form.clk !== el) ||
         (tag === "select" && el.selectedIndex === -1))
     ) {
-      /* eslint-enable no-mixed-operators */
       return null;
     }
 
