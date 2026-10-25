@@ -144,6 +144,71 @@ describe("form", function () {
 
       assert.strictEqual(formData.length, 2, 'There are two "successful" elements of the form');
     });
+
+    it("should return an empty array for an empty selection", function () {
+      const $form = $(".missing-form");
+
+      const formData = $form.formToArray();
+
+      assert.deepEqual(formData, []);
+    });
+
+    it("should filter controls before collecting their values", function () {
+      const $form = $('<form><input name="keep" value="yes"><input name="drop" value="no"></form>');
+      const elements = [];
+
+      const formData = $form.formToArray(false, elements, function (element) {
+        return element.name === "keep" ? element : null;
+      });
+
+      assert.deepEqual(formData, [{ name: "keep", value: "yes", type: "text", required: false }]);
+      assert.deepEqual(elements, [$form[0].elements[0]]);
+    });
+
+    it("should include the clicked image value and coordinates in semantic order", function () {
+      const $form = $('<form><input type="image" name="map" value="go"></form>').appendTo("#main");
+      const image = $form.find("input")[0];
+      $form[0].clk = image;
+      $form[0].clk_x = 12;
+      $form[0].clk_y = 34;
+
+      const formData = $form.formToArray(true);
+
+      assert.deepEqual(formData, [
+        { name: "map", value: "go", type: "image" },
+        { name: "map.x", value: 12 },
+        { name: "map.y", value: 34 },
+      ]);
+    });
+
+    it("should include the clicked image value and coordinates in non-semantic mode", function () {
+      const $form = $(
+        '<form><input type="hidden" name="token" value="abc"><input type="image" name="map" value="go"></form>'
+      ).appendTo("#main");
+      const image = $form.find('[type="image"]')[0];
+      $form[0].clk = image;
+      $form[0].clk_x = 5;
+      $form[0].clk_y = 8;
+
+      const formData = $form.formToArray();
+
+      assert.deepEqual(formData, [
+        { name: "token", value: "abc", type: "hidden", required: false },
+        { name: "map", value: "go" },
+        { name: "map.x", value: 5 },
+        { name: "map.y", value: 8 },
+      ]);
+    });
+
+    it("should represent an empty file input as an empty file value", function () {
+      const $form = $('<form><input type="file" name="upload"></form>');
+      const elements = [];
+
+      const formData = $form.formToArray(false, elements);
+
+      assert.deepEqual(formData, [{ name: "upload", value: "", type: "file" }]);
+      assert.deepEqual(elements, [$form[0].elements[0]]);
+    });
   });
 
   describe("formSerialize", function () {
@@ -221,6 +286,54 @@ describe("form", function () {
 
       assert.ok(el.checked, "success: " + el.checked);
     });
+
+    it("should restore individual inputs and textareas to their defaults", function () {
+      const $fields = $(
+        '<div><input type="checkbox" checked><input value="original"><textarea>original</textarea></div>'
+      ).find(":input");
+      $fields.eq(0).prop("checked", false);
+      $fields.eq(1).val("changed");
+      $fields.eq(2).val("changed");
+
+      $fields.resetForm();
+
+      assert.strictEqual($fields.eq(0).prop("checked"), true);
+      assert.strictEqual($fields.eq(1).val(), "original");
+      assert.strictEqual($fields.eq(2).val(), "original");
+    });
+
+    it("should restore a multiple select when resetting an optgroup", function () {
+      const $select = $(
+        "<select multiple><optgroup><option selected>one</option><option>two</option></optgroup></select>"
+      );
+      const $options = $select.find("option");
+      $options.eq(0).prop("selected", false);
+      $options.eq(1).prop("selected", true);
+
+      $select.find("optgroup").resetForm();
+
+      assert.deepEqual(
+        $options
+          .map(function () {
+            return this.selected;
+          })
+          .get(),
+        [true, false]
+      );
+    });
+
+    it("should reset form controls found inside a container", function () {
+      const $container = $(
+        '<div><input value="original"><select><option selected>one</option><option>two</option></select></div>'
+      );
+      $container.find("input").val("changed");
+      $container.find("select").val("two");
+
+      $container.resetForm();
+
+      assert.strictEqual($container.find("input").val(), "original");
+      assert.strictEqual($container.find("select").val(), "one");
+    });
   });
 
   describe("clearForm", function () {
@@ -277,9 +390,80 @@ describe("form", function () {
 
       assert.ok(!el.checked, "success: " + el.checked);
     });
+
+    it("should clear hidden inputs only when explicitly included", function () {
+      const $fields = $(
+        '<div><input type="hidden" value="plain"><input type="hidden" class="special" value="special"></div>'
+      ).find("input");
+
+      $fields.clearFields(".special:hidden");
+
+      assert.strictEqual($fields.eq(0).val(), "plain");
+      assert.strictEqual($fields.eq(1).val(), "");
+    });
+
+    it("should clear all hidden inputs when includeHidden is true", function () {
+      const $hidden = $('<input type="hidden" value="secret">');
+
+      $hidden.clearFields(true);
+
+      assert.strictEqual($hidden.val(), "");
+    });
+
+    it("should clear a file input without replacing it in modern browsers", function () {
+      const $file = $('<input type="file" name="upload">');
+      const file = $file[0];
+
+      const result = $file.clearFields();
+
+      assert.strictEqual(result[0], file);
+      assert.strictEqual($file.val(), "");
+    });
+
+    it("should replace a file input when simulating legacy MSIE", function () {
+      const userAgent = Object.getOwnPropertyDescriptor(navigator, "userAgent");
+      const $container = $('<div><input type="file" name="upload"></div>');
+      const file = $container.find("input")[0];
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        value: "MSIE 10.0",
+      });
+
+      try {
+        $(file).clearFields();
+
+        assert.notStrictEqual($container.find("input")[0], file);
+        assert.strictEqual($container.find("input").attr("name"), "upload");
+      } finally {
+        if (userAgent) {
+          Object.defineProperty(navigator, "userAgent", userAgent);
+        } else {
+          delete navigator.userAgent;
+        }
+      }
+    });
   });
 
   describe("fieldValue", function () {
+    it("should omit unsuccessful controls by default", function () {
+      const $fields = $(
+        '<div><input value="unnamed"><input name="disabled" value="x" disabled><input type="reset" name="reset" value="x"><select name="empty"><option>one</option></select></div>'
+      ).find(":input");
+      $fields.filter("select")[0].selectedIndex = -1;
+
+      const values = $fields.fieldValue();
+
+      assert.deepEqual(values, []);
+    });
+
+    it("should normalize line endings in scalar values", function () {
+      const $textarea = $('<textarea name="message">first\nsecond</textarea>');
+
+      const values = $textarea.fieldValue();
+
+      assert.deepEqual(values, ["first\r\nsecond"]);
+    });
+
     it("should return only successful values when successful is true", function () {
       const expectedCheckbox = ["8", "10"];
       const expectedMultiple = ["3", "4"];
@@ -450,6 +634,81 @@ describe("form", function () {
       const result = $("#fieldTest :radio").fieldSerialize(false);
 
       assertPairs(result, expected);
+    });
+
+    it("should ignore unnamed fields and encode repeated select values", function () {
+      const $fields = $(
+        '<div><input value="ignored"><select name="choice" multiple><option selected value="a b">A</option><option selected value="c">C</option></select></div>'
+      ).find(":input");
+
+      const result = $fields.fieldSerialize();
+
+      assert.strictEqual(result, "choice=a%20b&choice=c");
+    });
+  });
+
+  describe("enable and selected", function () {
+    it("should enable by default and disable when passed false", function () {
+      const $input = $("<input disabled>");
+
+      const enabled = $input.enable();
+      const isEnabled = !$input.prop("disabled");
+      const disabled = $input.enable(false);
+
+      assert.strictEqual(enabled, $input);
+      assert.strictEqual(isEnabled, true);
+      assert.strictEqual(disabled, $input);
+      assert.strictEqual($input.prop("disabled"), true);
+    });
+
+    it("should check and uncheck checkbox and radio controls", function () {
+      const $controls = $('<div><input type="checkbox"><input type="radio"></div>').find("input");
+
+      $controls.selected();
+      const selected = $controls
+        .map(function () {
+          return this.checked;
+        })
+        .get();
+      $controls.selected(false);
+
+      assert.deepEqual(selected, [true, true]);
+      assert.deepEqual(
+        $controls
+          .map(function () {
+            return this.checked;
+          })
+          .get(),
+        [false, false]
+      );
+    });
+
+    it("should select one option while deselecting its single-select siblings", function () {
+      const $select = $("<select><option selected>one</option><option>two</option></select>");
+      const $options = $select.find("option");
+
+      const result = $options.eq(1).selected();
+
+      assert.strictEqual(result[0], $options[1]);
+      assert.strictEqual($options.eq(0).prop("selected"), false);
+      assert.strictEqual($options.eq(1).prop("selected"), true);
+    });
+
+    it("should independently select options in a multiple select", function () {
+      const $options = $(
+        "<select multiple><option selected>one</option><option>two</option></select>"
+      ).find("option");
+
+      $options.eq(1).selected();
+
+      assert.deepEqual(
+        $options
+          .map(function () {
+            return this.selected;
+          })
+          .get(),
+        [true, true]
+      );
     });
   });
 
