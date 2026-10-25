@@ -34,75 +34,102 @@ describe("form", function () {
     $("#main").html(fixture);
   });
 
-  it('"action" and "method" form attributes', function () {
-    var f = $("#form1");
-    assert.strictEqual(f.attr("action"), "ajax/text.html", 'form "action"');
-    assert.strictEqual(f.attr("method"), "get", 'form "method"');
+  describe("form fixture", function () {
+    it("should expose the action and method attributes of form1", function () {
+      const $form = $("#form1");
+
+      const action = $form.attr("action");
+      const method = $form.attr("method");
+
+      assert.strictEqual(action, "ajax/text.html", 'form "action"');
+      assert.strictEqual(method, "get", 'form "method"');
+    });
   });
 
-  it("formToArray: multi-select", function () {
-    var a = $("#form1").formToArray();
-    assert.strictEqual(a.constructor, Array, "type check");
-    assert.strictEqual(a.length, 13, "array length");
-    assert.strictEqual(arrayCount(a, "Multiple"), 3, "multi-select");
+  describe("formToArray", function () {
+    it("should return one entry per selected option of a multi-select", function () {
+      const $form = $("#form1");
+
+      const a = $form.formToArray();
+
+      assert.strictEqual(a.constructor, Array, "type check");
+      assert.strictEqual(a.length, 13, "array length");
+      assert.strictEqual(arrayCount(a, "Multiple"), 3, "multi-select");
+    });
+
+    it('should read fields named "action" and "method" as plain inputs', function () {
+      const $form = $("#form1");
+
+      const a = $form.formToArray();
+
+      assert.strictEqual(a.constructor, Array, "type check");
+      assert.strictEqual(arrayValue(a, "action"), "1", "input name=action");
+      assert.strictEqual(arrayValue(a, "method"), "2", "input name=method");
+    });
+
+    it("should return fields in document order when semantic is true", function () {
+      const $form = $("#form2");
+      const testData = ["a", "b", "c", "d", "e", "f"];
+
+      const formData = $form.formToArray(true);
+
+      for (let i = 0; i < 6; i++) {
+        assert.strictEqual(formData[i].name, testData[i], "match value at index=" + i);
+      }
+    });
+
+    it("should promote option text when an option has no value attribute", function () {
+      const $form = $("#form6");
+      const expected = [
+        { name: "A", value: "" },
+        { name: "B", value: "MISSING_ATTR" },
+        { name: "C", value: "" },
+        { name: "C", value: "MISSING_ATTR" },
+      ];
+
+      const a = $form.formToArray(true);
+
+      for (let i = 0; i < a.length; i++) {
+        assert.strictEqual(
+          a[i].name,
+          expected[i].name,
+          "Name: " + a[i].name + " = " + expected[i].name
+        );
+        assert.strictEqual(
+          a[i].value,
+          expected[i].value,
+          "Value: " + a[i].value + " = " + expected[i].value
+        );
+      }
+    });
+
+    it("should include fields outside the form that use the form attribute", function () {
+      const $form = $("#form10");
+
+      const formData = $form.formToArray();
+
+      assert.strictEqual(formData.length, 2, 'There are two "successful" elements of the form');
+    });
   });
 
-  it('formToArray: "action" and "method" inputs', function () {
-    var a = $("#form1").formToArray();
-    assert.strictEqual(a.constructor, Array, "type check");
-    assert.strictEqual(arrayValue(a, "action"), "1", "input name=action");
-    assert.strictEqual(arrayValue(a, "method"), "2", "input name=method");
-  });
+  describe("formSerialize", function () {
+    it("should produce one query-string pair per successful field", function () {
+      const $form = $("#form1");
 
-  it("formToArray: semantic test", function () {
-    var formData = $("#form2").formToArray(true);
-    var testData = ["a", "b", "c", "d", "e", "f"];
-    for (var i = 0; i < 6; i++) {
-      assert.strictEqual(formData[i].name, testData[i], "match value at index=" + i);
-    }
-  });
+      const s = $form.formSerialize();
 
-  it("formToArray: text promotion for missing value attributes", function () {
-    var expected = [
-      { name: "A", value: "" },
-      { name: "B", value: "MISSING_ATTR" },
-      { name: "C", value: "" },
-      { name: "C", value: "MISSING_ATTR" },
-    ];
-    var a = $("#form6").formToArray(true);
+      assert.ok(s.constructor == String, "type check");
+      assert.ok(s.split("&").length == 13, "string array length");
+    });
 
-    // verify all the option values
-    for (var i = 0; i < a.length; i++) {
-      assert.strictEqual(
-        a[i].name,
-        expected[i].name,
-        "Name: " + a[i].name + " = " + expected[i].name
-      );
-      assert.strictEqual(
-        a[i].value,
-        expected[i].value,
-        "Value: " + a[i].value + " = " + expected[i].value
-      );
-    }
-  });
+    it("should serialize input elements that are not inside a form", function () {
+      const $fields = $("#pseudo *");
 
-  it("formToArray: outside fields", function () {
-    var formData = $("#form10").formToArray();
-    assert.strictEqual(formData.length, 2, 'There are two "successful" elements of the form');
-  });
+      const s = $fields.fieldSerialize();
 
-  // test string serialization
-  it("serialize: param count", function () {
-    var s = $("#form1").formSerialize();
-    assert.ok(s.constructor == String, "type check");
-    assert.ok(s.split("&").length == 13, "string array length");
-  });
-
-  // test support for input elements not contained within a form
-  it("serialize: pseudo form", function () {
-    var s = $("#pseudo *").fieldSerialize();
-    assert.ok(s.constructor == String, "type check");
-    assert.ok(s.split("&").length == 3, "string array length");
+      assert.ok(s.constructor == String, "type check");
+      assert.ok(s.split("&").length == 3, "string array length");
+    });
   });
 
   // test resetForm
@@ -914,6 +941,7 @@ describe("form", function () {
     });
     assert.ok(true, "ajaxSubmit passed");
   });
+
   it("hash only", function () {
     $("#actionTest2").ajaxSubmit({
       beforeSerialize: function ($f, opts) {
@@ -922,6 +950,7 @@ describe("form", function () {
     });
     assert.ok(true, "ajaxSubmit passed");
   });
+
   it("empty action", function () {
     $("#actionTest3").ajaxSubmit({
       beforeSerialize: function ($f, opts) {
@@ -930,6 +959,7 @@ describe("form", function () {
     });
     assert.ok(true, "ajaxSubmit passed");
   });
+
   it("missing action", function () {
     $("#actionTest4").ajaxSubmit({
       beforeSerialize: function ($f, opts) {
