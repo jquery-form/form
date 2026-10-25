@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: baseline
     content: Install deps, run lint/tests/build on current state, record baseline failures
-    status: pending
+    status: completed
   - id: grill-prettier
     content: Grill-with-docs session to decide Prettier deviations from defaults; record in config/ADR/GLOSSARY as warranted
     status: pending
@@ -63,9 +63,25 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 1. ~~Grill session: branching strategy (and ADR)~~ — done (`docs/adr/0002-branching-and-release.md`)
 2. ~~Reconcile branches, rename to `main`, prune, protect (per ADR-0002)~~ — done
 3. ~~Runner/bundler prototype~~ — done (`docs/research/runner-bundler-prototype.md`)
-4. Baseline (Phase 1)
+4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
 5. Grill session: Prettier (Phase 2)
 6. Architecture/CI group (Phase 3), then refactor group (Phase 4), then coverage (Phase 5), and so on
+
+### Model recommendations
+
+Each remaining step gets the cheapest model that fits it: a strong reasoner where a mistake breaks consumers or hides bugs, and a fast or long-context model where the work is mechanical or mostly reading.
+
+| Step | Model | Why |
+| --- | --- | --- |
+| Baseline (Phase 1) | Composer 2.5 | Run commands and record output; little judgement needed. |
+| Grill: Prettier (Phase 2) | Claude Sonnet 5.5 | Conversational trade-off discussion; moderate depth, many turns. |
+| Architecture/CI group (Phase 3) | Claude Opus 5.5 | Multi-part toolchain work: converting `src` to ESM, keeping the ADR-0001 contract (CommonJS factory, AMD, script tag) in the build, and CI. A mistake here breaks consumers. |
+| Prettier sweep (Phase 4A) | Composer 2.5 | Mechanical: run the formatter, verify, commit. |
+| Test rewrite (Phase 4B) | Claude Sonnet 5.5 | Many similar edits; converting fire-and-forget async tests to promises needs care but follows a repeated pattern. |
+| Coverage to 100% (Phase 5) | GPT-5.6 Sol | Deep branch-by-branch reasoning, simulating legacy browsers and old jQuery, iframe transport edge cases. |
+| Dependency modernization (Phase 6) | Claude Sonnet 5.5 | Routine upgrades plus a version matrix; moderate judgement on breaking changes. |
+| Issue triage (Phase 7) | Gemini 4 Argon | Long-context reading of many issues and PRs; classification more than deep reasoning. |
+| Architecture and vulnerability review (Phase 8) | Claude Opus 5.5 | Security analysis (XSS, script eval, iframe parsing, prototype pollution) where missed findings are costly. |
 
 ## Commit grouping principle
 
