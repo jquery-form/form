@@ -1,4 +1,4 @@
-Please review [Instructions for Reporting a Bug](https://github.com/jquery-form/form/blob/master/CONTRIBUTING.md#reporting-a-bug).
+Please review [Instructions for Reporting a Bug](https://github.com/jquery-form/form/blob/main/CONTRIBUTING.md#reporting-a-bug).
 
 ### Description:
 

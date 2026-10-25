@@ -14,11 +14,11 @@
   "licenses": [
     {
       "type": "LGPL-2.1+",
-      "url": "https://github.com/jquery-form/form/blob/master/LICENSE"
+      "url": "https://github.com/jquery-form/form/blob/main/LICENSE"
     },
     {
       "type": "MIT",
-      "url": "https://github.com/jquery-form/form/blob/master/LICENSE-MIT"
+      "url": "https://github.com/jquery-form/form/blob/main/LICENSE-MIT"
     }
   ],
   "maintainers": [

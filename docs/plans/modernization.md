@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: branch-reconcile
     content: "Merge develop into master, rename master to main, delete develop, prune stale remotes, close #614, protect main, fix master links"
-    status: pending
+    status: completed
   - id: prototype
     content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
     status: pending
@@ -60,7 +60,7 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 ### Revised order
 
 1. ~~Grill session: branching strategy (and ADR)~~ — done (`docs/adr/0002-branching-and-release.md`)
-2. Reconcile branches, rename to `main`, prune, protect (per ADR-0002)
+2. ~~Reconcile branches, rename to `main`, prune, protect (per ADR-0002)~~ — done
 3. Runner/bundler prototype
 4. Baseline (Phase 1)
 5. Grill session: Prettier (Phase 2)
