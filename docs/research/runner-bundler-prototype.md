@@ -1,6 +1,6 @@
 # Runner and bundler prototype
 
-Throwaway prototype in `prototype/` (own `package.json`, root deps untouched). Run from `prototype/`: `npm ci && npx playwright install chromium`, then:
+Throwaway prototype in `prototype/` (own `package.json`, root deps untouched; removed in Phase 3, see git history). Run from `prototype/`: `npm ci && npx playwright install chromium`, then:
 
 - `npm run build`: Rollup build plus the CommonJS contract check (`cjs-check.cjs`). Run this first, because the surface tests load `dist/`.
 - `npm run playwright`: the Mocha suite under Playwright Test, plus the surface smoke tests.
