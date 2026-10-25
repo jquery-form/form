@@ -39,6 +39,16 @@
 - Test treatment: `it.fails`; its exercised source lines still count toward coverage.
 - Suggested fix: only derive success/error from `xhr.status` when response parsing has not failed.
 
+## Aborting an iframe upload while its response is processed completes twice
+
+- Test: `iframe transport should complete once when aborted while filtering the response`
+- Finding: `cb` checks `xhr.aborted` only on entry. If `abort()` runs while the response is being
+  processed (for example from `dataFilter`), abort calls `complete` with `"aborted"`, then `cb`
+  continues and calls `complete` again with a `null` status.
+- Test treatment: `it.fails`; its exercised source lines still count toward coverage.
+- Suggested fix: return from `cb` after the `xhr.aborted` check instead of continuing with a null
+  status.
+
 ## Aborting an iframe upload leaves its Deferred pending
 
 - Test: `iframe transport should reject the returned deferred when aborted`
