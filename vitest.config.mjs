@@ -65,6 +65,13 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.js"],
       reporter: ["text-summary", "html"],
+      // Below 100% only for the source branches listed in docs/research/coverage-gaps.md.
+      thresholds: {
+        lines: 98.14,
+        branches: 96.41,
+        functions: 98.27,
+        statements: 98.17,
+      },
     },
     projects: [
       {
