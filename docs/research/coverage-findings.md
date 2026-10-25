@@ -11,6 +11,18 @@
 - Suggested fix: accept or retain an explicit selector for delegated binding instead of reading
   `this.selector`; redesign this path as part of the planned 5.0 removal of obsolete jQuery metadata.
 
+## Resetting a label with a matching `for` target throws
+
+- Test: `resetForm should reset the control a label targets and its nested fields`
+- Finding: the label branch calls `list.unshift(forEl[0])`, but jQuery collections have no `unshift`,
+  so any label whose `for` target is found throws a `TypeError`. The target is also looked up with
+  `$(el.attr("for"))`, which treats the attribute as a selector: a normal `for="id"` matches nothing,
+  so only a `#`-prefixed value reaches the crash.
+- Test treatment: `it.fails` (using `for="#label-target"` so the crashing line runs); its exercised
+  source lines still count toward coverage.
+- Suggested fix: look the target up by id (`document.getElementById`) and combine with
+  `list.add(target)` instead of `unshift`.
+
 ## Iframe script responses are not evaluated
 
 - Test: `iframe transport should evaluate script from a pre response`
