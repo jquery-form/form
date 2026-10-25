@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # Print step durations, queue time, and total wall time for a GitHub Actions run.
-# Usage: scripts/ci-timings.sh <run-id>
+# Queue and total come from the job's own timestamps, so reruns are measured per attempt.
+# Usage: scripts/ci-timings.sh <run-id> [attempt]
 set -euo pipefail
 
-if [ $# -ne 1 ]; then
-  echo "usage: $0 <run-id>" >&2
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+  echo "usage: $0 <run-id> [attempt]" >&2
   exit 1
 fi
 
-gh run view "$1" --json createdAt,jobs --jq '
+attempt=${2:-$(gh api "repos/{owner}/{repo}/actions/runs/$1" --jq .run_attempt)}
+job_id=$(gh api "repos/{owner}/{repo}/actions/runs/$1/attempts/$attempt/jobs" --jq '.jobs[0].id')
+
+gh api "repos/{owner}/{repo}/actions/jobs/$job_id" --jq '
   def secs: fromdateiso8601;
-  . as $run
-  | .jobs[] | select(.startedAt != null) as $job
-  | ($job.steps[] | select(.startedAt != null and .completedAt != null)
-      | "step\t\(.name)\t\((.completedAt | secs) - (.startedAt | secs))"),
-    "queue time\t\t\(($job.startedAt | secs) - ($run.createdAt | secs))",
-    "total wall time\t\t\(($job.completedAt | secs) - ($run.createdAt | secs))"
-' | awk -F '\t' '{ name = ($1 == "step") ? $2 : $1; printf "%-50s %4s s\n", name, $3 }'
+  (.steps[] | select(.started_at != null and .completed_at != null)
+    | "\(.name)\t\((.completed_at | secs) - (.started_at | secs))"),
+  "queue time\t\((.started_at | secs) - (.created_at | secs))",
+  "total wall time\t\((.completed_at | secs) - (.created_at | secs))"
+' | awk -F '\t' '{ printf "%-50s %4s s\n", $1, $2 }'
