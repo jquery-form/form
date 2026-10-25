@@ -79,7 +79,7 @@ const sourceRules = {
 };
 
 export default [
-  { ignores: ["dist/**", "coverage/**", "test/ajax/**"] },
+  { ignores: [".jquery/**", "dist/**", "coverage/**", "test/ajax/**"] },
   js.configs.recommended,
   {
     files: ["src/**/*.js"],

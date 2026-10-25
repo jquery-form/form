@@ -231,3 +231,4 @@ $RECYCLE.BIN/
 ### Build and test output ###
 coverage/
 .vitest/
+.jquery/

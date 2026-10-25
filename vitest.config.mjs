@@ -52,6 +52,26 @@ const rawFiles = serveFiles(
 
 const jqueryEsm = new URL("./test/jquery-esm.js", import.meta.url);
 
+// The matrix points JQUERY_FILE at another classic jQuery build (see scripts/fetch-jquery.sh).
+const jqueryFile = fileURLToPath(
+  new URL(
+    process.env.JQUERY_FILE || "./node_modules/jquery/dist/jquery.js",
+    `file://${process.cwd()}/`
+  )
+);
+
+// jQuery builds are classic scripts that set window.jQuery. Appending an export gives the suite a
+// default import without Vite's CommonJS interop, for every version in the matrix.
+const jqueryAsModule = {
+  name: "jquery-as-module",
+  enforce: "pre",
+  transform(code, id) {
+    if (id.split("?")[0] === jqueryFile) {
+      return { code: `${code}\nexport default window.jQuery;\n`, map: null };
+    }
+  },
+};
+
 const browser = () => ({
   enabled: true,
   headless: true,
@@ -75,11 +95,14 @@ export default defineConfig({
     },
     projects: [
       {
-        plugins: [ajaxXmlFixtures, ajaxFixtures],
+        plugins: [jqueryAsModule, ajaxXmlFixtures, ajaxFixtures],
         test: {
           name: "suite",
           // Keeps Vite's CommonJS interop wrapper out of the plugin's coverage.
-          alias: [{ find: /^jquery$/, replacement: fileURLToPath(jqueryEsm) }],
+          alias: [
+            { find: /^jquery$/, replacement: fileURLToPath(jqueryEsm) },
+            { find: /^jquery\/dist\/jquery\.js$/, replacement: jqueryFile },
+          ],
           globals: true,
           include: ["test/test.js"],
           setupFiles: ["test/setup.js"],
