@@ -699,156 +699,137 @@ describe("form", function () {
     });
   });
 
-  // test pre and post callbacks for ajaxForm
-  it("ajaxForm: pre and post callbacks", function () {
-    // stop();
+  describe("ajaxForm", function () {
+    it("should call beforeSubmit and then success when the submit button is clicked", async function () {
+      const opts = {};
 
-    var opts = {
-      beforeSubmit: function (a, jq) {
-        // pre-submit callback
-        assert.ok(true, "pre-submit callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-      },
-      success: function () {
-        // post-submit callback
-        assert.ok(true, "post-submit callback");
-        // start();
-      },
-    };
-
-    // expect(4);
-    $("#form4").ajaxForm(opts);
-    $("#submitForm4")[0].click(); // trigger the submit button
-  });
-
-  // test that the value of the submit button is captured
-  it("ajaxForm: capture submit element", function () {
-    var opts = {
-      beforeSubmit: function (a, jq) {
-        // pre-callback
-        assert.ok(true, "pre-callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-        assert.ok(arrayValue(a, "form4inputName") !== null, "submit button");
-      },
-    };
-
-    // expect(4);
-    $("#form4").ajaxForm(opts);
-    $("#submitForm4withName")[0].click();
-  });
-
-  // test image submit support
-  it("ajaxForm: capture submit image coordinates", function () {
-    var opts = {
-      beforeSubmit: function (a, jq) {
-        // pre-callback
-        assert.ok(true, "pre-callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-        assert.ok(arrayValue(a, "myImage.x") !== null, "x coord");
-        assert.ok(arrayValue(a, "myImage.y") !== null, "y coord");
-      },
-    };
-
-    // expect(5);
-    $("#form4").ajaxForm(opts);
-    $("#form4imageSubmit")[0].click();
-  });
-
-  // test image submit support
-  it("ajaxForm: capture submit image coordinates (semantic=true)", function () {
-    var opts = {
-      semantic: true,
-      beforeSubmit: function (a, jq) {
-        // pre-callback
-        assert.ok(true, "pre-callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-        assert.ok(arrayValue(a, "myImage.x") !== null, "x coord");
-        assert.ok(arrayValue(a, "myImage.y") !== null, "y coord");
-      },
-    };
-
-    // expect(5);
-    $("#form4").ajaxForm(opts);
-    $("#form4imageSubmit")[0].click();
-  });
-
-  // test that the targetDiv gets updated
-  it("ajaxForm: update target div", function () {
-    $("#targetDiv").empty();
-    // stop();
-
-    var opts = {
-      target: "#targetDiv",
-      beforeSubmit: function (a, jq) {
-        // pre-callback
-        assert.ok(true, "pre-callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-      },
-      success: function () {
-        assert.ok(true, "post-callback");
-        assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
-        // start();
-      },
-    };
-
-    // expect(5);
-    $("#form4").ajaxForm(opts);
-    $("#submitForm4")[0].click();
-  });
-
-  it("ajaxForm - auto unbind", function () {
-    $("#targetDiv").empty();
-    // stop();
-
-    var opts = {
-      target: "#targetDiv",
-      beforeSubmit: function () {
-        // pre-callback
-        assert.ok(true, "pre-callback");
-      },
-      success: function () {
-        assert.ok(true, "post-callback");
-        // start();
-      },
-    };
-
-    // expect(2);
-    // multiple binds
-    $("#form8").ajaxForm(opts).ajaxForm(opts).ajaxForm(opts);
-    $("#submitForm8")[0].click();
-  });
-
-  it("ajaxFormUnbind", function () {
-    $("#targetDiv").empty();
-    // stop();
-
-    var opts = {
-      target: "#targetDiv",
-      beforeSubmit: function () {
-        // pre-callback
-        assert.ok(true, "pre-callback");
-      },
-      success: function () {
-        assert.ok(true, "post-callback");
-        // start();
-      },
-    };
-
-    // expect(0);
-    // multiple binds
-    $("#form9")
-      .ajaxForm(opts)
-      .submit(function () {
-        return false;
+      const seen = await submitAndSettle(opts, () => {
+        $("#form4").ajaxForm(opts);
+        $("#submitForm4")[0].click();
       });
-    $("#form9").ajaxFormUnbind(opts);
-    $("#submitForm9")[0].click();
 
-    // setTimeout(start, 500);
+      assert.ok(seen.beforeSubmit, "pre-submit callback");
+      assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+      assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+      assert.ok(seen.success, "post-submit callback");
+    });
+
+    it("should include the value of the clicked submit button", async function () {
+      const opts = {};
+
+      const seen = await submitAndSettle(opts, () => {
+        $("#form4").ajaxForm(opts);
+        $("#submitForm4withName")[0].click();
+      });
+
+      assert.ok(seen.beforeSubmit, "pre-callback");
+      assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+      assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+      assert.ok(
+        arrayValue(seen.beforeSubmit.data, "form4inputName") !== undefined,
+        "submit button"
+      );
+    });
+
+    it("should include the coordinates of a clicked image submit", async function () {
+      const opts = {};
+
+      const seen = await submitAndSettle(opts, () => {
+        $("#form4").ajaxForm(opts);
+        $("#form4imageSubmit")[0].click();
+      });
+
+      assert.ok(seen.beforeSubmit, "pre-callback");
+      assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+      assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+      assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.x") !== undefined, "x coord");
+      assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.y") !== undefined, "y coord");
+    });
+
+    it("should include image coordinates when semantic is true", async function () {
+      const opts = { semantic: true };
+
+      const seen = await submitAndSettle(opts, () => {
+        $("#form4").ajaxForm(opts);
+        $("#form4imageSubmit")[0].click();
+      });
+
+      assert.ok(seen.beforeSubmit, "pre-callback");
+      assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+      assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+      assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.x") !== undefined, "x coord");
+      assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.y") !== undefined, "y coord");
+    });
+
+    it("should load the response into the target div", async function () {
+      $("#targetDiv").empty();
+      const opts = { target: "#targetDiv" };
+
+      const seen = await submitAndSettle(opts, () => {
+        $("#form4").ajaxForm(opts);
+        $("#submitForm4")[0].click();
+      });
+
+      assert.ok(seen.beforeSubmit, "pre-callback");
+      assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+      assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+      assert.ok(seen.success, "post-callback");
+      assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
+    });
+
+    it("should submit once when ajaxForm is bound several times", async function () {
+      $("#targetDiv").empty();
+      let beforeSubmitCalls = 0;
+      let successCalls = 0;
+      const opts = {
+        target: "#targetDiv",
+        beforeSubmit: function () {
+          beforeSubmitCalls++;
+        },
+        success: function () {
+          successCalls++;
+        },
+      };
+      const settled = new Promise((resolve) => {
+        const success = opts.success;
+        opts.success = function () {
+          success.apply(this, arguments);
+          // Let any duplicate submissions from extra bindings land before asserting.
+          setTimeout(resolve, 100);
+        };
+      });
+
+      $("#form8").ajaxForm(opts).ajaxForm(opts).ajaxForm(opts);
+      $("#submitForm8")[0].click();
+      await settled;
+
+      assert.strictEqual(beforeSubmitCalls, 1, "pre-callback");
+      assert.strictEqual(successCalls, 1, "post-callback");
+    });
+
+    it("should not submit after ajaxFormUnbind", async function () {
+      $("#targetDiv").empty();
+      let callbacks = 0;
+      const opts = {
+        target: "#targetDiv",
+        beforeSubmit: function () {
+          callbacks++;
+        },
+        success: function () {
+          callbacks++;
+        },
+      };
+      $("#form9")
+        .ajaxForm(opts)
+        .submit(function () {
+          return false;
+        });
+
+      $("#form9").ajaxFormUnbind(opts);
+      $("#submitForm9")[0].click();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      assert.strictEqual(callbacks, 0, "no callbacks after unbind");
+    });
   });
 });
