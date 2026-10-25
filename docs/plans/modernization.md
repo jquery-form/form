@@ -37,7 +37,7 @@ todos:
     status: completed
   - id: deps-modernize
     content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
-    status: pending
+    status: completed
   - id: metrics
     content: "Keep docs/metrics.md current: before/after numbers (test time, coverage, test count, bundle size, audit, deps) at each phase and for the v4 and v5 releases"
     status: in_progress
@@ -198,6 +198,11 @@ functions, 98.17% statements) and reach 100% when 5.0 removes or fixes those bra
 ## Phase 6: Dependency modernization
 
 - Upgrade remaining dev deps, run a jQuery version matrix (floor from Phase 0, 3.x, 4.x), `npm audit`, and verify `bower.json`, `composer.json`, `form.jquery.json` manifests and `main`/`browser`/exports entries.
+
+Status: done on `phase-6-deps`. No dev dependency had an upgrade available and `npm audit` reports
+0 vulnerabilities. The matrix (1.7.2, 3.7.1, 4.0.0) is in CI; 3.7.1 passes, while 1.7.2 and 4.0.0
+fail and are non-gating until `src/` is fixed (`docs/research/jquery-matrix.md`). Manifests were
+aligned and are now checked by `test/surfaces/manifests.test.js`; an `exports` map is left to 5.0.
 
 ## Phase 7: Issue triage
 
