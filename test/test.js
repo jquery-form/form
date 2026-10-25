@@ -245,6 +245,180 @@ describe("form", function () {
     });
   });
 
+  describe("fieldValue", function () {
+    it("should return only successful values when successful is true", function () {
+      const expectedCheckbox = ["8", "10"];
+      const expectedMultiple = ["3", "4"];
+
+      const input = $("#fieldTest input").fieldValue(true);
+      const anyField = $("#fieldTest :input").fieldValue(true);
+      const hidden = $("#fieldTest input:hidden").fieldValue(true);
+      const password = $("#fieldTest :password").fieldValue(true);
+      const radio = $("#fieldTest :radio").fieldValue(true);
+      const select = $("#fieldTest select").fieldValue(true);
+      const checkbox = $("#fieldTest :checkbox").fieldValue(true);
+      const multiple = $("#fieldTest [name=B]").fieldValue(true);
+
+      assert.ok("5" == input[0], "input");
+      assert.ok("1" == anyField[0], ":input");
+      assert.ok("5" == hidden[0], ":hidden");
+      assert.ok("14" == password[0], ":password");
+      assert.ok("12" == radio[0], ":radio");
+      assert.ok("1" == select[0], "select");
+      assert.ok(
+        checkbox.length == expectedCheckbox.length,
+        "result size check (checkbox): " + checkbox.length + "=" + expectedCheckbox.length
+      );
+      for (let i = 0; i < checkbox.length; i++) {
+        assert.ok(checkbox[i] == expectedCheckbox[i], expectedCheckbox[i]);
+      }
+      assert.ok(
+        multiple.length == expectedMultiple.length,
+        "result size check (select-multiple): " + multiple.length + "=" + expectedMultiple.length
+      );
+      for (let i = 0; i < multiple.length; i++) {
+        assert.ok(multiple[i] == expectedMultiple[i], expectedMultiple[i]);
+      }
+    });
+
+    it("should return every value when successful is false", function () {
+      const expectedCheckbox = ["8", "9", "10"];
+      const expectedRadio = ["11", "12", "13"];
+      const expectedMultiple = ["3", "4"];
+
+      const input = $("#fieldTest input").fieldValue(false);
+      const anyField = $("#fieldTest :input").fieldValue(false);
+      const hidden = $("#fieldTest input:hidden").fieldValue(false);
+      const password = $("#fieldTest :password").fieldValue(false);
+      const select = $("#fieldTest select").fieldValue(false);
+      const checkbox = $("#fieldTest :checkbox").fieldValue(false);
+      const radio = $("#fieldTest :radio").fieldValue(false);
+      const multiple = $("#fieldTest [name=B]").fieldValue(false);
+
+      assert.ok("5" == input[0], "input");
+      assert.ok("1" == anyField[0], ":input");
+      assert.ok("5" == hidden[0], ":hidden");
+      assert.ok("14" == password[0], ":password");
+      assert.ok("1" == select[0], "select");
+      assert.ok(
+        checkbox.length == expectedCheckbox.length,
+        "result size check (checkbox): " + checkbox.length + "=" + expectedCheckbox.length
+      );
+      for (let i = 0; i < checkbox.length; i++) {
+        assert.ok(checkbox[i] == expectedCheckbox[i], expectedCheckbox[i]);
+      }
+      assert.ok(
+        radio.length == expectedRadio.length,
+        "result size check (radio): " + radio.length + "=" + expectedRadio.length
+      );
+      for (let i = 0; i < radio.length; i++) {
+        assert.ok(radio[i] == expectedRadio[i], expectedRadio[i]);
+      }
+      assert.ok(
+        multiple.length == expectedMultiple.length,
+        "result size check (select-multiple): " + multiple.length + "=" + expectedMultiple.length
+      );
+      for (let i = 0; i < multiple.length; i++) {
+        assert.ok(multiple[i] == expectedMultiple[i], expectedMultiple[i]);
+      }
+    });
+  });
+
+  describe("fieldSerialize", function () {
+    // Shared Assert step: the serialized pairs match `expected`, in order.
+    function assertPairs(serialized, expected) {
+      const result = serialized.split("&");
+
+      assert.ok(
+        result.length == expected.length,
+        "result size check: " + result.length + "=" + expected.length
+      );
+      for (let i = 0; i < result.length; i++) {
+        assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
+      }
+    }
+
+    it("should serialize only successful inputs when successful is true", function () {
+      const expected = ["C=5", "D=6", "F=8", "F=10", "G=12", "H=14"];
+
+      const result = $("#fieldTest input").fieldSerialize(true);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize only successful fields of every kind when successful is true", function () {
+      const expected = ["A=1", "B=3", "B=4", "C=5", "D=6", "E=7", "F=8", "F=10", "G=12", "H=14"];
+
+      const result = $("#fieldTest :input").fieldSerialize(true);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize every field when successful is false", function () {
+      const expected = [
+        "A=1",
+        "B=3",
+        "B=4",
+        "C=5",
+        "D=6",
+        "E=7",
+        "F=8",
+        "F=9",
+        "F=10",
+        "G=11",
+        "G=12",
+        "G=13",
+        "H=14",
+        "I=15",
+        "J=16",
+      ];
+
+      const result = $("#fieldTest :input").fieldSerialize(false);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize the selected options of a select-multiple", function () {
+      const expected = ["B=3", "B=4"];
+
+      const result = $("#fieldTest [name=B]").fieldSerialize(true);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize only checked checkboxes when successful is true", function () {
+      const expected = ["F=8", "F=10"];
+
+      const result = $("#fieldTest :checkbox").fieldSerialize(true);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize every checkbox when successful is false", function () {
+      const expected = ["F=8", "F=9", "F=10"];
+
+      const result = $("#fieldTest :checkbox").fieldSerialize(false);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize only the checked radio when successful is true", function () {
+      const expected = ["G=12"];
+
+      const result = $("#fieldTest :radio").fieldSerialize(true);
+
+      assertPairs(result, expected);
+    });
+
+    it("should serialize every radio when successful is false", function () {
+      const expected = ["G=11", "G=12", "G=13"];
+
+      const result = $("#fieldTest :radio").fieldSerialize(false);
+
+      assertPairs(result, expected);
+    });
+  });
+
   // test ajaxSubmit target update
   it("ajaxSubmit: target == String", function () {
     $("#targetDiv").empty();
@@ -671,213 +845,6 @@ describe("form", function () {
 
     // expect(1);
     $("#form3").ajaxSubmit(opts);
-  });
-
-  it("fieldValue(true)", function () {
-    var i;
-
-    assert.ok("5" == $("#fieldTest input").fieldValue(true)[0], "input");
-    assert.ok("1" == $("#fieldTest :input").fieldValue(true)[0], ":input");
-    assert.ok("5" == $("#fieldTest input:hidden").fieldValue(true)[0], ":hidden");
-    assert.ok("14" == $("#fieldTest :password").fieldValue(true)[0], ":password");
-    assert.ok("12" == $("#fieldTest :radio").fieldValue(true)[0], ":radio");
-    assert.ok("1" == $("#fieldTest select").fieldValue(true)[0], "select");
-
-    var expected = ["8", "10"];
-    var result = $("#fieldTest :checkbox").fieldValue(true);
-    assert.ok(
-      result.length == expected.length,
-      "result size check (checkbox): " + result.length + "=" + expected.length
-    );
-    for (i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i]);
-    }
-
-    expected = ["3", "4"];
-    result = $("#fieldTest [name=B]").fieldValue(true);
-    assert.ok(
-      result.length == expected.length,
-      "result size check (select-multiple): " + result.length + "=" + expected.length
-    );
-    for (i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i]);
-    }
-  });
-
-  it("fieldValue(false)", function () {
-    var i;
-
-    assert.ok("5" == $("#fieldTest input").fieldValue(false)[0], "input");
-    assert.ok("1" == $("#fieldTest :input").fieldValue(false)[0], ":input");
-    assert.ok("5" == $("#fieldTest input:hidden").fieldValue(false)[0], ":hidden");
-    assert.ok("14" == $("#fieldTest :password").fieldValue(false)[0], ":password");
-    assert.ok("1" == $("#fieldTest select").fieldValue(false)[0], "select");
-
-    var expected = ["8", "9", "10"];
-    var result = $("#fieldTest :checkbox").fieldValue(false);
-    assert.ok(
-      result.length == expected.length,
-      "result size check (checkbox): " + result.length + "=" + expected.length
-    );
-    for (i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i]);
-    }
-
-    expected = ["11", "12", "13"];
-    result = $("#fieldTest :radio").fieldValue(false);
-    assert.ok(
-      result.length == expected.length,
-      "result size check (radio): " + result.length + "=" + expected.length
-    );
-    for (i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i]);
-    }
-
-    expected = ["3", "4"];
-    result = $("#fieldTest [name=B]").fieldValue(false);
-    assert.ok(
-      result.length == expected.length,
-      "result size check (select-multiple): " + result.length + "=" + expected.length
-    );
-    for (i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i]);
-    }
-  });
-
-  it("fieldSerialize(true) input", function () {
-    var expected = ["C=5", "D=6", "F=8", "F=10", "G=12", "H=14"];
-
-    var result = $("#fieldTest input").fieldSerialize(true);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(true) :input", function () {
-    var expected = ["A=1", "B=3", "B=4", "C=5", "D=6", "E=7", "F=8", "F=10", "G=12", "H=14"];
-
-    var result = $("#fieldTest :input").fieldSerialize(true);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(false) :input", function () {
-    var expected = [
-      "A=1",
-      "B=3",
-      "B=4",
-      "C=5",
-      "D=6",
-      "E=7",
-      "F=8",
-      "F=9",
-      "F=10",
-      "G=11",
-      "G=12",
-      "G=13",
-      "H=14",
-      "I=15",
-      "J=16",
-    ];
-
-    var result = $("#fieldTest :input").fieldSerialize(false);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(true) select-mulitple", function () {
-    var expected = ["B=3", "B=4"];
-
-    var result = $("#fieldTest [name=B]").fieldSerialize(true);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(true) :checkbox", function () {
-    var expected = ["F=8", "F=10"];
-
-    var result = $("#fieldTest :checkbox").fieldSerialize(true);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(false) :checkbox", function () {
-    var expected = ["F=8", "F=9", "F=10"];
-
-    var result = $("#fieldTest :checkbox").fieldSerialize(false);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(true) :radio", function () {
-    var expected = ["G=12"];
-
-    var result = $("#fieldTest :radio").fieldSerialize(true);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
-  });
-
-  it("fieldSerialize(false) :radio", function () {
-    var expected = ["G=11", "G=12", "G=13"];
-
-    var result = $("#fieldTest :radio").fieldSerialize(false);
-    result = result.split("&");
-
-    assert.ok(
-      result.length == expected.length,
-      "result size check: " + result.length + "=" + expected.length
-    );
-    for (var i = 0; i < result.length; i++) {
-      assert.ok(result[i] == expected[i], expected[i] + " = " + result[i]);
-    }
   });
 
   it("ajaxForm - auto unbind", function () {
