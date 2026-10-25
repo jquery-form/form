@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: ci-instrumentation
     content: "Architecture/CI group: time each major CI step, record a CI baseline in docs/metrics.md, list speed-ups"
-    status: pending
+    status: completed
   - id: prettier-sweep
     content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
     status: completed
@@ -165,6 +165,14 @@ Goal: know where CI time goes before optimizing it. Measure first; change nothin
   - Cache `~/.cache/ms-playwright` keyed on the Playwright version, and on a hit run only `npx playwright install-deps chromium`, or skip it if the runner image already has the libraries.
   - Use the Chrome already on GitHub's `ubuntu-latest` image (Vitest instance `channel: "chrome"`), with no browser download. The browser version then drifts with the runner image, so weigh that against reproducibility.
 - Output: a CI baseline column in `docs/metrics.md` and a ranked list of candidate speed-ups with expected savings, for example caching Playwright browsers keyed on the Playwright version, skipping `--with-deps` on a cache hit, running lint in parallel with the browser job, `concurrency` cancelling superseded PR runs, and `paths-ignore` for docs-only changes. Apply candidates later as separate `ci` commits, each re-measured against the baseline.
+
+Baseline (`docs/metrics.md`, 6 warm runs and 1 cold, job wall time about 31 s, queue 3 s). Speed-up candidates, ranked by expected saving; none are applied yet:
+
+1. Use the Chrome already on the runner (`channel: "chrome"`): removes the Chromium install, about 8 s (26% of wall time). Costs reproducibility, since the browser version follows the runner image.
+2. Cache `~/.cache/ms-playwright` keyed on the Playwright version: about 5–6 s saved on a hit if the download is the cost (install is 7–10 s). Re-measure, since the cache restore adds about 1–2 s.
+3. `concurrency` cancelling superseded PR runs, plus `paths-ignore` for docs-only changes: no change to a single run, but it avoids the runs that stalled or finished for nothing. The stalled first run burned 9 minutes.
+4. Node setup: `setup-node` takes about 6.5 s, mostly the Node 26 download. The npm cache saves little: a cold `npm ci` was 2 s against 1 s warm. Test dropping `cache: npm` (at most a second or two) before keeping it.
+5. Not worth doing at this size: running lint in parallel (lint, format, and build total about 2.5 s), and the Playwright container (the image pull would likely cost more than the 8 s install). Measure the container only if candidates 1 and 2 are rejected.
 
 ## Phase 4: Refactor / modernize group
 
