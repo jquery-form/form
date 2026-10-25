@@ -73,6 +73,14 @@ jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/)
 
 Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
 
+### Git blame
+
+Repo-wide formatting commits are listed in [`.git-blame-ignore-revs`](.git-blame-ignore-revs). To skip them in `git blame`:
+
+```shell
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
 ## Reporting a bug
 
 So you've found a bug, and want to help us fix it? Before filing a bug report, please double-check the bug hasn't already been reported. You can do so [on our issue tracker](https://github.com/jquery-form/form/issues?q=is%3Aopen+is%3Aissue). If something hasn't been raised, you can go ahead and create a new issue with the following information:
