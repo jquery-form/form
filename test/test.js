@@ -34,6 +34,29 @@ describe("form", function () {
     $("#main").html(fixture);
   });
 
+  // Starts a submit via `trigger` (which must use `opts`) and resolves once the request settles.
+  // Resolves with what the callbacks saw, so the test can assert on it after the awaited act.
+  function submitAndSettle(opts, trigger) {
+    const seen = { beforeSubmit: null, success: null, error: null };
+
+    return new Promise(function (resolve) {
+      const userBeforeSubmit = opts.beforeSubmit;
+      opts.beforeSubmit = function (data, $form) {
+        seen.beforeSubmit = { data: data, $form: $form };
+        return userBeforeSubmit ? userBeforeSubmit.apply(this, arguments) : undefined;
+      };
+      opts.success = function () {
+        seen.success = Array.prototype.slice.call(arguments);
+        resolve(seen);
+      };
+      opts.error = function () {
+        seen.error = Array.prototype.slice.call(arguments);
+        resolve(seen);
+      };
+      trigger();
+    });
+  }
+
   describe("form fixture", function () {
     it("should expose the action and method attributes of form1", function () {
       const $form = $("#form1");
@@ -419,295 +442,261 @@ describe("form", function () {
     });
   });
 
-  // test ajaxSubmit target update
-  it("ajaxSubmit: target == String", function () {
-    $("#targetDiv").empty();
-    // stop();
-    var opts = {
-      target: "#targetDiv",
-      success: function () {
-        // post-callback
-        assert.ok(true, "post-callback");
+  describe("ajaxSubmit", function () {
+    describe("target", function () {
+      it("should load the response into a target given as a selector", async function () {
+        $("#targetDiv").empty();
+        const opts = { target: "#targetDiv" };
+
+        const seen = await submitAndSettle(opts, () => $("#form3").ajaxSubmit(opts));
+
+        assert.ok(seen.success, "post-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
-        // start();
-      },
-    };
+      });
 
-    // expect(2);
-    $("#form3").ajaxSubmit(opts);
-  });
+      it("should load the response into a target given as a jQuery object", async function () {
+        const $target = $("#targetDiv");
+        $target.empty();
+        const opts = { target: $target };
 
-  // test passing jQuery object as the target
-  it("ajaxSubmit: target == jQuery object", function () {
-    // stop();
-    var target = $("#targetDiv");
-    target.empty();
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
-    var opts = {
-      target: target,
-      success: function () {
-        // post-callback
-        assert.ok(true, "post-callback");
+        assert.ok(seen.success, "post-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
-        // start();
-      },
-    };
+      });
 
-    // expect(2);
-    $("#form2").ajaxSubmit(opts);
-  });
+      it("should load the response into a target given as a DOM element", async function () {
+        $("#targetDiv").empty();
+        const opts = { target: $("#targetDiv")[0] };
 
-  // test passing DOM element as the target
-  it("ajaxSubmit: target == DOM element", function () {
-    // stop();
-    $("#targetDiv").empty();
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
-    var opts = {
-      target: "#targetDiv",
-      success: function () {
-        // post-callback
-        assert.ok(true, "post-callback");
+        assert.ok(seen.success, "post-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
-        // start();
-      },
-    };
+      });
 
-    // expect(2);
-    $("#form2").ajaxSubmit(opts);
-  });
+      it("should run each script of a loaded document exactly once", async function () {
+        $("#targetDiv").empty();
+        const opts = {
+          target: "#targetDiv",
+          url: "ajax/doc-with-scripts.html?" + new Date().getTime(),
+        };
 
-  // test simulated $.load behavior
-  it("ajaxSubmit: load target with scripts", function () {
-    // stop();
-    $("#targetDiv").empty();
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
-    var opts = {
-      target: "#targetDiv",
-      url: "ajax/doc-with-scripts.html?" + new Date().getTime(),
-      success: function () {
-        // post-callback
-        assert.ok(true, "success-callback");
+        assert.ok(seen.success, "success-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
         assert.ok(typeof unitTestVariable1 != "undefined", "first script block executed");
         assert.ok(typeof unitTestVariable2 != "undefined", "second script block executed");
         assert.ok(typeof scriptCount != "undefined", "third script block executed");
         assert.ok(scriptCount == 1, "scripts executed once: " + scriptCount);
-        // start();
-      },
-    };
-
-    // expect(6);
-    $("#form2").ajaxSubmit(opts);
-  });
-
-  // test ajaxSubmit pre-submit callback
-  it("ajaxSubmit: pre-submit callback", function () {
-    var opts = {
-      beforeSubmit: function (a, jq) {
-        // pre-submit callback
-        assert.ok(true, "pre-submit callback");
-        assert.ok(a.constructor == Array, "type check array");
-        assert.ok(jq.jquery, "type check jQuery");
-        assert.ok(
-          jq[0].tagName.toLowerCase() == "form",
-          'jQuery arg == "form": ' + jq[0].tagName.toLowerCase()
-        );
-      },
-    };
-
-    // expect(4);
-    $("#form3").ajaxSubmit(opts);
-  });
-
-  // test ajaxSubmit post-submit callback for response and status text
-  it("ajaxSubmit: post-submit callback", function () {
-    // stop();
-
-    var opts = {
-      success: function (responseText, statusText) {
-        // post-submit callback
-        assert.ok(true, "post-submit callback");
-        assert.ok(responseText.match("Lorem ipsum"), "responseText");
-        assert.ok(statusText == "success", "statusText");
-        // start();
-      },
-    };
-
-    // expect(3);
-    $("#form3").ajaxSubmit(opts);
-  });
-
-  // test ajaxSubmit with function argument
-  it("ajaxSubmit: function arg", function () {
-    // stop();
-
-    // expect(1);
-    $("#form3").ajaxSubmit(function () {
-      assert.ok(true, "callback hit");
-      // start();
+      });
     });
-  });
 
-  // test semantic support via ajaxSubmit's pre-submit callback
-  it("ajaxSubmit: semantic test", function () {
-    var testData = ["a", "b", "c", "d", "e", "f"];
+    describe("callbacks", function () {
+      it("should call beforeSubmit with the field array and the form", async function () {
+        const opts = {};
 
-    var opts = {
-      semantic: true,
-      beforeSubmit: function (a, jq) {
-        // pre-submit callback
-        assert.ok(true, "pre-submit callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-        for (var i = 0; i < a.length; i++) {
-          assert.ok(a[i].name == testData[i], "match value at index=" + i);
+        const seen = await submitAndSettle(opts, () => $("#form3").ajaxSubmit(opts));
+
+        assert.ok(seen.beforeSubmit, "pre-submit callback");
+        assert.ok(seen.beforeSubmit.data.constructor == Array, "type check array");
+        assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+        assert.ok(
+          seen.beforeSubmit.$form[0].tagName.toLowerCase() == "form",
+          'jQuery arg == "form": ' + seen.beforeSubmit.$form[0].tagName.toLowerCase()
+        );
+      });
+
+      it("should call success with the response text and status text", async function () {
+        const opts = {};
+
+        const seen = await submitAndSettle(opts, () => $("#form3").ajaxSubmit(opts));
+
+        assert.ok(seen.success, "post-submit callback");
+        assert.ok(seen.success[0].match("Lorem ipsum"), "responseText");
+        assert.ok(seen.success[1] == "success", "statusText");
+      });
+
+      it("should treat a function argument as the success callback", async function () {
+        let called = false;
+
+        await new Promise(function (resolve) {
+          $("#form3").ajaxSubmit(function () {
+            called = true;
+            resolve();
+          });
+        });
+
+        assert.ok(called, "callback hit");
+      });
+
+      it("should call beforeSubmit with fields in document order when semantic is true", async function () {
+        const testData = ["a", "b", "c", "d", "e", "f"];
+        const opts = { semantic: true };
+
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
+
+        assert.ok(seen.beforeSubmit, "pre-submit callback");
+        assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+        assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+        for (let i = 0; i < seen.beforeSubmit.data.length; i++) {
+          assert.ok(seen.beforeSubmit.data[i].name == testData[i], "match value at index=" + i);
         }
-      },
-    };
+      });
 
-    // expect(9);
-    $("#form2").ajaxSubmit(opts);
-  });
+      it("should not send the request when beforeSubmit returns false", function () {
+        const seen = { beforeSubmit: null, success: false };
+        const opts = {
+          beforeSubmit: function (a, jq) {
+            seen.beforeSubmit = { data: a, $form: jq };
+            return false;
+          },
+          success: function () {
+            seen.success = true;
+          },
+        };
 
-  // test json datatype
-  it("ajaxSubmit: dataType == json", function () {
-    // stop();
+        $("#form3").ajaxSubmit(opts);
 
-    var opts = {
-      url: "ajax/json.json",
-      dataType: "json",
-      success: function (data) {
-        // post-submit callback
-        // assert that the json data was evaluated
-        assert.ok(typeof data == "object", "json data type");
-        assert.ok(data.name == "jquery-test", "json data contents");
-        // start();
-      },
-    };
+        assert.ok(seen.beforeSubmit, "pre-submit callback");
+        assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+        assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+        assert.ok(!seen.success, "should not hit this post-submit callback");
+      });
 
-    // expect(2);
-    $("#form2").ajaxSubmit(opts);
-  });
+      it("should call success when the request succeeds", async function () {
+        $("#targetDiv").empty();
+        const opts = {};
 
-  // test script datatype
-  it("ajaxSubmit: dataType == script", function () {
-    // stop();
+        const seen = await submitAndSettle(opts, () => $("#form3").ajaxSubmit(opts));
 
-    var opts = {
-      url: "ajax/script.txt?" + new Date().getTime(), // don't let ie cache it
-      dataType: "script",
-      success: function (responseText) {
-        // post-submit callback
+        assert.ok(seen.success, "post-callback");
+      });
+
+      it("should call error and not success when the request fails", async function () {
+        $("#targetDiv").empty();
+        const opts = { url: "ajax/404.html" };
+
+        const seen = await submitAndSettle(opts, () => $("#form3").ajaxSubmit(opts));
+
+        assert.ok(seen.error, "error-callback");
+        assert.ok(!seen.success, "should not hit post-submit callback");
+      });
+
+      it("should pass status, xhr and the form to success", async function () {
+        $("#targetDiv").empty();
+        const opts = {};
+        let $testForm;
+
+        const seen = await submitAndSettle(opts, () => {
+          $testForm = $("#form3").ajaxSubmit(opts);
+        });
+
+        assert.ok(seen.success, "success callback invoked");
+        assert.ok(seen.success[1] === "success", "status === success");
+        assert.ok(typeof seen.success[2] != "undefined", "third arg: " + typeof seen.success[2]);
+        assert.ok(!!seen.success[2] != false, "xhr != false");
+        assert.ok(seen.success[2].status, "xhr.status == " + seen.success[2].status);
+        assert.ok(seen.success[3] === $testForm, "$form param is valid");
+      });
+
+      it("should call success with a success status when forceSync is true", async function () {
+        $("#targetDiv").empty();
+        const opts = { forceSync: true };
+
+        const seen = await submitAndSettle(opts, () => $("#form3").ajaxSubmit(opts));
+
+        assert.ok(seen.success, "success callback invoked");
+        assert.ok(seen.success[1] === "success", "status === success");
+      });
+    });
+
+    describe("dataType", function () {
+      it("should parse a json response into an object", async function () {
+        const opts = { url: "ajax/json.json", dataType: "json" };
+
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
+
+        assert.ok(typeof seen.success[0] == "object", "json data type");
+        assert.ok(seen.success[0].name == "jquery-test", "json data contents");
+      });
+
+      it("should evaluate a script response", async function () {
+        const opts = {
+          url: "ajax/script.txt?" + new Date().getTime(), // don't let ie cache it
+          dataType: "script",
+        };
+
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
+
         assert.ok(typeof formScriptTest == "function", "script evaluated");
-        assert.ok(responseText.match("formScriptTest"), "script returned");
-        // start();
-      },
-    };
+        assert.ok(seen.success[0].match("formScriptTest"), "script returned");
+      });
 
-    // expect(2);
-    $("#form2").ajaxSubmit(opts);
-  });
+      it("should parse an xml response into a document", async function () {
+        const opts = { url: "ajax/test.xml", dataType: "xml" };
 
-  // test xml datatype
-  it("ajaxSubmit: dataType == xml", function () {
-    // stop();
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
-    var opts = {
-      url: "ajax/test.xml",
-      dataType: "xml",
-      success: function (responseXML) {
-        // post-submit callback
-        assert.ok(typeof responseXML == "object", "data type xml");
-        assert.ok($("test", responseXML).length == 3, "xml data query");
-        // start();
-      },
-    };
+        assert.ok(typeof seen.success[0] == "object", "data type xml");
+        assert.ok($("test", seen.success[0]).length == 3, "xml data query");
+      });
 
-    // expect(2);
-    $("#form2").ajaxSubmit(opts);
-  });
+      it("should leave a json text response for the caller to evaluate", async function () {
+        const opts = { url: "ajax/json.txt" };
 
-  // test that args embedded in the action are honored; no real way
-  // to assert this so successful callback is used to signal success
-  it("ajaxSubmit: existing args in action attr", function () {
-    // stop();
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
-    var opts = {
-      success: function () {
-        // post-submit callback
-        assert.ok(true, "post callback");
-        // start();
-      },
-    };
-
-    // expect(1);
-    $("#form5").ajaxSubmit(opts);
-  });
-
-  // test ajaxSubmit using pre-submit callback to cancel submit
-  it("ajaxSubmit: cancel submit", function () {
-    var opts = {
-      beforeSubmit: function (a, jq) {
-        // pre-submit callback
-        assert.ok(true, "pre-submit callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-        return false; // return false to abort submit
-      },
-      success: function () {
-        // post-submit callback
-        assert.ok(false, "should not hit this post-submit callback");
-      },
-    };
-
-    // expect(3);
-    $("#form3").ajaxSubmit(opts);
-  });
-
-  // test submitting a pseudo-form
-  it("ajaxSubmit: pseudo-form", function () {
-    // stop();
-
-    var opts = {
-      beforeSubmit: function (a, jq) {
-        // pre-submit callback
-        assert.ok(true, "pre-submit callback");
-        assert.ok(a.constructor == Array, "type check");
-        assert.ok(jq.jquery, "type check jQuery");
-        assert.ok(jq[0].tagName.toLowerCase() == "div", 'jQuery arg == "div"');
-      },
-      success: function () {
-        // post-submit callback
-        assert.ok(true, "post-submit callback");
-        // start();
-      },
-      // url and method must be provided for a pseudo form since they can
-      // not be extracted from the markup
-      url: "ajax/text.html",
-      type: "post",
-    };
-
-    // expect(5);
-    $("#pseudo").ajaxSubmit(opts);
-  });
-
-  // test eval of json response
-  it("ajaxSubmit: evaluate response", function () {
-    // stop();
-
-    var opts = {
-      success: function (responseText) {
-        // post-callback
-        assert.ok(true, "post-callback");
-        var data = eval.call(window, "(" + responseText + ")");
+        assert.ok(seen.success, "post-callback");
+        const data = eval.call(window, "(" + seen.success[0] + ")");
         assert.ok(data.name == "jquery-test", "evaled response");
-        // start();
-      },
-      url: "ajax/json.txt",
-    };
+      });
+    });
 
-    // expect(2);
-    $("#form2").ajaxSubmit(opts);
+    describe("action and url", function () {
+      it("should honor query args already present in the action attribute", async function () {
+        const opts = {};
+
+        const seen = await submitAndSettle(opts, () => $("#form5").ajaxSubmit(opts));
+
+        assert.ok(seen.success, "post callback");
+      });
+
+      it("should submit a pseudo-form using the given url and type", async function () {
+        const opts = { url: "ajax/text.html", type: "post" };
+
+        const seen = await submitAndSettle(opts, () => $("#pseudo").ajaxSubmit(opts));
+
+        assert.ok(seen.beforeSubmit, "pre-submit callback");
+        assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
+        assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
+        assert.ok(seen.beforeSubmit.$form[0].tagName.toLowerCase() == "div", 'jQuery arg == "div"');
+        assert.ok(seen.success, "post-submit callback");
+      });
+
+      // Each case submits a form whose action is unusual and checks that it still reaches
+      // beforeSerialize without throwing.
+      [
+        ["a naked hash", "#actionTest1"],
+        ["a hash only", "#actionTest2"],
+        ["an empty", "#actionTest3"],
+        ["a missing", "#actionTest4"],
+      ].forEach(function ([label, selector]) {
+        it("should submit a form with " + label + " action", function () {
+          let url = null;
+          const opts = {
+            beforeSerialize: function ($f, o) {
+              url = o.url;
+            },
+          };
+
+          assert.doesNotThrow(() => $(selector).ajaxSubmit(opts), "ajaxSubmit passed");
+
+          assert.ok(url !== null, "beforeSerialize called");
+        });
+      });
+    });
   });
 
   // test pre and post callbacks for ajaxForm
@@ -812,41 +801,6 @@ describe("form", function () {
     $("#submitForm4")[0].click();
   });
 
-  it('"success" callback', function () {
-    $("#targetDiv").empty();
-    // stop();
-
-    var opts = {
-      success: function () {
-        assert.ok(true, "post-callback");
-        // start();
-      },
-    };
-
-    // expect(1);
-    $("#form3").ajaxSubmit(opts);
-  });
-
-  it('"error" callback', function () {
-    $("#targetDiv").empty();
-    // stop();
-
-    var opts = {
-      url: "ajax/404.html",
-      error: function () {
-        assert.ok(true, "error-callback");
-        // start();
-      },
-      success: function () {
-        // post-submit callback
-        assert.ok(false, "should not hit post-submit callback");
-      },
-    };
-
-    // expect(1);
-    $("#form3").ajaxSubmit(opts);
-  });
-
   it("ajaxForm - auto unbind", function () {
     $("#targetDiv").empty();
     // stop();
@@ -896,92 +850,5 @@ describe("form", function () {
     $("#submitForm9")[0].click();
 
     // setTimeout(start, 500);
-  });
-
-  it("naked hash", function () {
-    $("#actionTest1").ajaxSubmit({
-      beforeSerialize: function ($f, opts) {
-        assert.ok(true, "url=" + opts.url);
-      },
-    });
-    assert.ok(true, "ajaxSubmit passed");
-  });
-
-  it("hash only", function () {
-    $("#actionTest2").ajaxSubmit({
-      beforeSerialize: function ($f, opts) {
-        assert.ok(true, "url=" + opts.url);
-      },
-    });
-    assert.ok(true, "ajaxSubmit passed");
-  });
-
-  it("empty action", function () {
-    $("#actionTest3").ajaxSubmit({
-      beforeSerialize: function ($f, opts) {
-        assert.ok(true, "url=" + opts.url);
-      },
-    });
-    assert.ok(true, "ajaxSubmit passed");
-  });
-
-  it("missing action", function () {
-    $("#actionTest4").ajaxSubmit({
-      beforeSerialize: function ($f, opts) {
-        assert.ok(true, "url=" + opts.url);
-      },
-    });
-    assert.ok(true, "ajaxSubmit passed");
-  });
-
-  it("success callback params", function () {
-    var $testForm;
-
-    $("#targetDiv").empty();
-    // stop();
-
-    if (/^1\.3/.test($.fn.jquery)) {
-      // expect(3);
-      $testForm = $("#form3").ajaxSubmit({
-        success: function (data, status, $form) {
-          // jQuery 1.4+ signature
-          assert.ok(true, "success callback invoked");
-          assert.ok(status === "success", "status === success");
-          assert.ok($form === $testForm, "$form param is valid");
-          // start();
-        },
-      });
-    } else {
-      // if (/^1\.4/.test($.fn.jquery)) {
-      // expect(6);
-      $testForm = $("#form3").ajaxSubmit({
-        success: function (data, status, xhr, $form) {
-          // jQuery 1.4+ signature
-          assert.ok(true, "success callback invoked");
-          assert.ok(status === "success", "status === success");
-          assert.ok(typeof xhr != "undefined", "third arg: " + typeof xhr);
-          assert.ok(!!xhr != false, "xhr != false");
-          assert.ok(xhr.status, "xhr.status == " + xhr.status);
-          assert.ok($form === $testForm, "$form param is valid");
-          // start();
-        },
-      });
-    }
-  });
-
-  it("forceSync", function () {
-    $("#targetDiv").empty();
-    // stop();
-
-    // expect(2);
-    $("#form3").ajaxSubmit({
-      forceSync: true,
-      success: function (data, status) {
-        // jQuery 1.4+ signature
-        assert.ok(true, "success callback invoked");
-        assert.ok(status === "success", "status === success");
-        // start();
-      },
-    });
   });
 });
