@@ -2078,6 +2078,138 @@ describe("form", function () {
         }
       });
 
+      it("should abort from beforeSend without global events", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const events = [];
+        $(document).on("ajaxSend ajaxError", (event) => events.push(event.type));
+
+        try {
+          $form.ajaxSubmit({
+            iframe: true,
+            global: false,
+            beforeSend: (request) => request.abort(),
+          });
+          const state = await new Promise((resolve) =>
+            $form.data("jqxhr").fail(() => resolve("rejected"))
+          );
+
+          assert.strictEqual(state, "rejected");
+          assert.deepEqual(events, []);
+        } finally {
+          $(document).off("ajaxSend ajaxError");
+        }
+      });
+
+      it("should leave the active count alone when beforeSend vetoes without global events", function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const active = $.active;
+
+        $form.ajaxSubmit({ iframe: true, global: false, beforeSend: () => false });
+
+        assert.strictEqual($.active, active);
+        assert.strictEqual($form.data("jqxhr").state(), "rejected");
+      });
+
+      [
+        ["an unnamed clicked button", '<button type="submit" value="ignored">Go</button>', {}],
+        [
+          "a named clicked submit button",
+          '<button type="submit" name="choice" value="picked">Go</button>',
+          { choice: "picked" },
+        ],
+      ].forEach(function ([label, markup, expected]) {
+        it("should submit hidden values for " + label, async function () {
+          const $form = createIframeForm("ajax/iframe-text.html");
+          $form[0].clk = $(markup).appendTo($form)[0];
+          const submitted = {};
+          inspectNativeSubmit($form, function (form) {
+            $(form)
+              .find('input[type="hidden"]')
+              .each(function () {
+                submitted[this.name] = this.value;
+              });
+          });
+
+          await submitThroughIframe($form, { dataType: "text" });
+
+          assert.deepEqual(submitted, expected);
+        });
+      });
+
+      it("should keep GET method and encoding when submitting with GET", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html").attr("method", "get");
+        let submitted;
+        inspectNativeSubmit($form, function (form) {
+          submitted = [form.getAttribute("method"), form.getAttribute("enctype")];
+        });
+
+        const result = await submitThroughIframe($form, { dataType: "text" });
+
+        assert.deepEqual(submitted, ["get", null]);
+        assert.strictEqual(result.success[0].trim(), "iframe response");
+      });
+
+      it("should submit only own extraData properties", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const data = Object.create({ inherited: "skipped" });
+        data.own = "kept";
+        const submitted = {};
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        await submitThroughIframe($form, { data: data, dataType: "text" });
+
+        assert.deepEqual(submitted, { own: "kept" });
+      });
+
+      it("should succeed without global events", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const events = [];
+        $(document).on("ajaxSuccess ajaxComplete", (event) => events.push(event.type));
+
+        try {
+          const result = await submitThroughIframe($form, { dataType: "text", global: false });
+
+          assert.deepEqual(result.events, ["success", "complete"]);
+          assert.deepEqual(events, []);
+        } finally {
+          $(document).off("ajaxSuccess ajaxComplete");
+        }
+      });
+
+      it("should reject an HTTP error without callbacks or global events", async function () {
+        const $form = createIframeForm("ajax/iframe-error.html");
+
+        $form.ajaxSubmit({ iframe: true, global: false });
+        const rejection = await new Promise((resolve) =>
+          $form.data("jqxhr").fail((...args) => resolve(args))
+        );
+
+        assert.strictEqual(rejection[0].status, 500);
+        assert.deepEqual(rejection.slice(1), ["error", "fixture failure"]);
+      });
+
+      it("should return the response text when no dataType is given", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, {});
+
+        assert.strictEqual(result.success[0].trim(), "iframe response");
+      });
+
+      it("should keep the HTML when textarea extraction finds no textarea", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { dataType: "html", textarea: true });
+
+        assert.strictEqual(result.success[0].trim(), "iframe response");
+      });
+
       // abort calls callbacks but leaves the returned Deferred pending.
       it.fails("should reject the returned deferred when aborted", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
