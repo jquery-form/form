@@ -17,14 +17,14 @@ Throwaway prototype in `prototype/` (own `package.json`, root deps untouched; re
 
 Same inputs for both runners: the unmodified `test/test.js`, the `#main` fixture markup from `test/test.html`, `test/ajax/*` fixtures, jQuery 3.7.1, plus a shared `prototype/shared/iframe-upload.js` covering the iframe transport (`iframe: true`) and an XHR FormData upload of a real `File`, with an assertion that `uploadProgress` fires. "Unmodified" depends on two shims in `vt/setup.js` for Vitest: `before` is mapped to `beforeAll`, and `window.chai` is set to `{ assert }`.
 
-| | Playwright Test | Vitest browser mode |
-| --- | --- | --- |
-| Result | 61/61 pass, ~2.8 s wall | 61/61 pass, ~1.2 s wall |
-| Line coverage of `src` | 60.4% (monocart) | 60.0% (v8) |
-| Dev deps | `@playwright/test`, `monocart-coverage-reports`, `mocha`, `chai` | `vitest`, `@vitest/browser-playwright`, `@vitest/coverage-v8` |
-| Glue | 40-line static server, harness page rewrite, a spec that waits on Mocha | Vite middleware for `ajax/*`, 10-line setup file |
-| Reporting | One Playwright test wraps the whole Mocha run | Per-test results, watch mode |
-| Coverage threshold | Hand-written | Built in (`coverage.thresholds`) |
+|                        | Playwright Test                                                         | Vitest browser mode                                           |
+| ---------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Result                 | 61/61 pass, ~2.8 s wall                                                 | 61/61 pass, ~1.2 s wall                                       |
+| Line coverage of `src` | 60.4% (monocart)                                                        | 60.0% (v8)                                                    |
+| Dev deps               | `@playwright/test`, `monocart-coverage-reports`, `mocha`, `chai`        | `vitest`, `@vitest/browser-playwright`, `@vitest/coverage-v8` |
+| Glue                   | 40-line static server, harness page rewrite, a spec that waits on Mocha | Vite middleware for `ajax/*`, 10-line setup file              |
+| Reporting              | One Playwright test wraps the whole Mocha run                           | Per-test results, watch mode                                  |
+| Coverage threshold     | Hand-written                                                            | Built in (`coverage.thresholds`)                              |
 
 Why Vitest clears the "clearly justified" bar from Phase 0:
 

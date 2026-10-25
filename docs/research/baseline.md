@@ -11,12 +11,12 @@ Taken on `main` at the runner/bundler prototype commit, Node v24.11.0.
 
 ## Results
 
-| Check | Result |
-| --- | --- |
+| Check    | Result                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------- |
 | `npm ci` | Passes. `npm audit`: 51 vulnerabilities (5 low, 10 moderate, 25 high, 11 critical), all in dev tooling. |
-| Lint | Passes, no findings. |
-| Tests | 59 passing. |
-| Build | Passes; output is byte-identical to the committed `dist/`. |
+| Lint     | Passes, no findings.                                                                                    |
+| Tests    | 59 passing.                                                                                             |
+| Build    | Passes; output is byte-identical to the committed `dist/`.                                              |
 
 ## Known issues
 

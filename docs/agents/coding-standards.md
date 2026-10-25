@@ -8,15 +8,15 @@ Human PR/process stays in `CONTRIBUTING.md`.
 
 ## Workshop
 
-| Concern | Target |
-| --- | --- |
-| Runtime / CI | **Node 26**; **GitHub Actions** runs `npm test`. Travis and CircleCI are obsolete. |
-| Lint | **ESLint** (flat config) — correctness and quality |
-| Format | **Prettier** near-defaults (2-space indent, double quotes, semicolons) with `printWidth: 100` and `trailingComma: "es5"`. No `.editorconfig`. |
-| Verify | **`npm test`** — the one command agents run. Runner is whatever the repo ships; do not assume Mocha, Vitest, or Playwright by name. |
-| Publish | **Dual surface**: modern module entry **and** classic browser/`$.fn` (UMD or equivalent) so existing script-tag and AMD consumers keep working. |
-| Bundler | Chosen by the modernization plan; must support the dual surface above. |
-| Language | **Deferred** to the modernization plan (JS vs TS). Agents match whatever landed (`package.json`, `tsconfig` if any, source layout). |
+| Concern      | Target                                                                                                                                          |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime / CI | **Node 26**; **GitHub Actions** runs `npm test`. Travis and CircleCI are obsolete.                                                              |
+| Lint         | **ESLint** (flat config) — correctness and quality                                                                                              |
+| Format       | **Prettier** near-defaults (2-space indent, double quotes, semicolons) with `printWidth: 100` and `trailingComma: "es5"`. No `.editorconfig`.   |
+| Verify       | **`npm test`** — the one command agents run. Runner is whatever the repo ships; do not assume Mocha, Vitest, or Playwright by name.             |
+| Publish      | **Dual surface**: modern module entry **and** classic browser/`$.fn` (UMD or equivalent) so existing script-tag and AMD consumers keep working. |
+| Bundler      | Chosen by the modernization plan; must support the dual surface above.                                                                          |
+| Language     | **Deferred** to the modernization plan (JS vs TS). Agents match whatever landed (`package.json`, `tsconfig` if any, source layout).             |
 
 ### Prettier overrides
 

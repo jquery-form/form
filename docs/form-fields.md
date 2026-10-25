@@ -2,22 +2,25 @@
 ---
 
 ## Form Fields
+
 This page describes and demonstrates the Form Plugin's `fieldValue` and `fieldSerialize` methods.
 
 ### fieldValue
+
 `fieldValue` allows you to retrieve the current value of a field. For example, to retrieve the value of the password field in a form with the id of 'myForm' you would write:
 
 ```javascript
-var pwd = $('#myForm :password').fieldValue()[0];
+var pwd = $("#myForm :password").fieldValue()[0];
 ```
 
-This method *always* returns an array. If no valid value can be determined the array will be empty, otherwise it will contain one or more values.
+This method _always_ returns an array. If no valid value can be determined the array will be empty, otherwise it will contain one or more values.
 
 ### fieldSerialize
+
 `fieldSerialize` allows you to serialize a subset of a form into a query string. This is useful when you need to process only certain fields. For example, to serialize only the text inputs of a form you would write:
 
 ```javascript
-var queryString = $('#myForm :text').fieldSerialize();
+var queryString = $("#myForm :text").fieldSerialize();
 ```
 
 <form id="inputForm" action="#">
@@ -35,7 +38,6 @@ var queryString = $('#myForm :text').fieldSerialize();
     <input type="submit" value="Test">
   </div>
 </form>
-
 
 <form id="test" action="dummy.php" method="post"><div>
     <strong>Test Form</strong>
@@ -71,15 +73,17 @@ var queryString = $('#myForm :text').fieldSerialize();
 </div></form>
 
 By default, `fieldValue` and `fieldSerialize` only function on '[successful controls](https://www.w3.org/TR/html5/forms.html#constructing-form-data-set)'. This means that if you run the following code on a checkbox that is not checked, the result will be an empty array.
+
 ```javascript
 // value will be an empty array if checkbox is not checked:
-var value = $('#myUncheckedCheckbox').fieldValue();
+var value = $("#myUncheckedCheckbox").fieldValue();
 // value.length == 0
 ```
 
 However, if you really want to know the 'value' of the checkbox element, even if it's unchecked, you can write this:
+
 ```javascript
 // value will hold the checkbox value even if it's not checked:
-var value = $('#myUncheckedCheckbox').fieldValue(false);
+var value = $("#myUncheckedCheckbox").fieldValue(false);
 // value.length == 1
 ```
