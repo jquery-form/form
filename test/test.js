@@ -1468,6 +1468,228 @@ describe("form", function () {
       });
     });
 
+    describe("iframe upload transport", function () {
+      function createIframeForm(action) {
+        return $('<form method="post"><input name="upload" value="yes"></form>')
+          .attr("action", action)
+          .appendTo("#main");
+      }
+
+      function submitThroughIframe($form, options) {
+        return new Promise(function (resolve) {
+          const result = { events: [] };
+          const settings = $.extend({}, options, {
+            iframe: true,
+            success: function () {
+              result.success = Array.from(arguments);
+              result.events.push("success");
+            },
+            error: function () {
+              result.error = Array.from(arguments);
+              result.events.push("error");
+            },
+            complete: function () {
+              result.complete = Array.from(arguments);
+              result.events.push("complete");
+              resolve(result);
+            },
+          });
+
+          $form.ajaxSubmit(settings);
+          result.xhr = $form.data("jqxhr");
+        });
+      }
+
+      it("should submit through a generated iframe and clean it up", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const initialFrames = $("iframe").length;
+
+        const result = await submitThroughIframe($form, { forceSync: true, dataType: "text" });
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        assert.strictEqual(result.success[0].trim(), "iframe response");
+        assert.strictEqual(result.success[1], "success");
+        assert.strictEqual(result.success[2].status, 201);
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.strictEqual($("iframe").length, initialFrames);
+      });
+
+      it("should use and reset a supplied iframe target", async function () {
+        const $target = $('<iframe name="provided-frame"></iframe>').appendTo("#main");
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, {
+          iframeTarget: $target,
+          dataType: "text",
+        });
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        assert.strictEqual(result.success[0].trim(), "iframe response");
+        assert.strictEqual($target.attr("name"), "provided-frame");
+        assert.strictEqual($target.attr("src"), "about:blank");
+        assert.strictEqual($target.parent().length, 1);
+      });
+
+      it("should wait for closeKeepAlive before creating the iframe request", async function () {
+        const originalGet = $.get;
+        const $form = createIframeForm("ajax/iframe-text.html");
+        let release;
+        let resolveCompletion;
+        const completed = new Promise((resolve) => {
+          resolveCompletion = resolve;
+        });
+        $.get = function (_url, callback) {
+          release = callback;
+        };
+
+        try {
+          $form.ajaxSubmit({
+            iframe: true,
+            closeKeepAlive: "/close",
+            dataType: "text",
+            complete: resolveCompletion,
+          });
+          const beforeRelease = $form.data("jqxhr");
+
+          release();
+          await completed;
+
+          assert.strictEqual(beforeRelease, undefined);
+        } finally {
+          $.get = originalGet;
+        }
+      });
+
+      it("should parse textarea JSON and apply dataFilter", async function () {
+        const $form = createIframeForm("ajax/iframe-json.html");
+        let filtered;
+
+        const result = await submitThroughIframe($form, {
+          dataType: "json",
+          textarea: true,
+          dataFilter: function (data, type) {
+            filtered = [data, type];
+            return data;
+          },
+        });
+
+        assert.deepEqual(result.success[0], { transport: "iframe" });
+        assert.deepEqual(filtered, ['{"transport":"iframe"}', "json"]);
+        assert.strictEqual(result.success[2].status, 202);
+        assert.strictEqual(result.success[2].statusText, "accepted");
+      });
+
+      // Emulated content-type is "script", so httpData never evaluates it as JavaScript.
+      it.fails("should evaluate script from a pre response", async function () {
+        const $form = createIframeForm("ajax/iframe-script.html");
+        delete window.iframeTransportScript;
+
+        const result = await submitThroughIframe($form, { dataType: "script" });
+
+        assert.strictEqual(window.iframeTransportScript, "evaluated");
+        assert.ok(result.success[0].includes("iframeTransportScript"));
+        delete window.iframeTransportScript;
+      });
+
+      it("should return an XML document", async function () {
+        const $form = createIframeForm("ajax/iframe-xml.html");
+
+        const result = await submitThroughIframe($form, { dataType: "xml" });
+
+        assert.strictEqual(result.success[0].documentElement.nodeName, "response");
+        assert.strictEqual(
+          result.success[0].getElementsByTagName("transport")[0].textContent,
+          "iframe"
+        );
+      });
+
+      it("should report emulated HTTP errors and complete once", async function () {
+        const $form = createIframeForm("ajax/iframe-error.html");
+
+        const result = await submitThroughIframe($form, { dataType: "text" });
+
+        assert.strictEqual(result.error[0].status, 500);
+        assert.strictEqual(result.error[1], "error");
+        assert.strictEqual(result.error[2], "fixture failure");
+        assert.deepEqual(result.events, ["error", "complete"]);
+      });
+
+      // A parsed status code overwrites parsererror with success.
+      it.fails("should report malformed JSON as a parser error", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { dataType: "json" });
+
+        assert.strictEqual(result.error[1], "parsererror");
+        assert.ok(result.error[2] instanceof Error);
+      });
+
+      it("should honor a beforeSend veto without submitting or completing", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        let complete = false;
+
+        $form.ajaxSubmit({
+          iframe: true,
+          beforeSend: function () {
+            return false;
+          },
+          complete: function () {
+            complete = true;
+          },
+        });
+        const xhr = $form.data("jqxhr");
+        const rejected = await new Promise((resolve) => xhr.fail(() => resolve(true)));
+
+        assert.strictEqual(rejected, true);
+        assert.strictEqual(complete, false);
+      });
+
+      it("should time out an iframe request and call error then complete", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { timeout: 1 });
+
+        assert.strictEqual(result.error[1], "timeout");
+        assert.strictEqual(result.complete[1], "timeout");
+        assert.deepEqual(result.events, ["error", "complete"]);
+      });
+
+      it("should emit matching global lifecycle events", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const events = [];
+        const names = "ajaxStart ajaxSend ajaxSuccess ajaxComplete ajaxStop";
+        const active = $.active;
+        $.active = 0;
+        $(document).on(names, function (event) {
+          events.push(event.type);
+        });
+
+        try {
+          await submitThroughIframe($form, { dataType: "text", global: true });
+
+          assert.deepEqual(events, names.split(" "));
+          assert.strictEqual($.active, 0);
+        } finally {
+          $(document).off(names);
+          $.active = active;
+        }
+      });
+
+      // abort calls callbacks but leaves the returned Deferred pending.
+      it.fails("should reject the returned deferred when aborted", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const resultPromise = submitThroughIframe($form, {});
+        const xhr = $form.data("jqxhr");
+
+        xhr.abort("manual");
+        const result = await resultPromise;
+
+        assert.strictEqual(result.error[1], "aborted");
+        assert.strictEqual(result.complete[1], "aborted");
+        assert.strictEqual(xhr.state(), "rejected");
+      });
+    });
+
     describe("dataType", function () {
       it("should parse a json response into an object", async function () {
         const opts = { url: "ajax/json.json", dataType: "json" };
