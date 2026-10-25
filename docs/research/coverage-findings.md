@@ -10,3 +10,28 @@
   assertion to fail, so the exercised source lines still count toward coverage.
 - Suggested fix: accept or retain an explicit selector for delegated binding instead of reading
   `this.selector`; redesign this path as part of the planned 5.0 removal of obsolete jQuery metadata.
+
+## Iframe script responses are not evaluated
+
+- Test: `iframe transport should evaluate script from a pre response`
+- Finding: the iframe mock reports `content-type: script`, but `httpData` only evaluates strings when
+  the content type contains `javascript`, so a requested script response is returned without running.
+- Test treatment: `it.fails`; its exercised source lines still count toward coverage.
+- Suggested fix: make explicit `dataType: "script"` authoritative, matching jQuery AJAX behavior.
+
+## Iframe parser errors can be overwritten by an HTTP success status
+
+- Test: `iframe transport should report malformed JSON as a parser error`
+- Finding: malformed JSON sets `status` to `parsererror`, then the emulated HTTP status block rewrites
+  it to `success` for a 2xx response.
+- Test treatment: `it.fails`; its exercised source lines still count toward coverage.
+- Suggested fix: only derive success/error from `xhr.status` when response parsing has not failed.
+
+## Aborting an iframe upload leaves its Deferred pending
+
+- Test: `iframe transport should reject the returned deferred when aborted`
+- Finding: `abort()` invokes error and complete callbacks but never rejects the Deferred returned as
+  the stored jqXHR.
+- Test treatment: `it.fails`; its exercised source lines still count toward coverage.
+- Suggested fix: reject the Deferred exactly once from the abort path with the same arguments used by
+  the timeout and server-abort paths.
