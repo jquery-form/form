@@ -30,6 +30,14 @@ jobs:
           start=$(date +%s)
           trap 'printf "%s\t%s\n" "npm ci" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
           npm ci
+      - name: Get Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium
         run: |
           start=$(date +%s)
