@@ -169,7 +169,7 @@ Goal: know where CI time goes before optimizing it. Measure first; change nothin
 Baseline (`docs/metrics.md`, 6 warm runs and 1 cold, job wall time about 31 s, queue 3 s). Speed-up candidates, ranked by expected saving; none are applied yet:
 
 1. Use the Chrome already on the runner (`channel: "chrome"`): removes the Chromium install, about 8 s (26% of wall time). Costs reproducibility, since the browser version follows the runner image.
-2. Cache `~/.cache/ms-playwright` keyed on the Playwright version: about 5–6 s saved on a hit if the download is the cost (install is 7–10 s). Re-measure, since the cache restore adds about 1–2 s.
+2. Cache `~/.cache/ms-playwright` keyed on the Playwright version: applied. Warm wall time fell from 31 s to 27 s (the restore costs about 3 s); the first run after a Playwright bump costs about 5 s more (`docs/research/ci-browser-setups.md`). Concurrency cancel and `paths-ignore` are also applied.
 3. `concurrency` cancelling superseded PR runs, plus `paths-ignore` for docs-only changes: no change to a single run, but it avoids the runs that stalled or finished for nothing. The stalled first run burned 9 minutes.
 4. Node setup: `setup-node` takes about 6.5 s, mostly the Node 26 download. The npm cache saves little: a cold `npm ci` was 2 s against 1 s warm. Test dropping `cache: npm` (at most a second or two) before keeping it.
 5. Not worth doing at this size: running lint in parallel (lint, format, and build total about 2.5 s), and the Playwright container (the image pull would likely cost more than the 8 s install). Measure the container only if candidates 1 and 2 are rejected.
