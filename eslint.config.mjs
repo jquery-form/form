@@ -94,13 +94,8 @@ export default [
   {
     files: ["test/test.js"],
     languageOptions: {
-      sourceType: "script",
-      globals: { ...globals.browser, ...globals.mocha, $: "readonly", jQuery: "readonly" },
-    },
-    rules: {
-      // The existing suite predates these rules; the BDD/AAA test rewrite turns them back on.
-      "no-unused-vars": "off",
-      "no-constant-binary-expression": "off",
+      sourceType: "module",
+      globals: { ...globals.browser, $: "readonly", jQuery: "readonly" },
     },
   },
   {

@@ -1,6 +1,6 @@
-/* global chai, scriptCount */
+/* global scriptCount */
 
-"use strict";
+import { assert, beforeAll, beforeEach, describe, it } from "vitest";
 
 // helper method
 var arrayCount = function (arr, key) {
@@ -23,11 +23,10 @@ var arrayValue = function (arr, key) {
   return undefined;
 };
 
-var assert = chai.assert;
 var fixture;
 
 describe("form", function () {
-  before(function () {
+  beforeAll(function () {
     fixture = $("#main").html();
   });
 
@@ -148,7 +147,6 @@ describe("form", function () {
   // test resetForm
   it("resetForm (checkbox)", function () {
     var el = $("#form1 input:checkbox:checked")[0];
-    var val = el.value;
     assert.ok(el.checked, "beforeSubmit: " + el.checked);
     el.checked = false;
     assert.ok(!el.checked, "update: " + el.checked);
@@ -159,7 +157,6 @@ describe("form", function () {
   // test resetForm
   it("resetForm (radio)", function () {
     var el = $("#form1 input:radio:checked")[0];
-    var val = el.value;
     assert.ok(el.checked, "beforeSubmit: " + el.checked);
     el.checked = false;
     assert.ok(!el.checked, "update: " + el.checked);
@@ -249,7 +246,7 @@ describe("form", function () {
 
     var opts = {
       target: target,
-      success: function (responseText) {
+      success: function () {
         // post-callback
         assert.ok(true, "post-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
@@ -265,11 +262,10 @@ describe("form", function () {
   it("ajaxSubmit: target == DOM element", function () {
     // stop();
     $("#targetDiv").empty();
-    var el = $("#targetDiv")[0];
 
     var opts = {
       target: "#targetDiv",
-      success: function (responseText) {
+      success: function () {
         // post-callback
         assert.ok(true, "post-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
@@ -289,7 +285,7 @@ describe("form", function () {
     var opts = {
       target: "#targetDiv",
       url: "ajax/doc-with-scripts.html?" + new Date().getTime(),
-      success: function (responseText) {
+      success: function () {
         // post-callback
         assert.ok(true, "success-callback");
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
@@ -381,7 +377,7 @@ describe("form", function () {
     var opts = {
       url: "ajax/json.json",
       dataType: "json",
-      success: function (data, statusText) {
+      success: function (data) {
         // post-submit callback
         // assert that the json data was evaluated
         assert.ok(typeof data == "object", "json data type");
@@ -401,7 +397,7 @@ describe("form", function () {
     var opts = {
       url: "ajax/script.txt?" + new Date().getTime(), // don't let ie cache it
       dataType: "script",
-      success: function (responseText, statusText) {
+      success: function (responseText) {
         // post-submit callback
         assert.ok(typeof formScriptTest == "function", "script evaluated");
         assert.ok(responseText.match("formScriptTest"), "script returned");
@@ -420,7 +416,7 @@ describe("form", function () {
     var opts = {
       url: "ajax/test.xml",
       dataType: "xml",
-      success: function (responseXML, statusText) {
+      success: function (responseXML) {
         // post-submit callback
         assert.ok(typeof responseXML == "object", "data type xml");
         assert.ok($("test", responseXML).length == 3, "xml data query");
@@ -865,7 +861,7 @@ describe("form", function () {
 
     var opts = {
       target: "#targetDiv",
-      beforeSubmit: function (a, jq) {
+      beforeSubmit: function () {
         // pre-callback
         assert.ok(true, "pre-callback");
       },
@@ -887,7 +883,7 @@ describe("form", function () {
 
     var opts = {
       target: "#targetDiv",
-      beforeSubmit: function (a, jq) {
+      beforeSubmit: function () {
         // pre-callback
         assert.ok(true, "pre-callback");
       },
@@ -968,7 +964,7 @@ describe("form", function () {
           // jQuery 1.4+ signature
           assert.ok(true, "success callback invoked");
           assert.ok(status === "success", "status === success");
-          assert.ok(true, "third arg: " + typeof xhr != undefined);
+          assert.ok(typeof xhr != "undefined", "third arg: " + typeof xhr);
           assert.ok(!!xhr != false, "xhr != false");
           assert.ok(xhr.status, "xhr.status == " + xhr.status);
           assert.ok($form === $testForm, "$form param is valid");
@@ -983,9 +979,9 @@ describe("form", function () {
     // stop();
 
     // expect(2);
-    var $testForm = $("#form3").ajaxSubmit({
+    $("#form3").ajaxSubmit({
       forceSync: true,
-      success: function (data, status, $form) {
+      success: function (data, status) {
         // jQuery 1.4+ signature
         assert.ok(true, "success callback invoked");
         assert.ok(status === "success", "status === success");
