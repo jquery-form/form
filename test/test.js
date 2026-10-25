@@ -1,6 +1,6 @@
 /* global scriptCount */
 
-import { assert, beforeAll, beforeEach, describe, it } from "vitest";
+import { assert, beforeAll, beforeEach, describe, it, vi } from "vitest";
 
 // helper method
 var arrayCount = function (arr, key) {
@@ -2325,6 +2325,163 @@ describe("form", function () {
             assert.strictEqual(result.success[0].getElementsByTagName("transport").length, 1);
           } finally {
             $.parseXML = parseXML;
+          }
+        });
+      });
+
+      describe("legacy browser frames", function () {
+        const realContentWindow = Object.getOwnPropertyDescriptor(
+          HTMLIFrameElement.prototype,
+          "contentWindow"
+        ).get;
+        const realContentDocument = Object.getOwnPropertyDescriptor(
+          HTMLIFrameElement.prototype,
+          "contentDocument"
+        ).get;
+
+        function createTarget(properties) {
+          const $target = $('<iframe name="legacy-frame"></iframe>').appendTo("#main");
+          Object.defineProperties($target[0], properties || {});
+          return $target;
+        }
+
+        function denied() {
+          throw new Error("Access is denied");
+        }
+
+        // IE fires onload for the initial blank document before the response arrives.
+        function ieEvents(frame, delay) {
+          const detached = [];
+          return {
+            detached: detached,
+            properties: {
+              attachEvent: {
+                configurable: true,
+                value: function (name, handler) {
+                  if (delay === undefined) {
+                    handler();
+                  }
+                  frame().addEventListener("load", () => setTimeout(handler, delay || 0));
+                },
+              },
+              detachEvent: {
+                configurable: true,
+                value: (name) => detached.push(name),
+              },
+            },
+          };
+        }
+
+        it("should read the document when IE8 denies contentWindow access", async function () {
+          const $target = createTarget({
+            contentWindow: { configurable: true, get: denied },
+            contentDocument: {
+              configurable: true,
+              get: () => realContentDocument.call($target[0]),
+            },
+          });
+          const $form = createIframeForm("ajax/iframe-text.html");
+
+          const result = await submitThroughIframe($form, {
+            iframeTarget: $target,
+            dataType: "text",
+          });
+
+          assert.strictEqual(result.success[0].trim(), "iframe response");
+        });
+
+        [
+          ["throws", { get: denied }, { timeout: 1000 }],
+          ["is missing", { value: null }, {}],
+        ].forEach(function ([label, contentDocument, options]) {
+          it("should report a server abort when the frame document " + label, async function () {
+            const $target = createTarget({
+              contentWindow: { configurable: true, value: null },
+              contentDocument: $.extend({ configurable: true }, contentDocument),
+            });
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            const result = await submitThroughIframe(
+              $form,
+              $.extend({ iframeTarget: $target, dataType: "text" }, options)
+            );
+
+            assert.deepEqual(result.error.slice(1, 3), ["aborted", "server abort"]);
+            assert.strictEqual(result.xhr.state(), "rejected");
+          });
+        });
+
+        it("should keep polling while IE reports an uninitialized document", async function () {
+          let polls = 0;
+          let events;
+          const $target = createTarget();
+          events = ieEvents(() => $target[0], 100);
+          Object.defineProperties(
+            $target[0],
+            $.extend(events.properties, {
+              contentWindow: {
+                configurable: true,
+                get: function () {
+                  polls++;
+                  return polls <= 2
+                    ? { document: { readyState: "uninitialized" } }
+                    : realContentWindow.call(this);
+                },
+              },
+            })
+          );
+          const $form = createIframeForm("ajax/iframe-text.html");
+
+          const result = await submitThroughIframe($form, {
+            iframeTarget: $target,
+            dataType: "text",
+          });
+
+          assert.ok(polls > 4, "polled again after uninitialized");
+          assert.strictEqual(result.success[0].trim(), "iframe response");
+          assert.deepEqual(events.detached, ["onload"]);
+        });
+
+        it("should ignore the IE onload for the initial blank document", async function () {
+          const $target = createTarget();
+          const events = ieEvents(() => $target[0]);
+          Object.defineProperties($target[0], events.properties);
+          const $form = createIframeForm("ajax/iframe-text.html");
+
+          const result = await submitThroughIframe($form, {
+            iframeTarget: $target,
+            dataType: "text",
+          });
+
+          assert.deepEqual(result.events, ["success", "complete"]);
+          assert.strictEqual(result.success[0].trim(), "iframe response");
+          assert.deepEqual(events.detached, ["onload"]);
+        });
+
+        it("should requeue Opera's empty DOM until its retries run out", async function () {
+          const $target = createTarget();
+          const $form = createIframeForm("ajax/iframe-empty.html");
+          const successes = [];
+          vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+          window.opera = {};
+
+          try {
+            $form.ajaxSubmit({
+              iframe: true,
+              iframeTarget: $target,
+              forceSync: true,
+              dataType: "text",
+              success: (data) => successes.push(data),
+            });
+            await new Promise((resolve) => $target.one("load", resolve));
+            const beforeRetries = successes.length;
+            vi.advanceTimersByTime(250 * 50);
+
+            assert.strictEqual(beforeRetries, 0);
+            assert.deepEqual(successes, [""]);
+          } finally {
+            vi.useRealTimers();
+            delete window.opera;
           }
         });
       });
