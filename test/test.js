@@ -112,6 +112,63 @@ describe("form", function () {
   });
 
   describe("formToArray", function () {
+    it("should include controls associated by the form attribute in semantic mode", function () {
+      const $form = $('<form id="external-owner"><input name="inside" value="1"></form>');
+      $form.appendTo("#main");
+      $('<input name="outside" form="external-owner" value="2">').appendTo("#main");
+
+      const data = $form.formToArray(true);
+
+      assert.deepEqual(
+        data.map((field) => field.name),
+        ["inside", "outside"]
+      );
+    });
+
+    it("should skip image inputs that were not clicked in semantic mode", function () {
+      const $form = $(
+        '<form><input type="image" name="first" value="a"><input type="image" name="second" value="b"></form>'
+      ).appendTo("#main");
+      const form = $form[0];
+      form.clk = $form.find('[name="second"]')[0];
+      form.clk_x = 3;
+      form.clk_y = 4;
+
+      const data = $form.formToArray(true);
+
+      assert.deepEqual(
+        data.map((field) => [field.name, field.value]),
+        [
+          ["second", "b"],
+          ["second.x", 3],
+          ["second.y", 4],
+        ]
+      );
+    });
+
+    it("should collect multi-value controls into the elements list", function () {
+      const $form = $(
+        '<form><select name="many" multiple><option selected>a</option><option selected>b</option></select></form>'
+      ).appendTo("#main");
+      const elements = [];
+
+      const data = $form.formToArray(false, elements);
+
+      assert.deepEqual(
+        data.map((field) => field.value),
+        ["a", "b"]
+      );
+      assert.deepEqual(elements, [$form.find("select")[0]]);
+    });
+
+    it("should report an empty file input without an elements list", function () {
+      const $form = $('<form><input type="file" name="upload"></form>').appendTo("#main");
+
+      const data = $form.formToArray();
+
+      assert.deepEqual(data, [{ name: "upload", value: "", type: "file" }]);
+    });
+
     it("should return one entry per selected option of a multi-select", function () {
       const $form = $("#form1");
 
@@ -263,6 +320,50 @@ describe("form", function () {
   });
 
   describe("resetForm", function () {
+    // jQuery collections have no unshift, so a matching for target throws a TypeError.
+    it.fails("should reset the control a label targets and its nested fields", function () {
+      const $target = $('<input id="label-target" value="default">').appendTo("#main");
+      const $label = $('<label for="#label-target"><input value="nested"></label>').appendTo(
+        "#main"
+      );
+      $target.val("changed");
+      $label.find("input").val("changed");
+
+      $label.resetForm();
+
+      assert.strictEqual($target.val(), "default");
+      assert.strictEqual($label.find("input").val(), "nested");
+    });
+
+    it("should reset nested fields of a label without a for attribute", function () {
+      const $label = $('<label><input value="nested"></label>').appendTo("#main");
+      $label.find("input").val("changed");
+
+      $label.resetForm();
+
+      assert.strictEqual($label.find("input").val(), "nested");
+    });
+
+    it("should reset the parent single select when one of its options is reset", function () {
+      const $select = $(
+        "<select><option>a</option><option selected>b</option><option>c</option></select>"
+      ).appendTo("#main");
+      $select.val("c");
+
+      $select.find("option").eq(0).resetForm();
+
+      assert.strictEqual($select.val(), "b");
+    });
+
+    it("should not call reset when a control named reset shadows the form method", function () {
+      const $form = $('<form><input name="reset" value="default"></form>').appendTo("#main");
+      $form.find("input").val("changed");
+
+      $form.resetForm();
+
+      assert.strictEqual($form.find("input").val(), "changed");
+    });
+
     it("should restore a text input to its default value", function () {
       const $el = $("#form1 input[name=Name]");
       assert.ok("MyName1" == $el.val(), "beforeSubmit: " + $el.val());
@@ -476,6 +577,27 @@ describe("form", function () {
   });
 
   describe("fieldValue", function () {
+    it("should return null for an unselected select when success is not required", function () {
+      const select = $('<select name="choice"><option>a</option></select>')[0];
+      select.selectedIndex = -1;
+
+      const value = $.fieldValue(select, false);
+
+      assert.strictEqual(value, null);
+    });
+
+    it("should use option text when an empty value attribute is unspecified", function () {
+      const select = $('<select name="choice"><option value="">Label</option></select>')[0];
+      Object.defineProperty(select.options[0], "attributes", {
+        configurable: true,
+        value: { value: { specified: false } },
+      });
+
+      const value = $.fieldValue(select);
+
+      assert.strictEqual(value, "Label");
+    });
+
     it("should omit unsuccessful controls by default", function () {
       const $fields = $(
         '<div><input value="unnamed"><input name="disabled" value="x" disabled><input type="reset" name="reset" value="x"><select name="empty"><option>one</option></select></div>'
@@ -678,7 +800,82 @@ describe("form", function () {
     });
   });
 
+  describe("debug logging", function () {
+    function logWithDebug(globals) {
+      const saved = {};
+      Object.keys(globals).forEach(function (name) {
+        saved[name] = Object.getOwnPropertyDescriptor(window, name);
+        Object.defineProperty(window, name, {
+          configurable: true,
+          writable: true,
+          value: globals[name],
+        });
+      });
+      $.fn.ajaxSubmit.debug = true;
+
+      try {
+        $(".missing-form").ajaxSubmit();
+      } finally {
+        $.fn.ajaxSubmit.debug = false;
+        Object.keys(globals).forEach(function (name) {
+          if (saved[name]) {
+            Object.defineProperty(window, name, saved[name]);
+          } else {
+            delete window[name];
+          }
+        });
+      }
+    }
+
+    const message = "[jquery.form] ajaxSubmit: skipping submit process - no element selected";
+
+    it("should write to console.log when debug is enabled", function () {
+      const logged = [];
+
+      logWithDebug({ console: { log: (text) => logged.push(text) } });
+
+      assert.deepEqual(logged, [message]);
+    });
+
+    it("should fall back to opera.postError without console.log", function () {
+      const posted = [];
+
+      logWithDebug({ console: {}, opera: { postError: (text) => posted.push(text) } });
+
+      assert.deepEqual(posted, [message]);
+    });
+
+    it("should stay silent without any logging target", function () {
+      const run = () => logWithDebug({ console: undefined, opera: {} });
+
+      assert.doesNotThrow(run);
+    });
+
+    it("should stay silent when debug is disabled", function () {
+      const logged = [];
+      const log = console.log;
+      console.log = (text) => logged.push(text);
+
+      try {
+        $(".missing-form").ajaxSubmit();
+      } finally {
+        console.log = log;
+      }
+
+      assert.deepEqual(logged, []);
+    });
+  });
+
   describe("enable and selected", function () {
+    it("should leave controls that cannot be selected unchanged", function () {
+      const input = $('<input type="text" value="x">')[0];
+
+      $(input).selected(true);
+
+      assert.strictEqual(input.checked, false);
+      assert.strictEqual(input.selected, undefined);
+    });
+
     it("should enable by default and disable when passed false", function () {
       const $input = $("<input disabled>");
 
