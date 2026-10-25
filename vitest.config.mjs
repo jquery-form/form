@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
@@ -49,6 +50,8 @@ const rawFiles = serveFiles(
   { "Content-Type": "text/javascript" }
 );
 
+const jqueryEsm = new URL("./test/jquery-esm.js", import.meta.url);
+
 const browser = () => ({
   enabled: true,
   headless: true,
@@ -68,6 +71,8 @@ export default defineConfig({
         plugins: [ajaxXmlFixtures, ajaxFixtures],
         test: {
           name: "suite",
+          // Keeps Vite's CommonJS interop wrapper out of the plugin's coverage.
+          alias: [{ find: /^jquery$/, replacement: fileURLToPath(jqueryEsm) }],
           globals: true,
           include: ["test/test.js"],
           setupFiles: ["test/setup.js"],
