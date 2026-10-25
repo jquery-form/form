@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: toolchain-ci
     content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
-    status: pending
+    status: completed
   - id: prettier-sweep
     content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
     status: pending
@@ -68,7 +68,18 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 3. ~~Runner/bundler prototype~~ — done (`docs/research/runner-bundler-prototype.md`)
 4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
 5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
-6. Architecture/CI group (Phase 3), then refactor group (Phase 4), then coverage (Phase 5), and so on
+6. ~~Architecture/CI group (Phase 3)~~ — done; decisions below
+7. Refactor group (Phase 4), then coverage (Phase 5), and so on
+
+### Architecture/CI decisions (Phase 3)
+
+- Node 26 pinned by `.nvmrc` and `devEngines` (not `engines`, which would constrain consumers). CI reads `.nvmrc`.
+- `src/jquery.form.js` is an ES module: `import jQuery from 'jquery'`, the plugin body byte-identical, `export default jQuery`. Rollup builds `dist/jquery.form.mjs` (module), `dist/jquery.form.js` (classic), and `dist/jquery.form.min.js` plus source map. The classic build re-wraps the body in the original UMD header from `rollup.config.mjs` and restores the `'use strict'` directive Rollup drops from modules.
+- Package entries: `main` is `dist/jquery.form.js` (was `src/jquery.form.js`), `module` is `dist/jquery.form.mjs`, `browser` is unchanged. No `exports` map, so deep paths keep resolving. `bower.json`, `composer.json`, and `form.jquery.json` now point at `dist/jquery.form.js`. ADR-0001 flag: anyone deep-requiring `jquery-form/src/jquery.form.js` now gets ESM; the package entries are unaffected.
+- `dist/` stays committed; CI fails if it differs from a fresh build. The AMD module still defines no value (unchanged).
+- Vitest projects: `suite` (unmodified `test/test.js` in Chromium; `test/setup.js` maps `before` and `chai.assert`), `surfaces` (script tag, AMD via RequireJS, native ESM with jQuery 4, bundled ESM with CommonJS jQuery 3), `commonjs` (Node `require` returns the 2-argument factory). `test/test.html` is now only the fixture source.
+- ESLint keeps the old config's error-level non-style rules for `src` (the body passes all of them) plus `recommended`; `no-prototype-builtins` stays a warning. Warn-level preferences that Grunt hid with `quiet` are dropped. `test/test.js` turns off `no-unused-vars` and `no-constant-binary-expression` until the Phase 4 test rewrite. Unused `eslint-disable` comments in `src` are not reported; remove them in Phase 4.
+- Grunt, Travis, CircleCI, `.editorconfig`, `install/` (Grunt githooks), and `prototype/` are removed.
 
 ### Prettier decisions (Phase 2)
 
@@ -132,7 +143,7 @@ Rationale for order: the harness must exist first so the test rewrite is verifie
 
 ## Phase 4: Refactor / modernize group
 - Commit A: Prettier sweep only (separate commit, no behavior change).
-- Commit(s) B: rewrite/rename existing tests to BDD names and AAA shape, grouped by area. Behavior and assertions unchanged, except async tests must return promises (today their callback assertions run after the test has passed).
+- Commit(s) B: rewrite/rename existing tests to BDD names and AAA shape, grouped by area. Behavior and assertions unchanged, except async tests must return promises (today their callback assertions run after the test has passed). Drop the `before`/`chai` shims in `test/setup.js` and re-enable the two ESLint rules turned off for `test/test.js`.
 - Each commit is verified by `npm test`.
 
 ## Phase 5: Coverage to 100%
