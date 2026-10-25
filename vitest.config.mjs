@@ -33,6 +33,14 @@ const ajaxFixtures = serveFiles(
   (file) => `test/ajax/${file}`
 );
 
+// Iframe documents are only parsed as XML when served with an XML content type.
+const ajaxXmlFixtures = serveFiles(
+  "ajax-xml-fixtures",
+  /\/ajax\/([\w.-]+\.xml)$/,
+  (file) => `test/ajax/${file}`,
+  { "Content-Type": "application/xml" }
+);
+
 // Surface pages must load files as consumers would, without Vite rewriting bare imports.
 const rawFiles = serveFiles(
   "raw-files",
@@ -57,7 +65,7 @@ export default defineConfig({
     },
     projects: [
       {
-        plugins: [ajaxFixtures],
+        plugins: [ajaxXmlFixtures, ajaxFixtures],
         test: {
           name: "suite",
           globals: true,

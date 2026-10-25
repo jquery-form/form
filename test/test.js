@@ -2210,6 +2210,125 @@ describe("form", function () {
         assert.strictEqual(result.success[0].trim(), "iframe response");
       });
 
+      describe("response extraction", function () {
+        it("should keep the default status for a textarea without status attributes", async function () {
+          const $form = createIframeForm("ajax/iframe-textarea.html");
+
+          const result = await submitThroughIframe($form, { dataType: "json" });
+
+          assert.deepEqual(result.success[0], { bare: true });
+          assert.strictEqual(result.success[2].status, 0);
+          assert.strictEqual(result.success[2].statusText, "n/a");
+        });
+
+        [
+          ["an empty pre", "ajax/iframe-empty-pre.html"],
+          ["an empty body", "ajax/iframe-empty.html"],
+        ].forEach(function ([label, url]) {
+          it("should return empty text for " + label, async function () {
+            const $form = createIframeForm(url);
+
+            const result = await submitThroughIframe($form, { dataType: "text" });
+
+            assert.strictEqual(result.success[0], "");
+          });
+        });
+
+        it("should return null text for a response that removed its root element", async function () {
+          const $form = createIframeForm("ajax/iframe-rootless.html");
+
+          const result = await submitThroughIframe($form, { dataType: "text" });
+
+          assert.strictEqual(result.success[0], null);
+          assert.strictEqual(result.success[2].responseText, null);
+        });
+
+        it("should report parsererror when dataFilter throws without a reason", async function () {
+          const $form = createIframeForm("ajax/iframe-plain.html");
+
+          const result = await submitThroughIframe($form, {
+            dataType: "json",
+            dataFilter: function () {
+              throw "";
+            },
+          });
+
+          assert.deepEqual(result.error.slice(1, 3), ["parsererror", "parsererror"]);
+          assert.strictEqual(result.xhr.state(), "rejected");
+        });
+
+        // The cb keeps running after abort, so complete fires again with a null status.
+        it.fails(
+          "should complete once when aborted while filtering the response",
+          async function () {
+            const $form = createIframeForm("ajax/iframe-plain.html");
+            const completions = [];
+            let request;
+
+            $form.ajaxSubmit({
+              iframe: true,
+              dataType: "text",
+              beforeSend: (xhr) => {
+                request = xhr;
+              },
+              dataFilter: (data) => {
+                request.abort();
+                return data;
+              },
+              complete: (_xhr, status) => completions.push(status),
+            });
+            await new Promise((resolve) => setTimeout(resolve, 150));
+
+            assert.deepEqual(completions, ["aborted"]);
+          }
+        );
+
+        it("should prefer an IE XMLDocument island as the XML response", async function () {
+          const $form = createIframeForm("ajax/iframe-xml-island.html");
+
+          const result = await submitThroughIframe($form, { dataType: "xml" });
+
+          assert.strictEqual(result.success[0].documentElement.nodeName, "island");
+        });
+
+        it("should report a parsererror document as a parser error", async function () {
+          const $form = createIframeForm("ajax/iframe-parsererror.xml");
+
+          const result = await submitThroughIframe($form, { dataType: "xml" });
+
+          assert.strictEqual(result.error[1], "parsererror");
+          assert.strictEqual(result.error[2].message, "parsererror");
+        });
+
+        it("should return a parsererror document when jQuery has no error helper", async function () {
+          const error = $.error;
+          const $form = createIframeForm("ajax/iframe-parsererror.xml");
+          $.error = undefined;
+
+          try {
+            const result = await submitThroughIframe($form, { dataType: "xml" });
+
+            assert.strictEqual(result.success[0].documentElement.nodeName, "parsererror");
+          } finally {
+            $.error = error;
+          }
+        });
+
+        it("should return an XML document when jQuery has no parseXML helper", async function () {
+          const parseXML = $.parseXML;
+          const $form = createIframeForm("ajax/iframe-xml.html");
+          $.parseXML = undefined;
+
+          try {
+            const result = await submitThroughIframe($form, { dataType: "xml" });
+
+            assert.strictEqual(result.success[0].getElementsByTagName("transport").length, 1);
+          } finally {
+            $.parseXML = parseXML;
+          }
+        });
+      });
+
       // abort calls callbacks but leaves the returned Deferred pending.
       it.fails("should reject the returned deferred when aborted", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
