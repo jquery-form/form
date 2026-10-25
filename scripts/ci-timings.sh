@@ -10,7 +10,7 @@ if [ $# -lt 1 ] || [ $# -gt 2 ]; then
 fi
 
 attempt=${2:-$(gh api "repos/{owner}/{repo}/actions/runs/$1" --jq .run_attempt)}
-job_id=$(gh api "repos/{owner}/{repo}/actions/runs/$1/attempts/$attempt/jobs" --jq '.jobs[0].id')
+job_id=$(gh api "repos/{owner}/{repo}/actions/runs/$1/attempts/$attempt/jobs" --jq '.jobs[] | select(.name == "test") | .id')
 
 gh api "repos/{owner}/{repo}/actions/jobs/$job_id" --jq '
   def secs: fromdateiso8601;
