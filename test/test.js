@@ -132,119 +132,117 @@ describe("form", function () {
     });
   });
 
-  // test resetForm
-  it("resetForm (text input)", function () {
-    var $el = $("#form1 input[name=Name]");
-    var val = $el.val();
-    assert.ok("MyName1" == val, "beforeSubmit: " + val);
-    $el.val("test");
-    val = $el.val();
-    assert.ok("test" == $el.val(), "update: " + val);
-    $("#form1").resetForm();
-    val = $el.val();
-    assert.ok("MyName1" == val, "success: " + val);
+  describe("resetForm", function () {
+    it("should restore a text input to its default value", function () {
+      const $el = $("#form1 input[name=Name]");
+      assert.ok("MyName1" == $el.val(), "beforeSubmit: " + $el.val());
+      $el.val("test");
+      assert.ok("test" == $el.val(), "update: " + $el.val());
+
+      $("#form1").resetForm();
+
+      assert.ok("MyName1" == $el.val(), "success: " + $el.val());
+    });
+
+    it("should restore a select to its default option", function () {
+      const $el = $("#form1 select[name=Single]");
+      assert.ok("one" == $el.val(), "beforeSubmit: " + $el.val());
+      $el.val("two");
+      assert.ok("two" == $el.val(), "update: " + $el.val());
+
+      $("#form1").resetForm();
+
+      assert.ok("one" == $el.val(), "success: " + $el.val());
+    });
+
+    it("should restore a textarea to its default text", function () {
+      const $el = $("#form1 textarea");
+      assert.ok("This is Form1" == $el.val(), "beforeSubmit: " + $el.val());
+      $el.val("test");
+      assert.ok("test" == $el.val(), "udpate: " + $el.val());
+
+      $("#form1").resetForm();
+
+      assert.ok("This is Form1" == $el.val(), "success: " + $el.val());
+    });
+
+    it("should re-check a checkbox that was unchecked", function () {
+      const el = $("#form1 input:checkbox:checked")[0];
+      assert.ok(el.checked, "beforeSubmit: " + el.checked);
+      el.checked = false;
+      assert.ok(!el.checked, "update: " + el.checked);
+
+      $("#form1").resetForm();
+
+      assert.ok(el.checked, "success: " + el.checked);
+    });
+
+    it("should re-check a radio button that was unchecked", function () {
+      const el = $("#form1 input:radio:checked")[0];
+      assert.ok(el.checked, "beforeSubmit: " + el.checked);
+      el.checked = false;
+      assert.ok(!el.checked, "update: " + el.checked);
+
+      $("#form1").resetForm();
+
+      assert.ok(el.checked, "success: " + el.checked);
+    });
   });
 
-  // test resetForm
-  it("resetForm (select)", function () {
-    var $el = $("#form1 select[name=Single]");
-    var val = $el.val();
-    assert.ok("one" == val, "beforeSubmit: " + val);
-    $el.val("two");
-    val = $el.val();
-    assert.ok("two" == $el.val(), "update: " + val);
-    $("#form1").resetForm();
-    val = $el.val();
-    assert.ok("one" == val, "success: " + val);
-  });
+  describe("clearForm", function () {
+    it("should empty a text input", function () {
+      const $el = $("#form1 input[name=Name]");
+      assert.ok("MyName1" == $el.val(), "beforeSubmit: " + $el.val());
 
-  // test resetForm
-  it("resetForm (textarea)", function () {
-    var $el = $("#form1 textarea");
-    var val = $el.val();
-    assert.ok("This is Form1" == val, "beforeSubmit: " + val);
-    $el.val("test");
-    val = $el.val();
-    assert.ok("test" == val, "udpate: " + val);
-    $("#form1").resetForm();
-    val = $el.val();
-    assert.ok("This is Form1" == val, "success: " + val);
-  });
+      $("#form1").clearForm();
 
-  // test resetForm
-  it("resetForm (checkbox)", function () {
-    var el = $("#form1 input:checkbox:checked")[0];
-    assert.ok(el.checked, "beforeSubmit: " + el.checked);
-    el.checked = false;
-    assert.ok(!el.checked, "update: " + el.checked);
-    $("#form1").resetForm();
-    assert.ok(el.checked, "success: " + el.checked);
-  });
+      assert.ok("" == $el.val(), "success: " + $el.val());
+    });
 
-  // test resetForm
-  it("resetForm (radio)", function () {
-    var el = $("#form1 input:radio:checked")[0];
-    assert.ok(el.checked, "beforeSubmit: " + el.checked);
-    el.checked = false;
-    assert.ok(!el.checked, "update: " + el.checked);
-    $("#form1").resetForm();
-    assert.ok(el.checked, "success: " + el.checked);
-  });
+    it("should deselect a select", function () {
+      const $el = $("#form1 select[name=Single]");
+      assert.ok("one" == $el.val(), "beforeSubmit: " + $el.val());
 
-  // test clearForm
-  it("clearForm (text input)", function () {
-    var $el = $("#form1 input[name=Name]");
-    var val = $el.val();
-    assert.ok("MyName1" == val, "beforeSubmit: " + val);
-    $("#form1").clearForm();
-    val = $el.val();
-    assert.ok("" == val, "success: " + val);
-  });
+      $("#form1").clearForm();
 
-  // test clearForm
-  it("clearForm (select)", function () {
-    var $el = $("#form1 select[name=Single]");
-    var val = $el.val();
-    assert.ok("one" == val, "beforeSubmit: " + val);
-    $("#form1").clearForm();
-    val = $el.val();
-    assert.ok(!val, "success: " + val);
-  });
+      assert.ok(!$el.val(), "success: " + $el.val());
+    });
 
-  // test clearForm; here we're testing that a hidden field is NOT cleared
-  it("clearForm: (hidden input)", function () {
-    var $el = $("#form1 input:hidden");
-    var val = $el.val();
-    assert.ok("hiddenValue" == val, "beforeSubmit: " + val);
-    $("#form1").clearForm();
-    val = $el.val();
-    assert.ok("hiddenValue" == val, "success: " + val);
-  });
+    it("should leave a hidden input unchanged", function () {
+      const $el = $("#form1 input:hidden");
+      assert.ok("hiddenValue" == $el.val(), "beforeSubmit: " + $el.val());
 
-  // test clearForm; here we're testing that a submit element is NOT cleared
-  it("clearForm: (submit input)", function () {
-    var $el = $("#form1 input:submit");
-    var val = $el.val();
-    assert.ok("Submit1" == val, "beforeSubmit: " + val);
-    $("#form1").clearForm();
-    val = $el.val();
-    assert.ok("Submit1" == val, "success: " + val);
-  });
+      $("#form1").clearForm();
 
-  // test clearForm
-  it("clearForm (checkbox)", function () {
-    var el = $("#form1 input:checkbox:checked")[0];
-    assert.ok(el.checked, "beforeSubmit: " + el.checked);
-    $("#form1").clearForm();
-    assert.ok(!el.checked, "success: " + el.checked);
-  });
+      assert.ok("hiddenValue" == $el.val(), "success: " + $el.val());
+    });
 
-  // test clearForm
-  it("clearForm (radio)", function () {
-    var el = $("#form1 input:radio:checked")[0];
-    assert.ok(el.checked, "beforeSubmit: " + el.checked);
-    $("#form1").clearForm();
-    assert.ok(!el.checked, "success: " + el.checked);
+    it("should leave a submit input unchanged", function () {
+      const $el = $("#form1 input:submit");
+      assert.ok("Submit1" == $el.val(), "beforeSubmit: " + $el.val());
+
+      $("#form1").clearForm();
+
+      assert.ok("Submit1" == $el.val(), "success: " + $el.val());
+    });
+
+    it("should uncheck a checkbox", function () {
+      const el = $("#form1 input:checkbox:checked")[0];
+      assert.ok(el.checked, "beforeSubmit: " + el.checked);
+
+      $("#form1").clearForm();
+
+      assert.ok(!el.checked, "success: " + el.checked);
+    });
+
+    it("should uncheck a radio button", function () {
+      const el = $("#form1 input:radio:checked")[0];
+      assert.ok(el.checked, "beforeSubmit: " + el.checked);
+
+      $("#form1").clearForm();
+
+      assert.ok(!el.checked, "success: " + el.checked);
+    });
   });
 
   // test ajaxSubmit target update
