@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: prototype
     content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
-    status: pending
+    status: completed
   - id: baseline
     content: Install deps, run lint/tests/build on current state, record baseline failures
     status: pending
@@ -55,13 +55,14 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 
 - Two release tracks: 4.x (minor, keeps all compatibility, target 100% coverage including legacy branches) then 5.0 (drops legacy jQuery <3 and IE shims, peer dependency, architecture work, TS discussion).
 - Plain JS for now. Minimal tooling: Vitest only if clearly justified over plain Playwright Test.
+- Runner and bundler settled by prototype (`docs/research/runner-bundler-prototype.md`): Vitest browser mode (Playwright provider, v8 coverage), and Rollup with the classic build kept in the existing UMD wrapper so the CommonJS `(root, jQuery)` factory is preserved. Mocha and Chai are dropped.
 - Branching settled in ADR-0002: trunk on `main` (no `develop`/`next`); reconcile is merge `develop`→`master`, rename to `main`, prune, protect; community PRs wait until coverage is 100%.
 
 ### Revised order
 
 1. ~~Grill session: branching strategy (and ADR)~~ — done (`docs/adr/0002-branching-and-release.md`)
 2. ~~Reconcile branches, rename to `main`, prune, protect (per ADR-0002)~~ — done
-3. Runner/bundler prototype
+3. ~~Runner/bundler prototype~~ — done (`docs/research/runner-bundler-prototype.md`)
 4. Baseline (Phase 1)
 5. Grill session: Prettier (Phase 2)
 6. Architecture/CI group (Phase 3), then refactor group (Phase 4), then coverage (Phase 5), and so on
@@ -99,10 +100,11 @@ Rationale for order: the harness must exist first so the test rewrite is verifie
 - ESLint flat config, Prettier config (settings from Phase 2), `npm test` running lint + tests + coverage.
 - GitHub Actions workflow; remove Travis, CircleCI and `.editorconfig`; retire Grunt if the bundler replaces it.
 - Existing tests keep passing, unmodified, in the new runner (port only what the runner requires).
+- Convert `src` to an ESM module (body unchanged) as the Rollup entry; delete `prototype/` once the real config lands.
 
 ## Phase 4: Refactor / modernize group
 - Commit A: Prettier sweep only (separate commit, no behavior change).
-- Commit(s) B: rewrite/rename existing tests to BDD names and AAA shape, grouped by area. Behavior and assertions unchanged.
+- Commit(s) B: rewrite/rename existing tests to BDD names and AAA shape, grouped by area. Behavior and assertions unchanged, except async tests must return promises (today their callback assertions run after the test has passed).
 - Each commit is verified by `npm test`.
 
 ## Phase 5: Coverage to 100%

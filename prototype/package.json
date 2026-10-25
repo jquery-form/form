@@ -1,0 +1,27 @@
+{
+  "name": "jquery-form-runner-bundler-prototype",
+  "private": true,
+  "description": "Throwaway runner/bundler prototype; see docs/research/runner-bundler-prototype.md",
+  "scripts": {
+    "playwright": "playwright test",
+    "vitest": "vitest run --coverage",
+    "vitest:threshold": "vitest run --coverage --coverage.thresholds.lines=100",
+    "vitest:probe": "PROBE=1 vitest run",
+    "build": "rollup -c && node cjs-check.cjs"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@rollup/plugin-terser": "^1.0.2",
+    "@vitest/browser-playwright": "^5.0.5",
+    "@vitest/coverage-v8": "^5.0.5",
+    "chai": "^4.5.0",
+    "jquery": "^3.7.1",
+    "jquery4": "npm:jquery@^4.0.0",
+    "mocha": "^12.0.3",
+    "monocart-coverage-reports": "^3.1.0",
+    "requirejs": "^2.3.8",
+    "rollup": "^4.65.0",
+    "vitest": "^5.0.5"
+  }
+}

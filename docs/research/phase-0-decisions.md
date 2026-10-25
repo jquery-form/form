@@ -8,11 +8,11 @@ Inputs: [tooling-research.md](tooling-research.md), [issue-pr-scan.md](issue-pr-
 - **Two release tracks:**
   - **4.x (minor release):** keep all current compatibility (jQuery >=1.7.2, legacy shims, `options.iframe`). Covers tooling, CI, tests, 100% coverage of existing branches, jQuery 4 compatibility through changes that still work on old jQuery (the #599 style of native replacements), and low-risk bug fixes.
   - **5.0 (major release):** prepared after 4.x. Drops legacy jQuery (<3) and IE/Opera shims, deletes dead branches, makes `jquery` a peer dependency, adds an `exports` map, and carries the larger architectural improvements.
-- **Test runner:** undecided. Prototype Vitest browser mode (Playwright provider, v8 coverage) and Playwright Test against the `test/ajax` fixtures and iframe upload tests, then choose.
+- **Test runner:** Vitest browser mode (Playwright provider, v8 coverage), chosen by prototype; see [runner-bundler-prototype.md](runner-bundler-prototype.md).
 
-## Leading candidates, to confirm by prototype
+## Confirmed by prototype
 
-- **Bundler:** Rollup 4 (UMD + ESM, jquery external). esbuild has no UMD or AMD output.
+- **Bundler:** Rollup 4 (ESM + classic UMD, jquery external), confirmed by prototype. The classic build keeps the hand-written UMD wrapper because Rollup's generic UMD changes the CommonJS export. esbuild has no UMD or AMD output.
 - **Node:** target Node 26 (LTS from 2026-10-28). Local is v24.11.0, which is the minimum for some tools.
 
 ## Consequences for the plan
