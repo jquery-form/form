@@ -23,6 +23,9 @@ todos:
   - id: toolchain-ci
     content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
     status: completed
+  - id: ci-instrumentation
+    content: "Architecture/CI group: time each major CI step, record a CI baseline in docs/metrics.md, list speed-ups"
+    status: pending
   - id: prettier-sweep
     content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
     status: completed
@@ -69,7 +72,8 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
 5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
 6. ~~Architecture/CI group (Phase 3)~~ — done; decisions below
-7. Refactor group (Phase 4), then coverage (Phase 5), and so on
+7. CI instrumentation (Phase 3B), on the first green CI run of PR #625
+8. Refactor group (Phase 4), then coverage (Phase 5), and so on
 
 ### Architecture/CI decisions (Phase 3)
 
@@ -99,6 +103,7 @@ Each remaining step gets the cheapest model that fits it: a strong reasoner wher
 | Baseline (Phase 1)                              | Composer 2.5      | Run commands and record output; little judgement needed.                                                                                                                     |
 | Grill: Prettier (Phase 2)                       | Claude Sonnet 5.5 | Conversational trade-off discussion; moderate depth, many turns.                                                                                                             |
 | Architecture/CI group (Phase 3)                 | Claude Opus 5.5   | Multi-part toolchain work: converting `src` to ESM, keeping the ADR-0001 contract (CommonJS factory, AMD, script tag) in the build, and CI. A mistake here breaks consumers. |
+| CI instrumentation (Phase 3B)                   | Claude Sonnet 5.5 | Workflow edits, a timing script, and recording numbers; the analysis is already in `docs/research/ci-first-run.md`.                                                          |
 | Prettier sweep (Phase 4A)                       | Composer 2.5      | Mechanical: run the formatter, verify, commit.                                                                                                                               |
 | Test rewrite (Phase 4B)                         | Claude Sonnet 5.5 | Many similar edits; converting fire-and-forget async tests to promises needs care but follows a repeated pattern.                                                            |
 | Coverage to 100% (Phase 5)                      | GPT-5.6 Sol       | Deep branch-by-branch reasoning, simulating legacy browsers and old jQuery, iframe transport edge cases.                                                                     |
@@ -144,6 +149,22 @@ Rationale for order: the harness must exist first so the test rewrite is verifie
 - GitHub Actions workflow; remove Travis, CircleCI and `.editorconfig`; retire Grunt if the bundler replaces it.
 - Existing tests keep passing, unmodified, in the new runner (port only what the runner requires).
 - Convert `src` to an ESM module (body unchanged) as the Rollup entry; delete `prototype/` once the real config lands.
+
+## Phase 3B: CI instrumentation
+
+Goal: know where CI time goes before optimizing it. Measure first; change nothing for speed in this phase.
+
+- Split the single `npm test` CI step into named steps (`npm run lint`, `npm run build`, `vitest run --coverage`) so GitHub reports each duration. `npm test` stays the one local command; a CI check confirms the steps still match its script.
+- Time the setup steps already separate in the log: checkout, `setup-node` (record npm cache hit or miss), `npm ci`, `playwright install --with-deps chromium` (split download from system deps if `--with-deps` dominates), and the `dist` diff.
+- Have Vitest write a JSON report (`--reporter=json --outputFile`) and upload it as an artifact, to get per-file and per-test durations and startup (browser launch, transform, import) separately from test time.
+- Add a final step that writes a step-duration table to `$GITHUB_STEP_SUMMARY`, so each run shows its own breakdown without opening logs.
+- Add `scripts/ci-timings.sh`, which pulls step start and end times with `gh run view <id> --json jobs` and prints a table. Run it on at least 5 runs with a warm cache and 1 cold, and record the median and spread per step in `docs/metrics.md`, plus queue time and total wall time.
+- Unblock first: the first run (PR #625) stalled in `npx playwright install --with-deps chromium` because apt downloaded unneeded fonts from a slow mirror; the libraries Chromium needs were already on the runner (`docs/research/ci-first-run.md`). Drop `--with-deps` so CI can go green, then take the baseline.
+- Then compare three browser setups on warm and cold runs:
+  - Run the job in the official Playwright container (`container: mcr.microsoft.com/playwright:v<version>-noble`), which ships the browsers and system dependencies. Pin the tag to the exact `playwright` version in `package-lock.json`, and keep the two in step with Dependabot or a CI check. Measure the image pull time, and confirm `setup-node` and the npm cache behave inside the container.
+  - Cache `~/.cache/ms-playwright` keyed on the Playwright version, and on a hit run only `npx playwright install-deps chromium`, or skip it if the runner image already has the libraries.
+  - Use the Chrome already on GitHub's `ubuntu-latest` image (Vitest instance `channel: "chrome"`), with no browser download. The browser version then drifts with the runner image, so weigh that against reproducibility.
+- Output: a CI baseline column in `docs/metrics.md` and a ranked list of candidate speed-ups with expected savings, for example caching Playwright browsers keyed on the Playwright version, skipping `--with-deps` on a cache hit, running lint in parallel with the browser job, `concurrency` cancelling superseded PR runs, and `paths-ignore` for docs-only changes. Apply candidates later as separate `ci` commits, each re-measured against the baseline.
 
 ## Phase 4: Refactor / modernize group
 
