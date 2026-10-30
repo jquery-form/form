@@ -203,9 +203,10 @@ functions, 98.17% statements) and reach 100% when 5.0 removes or fixes those bra
 - Upgrade remaining dev deps, run a jQuery version matrix (floor from Phase 0, 3.x, 4.x), `npm audit`, and verify `bower.json`, `composer.json`, `form.jquery.json` manifests and `main`/`browser`/exports entries.
 
 Status: done on `phase-6-deps`. No dev dependency had an upgrade available and `npm audit` reports
-0 vulnerabilities. The matrix (1.7.2, 3.7.1, 4.0.0) is in CI; 3.7.1 passes, while 1.7.2 and 4.0.0
-fail and are non-gating until `src/` is fixed (`docs/research/jquery-matrix.md`). Manifests were
-aligned and are now checked by `test/surfaces/manifests.test.js`; an `exports` map is left to 5.0.
+0 vulnerabilities. The matrix (1.7.2, 3.7.1, 4.0.0) runs in CI and all three gate merges after
+fixes for jQuery 4 removals in `src/` and for test-harness issues (`docs/research/jquery-matrix.md`).
+Manifests were aligned and are checked by `test/surfaces/manifests.test.js`; an `exports` map is
+left to 5.0. Coverage thresholds were re-baselined after the `eval` fallback was removed.
 
 ## Phase 7: Issue triage
 
