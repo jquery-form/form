@@ -335,6 +335,15 @@ describe("form", function () {
       assert.strictEqual($label.find("input").val(), "nested");
     });
 
+    // #600: resetForm reads tagName, which the document and text nodes lack.
+    it.fails("should skip nodes without a tag name", function () {
+      const $nodes = $([document, document.createTextNode("text")]);
+
+      const reset = () => $nodes.resetForm();
+
+      assert.doesNotThrow(reset);
+    });
+
     it("should reset nested fields of a label without a for attribute", function () {
       const $label = $('<label><input value="nested"></label>').appendTo("#main");
       $label.find("input").val("changed");
@@ -532,6 +541,15 @@ describe("form", function () {
 
       assert.strictEqual($fields.eq(0).val(), "plain");
       assert.strictEqual($fields.eq(1).val(), "");
+    });
+
+    // #600: clearFields reads tagName, which the document and text nodes lack.
+    it.fails("should skip nodes without a tag name", function () {
+      const $nodes = $([document, document.createTextNode("text")]);
+
+      const clear = () => $nodes.clearFields();
+
+      assert.doesNotThrow(clear);
     });
 
     it("should clear all hidden inputs when includeHidden is true", function () {
@@ -2221,6 +2239,26 @@ describe("form", function () {
         assert.strictEqual(result.success[0].trim(), "iframe response");
       });
 
+      // #597: each extraData value goes into one hidden input, so an array is joined with commas.
+      it.fails("should submit array extraData values as separate fields", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const submitted = [];
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted.push([this.name, this.value]);
+            });
+        });
+
+        await submitThroughIframe($form, { data: { tags: ["a", "b"] }, dataType: "text" });
+
+        assert.deepEqual(submitted, [
+          ["tags[]", "a"],
+          ["tags[]", "b"],
+        ]);
+      });
+
       it("should submit only own extraData properties", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const data = Object.create({ inherited: "skipped" });
@@ -2893,6 +2931,19 @@ describe("form", function () {
     it("should capture a submit button when nested content is clicked", function () {
       const $form = $(
         '<form><button type="submit" name="choice" value="nested"><span>Send</span></button></form>'
+      ).appendTo("#main");
+      const button = $form.find("button")[0];
+
+      $form.ajaxForm();
+      $form.find("span").trigger("click");
+
+      assert.strictEqual($form[0].clk, button);
+    });
+
+    // #588: the click handler matches [type=submit], which a button without a type attribute lacks.
+    it.fails("should capture a button without a type attribute", function () {
+      const $form = $(
+        '<form><button name="choice" value="untyped"><span>Send</span></button></form>'
       ).appendTo("#main");
       const button = $form.find("button")[0];
 
