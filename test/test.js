@@ -2821,6 +2821,10 @@ describe("form", function () {
     });
 
     describe("before the DOM is ready", function () {
+      // These tests fake `$.isReady`. jQuery 1.7.2 then re-fires its ready handlers, which closes
+      // the test page, so they only run where the collection has no native selector metadata.
+      const it = globalThis.it.skipIf(Number($.fn.jquery.split(".")[0]) < 3);
+
       function withDomNotReady(run) {
         const isReady = $.isReady;
         $.isReady = false;
