@@ -796,7 +796,9 @@ describe("form", function () {
 
       const result = $fields.fieldSerialize();
 
-      assert.strictEqual(result, "choice=a%20b&choice=c");
+      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
+      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
+      assert.strictEqual(result, `choice=a${space}b&choice=c`);
     });
   });
 
