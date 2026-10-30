@@ -206,7 +206,10 @@ Status: done on `phase-6-deps`. No dev dependency had an upgrade available and `
 0 vulnerabilities. The matrix (1.7.2, 3.7.1, 4.0.0) runs in CI and all three gate merges after
 fixes for jQuery 4 removals in `src/` and for test-harness issues (`docs/research/jquery-matrix.md`).
 Manifests were aligned and are checked by `test/surfaces/manifests.test.js`; an `exports` map is
-left to 5.0. Coverage thresholds were re-baselined after the `eval` fallback was removed.
+deferred to 5.0 (it would break deep imports on 4.x). Coverage thresholds were re-baselined after the
+`eval` fallback was removed. The `.selector`/`.context` delegation bug was investigated and is
+documented, not fixed (`docs/research/selector-context-delegation.md`); consumer-visible changes are
+listed in `docs/research/4x-behavior-changes.md`.
 
 ## Phase 7: Issue triage
 
@@ -216,6 +219,7 @@ left to 5.0. Coverage thresholds were re-baselined after the `eval` fallback was
 
 - Review `src/jquery.form.js`: response handling (script/html eval, XSS, iframe parsing), uploads (`target`/iframe, `document.domain`), request construction (URL building, data serialization, prototype pollution), dependency exposure.
 - Identify improvements while preserving the ADR-0001 dual surface (module format, shim removal, API surface, deprecation path). Output a findings doc and ranked issues.
+- 5.0 carry-overs from Phase 6: add an `exports` map (deferred from 4.x; check deep imports and the dual surface), and settle the `.selector`/`.context` replacement for `ajaxForm` delegation and the DOM-not-ready queue (`docs/research/selector-context-delegation.md`).
 
 ## Metrics (throughout)
 
