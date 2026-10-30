@@ -2606,7 +2606,10 @@ describe("form", function () {
         const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
         assert.ok(typeof formScriptTest == "function", "script evaluated");
-        assert.ok(seen.success[0].match("formScriptTest"), "script returned");
+        // jQuery 4 loads async script requests through a script tag, so no response text arrives.
+        if (Number($.fn.jquery.split(".")[0]) < 4) {
+          assert.ok(seen.success[0].match("formScriptTest"), "script returned");
+        }
       });
 
       it("should parse an xml response into a document", async function () {
