@@ -11,17 +11,14 @@ Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) 
 ### Code of Conduct
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
-### Pull Requests Needed
-#### Enhancements needed to to be fully compatible with jQuery 3
-jQuery 3 is removing a lot of features that have been deprecated for a long time. Some of these are still in use by jQuery Form.  
-Pull requests and assistance in updating jQuery Form to be compatible with jQuery 3 are greatly appreciated.  
-See [issue #544](https://github.com/jquery-form/form/issues/544) for more information.
+### Security
+Please report security issues privately, not in public issues. See [SECURITY](SECURITY.md).
 
 ## Compatibility
-* Requires jQuery 1.7.2 or later.  
-* Compatible with jQuery 2.
-* Partially compatible with jQuery 3.
-* **Not** compatible with jQuery 3 Slim. ([issue #544](https://github.com/jquery-form/form/issues/544))
+* Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0.
+* jQuery 4 needs a release newer than 4.3.0; 4.3.0 uses APIs that jQuery 4 removed.
+* With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones. ([issue #353](https://github.com/jquery-form/form/issues/353))
+* **Not** compatible with the jQuery slim builds, which leave out AJAX.
 
 ## Download
 * **Development:** [dist/jquery.form.js
@@ -156,8 +153,12 @@ $('form').ajaxForm({
 ````
 
 ### error
-**Deprecated**  
-Callback function to be invoked upon error.
+Callback function to be invoked upon error. It is passed the following arguments:
+
+1. `jqXHR`, object (the error response body is in `responseText`)
+2. `textStatus`, string
+3. `errorThrown`, string
+4. `$form` jQuery object containing form element
 
 ### forceSync
 Only applicable when explicity using the iframe option or when uploading files on browsers that don't support XHR2.
@@ -185,7 +186,6 @@ Boolean flag indicating whether the form should be reset if the submit is succes
 Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order except for input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
 
 ### success
-**Deprecated**  
 Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
 
 1. `data`, formatted according to the dataType parameter or the dataFilter callback function, if specified

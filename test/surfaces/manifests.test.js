@@ -61,3 +61,18 @@ describe("when the package manifests are read", () => {
     expect(composer.require["components/jquery"]).toBe(range);
   });
 });
+
+describe("when the dist files are read", () => {
+  // #553: a block ESLint configuration comment in the classic build applies to code concatenated after it.
+  it.fails("should not ship file-wide ESLint configuration comments", () => {
+    const builds = ["dist/jquery.form.js", "dist/jquery.form.mjs"];
+
+    const sources = builds.map((file) =>
+      readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+    );
+
+    for (const source of sources) {
+      expect(source).not.toMatch(/\/\*\s*eslint\s/);
+    }
+  });
+});
