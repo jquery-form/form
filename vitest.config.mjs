@@ -42,6 +42,14 @@ const ajaxXmlFixtures = serveFiles(
   { "Content-Type": "application/xml" }
 );
 
+// A real server labels HTML (iframe fixtures stay unlabeled so the browser sniffs them); without it jQuery 1.7.2 hands back an XMLDocument for the response.
+const ajaxHtmlFixtures = serveFiles(
+  "ajax-html-fixtures",
+  /\/ajax\/((?!iframe-)[\w.-]+\.html)(\?.*)?$/,
+  (file) => `test/ajax/${file}`,
+  { "Content-Type": "text/html" }
+);
+
 // Surface pages must load files as consumers would, without Vite rewriting bare imports.
 const rawFiles = serveFiles(
   "raw-files",
@@ -95,7 +103,7 @@ export default defineConfig({
     },
     projects: [
       {
-        plugins: [jqueryAsModule, ajaxXmlFixtures, ajaxFixtures],
+        plugins: [jqueryAsModule, ajaxXmlFixtures, ajaxHtmlFixtures, ajaxFixtures],
         test: {
           name: "suite",
           // Keeps Vite's CommonJS interop wrapper out of the plugin's coverage.
