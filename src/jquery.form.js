@@ -934,13 +934,6 @@ import jQuery from "jquery";
             ? doc
             : null;
         };
-      var parseJSON =
-        $.parseJSON ||
-        function (s) {
-          /* jslint evil:true */
-          return window["eval"]("(" + s + ")"); // eslint-disable-line dot-notation
-        };
-
       var httpData = function (xhr, type, s) {
         // mostly lifted from jq1.4.4
 
@@ -958,7 +951,7 @@ import jQuery from "jquery";
         }
         if (typeof data === "string") {
           if ((type === "json" || !type) && ct.indexOf("json") >= 0) {
-            data = parseJSON(data);
+            data = JSON.parse(data);
           } else if ((type === "script" || !type) && ct.indexOf("javascript") >= 0) {
             $.globalEval(data);
           }

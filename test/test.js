@@ -2068,20 +2068,6 @@ describe("form", function () {
         assert.strictEqual(xhr.setRequestHeader("X-Test", "ignored"), undefined);
       });
 
-      it("should use the legacy JSON parser fallback when jQuery does not provide one", async function () {
-        const parseJSON = $.parseJSON;
-        const $form = createIframeForm("ajax/iframe-json.html");
-        $.parseJSON = undefined;
-
-        try {
-          const result = await submitThroughIframe($form, { dataType: "json", textarea: true });
-
-          assert.deepEqual(result.success[0], { transport: "iframe" });
-        } finally {
-          $.parseJSON = parseJSON;
-        }
-      });
-
       it("should clear a pending timeout after a successful response", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
 
