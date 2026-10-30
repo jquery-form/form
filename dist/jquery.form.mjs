@@ -138,7 +138,7 @@ export { default } from 'jquery';
     method = options.method || options.type || this.attr2("method");
     action = options.url || this.attr2("action");
 
-    url = typeof action === "string" ? $.trim(action) : "";
+    url = typeof action === "string" ? action.trim() : "";
     url = url || window.location.href || "";
     if (url) {
       // clean url (don't include hash vaue)
@@ -191,7 +191,7 @@ export { default } from 'jquery';
       a = this.formToArray(options.semantic, elements, options.filtering);
 
     if (options.data) {
-      var optionsData = $.isFunction(options.data) ? options.data(a) : options.data;
+      var optionsData = typeof options.data === "function" ? options.data(a) : options.data;
 
       options.extraData = optionsData;
       qx = $.param(optionsData, traditional);
@@ -254,7 +254,7 @@ export { default } from 'jquery';
           });
       });
     } else if (options.success) {
-      if ($.isArray(options.success)) {
+      if (Array.isArray(options.success)) {
         $.merge(callbacks, options.success);
       } else {
         callbacks.push(options.success);
@@ -935,13 +935,6 @@ export { default } from 'jquery';
             ? doc
             : null;
         };
-      var parseJSON =
-        $.parseJSON ||
-        function (s) {
-          /* jslint evil:true */
-          return window["eval"]("(" + s + ")"); // eslint-disable-line dot-notation
-        };
-
       var httpData = function (xhr, type, s) {
         // mostly lifted from jq1.4.4
 
@@ -959,7 +952,7 @@ export { default } from 'jquery';
         }
         if (typeof data === "string") {
           if ((type === "json" || !type) && ct.indexOf("json") >= 0) {
-            data = parseJSON(data);
+            data = JSON.parse(data);
           } else if ((type === "script" || !type) && ct.indexOf("javascript") >= 0) {
             $.globalEval(data);
           }
@@ -1001,7 +994,7 @@ export { default } from 'jquery';
     }
 
     options = options || {};
-    options.delegation = options.delegation && $.isFunction($.fn.on);
+    options.delegation = options.delegation && typeof $.fn.on === "function";
 
     // in jQuery 1.3+ we can fix mistakes with the ready state
     if (!options.delegation && this.length === 0) {
@@ -1140,7 +1133,7 @@ export { default } from 'jquery';
       return a;
     }
 
-    if ($.isFunction(filtering)) {
+    if (typeof filtering === "function") {
       els = $.map(els, filtering);
     }
 

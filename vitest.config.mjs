@@ -42,6 +42,14 @@ const ajaxXmlFixtures = serveFiles(
   { "Content-Type": "application/xml" }
 );
 
+// A real server labels HTML (iframe fixtures stay unlabeled so the browser sniffs them); without it jQuery 1.7.2 hands back an XMLDocument for the response.
+const ajaxHtmlFixtures = serveFiles(
+  "ajax-html-fixtures",
+  /\/ajax\/((?!iframe-)[\w.-]+\.html)(\?.*)?$/,
+  (file) => `test/ajax/${file}`,
+  { "Content-Type": "text/html" }
+);
+
 // Surface pages must load files as consumers would, without Vite rewriting bare imports.
 const rawFiles = serveFiles(
   "raw-files",
@@ -51,6 +59,26 @@ const rawFiles = serveFiles(
 );
 
 const jqueryEsm = new URL("./test/jquery-esm.js", import.meta.url);
+
+// The matrix points JQUERY_FILE at another classic jQuery build (see scripts/fetch-jquery.sh).
+const jqueryFile = fileURLToPath(
+  new URL(
+    process.env.JQUERY_FILE || "./node_modules/jquery/dist/jquery.js",
+    `file://${process.cwd()}/`
+  )
+);
+
+// jQuery builds are classic scripts that set window.jQuery. Appending an export gives the suite a
+// default import without Vite's CommonJS interop, for every version in the matrix.
+const jqueryAsModule = {
+  name: "jquery-as-module",
+  enforce: "pre",
+  transform(code, id) {
+    if (id.split("?")[0] === jqueryFile) {
+      return { code: `${code}\nexport default window.jQuery;\n`, map: null };
+    }
+  },
+};
 
 const browser = () => ({
   enabled: true,
@@ -67,19 +95,22 @@ export default defineConfig({
       reporter: ["text-summary", "html"],
       // Below 100% only for the source branches listed in docs/research/coverage-gaps.md.
       thresholds: {
-        lines: 98.14,
-        branches: 96.41,
-        functions: 98.27,
-        statements: 98.17,
+        lines: 98.13,
+        branches: 96.4,
+        functions: 98.24,
+        statements: 98.16,
       },
     },
     projects: [
       {
-        plugins: [ajaxXmlFixtures, ajaxFixtures],
+        plugins: [jqueryAsModule, ajaxXmlFixtures, ajaxHtmlFixtures, ajaxFixtures],
         test: {
           name: "suite",
           // Keeps Vite's CommonJS interop wrapper out of the plugin's coverage.
-          alias: [{ find: /^jquery$/, replacement: fileURLToPath(jqueryEsm) }],
+          alias: [
+            { find: /^jquery$/, replacement: fileURLToPath(jqueryEsm) },
+            { find: /^jquery\/dist\/jquery\.js$/, replacement: jqueryFile },
+          ],
           globals: true,
           include: ["test/test.js"],
           setupFiles: ["test/setup.js"],
@@ -97,7 +128,7 @@ export default defineConfig({
       {
         test: {
           name: "commonjs",
-          include: ["test/surfaces/commonjs.test.js"],
+          include: ["test/surfaces/commonjs.test.js", "test/surfaces/manifests.test.js"],
           environment: "node",
         },
       },

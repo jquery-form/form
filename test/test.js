@@ -796,7 +796,9 @@ describe("form", function () {
 
       const result = $fields.fieldSerialize();
 
-      assert.strictEqual(result, "choice=a%20b&choice=c");
+      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
+      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
+      assert.strictEqual(result, `choice=a${space}b&choice=c`);
     });
   });
 
@@ -2066,20 +2068,6 @@ describe("form", function () {
         assert.strictEqual(xhr.setRequestHeader("X-Test", "ignored"), undefined);
       });
 
-      it("should use the legacy JSON parser fallback when jQuery does not provide one", async function () {
-        const parseJSON = $.parseJSON;
-        const $form = createIframeForm("ajax/iframe-json.html");
-        $.parseJSON = undefined;
-
-        try {
-          const result = await submitThroughIframe($form, { dataType: "json", textarea: true });
-
-          assert.deepEqual(result.success[0], { transport: "iframe" });
-        } finally {
-          $.parseJSON = parseJSON;
-        }
-      });
-
       it("should clear a pending timeout after a successful response", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
 
@@ -2604,7 +2592,10 @@ describe("form", function () {
         const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
         assert.ok(typeof formScriptTest == "function", "script evaluated");
-        assert.ok(seen.success[0].match("formScriptTest"), "script returned");
+        // jQuery 4 loads async script requests through a script tag, so no response text arrives.
+        if (Number($.fn.jquery.split(".")[0]) < 4) {
+          assert.ok(seen.success[0].match("formScriptTest"), "script returned");
+        }
       });
 
       it("should parse an xml response into a document", async function () {
@@ -2816,6 +2807,10 @@ describe("form", function () {
     });
 
     describe("before the DOM is ready", function () {
+      // These tests fake `$.isReady`. jQuery 1.7.2 then re-fires its ready handlers, which closes
+      // the test page, so they only run where the collection has no native selector metadata.
+      const it = globalThis.it.skipIf(Number($.fn.jquery.split(".")[0]) < 3);
+
       function withDomNotReady(run) {
         const isReady = $.isReady;
         $.isReady = false;

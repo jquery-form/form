@@ -3,7 +3,7 @@
 ## Delegated `ajaxForm` handlers are not selector-scoped
 
 - Test: `ajaxForm should scope delegated handlers to the selected forms`
-- Finding: jQuery 3.7 removed the collection's `.selector` metadata. With
+- Finding: jQuery 3.0 removed the collection's `.selector` metadata (see `selector-context-delegation.md`). With
   `{ delegation: true }`, `ajaxForm` passes `undefined` as the delegated selector, so submitting an
   unrelated form also invokes the plugin handler.
 - Test treatment: `it.fails` records the intended behavior. Vitest executes the test and expects its

@@ -1,52 +1,55 @@
 ---
+
 name: Modernize jquery-form
 overview: "Ordered plan: research, working baseline, toolchain and CI, grouped refactor/modernize commits (Prettier, test rewrite), coverage to 100%, then issue triage and architecture review."
 todos:
-  - id: research
-    content: "Research: test runner, bundler for dual publish, Node 26/tool versions, legacy support floor, issue/PR scan; write findings to docs"
-    status: completed
-  - id: grill-branching
-    content: "Grill-with-docs session: develop vs trunk, main rename, v4/v5 branch and tag strategy; record ADR"
-    status: completed
-  - id: branch-reconcile
-    content: "Merge develop into master, rename master to main, delete develop, prune stale remotes, close #614, protect main, fix master links"
-    status: completed
-  - id: prototype
-    content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
-    status: completed
-  - id: baseline
-    content: Install deps, run lint/tests/build on current state, record baseline failures
-    status: completed
-  - id: grill-prettier
-    content: Grill-with-docs session to decide Prettier deviations from defaults; record in config/ADR/GLOSSARY as warranted
-    status: completed
-  - id: toolchain-ci
-    content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
-    status: completed
-  - id: ci-instrumentation
-    content: "Architecture/CI group: time each major CI step, record a CI baseline in docs/metrics.md, list speed-ups"
-    status: completed
-  - id: prettier-sweep
-    content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
-    status: completed
-  - id: test-rewrite
-    content: "Refactor group: migrate/rename existing tests to BDD names and AAA shape, behavior unchanged"
-    status: completed
-  - id: coverage
-    content: Close coverage gaps to 100% with new tests and enforce threshold in npm test
-    status: completed
-  - id: deps-modernize
-    content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
-    status: pending
-  - id: metrics
-    content: "Keep docs/metrics.md current: before/after numbers (test time, coverage, test count, bundle size, audit, deps) at each phase and for the v4 and v5 releases"
-    status: in_progress
-  - id: triage
-    content: Triage GitHub issues/PRs via gh into prioritized backlog
-    status: pending
-  - id: review
-    content: Architecture and vulnerability review with findings doc and issues
-    status: pending
+
+- id: research
+content: "Research: test runner, bundler for dual publish, Node 26/tool versions, legacy support floor, issue/PR scan; write findings to docs"
+status: completed
+- id: grill-branching
+content: "Grill-with-docs session: develop vs trunk, main rename, v4/v5 branch and tag strategy; record ADR"
+status: completed
+- id: branch-reconcile
+content: "Merge develop into master, rename master to main, delete develop, prune stale remotes, close #614, protect main, fix master links"
+status: completed
+- id: prototype
+content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
+status: completed
+- id: baseline
+content: Install deps, run lint/tests/build on current state, record baseline failures
+status: completed
+- id: grill-prettier
+content: Grill-with-docs session to decide Prettier deviations from defaults; record in config/ADR/GLOSSARY as warranted
+status: completed
+- id: toolchain-ci
+content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
+status: completed
+- id: ci-instrumentation
+content: "Architecture/CI group: time each major CI step, record a CI baseline in docs/metrics.md, list speed-ups"
+status: completed
+- id: prettier-sweep
+content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
+status: completed
+- id: test-rewrite
+content: "Refactor group: migrate/rename existing tests to BDD names and AAA shape, behavior unchanged"
+status: completed
+- id: coverage
+content: Close coverage gaps to 100% with new tests and enforce threshold in npm test
+status: completed
+- id: deps-modernize
+content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
+status: completed
+- id: metrics
+content: "Keep docs/metrics.md current: before/after numbers (test time, coverage, test count, bundle size, audit, deps) at each phase and for the v4 and v5 releases"
+status: in_progress
+- id: triage
+content: Triage GitHub issues/PRs via gh into prioritized backlog
+status: pending
+- id: review
+content: Architecture and vulnerability review with findings doc and issues
+status: pending
+
 ---
 
 # Plan: jquery-form revival
@@ -67,7 +70,7 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 ### Revised order
 
 1. ~~Grill session: branching strategy (and ADR)~~ — done (`docs/adr/0002-branching-and-release.md`)
-2. ~~Reconcile branches, rename to `main`, prune, protect (per ADR-0002)~~ — done
+2. ~~Reconcile branches, rename to~~ `main`~~, prune, protect (per ADR-0002)~~ — done
 3. ~~Runner/bundler prototype~~ — done (`docs/research/runner-bundler-prototype.md`)
 4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
 5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
@@ -199,6 +202,15 @@ functions, 98.17% statements) and reach 100% when 5.0 removes or fixes those bra
 
 - Upgrade remaining dev deps, run a jQuery version matrix (floor from Phase 0, 3.x, 4.x), `npm audit`, and verify `bower.json`, `composer.json`, `form.jquery.json` manifests and `main`/`browser`/exports entries.
 
+Status: done on `phase-6-deps`. No dev dependency had an upgrade available and `npm audit` reports
+0 vulnerabilities. The matrix (1.7.2, 3.7.1, 4.0.0) runs in CI and all three gate merges after
+fixes for jQuery 4 removals in `src/` and for test-harness issues (`docs/research/jquery-matrix.md`).
+Manifests were aligned and are checked by `test/surfaces/manifests.test.js`; an `exports` map is
+deferred to 5.0 (it would break deep imports on 4.x). Coverage thresholds were re-baselined after the
+`eval` fallback was removed. The `.selector`/`.context` delegation bug was investigated and is
+documented, not fixed (`docs/research/selector-context-delegation.md`); consumer-visible changes are
+listed in `docs/research/4x-behavior-changes.md`.
+
 ## Phase 7: Issue triage
 
 - Pull open issues/PRs with `gh` (see `docs/agents/issue-tracker.md`); categorize bug, security, feature, support, duplicate, stale; reproduce bugs as failing tests; propose labels/closures. Output a prioritized backlog.
@@ -207,6 +219,7 @@ functions, 98.17% statements) and reach 100% when 5.0 removes or fixes those bra
 
 - Review `src/jquery.form.js`: response handling (script/html eval, XSS, iframe parsing), uploads (`target`/iframe, `document.domain`), request construction (URL building, data serialization, prototype pollution), dependency exposure.
 - Identify improvements while preserving the ADR-0001 dual surface (module format, shim removal, API surface, deprecation path). Output a findings doc and ranked issues.
+- 5.0 carry-overs from Phase 6: add an `exports` map (deferred from 4.x; check deep imports and the dual surface), and settle the `.selector`/`.context` replacement for `ajaxForm` delegation and the DOM-not-ready queue (`docs/research/selector-context-delegation.md`).
 
 ## Metrics (throughout)
 
