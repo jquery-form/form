@@ -94,20 +94,18 @@ jobs:
             awk -F '\t' '{ printf "| %s | %s |\n", $1, $2 }' "$TIMINGS"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # The suite against the jQuery support floor, the latest 3.x, and 4.x. Known failures on 1.7.2
-  # and 4.0.0 are recorded in docs/research/jquery-matrix.md, so those entries do not gate merges.
+  # The suite against the jQuery support floor, the latest 3.x, and 4.x.
   jquery:
     name: jQuery ${{ matrix.jquery }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: ${{ matrix.known-failures }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { jquery: "1.7.2", file: ".jquery/jquery-1.7.2.js", known-failures: true }
-          - { jquery: "3.7.1", file: "node_modules/jquery/dist/jquery.js", known-failures: false }
-          - { jquery: "4.0.0", file: "node_modules/jquery4/dist/jquery.js", known-failures: true }
+          - { jquery: "1.7.2", file: ".jquery/jquery-1.7.2.js" }
+          - { jquery: "3.7.1", file: "node_modules/jquery/dist/jquery.js" }
+          - { jquery: "4.0.0", file: "node_modules/jquery4/dist/jquery.js" }
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

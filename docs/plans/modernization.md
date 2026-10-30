@@ -1,52 +1,55 @@
 ---
+
 name: Modernize jquery-form
 overview: "Ordered plan: research, working baseline, toolchain and CI, grouped refactor/modernize commits (Prettier, test rewrite), coverage to 100%, then issue triage and architecture review."
 todos:
-  - id: research
-    content: "Research: test runner, bundler for dual publish, Node 26/tool versions, legacy support floor, issue/PR scan; write findings to docs"
-    status: completed
-  - id: grill-branching
-    content: "Grill-with-docs session: develop vs trunk, main rename, v4/v5 branch and tag strategy; record ADR"
-    status: completed
-  - id: branch-reconcile
-    content: "Merge develop into master, rename master to main, delete develop, prune stale remotes, close #614, protect main, fix master links"
-    status: completed
-  - id: prototype
-    content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
-    status: completed
-  - id: baseline
-    content: Install deps, run lint/tests/build on current state, record baseline failures
-    status: completed
-  - id: grill-prettier
-    content: Grill-with-docs session to decide Prettier deviations from defaults; record in config/ADR/GLOSSARY as warranted
-    status: completed
-  - id: toolchain-ci
-    content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
-    status: completed
-  - id: ci-instrumentation
-    content: "Architecture/CI group: time each major CI step, record a CI baseline in docs/metrics.md, list speed-ups"
-    status: completed
-  - id: prettier-sweep
-    content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
-    status: completed
-  - id: test-rewrite
-    content: "Refactor group: migrate/rename existing tests to BDD names and AAA shape, behavior unchanged"
-    status: completed
-  - id: coverage
-    content: Close coverage gaps to 100% with new tests and enforce threshold in npm test
-    status: completed
-  - id: deps-modernize
-    content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
-    status: completed
-  - id: metrics
-    content: "Keep docs/metrics.md current: before/after numbers (test time, coverage, test count, bundle size, audit, deps) at each phase and for the v4 and v5 releases"
-    status: in_progress
-  - id: triage
-    content: Triage GitHub issues/PRs via gh into prioritized backlog
-    status: pending
-  - id: review
-    content: Architecture and vulnerability review with findings doc and issues
-    status: pending
+
+- id: research
+content: "Research: test runner, bundler for dual publish, Node 26/tool versions, legacy support floor, issue/PR scan; write findings to docs"
+status: completed
+- id: grill-branching
+content: "Grill-with-docs session: develop vs trunk, main rename, v4/v5 branch and tag strategy; record ADR"
+status: completed
+- id: branch-reconcile
+content: "Merge develop into master, rename master to main, delete develop, prune stale remotes, close #614, protect main, fix master links"
+status: completed
+- id: prototype
+content: "Prototype plain Playwright Test vs Vitest (Vitest only if clearly justified) and Rollup dual build; pick runner and bundler"
+status: completed
+- id: baseline
+content: Install deps, run lint/tests/build on current state, record baseline failures
+status: completed
+- id: grill-prettier
+content: Grill-with-docs session to decide Prettier deviations from defaults; record in config/ADR/GLOSSARY as warranted
+status: completed
+- id: toolchain-ci
+content: "Architecture/CI group: Node pin, runner + coverage, bundler with dual publish, ESLint flat config, GitHub Actions, remove Travis/CircleCI/.editorconfig"
+status: completed
+- id: ci-instrumentation
+content: "Architecture/CI group: time each major CI step, record a CI baseline in docs/metrics.md, list speed-ups"
+status: completed
+- id: prettier-sweep
+content: "Refactor group: Prettier format sweep as its own commit, no behavior changes"
+status: completed
+- id: test-rewrite
+content: "Refactor group: migrate/rename existing tests to BDD names and AAA shape, behavior unchanged"
+status: completed
+- id: coverage
+content: Close coverage gaps to 100% with new tests and enforce threshold in npm test
+status: completed
+- id: deps-modernize
+content: Dependency upgrades, jQuery version matrix, npm audit, manifest checks
+status: completed
+- id: metrics
+content: "Keep docs/metrics.md current: before/after numbers (test time, coverage, test count, bundle size, audit, deps) at each phase and for the v4 and v5 releases"
+status: in_progress
+- id: triage
+content: Triage GitHub issues/PRs via gh into prioritized backlog
+status: pending
+- id: review
+content: Architecture and vulnerability review with findings doc and issues
+status: pending
+
 ---
 
 # Plan: jquery-form revival
@@ -67,7 +70,7 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 ### Revised order
 
 1. ~~Grill session: branching strategy (and ADR)~~ — done (`docs/adr/0002-branching-and-release.md`)
-2. ~~Reconcile branches, rename to `main`, prune, protect (per ADR-0002)~~ — done
+2. ~~Reconcile branches, rename to~~ `main`~~, prune, protect (per ADR-0002)~~ — done
 3. ~~Runner/bundler prototype~~ — done (`docs/research/runner-bundler-prototype.md`)
 4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
 5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
