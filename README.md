@@ -146,6 +146,8 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 true to enable support for event delegation
 *requires jQuery v1.7+*
 
+**Note:** jQuery 3.0 removed the selector information this option relied on, so on jQuery 3 and later delegation is not limited to the selected forms; every form submit on the page is handled. See `docs/research/selector-context-delegation.md`.
+
 ````javascript
 // prepare all existing and future forms for ajax submission
 $('form').ajaxForm({

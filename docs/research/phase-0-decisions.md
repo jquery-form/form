@@ -25,7 +25,7 @@ Inputs: [tooling-research.md](tooling-research.md), [issue-pr-scan.md](issue-pr-
 
 ## Still open
 
-- What replaces the `this.selector` / `.context` delegation path in `ajaxForm` (on 4.x and on 5.0).
+- What replaces the `this.selector` / `.context` delegation path in `ajaxForm` (on 4.x and on 5.0). Investigated in Phase 6: `docs/research/selector-context-delegation.md`; still undecided.
 - Whether `options.iframe` survives into 5.0.
 
 ## Added after review
