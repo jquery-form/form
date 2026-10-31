@@ -48,6 +48,21 @@ content: Triage GitHub issues/PRs via gh into prioritized backlog
 status: completed
 - id: review
 content: Architecture and vulnerability review with findings doc and issues
+status: completed
+- id: coverage-100
+content: "Coverage to 100%: remove dead and over-defensive branches, refactor for testability, raise thresholds"
+status: pending
+- id: security-fixes
+content: "Security and bug fixes: private advisories, review findings, P1 and Phase 5 it.fails bugs"
+status: pending
+- id: cleanup-4x
+content: "4.x cleanup and rearchitecture without breaking changes: source modules, lower complexity, additive options, deprecations"
+status: pending
+- id: release-4x
+content: "Release 4.x: tag, publish with provenance, publish advisories and release notes"
+status: pending
+- id: breaking-5
+content: "5.0: jQuery >=3.5 peer, exports map, drop jQuery <3 and IE/Opera shims, explicit iframe transport and delegation selector"
 status: pending
 
 ---
@@ -75,10 +90,16 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 4. ~~Baseline (Phase 1)~~ — done (`docs/research/baseline.md`)
 5. ~~Grill session: Prettier (Phase 2)~~ — done; decisions below
 6. ~~Architecture/CI group (Phase 3)~~ — done; decisions below
-7. CI instrumentation (Phase 3B), on the first green CI run of PR #625
+7. ~~CI instrumentation (Phase 3B)~~ — done (`docs/metrics.md`)
 8. ~~Refactor group (Phase 4: Prettier sweep, test rewrite, lint cleanup)~~ — done
 9. ~~Coverage (Phase 5)~~ — done at the reachable maximum; see Phase 5 below
-10. Dependency modernization (Phase 6), and so on
+10. ~~Dependency modernization (Phase 6)~~ — done
+11. ~~Issue triage (Phase 7)~~ — done (`docs/research/issue-triage.md`)
+12. ~~Architecture and vulnerability review (Phase 8)~~ — done (`docs/research/security-review.md`)
+13. Coverage to 100% (Phase 9)
+14. Security and bug fixes (Phase 10)
+15. 4.x cleanup and rearchitecture (Phase 11), then the 4.x release
+16. 5.0 (Phase 12), then the 5.0 release; 5.x features after
 
 ### Architecture/CI decisions (Phase 3)
 
@@ -115,6 +136,10 @@ Each remaining step gets the cheapest model that fits it: a strong reasoner wher
 | Dependency modernization (Phase 6)              | Claude Sonnet 5.5 | Routine upgrades plus a version matrix; moderate judgement on breaking changes.                                                                                              |
 | Issue triage (Phase 7)                          | Gemini 4 Argon    | Long-context reading of many issues and PRs; classification more than deep reasoning.                                                                                        |
 | Architecture and vulnerability review (Phase 8) | Claude Opus 5.5   | Security analysis (XSS, script eval, iframe parsing, prototype pollution) where missed findings are costly.                                                                  |
+| Coverage to 100% (Phase 9)                      | GPT-5.6 Sol       | Same branch-by-branch reasoning as Phase 5; each deletion must be proven dead on every supported jQuery and browser.                                                         |
+| Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes in private advisory forks; a weak fix reopens an XSS.                                                                                                         |
+| 4.x cleanup and rearchitecture (Phase 11)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                    |
+| 5.0 (Phase 12)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
 
 ## Commit grouping principle
 
@@ -227,6 +252,77 @@ leaving 12 open issues and 3 open PRs.
 - Review `src/jquery.form.js`: response handling (script/html eval, XSS, iframe parsing), uploads (`target`/iframe, `document.domain`), request construction (URL building, data serialization, prototype pollution), dependency exposure.
 - Identify improvements while preserving the ADR-0001 dual surface (module format, shim removal, API surface, deprecation path). Output a findings doc and ranked issues.
 - 5.0 carry-overs from Phase 6: add an `exports` map (deferred from 4.x; check deep imports and the dual surface), and settle the `.selector`/`.context` replacement for `ajaxForm` delegation and the DOM-not-ready queue (`docs/research/selector-context-delegation.md`).
+
+Status: done. Findings, the `target` recommendation and the 5.0 carry-overs are in
+`docs/research/security-review.md`.
+
+- Four XSS findings (W1–W4) are withheld from the repository until the fixed 4.x release ships. Two of them are private advisories, and one of those is public on drupal.org.
+- CodeQL advanced setup runs on `main` and PRs (`.github/workflows/codeql.yml`).
+- `npm run metrics` records source size and complexity. The v4.3.0 and Phase 8 baselines are in `docs/metrics.md`.
+
+The phases below run in order before the releases. Each records a before-and-after metrics column and keeps `npm test`, the jQuery matrix and CodeQL green.
+
+## Phase 9: Coverage to 100% (4.x, no compatibility change)
+
+- Remove the dead and over-defensive branches listed in `docs/research/coverage-gaps.md`:
+  - the `|| ""` fallbacks
+  - the always-true `serializedData[i]` and `if (a)` checks
+  - the always-present `s.success`
+  - the `|| []` fallback
+  - the dead XML branch and the `toXml` fallback, which is dead even on jQuery 1.7.2 because it has `$.parseXML`
+- Restructure the iframe timeout path so its branches are reachable.
+- Make explicit `dataType: "script"` authoritative in the iframe transport. This fixes its `it.fails`.
+- Refactor for testability where a branch needs it. For the IE-on-HTTPS `javascript:false` default, either move the decision into a small helper the suite can drive, or add an HTTPS test project. Pick the cheaper option.
+- Raise the coverage thresholds to 100%. Add no `/* v8 ignore */` comments.
+
+## Phase 10: Security and bug fixes (4.x)
+
+- W1–W4 from `security-review.md`, developed in the advisories' private forks and merged at release.
+- The review's findings 4, 6, 7 and 8. Fixing finding 7 also clears the three `no-prototype-builtins` warnings.
+- The P1 bugs #588, #597, #600 and #553, and the remaining Phase 5 `it.fails` records: label lookup, iframe parsererror overwrite, double completion and pending Deferred on abort.
+- Each `it.fails` becomes an `it`, and coverage stays at 100%.
+
+## Phase 11: 4.x cleanup and rearchitecture (no breaking change)
+
+- Split `src/jquery.form.js` into source modules: serialization, field helpers, XHR transport, iframe transport, `ajaxForm` binding. Rollup emits the same `dist` files, and the surface tests prove ADR-0001 still holds.
+- Lower the complexity hot spots that `npm run metrics` reports.
+- Additive options and docs:
+  - `delegation: "<selector>"`
+  - the `target` sanitizing recipe with `dataFilter`, and the trusted-options list
+  - iframe response requirements
+  - a clear error on jQuery slim (#541)
+- Decide on the JSON body (#545, PR #557).
+- Deprecation warnings (under `debug`, and in the docs) for everything Phase 12 removes.
+
+## 4.x release
+
+- Tag the release and publish it with npm provenance.
+- Publish the advisories, then the release notes from `docs/research/4x-behavior-changes.md`.
+- Move the W1–W4 details into `security-review.md`.
+- Close #616, #618, #553, #554 and #604. Cut `release/4.x` when 5.0 lands (ADR-0002).
+
+## Phase 12: 5.0 (breaking)
+
+- jQuery becomes a peer dependency, `>=3.5.0`. Add the `exports` map from `security-review.md`.
+- Remove the jQuery < 3 paths: `attr2`/`hasProp`, the `.selector`/`.context` delegation and DOM-ready queue, and the `$.fn.on` and `$.fn.offset` checks.
+- Remove the IE, Opera and Edge shims:
+  - `attachEvent`/`detachEvent`
+  - `ActiveXObject`
+  - `window.opera`
+  - user-agent sniffing and `javascript:false`
+  - `execCommand("Stop")`
+  - the IE8 `getDoc` fallbacks
+  - the option-value and file-clone shims
+- The iframe transport runs only with `iframe: true`, and FormData detection is removed. Delegation requires a selector.
+- Remove the deprecated API: `clearInputs`, `$.fn.attr2`, and whatever the `enable`/`selected` audit decides.
+- Move to ES2015+ syntax and revisit Prettier `trailingComma`.
+
+## 5.x
+
+- Use `SubmitEvent.submitter` instead of the click-capture `clk` properties. This fixes #588 natively.
+- Use `new FormData(form, submitter)`.
+- Ship type declarations generated from JSDoc, and keep the source in plain JS.
+- Add a promise-friendly API alongside chaining.
 
 ## Metrics (throughout)
 
