@@ -123,3 +123,23 @@ so the wrapper is no longer part of the plugin's coverage.
 Decision: enforce thresholds at the reachable maximum and reach 100% when 5.0 removes or fixes the
 branches above. The alternatives were fixing them in a 4.x source change, or adding
 `/* v8 ignore */` comments; neither was taken.
+
+## Phase 9: 100%
+
+Phase 9 reversed the decision above and fixed the branches in 4.x, without `/* v8 ignore */`
+comments and without a compatibility change. `npm test` now enforces 100% on all four metrics.
+
+- Lines 141 and 1134, and the `|| ""` on line 150: the fallbacks are removed.
+- Lines 369 and 453: the always-true `serializedData[i]` and `if (a)` checks are removed.
+- Lines 762 and 777: `timedOut` is removed. The timeout handler aborts through `cb`, and every later
+  `cb` call returns at the `xhr.aborted` check, so the flag was never read while true.
+- Line 854: the outer `catch` now covers a real case, an IE8-style access denial while reading the
+  response document (a test stubs the frame's document). Its `|| status` fallback is removed, since a
+  property read throws an error object.
+- Line 870: `s.success` is called unconditionally.
+- Lines 841 and 922–933: the dead XML branch and the whole `toXml` helper are removed.
+- Line 962: explicit `dataType: "script"` now evaluates the response, as `$.ajax` does
+  (see `coverage-findings.md`).
+- Line 150, `javascript:false`: the HTTPS check reads `document.URL` instead of
+  `window.location.href`. The two are the same for a page's own document, but the suite can redefine
+  `document.URL`, so a test now drives IE on an HTTPS page. No HTTPS test project was added.

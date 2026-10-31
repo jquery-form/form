@@ -28,8 +28,8 @@
 - Test: `iframe transport should evaluate script from a pre response`
 - Finding: the iframe mock reports `content-type: script`, but `httpData` only evaluates strings when
   the content type contains `javascript`, so a requested script response is returned without running.
-- Test treatment: `it.fails`; its exercised source lines still count toward coverage.
-- Suggested fix: make explicit `dataType: "script"` authoritative, matching jQuery AJAX behavior.
+- Fixed in Phase 9: explicit `dataType: "script"` is authoritative, matching jQuery AJAX behavior,
+  and the test is an `it`.
 
 ## Iframe parser errors can be overwritten by an HTTP success status
 
