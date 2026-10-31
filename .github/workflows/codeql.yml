@@ -33,10 +33,13 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
           queries: security-extended
-          # Scan the source once: dist/ is built from src/, and tests and the docs site are not shipped.
+          # The library-input queries start from the package entry point (main: dist/jquery.form.js),
+          # so keep that build; skip its duplicates. Tests and the docs site are not shipped.
           config: |
             paths-ignore:
-              - dist
+              - dist/jquery.form.mjs
+              - dist/jquery.form.min.js
+              - dist/*.map
               - test
               - docs
               - node_modules

@@ -168,10 +168,11 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 `.github/workflows/codeql.yml` (added in this phase) runs advanced CodeQL setup:
 
 - Languages `javascript-typescript` and `actions`, with the `security-extended` queries, which include `js/html-constructed-from-input`, the query behind #604.
-- It scans `src/` and the workflows. `dist/` is excluded because it is generated from `src/`; tests and the docs site are excluded because they are not shipped.
+- It scans `src/`, `dist/jquery.form.js` and the workflows. The library-input queries only treat code reachable from the package entry point as public API. `main` has been `dist/jquery.form.js` since Phase 3, so a scan of `src/` alone reports nothing for them. The first run, with all of `dist/` excluded, had 0 results.
+- The other builds (`jquery.form.mjs`, `jquery.form.min.js`, the source map) are excluded as duplicates. Tests and the docs site are excluded because they are not shipped.
 - It runs on pushes and PRs to `main` and weekly.
 
-Default setup was not used because it cannot exclude `dist/`, where every source alert would appear three more times.
+Default setup was not used because it cannot exclude the duplicate builds, where every alert would appear again.
 
 **Visibility.** Alerts are listed only to people with write access. PR annotations, which anyone can read, show only alerts on lines a PR changes. So the advisory fixes are developed in the advisories' private forks.
 
