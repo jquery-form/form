@@ -102,7 +102,12 @@ export default [
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ["*.config.mjs", "test/surfaces/commonjs.test.js", "test/surfaces/manifests.test.js"],
+    files: [
+      "*.config.mjs",
+      "scripts/**/*.mjs",
+      "test/surfaces/commonjs.test.js",
+      "test/surfaces/manifests.test.js",
+    ],
     languageOptions: { globals: globals.node },
   },
   prettier,
