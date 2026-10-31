@@ -2060,8 +2060,7 @@ describe("form", function () {
         assert.strictEqual(result.success[2].statusText, "accepted");
       });
 
-      // Emulated content-type is "script", so httpData never evaluates it as JavaScript.
-      it.fails("should evaluate script from a pre response", async function () {
+      it("should evaluate script from a pre response", async function () {
         const $form = createIframeForm("ajax/iframe-script.html");
         delete window.iframeTransportScript;
 
