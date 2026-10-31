@@ -45,7 +45,7 @@ content: "Keep docs/metrics.md current: before/after numbers (test time, coverag
 status: in_progress
 - id: triage
 content: Triage GitHub issues/PRs via gh into prioritized backlog
-status: in_progress
+status: completed
 - id: review
 content: Architecture and vulnerability review with findings doc and issues
 status: pending
@@ -219,7 +219,8 @@ Status: backlog and dispositions in `docs/research/issue-triage.md`. P0 done: `S
 GitHub private vulnerability reporting (enabled), and the callback and compatibility docs corrected.
 Open-issue bugs #553, #588, #597 and #600 are recorded as `it.fails`; P1 fixes and the 4.x and 5.0
 releases are planned after all phases. PRs were triaged, not worked: #612, #601, #583, #599 and #587
-closed; #611, #586 and #557 held. Issue comments, labels and closures are posted after this merges.
+closed; #611, #586 and #557 held. Issue comments, labels and closures were posted on 2026-10-30,
+leaving 12 open issues and 3 open PRs.
 
 ## Phase 8: Architecture and vulnerability review
 
