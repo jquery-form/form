@@ -139,7 +139,7 @@ export { default } from 'jquery';
     action = options.url || this.attr2("action");
 
     url = typeof action === "string" ? action.trim() : "";
-    url = url || window.location.href || "";
+    url = url || window.location.href;
     if (url) {
       // clean url (don't include hash vaue)
       url = (url.match(/^([^#]+)/) || [])[1];
@@ -147,8 +147,7 @@ export { default } from 'jquery';
     // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
     // Instead of using javascript:false always, let's only apply it for IE.
     isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
-    iframeSrc =
-      isMsie && /^https/i.test(window.location.href || "") ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
+    iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
 
     options = $.extend(
       true,
@@ -314,10 +313,10 @@ export { default } from 'jquery';
       // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
       if (options.closeKeepAlive) {
         $.get(options.closeKeepAlive, function () {
-          jqxhr = fileUploadIframe(a);
+          jqxhr = fileUploadIframe();
         });
       } else {
-        jqxhr = fileUploadIframe(a);
+        jqxhr = fileUploadIframe();
       }
     } else if ((hasFileInputs || multipart) && fileAPI) {
       jqxhr = fileUploadXhr(a);
@@ -367,9 +366,7 @@ export { default } from 'jquery';
         var serializedData = deepSerialize(options.extraData);
 
         for (i = 0; i < serializedData.length; i++) {
-          if (serializedData[i]) {
-            formdata.append(serializedData[i][0], serializedData[i][1]);
-          }
+          formdata.append(serializedData[i][0], serializedData[i][1]);
         }
       }
 
@@ -442,7 +439,6 @@ export { default } from 'jquery';
         xhr,
         sub,
         n,
-        timedOut,
         timeoutHandle;
       var deferred = $.Deferred();
 
@@ -451,15 +447,13 @@ export { default } from 'jquery';
         xhr.abort(status);
       };
 
-      if (a) {
-        // ensure that every serialized input is still enabled
-        for (i = 0; i < elements.length; i++) {
-          el = $(elements[i]);
-          if (hasProp) {
-            el.prop("disabled", false);
-          } else {
-            el.removeAttr("disabled");
-          }
+      // ensure that every serialized input is still enabled
+      for (i = 0; i < elements.length; i++) {
+        el = $(elements[i]);
+        if (hasProp) {
+          el.prop("disabled", false);
+        } else {
+          el.removeAttr("disabled");
         }
       }
 
@@ -637,7 +631,6 @@ export { default } from 'jquery';
         // support timout
         if (s.timeout) {
           timeoutHandle = setTimeout(function () {
-            timedOut = true;
             cb(CLIENT_TIMEOUT_ABORT);
           }, s.timeout);
         }
@@ -758,11 +751,9 @@ export { default } from 'jquery';
           return;
         }
 
-        if (!doc || doc.location.href === s.iframeSrc) {
+        if (doc.location.href === s.iframeSrc) {
           // response not received yet
-          if (!timedOut) {
-            return;
-          }
+          return;
         }
 
         if (io.detachEvent) {
@@ -775,10 +766,6 @@ export { default } from 'jquery';
           errMsg;
 
         try {
-          if (timedOut) {
-            throw "timeout";
-          }
-
           var isXml = s.dataType === "xml" || doc.XMLDocument || $.isXMLDoc(doc);
 
           log("isXml=" + isXml);
@@ -839,8 +826,6 @@ export { default } from 'jquery';
                 xhr.responseText = b.textContent ? b.textContent : b.innerText;
               }
             }
-          } else if (dt === "xml" && !xhr.responseXML && xhr.responseText) {
-            xhr.responseXML = toXml(xhr.responseText); // eslint-disable-line no-use-before-define
           }
 
           try {
@@ -852,7 +837,7 @@ export { default } from 'jquery';
         } catch (err) {
           log("error caught: ", err);
           status = "error";
-          xhr.error = errMsg = err || status;
+          xhr.error = errMsg = err;
         }
 
         if (xhr.aborted) {
@@ -868,9 +853,7 @@ export { default } from 'jquery';
 
         // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
         if (status === "success") {
-          if (s.success) {
-            s.success.call(s.context, data, "success", xhr);
-          }
+          s.success.call(s.context, data, "success", xhr);
 
           deferred.resolve(xhr.responseText, "success", xhr);
 
@@ -919,22 +902,6 @@ export { default } from 'jquery';
         }, 100);
       }
 
-      var toXml =
-        $.parseXML ||
-        function (s, doc) {
-          // use parseXML if available (jQuery 1.5+)
-          if (window.ActiveXObject) {
-            doc = new ActiveXObject("Microsoft.XMLDOM");
-            doc.async = "false";
-            doc.loadXML(s);
-          } else {
-            doc = new DOMParser().parseFromString(s, "text/xml");
-          }
-
-          return doc && doc.documentElement && doc.documentElement.nodeName !== "parsererror"
-            ? doc
-            : null;
-        };
       var httpData = function (xhr, type, s) {
         // mostly lifted from jq1.4.4
 
@@ -1125,7 +1092,7 @@ export { default } from 'jquery';
     if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
       els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
       if (els2.length) {
-        els = (els || []).concat(els2);
+        els = els.concat(els2);
       }
     }
 

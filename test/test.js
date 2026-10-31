@@ -88,6 +88,16 @@ describe("form", function () {
     }
   }
 
+  function withDocumentUrl(url, run) {
+    Object.defineProperty(document, "URL", { configurable: true, value: url });
+
+    try {
+      return run();
+    } finally {
+      delete document.URL;
+    }
+  }
+
   async function withAjaxStub(stub, run) {
     const ajax = $.ajax;
     $.ajax = stub;
@@ -2521,6 +2531,32 @@ describe("form", function () {
           });
         });
 
+        it("should report an error when IE8 denies access to the response body", async function () {
+          const $target = createTarget({
+            contentWindow: {
+              configurable: true,
+              get: function () {
+                const frameDocument = realContentWindow.call(this).document;
+                return {
+                  document: new Proxy(frameDocument, {
+                    get: (target, name) => (name === "body" ? denied() : target[name]),
+                  }),
+                };
+              },
+            },
+          });
+          const $form = createIframeForm("ajax/iframe-text.html");
+
+          const result = await submitThroughIframe($form, {
+            iframeTarget: $target,
+            dataType: "text",
+          });
+
+          assert.strictEqual(result.error[1], "error");
+          assert.strictEqual(result.error[2].message, "Access is denied");
+          assert.deepEqual(result.events, ["error", "complete"]);
+        });
+
         it("should keep polling while IE reports an uninitialized document", async function () {
           let polls = 0;
           let events;
@@ -2734,6 +2770,17 @@ describe("form", function () {
 
           assert.strictEqual(settings.iframeSrc, "about:blank");
         });
+      });
+
+      it("should use javascript:false as the iframe source for IE on an HTTPS page", function () {
+        const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
+        const userAgent = "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0)";
+
+        const settings = withDocumentUrl("https://example.test/form", () =>
+          withUserAgent(userAgent, () => captureAjaxOptions($form, {}))
+        );
+
+        assert.strictEqual(settings.iframeSrc, "javascript:false");
       });
     });
 
