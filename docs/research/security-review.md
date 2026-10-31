@@ -168,11 +168,17 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 `.github/workflows/codeql.yml` (added in this phase) runs advanced CodeQL setup:
 
 - Languages `javascript-typescript` and `actions`, with the `security-extended` queries, which include `js/html-constructed-from-input`, the query behind #604.
-- It scans `src/`, `dist/jquery.form.js` and the workflows. The library-input queries only treat code reachable from the package entry point as public API. `main` has been `dist/jquery.form.js` since Phase 3, so a scan of `src/` alone reports nothing for them. The first run, with all of `dist/` excluded, had 0 results.
-- The other builds (`jquery.form.mjs`, `jquery.form.min.js`, the source map) are excluded as duplicates. Tests and the docs site are excluded because they are not shipped.
-- It runs on pushes and PRs to `main` and weekly.
+- It scans `src/` and the workflows. `dist/` is excluded because every build repeats the source's alerts (a trial with GitHub's default setup reported each one three times). Tests and the docs site are excluded because they are not shipped.
+- It runs on pushes and PRs to `main` and weekly. On a PR, CodeQL reports only results on the lines the PR changes, so a PR that doesn't touch `src/` shows 0 even when `src/` has alerts.
 
-Default setup was not used because it cannot exclude the duplicate builds, where every alert would appear again.
+**What it finds.** On `main`, the built-in queries report three alerts in `src/`:
+
+- `js/html-constructed-from-input` on the two lines #604 reported.
+- `js/unsafe-jquery-plugin` on the `iframeTarget` lookup, which is a developer-supplied selector (finding 11).
+
+Most of the withheld findings are not flagged. A clean CodeQL run is therefore not evidence that those are fixed; the Phase 10 tests are.
+
+Default setup was not used because it cannot exclude the duplicate builds.
 
 **Visibility.** Alerts are listed only to people with write access. PR annotations, which anyone can read, show only alerts on lines a PR changes. So the advisory fixes are developed in the advisories' private forks.
 
