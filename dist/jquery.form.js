@@ -130,6 +130,100 @@ function closestByTag(el, names) {
   return null;
 }
 
+// The submitter: the button that submitted a form, captured from ajaxForm's clicks. It is kept in
+// the form's clk, clk_x and clk_y properties and cleared shortly after the click.
+
+// Records a submitter for a form until the click window ends.
+function record(form, el, x, y) {
+  form.clk = el;
+
+  if (el.type === "image") {
+    form.clk_x = x;
+    form.clk_y = y;
+  }
+
+  // clear form vars
+  setTimeout(function () {
+    form.clk = form.clk_x = form.clk_y = null;
+  }, 100);
+}
+
+// The clicked point of an image button, relative to the image.
+function imagePoint(e, target) {
+  if (typeof e.offsetX !== "undefined") {
+    return [e.offsetX, e.offsetY];
+  }
+
+  if (typeof jQuery.fn.offset === "function") {
+    var offset = jQuery(target).offset();
+
+    return [e.pageX - offset.left, e.pageY - offset.top];
+  }
+
+  return [e.pageX - target.offsetLeft, e.pageY - target.offsetTop];
+}
+
+/**
+ * Records the submit or image button a click event reached, for the form it belongs to.
+ */
+function captureSubmitter(e) {
+  // the clicked control, or the button around the clicked content (ex: a span within a button)
+  var target = closestByTag(e.target, ["button", "input"]);
+
+  // the type property, unlike the attribute, is "submit" for a button without a type (#588)
+  if (!target || (target.type !== "submit" && target.type !== "image")) {
+    return;
+  }
+
+  var form = target.form;
+
+  if (!form) {
+    // a submit control that belongs to no form
+    return;
+  }
+
+  var point = target.type === "image" ? imagePoint(e, target) : [];
+
+  record(form, target, point[0], point[1]);
+}
+
+/**
+ * The form's submitter as { el, x, y } (x and y for an image button), or null.
+ */
+function submitterOf(form) {
+  var el = form && form.clk;
+
+  return el ? { el: el, x: form.clk_x, y: form.clk_y } : null;
+}
+
+/**
+ * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
+ */
+function submitterFields(form) {
+  var fields = {};
+  var sub = submitterOf(form);
+  var el = sub && sub.el;
+
+  if (el && el.name && !el.disabled) {
+    fields[el.name] = el.value;
+    if (el.type === "image") {
+      fields[el.name + ".x"] = sub.x;
+      fields[el.name + ".y"] = sub.y;
+    }
+  }
+
+  return fields;
+}
+
+/**
+ * The form's submitter element, or null.
+ */
+function submitterElement(form) {
+  var sub = submitterOf(form);
+
+  return sub ? sub.el : null;
+}
+
 /**
  * An attribute of a form, or undefined when it is absent, as jQuery's attr returns it. The
  * subject may also be the document or a plain object, read through jQuery.
@@ -345,7 +439,7 @@ function createSuccessfulControls(feature) {
   }
 
   // The clicked image's value and coordinates.
-  function imageFields(form, input, type) {
+  function imageFields(sub, input, type) {
     var n = input.name;
     var value = { name: n, value: $(input).val() };
 
@@ -353,7 +447,7 @@ function createSuccessfulControls(feature) {
       value.type = type;
     }
 
-    return [value, { name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y }];
+    return [value, { name: n + ".x", value: sub.x }, { name: n + ".y", value: sub.y }];
   }
 
   // Adds one candidate control's fields, and the control when it has a value to send.
@@ -362,10 +456,12 @@ function createSuccessfulControls(feature) {
       return;
     }
 
-    if (semantic && form.clk && el.type === "image") {
+    var sub = semantic && el.type === "image" && submitterOf(form);
+
+    if (sub) {
       // handle image inputs on the fly when semantic == true
-      if (form.clk === el) {
-        collected.fields.push.apply(collected.fields, imageFields(form, el, el.type));
+      if (sub.el === el) {
+        collected.fields.push.apply(collected.fields, imageFields(sub, el, el.type));
       }
 
       return;
@@ -381,10 +477,11 @@ function createSuccessfulControls(feature) {
 
   // input type=='image' are not found in elements array! handle it here
   function addClickedImage(collected, form) {
-    var input = form.clk && $(form.clk)[0];
+    var sub = submitterOf(form);
+    var input = sub && $(sub.el)[0];
 
     if (input && input.name && !isDisabled(input) && input.type === "image") {
-      collected.fields.push.apply(collected.fields, imageFields(form, input));
+      collected.fields.push.apply(collected.fields, imageFields(sub, input));
     }
   }
 
@@ -627,19 +724,11 @@ function isSameOrigin(url) {
 /** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
 function addSubmitterFields(s, form) {
   // add submitting element to data if we know it
-  var sub = form.clk;
+  var fields = submitterFields(form);
 
-  if (sub) {
-    var n = sub.name;
-
-    if (n && !sub.disabled) {
-      s.extraData = s.extraData || {};
-      s.extraData[n] = sub.value;
-      if (sub.type === "image") {
-        s.extraData[n + ".x"] = form.clk_x;
-        s.extraData[n + ".y"] = form.clk_y;
-      }
-    }
+  for (var n in fields) {
+    s.extraData = s.extraData || {};
+    s.extraData[n] = fields[n];
   }
 }
 
@@ -2025,43 +2114,7 @@ function createSubmission(feature, forms, serialization) {
   function captureSubmittingElement(e) {
     /* jshint validthis:true */
     assertRealParent(this);
-
-    // the clicked control, or the button around the clicked content (ex: a span within a button)
-    var target = closestByTag(e.target, ["button", "input"]);
-    var $el = $(target);
-
-    // the type property, unlike the attribute, is "submit" for a button without a type (#588)
-    if (!target || (target.type !== "submit" && target.type !== "image")) {
-      return;
-    }
-
-    var form = target.form;
-
-    if (!form) {
-      // a submit control that belongs to no form
-      return;
-    }
-
-    form.clk = target;
-
-    if (target.type === "image") {
-      if (typeof e.offsetX !== "undefined") {
-        form.clk_x = e.offsetX;
-        form.clk_y = e.offsetY;
-      } else if (typeof $.fn.offset === "function") {
-        var offset = $el.offset();
-
-        form.clk_x = e.pageX - offset.left;
-        form.clk_y = e.pageY - offset.top;
-      } else {
-        form.clk_x = e.pageX - target.offsetLeft;
-        form.clk_y = e.pageY - target.offsetTop;
-      }
-    }
-    // clear form vars
-    setTimeout(function () {
-      form.clk = form.clk_x = form.clk_y = null;
-    }, 100);
+    captureSubmitter(e);
   }
 
   // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
@@ -2192,7 +2245,7 @@ function createSubmission(feature, forms, serialization) {
   $.fieldValue = function (el, successful) {
     var required = typeof successful === "undefined" || successful;
 
-    if (required && !isSuccessful(el, el.form && el.form.clk)) {
+    if (required && !isSuccessful(el, submitterElement(el.form))) {
       return null;
     }
 

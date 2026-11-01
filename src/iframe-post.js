@@ -1,6 +1,7 @@
 import { callFormMethod } from "./form-members.js";
 import { deepSerialize } from "./xhr-transport.js";
 import jQuery from "jquery";
+import { submitterFields } from "./submitter.js";
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
 // posting and restored after, and the native submit.
@@ -33,19 +34,11 @@ function isSameOrigin(url) {
 /** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
 export function addSubmitterFields(s, form) {
   // add submitting element to data if we know it
-  var sub = form.clk;
+  var fields = submitterFields(form);
 
-  if (sub) {
-    var n = sub.name;
-
-    if (n && !sub.disabled) {
-      s.extraData = s.extraData || {};
-      s.extraData[n] = sub.value;
-      if (sub.type === "image") {
-        s.extraData[n + ".x"] = form.clk_x;
-        s.extraData[n + ".y"] = form.clk_y;
-      }
-    }
+  for (var n in fields) {
+    s.extraData = s.extraData || {};
+    s.extraData[n] = fields[n];
   }
 }
 

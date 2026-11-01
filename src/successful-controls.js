@@ -1,6 +1,7 @@
 import { callFormMethod, formMember, isElement, tagName } from "./form-members.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
+import { submitterOf } from "./submitter.js";
 
 // Successful controls: which controls of a form are sent, and as which name/value fields
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
@@ -203,7 +204,7 @@ export function createSuccessfulControls(feature) {
   }
 
   // The clicked image's value and coordinates.
-  function imageFields(form, input, type) {
+  function imageFields(sub, input, type) {
     var n = input.name;
     var value = { name: n, value: $(input).val() };
 
@@ -211,7 +212,7 @@ export function createSuccessfulControls(feature) {
       value.type = type;
     }
 
-    return [value, { name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y }];
+    return [value, { name: n + ".x", value: sub.x }, { name: n + ".y", value: sub.y }];
   }
 
   // Adds one candidate control's fields, and the control when it has a value to send.
@@ -220,10 +221,12 @@ export function createSuccessfulControls(feature) {
       return;
     }
 
-    if (semantic && form.clk && el.type === "image") {
+    var sub = semantic && el.type === "image" && submitterOf(form);
+
+    if (sub) {
       // handle image inputs on the fly when semantic == true
-      if (form.clk === el) {
-        collected.fields.push.apply(collected.fields, imageFields(form, el, el.type));
+      if (sub.el === el) {
+        collected.fields.push.apply(collected.fields, imageFields(sub, el, el.type));
       }
 
       return;
@@ -239,10 +242,11 @@ export function createSuccessfulControls(feature) {
 
   // input type=='image' are not found in elements array! handle it here
   function addClickedImage(collected, form) {
-    var input = form.clk && $(form.clk)[0];
+    var sub = submitterOf(form);
+    var input = sub && $(sub.el)[0];
 
     if (input && input.name && !isDisabled(input) && input.type === "image") {
-      collected.fields.push.apply(collected.fields, imageFields(form, input));
+      collected.fields.push.apply(collected.fields, imageFields(sub, input));
     }
   }
 

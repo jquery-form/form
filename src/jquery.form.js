@@ -20,6 +20,7 @@
  * Lesser General Public License for more details.
  */
 import { assertRealParent, callFormMethod, closestByTag, tagName } from "./form-members.js";
+import { captureSubmitter, submitterElement } from "./submitter.js";
 import {
   createSuccessfulControls,
   isSuccessful,
@@ -239,43 +240,7 @@ import { log } from "./diagnostics.js";
   function captureSubmittingElement(e) {
     /* jshint validthis:true */
     assertRealParent(this);
-
-    // the clicked control, or the button around the clicked content (ex: a span within a button)
-    var target = closestByTag(e.target, ["button", "input"]);
-    var $el = $(target);
-
-    // the type property, unlike the attribute, is "submit" for a button without a type (#588)
-    if (!target || (target.type !== "submit" && target.type !== "image")) {
-      return;
-    }
-
-    var form = target.form;
-
-    if (!form) {
-      // a submit control that belongs to no form
-      return;
-    }
-
-    form.clk = target;
-
-    if (target.type === "image") {
-      if (typeof e.offsetX !== "undefined") {
-        form.clk_x = e.offsetX;
-        form.clk_y = e.offsetY;
-      } else if (typeof $.fn.offset === "function") {
-        var offset = $el.offset();
-
-        form.clk_x = e.pageX - offset.left;
-        form.clk_y = e.pageY - offset.top;
-      } else {
-        form.clk_x = e.pageX - target.offsetLeft;
-        form.clk_y = e.pageY - target.offsetTop;
-      }
-    }
-    // clear form vars
-    setTimeout(function () {
-      form.clk = form.clk_x = form.clk_y = null;
-    }, 100);
+    captureSubmitter(e);
   }
 
   // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
@@ -406,7 +371,7 @@ import { log } from "./diagnostics.js";
   $.fieldValue = function (el, successful) {
     var required = typeof successful === "undefined" || successful;
 
-    if (required && !isSuccessful(el, el.form && el.form.clk)) {
+    if (required && !isSuccessful(el, submitterElement(el.form))) {
       return null;
     }
 
