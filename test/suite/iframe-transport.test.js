@@ -2206,33 +2206,45 @@ describe("form", function () {
             ]);
           });
 
-          it.fails(
-            "should send a query-string data option as its own fields on an iframe upload",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              let fields;
+          it("should send a query-string data option as its own fields on an iframe upload", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let fields;
 
-              startStubbedUpload($form, { data: "x=1" }, function (form) {
-                fields = hiddenFields(form);
-              });
+            startStubbedUpload($form, { data: "x=1" }, function (form) {
+              fields = hiddenFields(form);
+            });
 
-              assert.deepEqual(fields, [["x", "1"]]);
-            }
-          );
+            assert.deepEqual(fields, [["x", "1"]]);
+          });
 
-          it.fails(
-            "should not throw when data is a string and a submitter is clicked",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-                $form
-              )[0];
+          it("should not throw when data is a string and a submitter is clicked", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $form
+            )[0];
 
-              const start = () => startStubbedUpload($form, { data: "x=1" });
+            const start = () => startStubbedUpload($form, { data: "x=1" });
 
-              assert.doesNotThrow(start);
-            }
-          );
+            assert.doesNotThrow(start);
+          });
+
+          it("should send a query-string data option and the submitter as fields on an iframe upload", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $form
+            )[0];
+            let fields;
+
+            startStubbedUpload($form, { data: "x=1&y=a+b" }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [
+              ["x", "1"],
+              ["y", "a b"],
+              ["choice", "picked"],
+            ]);
+          });
 
           it("should not trigger the form's submit event when posting", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");

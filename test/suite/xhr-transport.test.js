@@ -1080,19 +1080,29 @@ describe("form", function () {
         assert.strictEqual(data, null);
       });
 
-      it.fails(
-        "should send a query-string data option as its own fields on an upload",
-        function () {
-          const upload = uploadForm();
+      it("should send a query-string data option as its own fields on an upload", function () {
+        const upload = uploadForm();
 
-          const body = uploadBody(captureAjaxOptions(upload.$form, { data: "x=1&y=2" }));
+        const body = uploadBody(captureAjaxOptions(upload.$form, { data: "x=1&y=2" }));
 
-          assert.deepEqual(Array.from(body.entries()).slice(2), [
-            ["x", "1"],
-            ["y", "2"],
-          ]);
-        }
-      );
+        assert.deepEqual(Array.from(body.entries()).slice(2), [
+          ["x", "1"],
+          ["y", "2"],
+        ]);
+      });
+      it("should decode each field of a query-string data option on an upload", function () {
+        const upload = uploadForm();
+
+        const body = uploadBody(
+          captureAjaxOptions(upload.$form, { data: () => "a+b=c%26d&&flag&e=1=2" })
+        );
+
+        assert.deepEqual(Array.from(body.entries()).slice(2), [
+          ["a b", "c&d"],
+          ["flag", ""],
+          ["e", "1=2"],
+        ]);
+      });
     });
 
     describe("FormData request settings", function () {

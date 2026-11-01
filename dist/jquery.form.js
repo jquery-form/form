@@ -988,9 +988,38 @@ function createSubmission(feature, forms) {
 
     var optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
 
+    if (typeof optionsData === "string") {
+      // a query string: sent as-is when urlencoded, as its own fields otherwise
+      options.extraData = queryPairs(optionsData);
+
+      return optionsData;
+    }
+
     options.extraData = optionsData;
 
     return $.param(optionsData, traditional);
+  }
+
+  // The fields of a query string, as the { name, value } list $.param takes.
+  function queryPairs(query) {
+    var pairs = [];
+    var parts = query.split("&");
+
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i]) {
+        var at = parts[i].indexOf("=");
+        var name = at < 0 ? parts[i] : parts[i].slice(0, at);
+        var value = at < 0 ? "" : parts[i].slice(at + 1);
+
+        pairs.push({ name: decodeQuery(name), value: decodeQuery(value) });
+      }
+    }
+
+    return pairs;
+  }
+
+  function decodeQuery(text) {
+    return decodeURIComponent(text.replace(/\+/g, " "));
   }
 
   // Puts the encoded fields in the url for a get, and in the data otherwise.

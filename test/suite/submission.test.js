@@ -1730,12 +1730,31 @@ describe("form", function () {
         assert.strictEqual(settings.data, "a=1&b=2");
       });
 
-      it.fails("should send a query-string data option as its own fields", function () {
+      it("should send a query-string data option as its own fields", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
 
         const settings = submitWith($form, [{ data: "x=1" }]);
 
         assert.strictEqual(settings.data, "x=1");
+      });
+      it("should append a query-string data option as-is to the fields", function () {
+        const $form = makeForm(
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+        );
+
+        const settings = submitWith($form, [{ data: "x=1&y=%20" }]);
+
+        assert.strictEqual(settings.data, "a=1&x=1&y=%20");
+      });
+
+      it("should append a query-string data option to the url of a GET", function () {
+        const $form = makeForm(
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+        );
+
+        const settings = submitWith($form, [{ data: "x=1" }]);
+
+        assert.strictEqual(settings.url, absolute("ajax/text.html") + "?a=1&x=1");
       });
     });
 
