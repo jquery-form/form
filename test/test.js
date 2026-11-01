@@ -2159,6 +2159,35 @@ describe("form", function () {
         }
       });
 
+      for (const [label, markup] of [
+        ["a get form", '<form method="get">'],
+        ["a form without a method", "<form>"],
+      ]) {
+        it(`should not send CSRF metadata with ${label}, whose query it would join`, function () {
+          const $form = $(markup + '<input name="upload" value="yes"></form>')
+            .attr("action", "ajax/iframe-text.html")
+            .appendTo("#main");
+          const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
+          const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
+            document.head
+          );
+          let submittedTokens;
+          $form[0].submit = function () {
+            submittedTokens = $(this).find('[name="authenticity_token"]').length;
+          };
+
+          try {
+            $form.ajaxSubmit({ iframe: true, forceSync: true, error: function () {} });
+            $form.data("jqxhr").abort();
+
+            assert.strictEqual(submittedTokens, 0);
+          } finally {
+            $token.remove();
+            $param.remove();
+          }
+        });
+      }
+
       it("should override the action during submission and then restore it", async function () {
         const $form = createIframeForm("ajax/original.html");
         let submittedAction;

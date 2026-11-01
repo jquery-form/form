@@ -678,11 +678,13 @@ import jQuery from "jquery";
         return doc;
       }
 
-      // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin
+      // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
+      // only when the form is posted, since a get form would put the token in the url
       var csrf_token = $("meta[name=csrf-token]").attr("content");
       var csrf_param = $("meta[name=csrf-param]").attr("content");
+      var posts = !method || /post/i.test(method) || /post/i.test($form.attr2("method"));
 
-      if (csrf_param && csrf_token && isSameOrigin(s.url)) {
+      if (csrf_param && csrf_token && posts && isSameOrigin(s.url)) {
         s.extraData = s.extraData || {};
         s.extraData[csrf_param] = csrf_token;
       }
