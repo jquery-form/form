@@ -106,6 +106,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`beforeSend` returning `false` cancels a FormData upload.** The plugin's wrapper dropped the return value, so the upload was sent anyway; a `false` from the `beforeSend` option or from `$.ajaxSetup` now cancels it, as it already did for plain requests and iframe uploads.
 
+- **With `closeKeepAlive`, an iframe upload posts controls disabled in `beforeSubmit` (D-19).** The plugin re-enables the serialized controls before posting, but with `closeKeepAlive` it did so only after the keep-alive request, when the list was already cleared: such a control was neither posted nor re-enabled. It is now re-enabled before the keep-alive request, as without `closeKeepAlive`. `closeKeepAlive` is otherwise unchanged.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

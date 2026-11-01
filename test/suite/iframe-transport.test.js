@@ -3022,31 +3022,28 @@ describe("form", function () {
             assert.strictEqual($form.data("jqxhr"), undefined);
           });
 
-          it.fails(
-            "should post a control disabled in beforeSubmit when closeKeepAlive delays the upload",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              let disabledDuringPost;
+          it("should post a control disabled in beforeSubmit when closeKeepAlive delays the upload", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let disabledDuringPost;
 
-              holdKeepAlive(function (release) {
-                startStubbedUpload(
-                  $form,
-                  {
-                    closeKeepAlive: "ajax/text.html",
-                    beforeSubmit: function (a, $submitted) {
-                      $submitted.find("[name=upload]").prop("disabled", true);
-                    },
+            holdKeepAlive(function (release) {
+              startStubbedUpload(
+                $form,
+                {
+                  closeKeepAlive: "ajax/text.html",
+                  beforeSubmit: function (a, $submitted) {
+                    $submitted.find("[name=upload]").prop("disabled", true);
                   },
-                  function (form) {
-                    disabledDuringPost = $(form).find("[name=upload]").prop("disabled");
-                  }
-                );
-                release();
-              });
+                },
+                function (form) {
+                  disabledDuringPost = $(form).find("[name=upload]").prop("disabled");
+                }
+              );
+              release();
+            });
 
-              assert.strictEqual(disabledDuringPost, false);
-            }
-          );
+            assert.strictEqual(disabledDuringPost, false);
+          });
 
           it("should ignore closeKeepAlive on the FormData transport", function () {
             const $form = $(

@@ -124,8 +124,6 @@ export function createIframeTransport(hasProp, forms) {
     var form = submission.form,
       method = submission.method;
 
-    enableControls(submission.controls);
-
     var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
       submission.options,
@@ -280,6 +278,10 @@ export function createIframeTransport(hasProp, forms) {
 
   return function sendIframe(submission) {
     var jqxhr;
+
+    // now, while the controls are still listed: ajaxSubmit clears the list when it returns,
+    // before a closeKeepAlive request completes
+    enableControls(submission.controls);
 
     // hack to fix Safari hang (thanks to Tim Molendijk for this)
     // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
