@@ -1620,14 +1620,8 @@ function callFormMethod(form, name) {
           return true;
 
         case "form":
-          // guard against an input with the name of 'reset'
-          // note that IE reports the reset function as an 'object'
-          if (
-            typeof this.reset === "function" ||
-            (typeof this.reset === "object" && !this.reset.nodeType)
-          ) {
-            this.reset();
-          }
+          // through the prototype: a control named reset shadows the method
+          callFormMethod(this, "reset");
 
           return true;
 

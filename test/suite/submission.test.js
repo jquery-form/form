@@ -2085,6 +2085,17 @@ describe("form", function () {
         assert.throws(submit, /control named "parentNode"/);
         assert.strictEqual(settings, undefined);
       }, 2000);
+
+      it("should reset the form after success when a control named reset shadows the method", function () {
+        const $form = $(
+          '<form action="ajax/text.html"><input name="reset" value="default"></form>'
+        ).appendTo("#main");
+        $form.find("input").val("changed");
+
+        captureAjaxOptions($form, { resetForm: true }, (settings) => settings.success("ok"));
+
+        assert.strictEqual($form.find("input").val(), "default");
+      });
     });
 
     describe("debug logging", function () {

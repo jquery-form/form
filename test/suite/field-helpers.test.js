@@ -293,13 +293,13 @@ describe("form", function () {
       assert.strictEqual($select.val(), "b");
     });
 
-    it("should not call reset when a control named reset shadows the form method", function () {
+    it("should reset the form when a control named reset shadows the form method", function () {
       const $form = $('<form><input name="reset" value="default"></form>').appendTo("#main");
       $form.find("input").val("changed");
 
       $form.resetForm();
 
-      assert.strictEqual($form.find("input").val(), "changed");
+      assert.strictEqual($form.find("input").val(), "default");
     });
 
     it("should restore a text input to its default value", function () {
@@ -594,7 +594,7 @@ describe("form", function () {
       assert.strictEqual($outside.val(), "default");
     });
 
-    it.fails("should reset the form when two controls named reset shadow the method", function () {
+    it("should reset the form when two controls named reset shadow the method", function () {
       const $form = $(
         '<form><input name="reset" value="a"><input name="reset" value="b"></form>'
       ).appendTo("#main");
