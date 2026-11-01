@@ -402,6 +402,7 @@ Release the result as a 4.x minor, the same way as Phase 11 but without the advi
 - The iframe transport runs only with `iframe: true`, and FormData detection is removed. Delegation requires a selector.
 - Remove the deprecated API: `clearInputs`, `$.fn.attr2`, and whatever the `enable`/`selected` audit decides.
 - Move to ES2015+ syntax and revisit Prettier `trailingComma`.
+- Decide whether `formToArray` and the other serializers keep calling an overridable `$.fieldValue`, or use the internal successful-controls module (5.0).
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x
