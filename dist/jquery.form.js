@@ -1527,14 +1527,11 @@
           return true;
 
         case "label":
-          var forEl = $(el.attr("for"));
-          var list = el.find("input,select,textarea");
+          // The control whose id the for attribute names, and the controls inside the label. The
+          // filter keeps a for that names an ancestor from resetting the label again.
+          var forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
 
-          if (forEl[0]) {
-            list.unshift(forEl[0]);
-          }
-
-          list.resetForm();
+          el.find("input,select,textarea").add(forEl).filter("input,select,textarea").resetForm();
 
           return true;
 

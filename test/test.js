@@ -360,10 +360,9 @@ describe("form", function () {
   });
 
   describe("resetForm", function () {
-    // jQuery collections have no unshift, so a matching for target throws a TypeError.
-    it.fails("should reset the control a label targets and its nested fields", function () {
+    it("should reset the control a label targets and its nested fields", function () {
       const $target = $('<input id="label-target" value="default">').appendTo("#main");
-      const $label = $('<label for="#label-target"><input value="nested"></label>').appendTo(
+      const $label = $('<label for="label-target"><input value="nested"></label>').appendTo(
         "#main"
       );
       $target.val("changed");
@@ -384,6 +383,42 @@ describe("form", function () {
 
       assert.doesNotThrow(reset);
       assert.strictEqual($input.val(), "default");
+    });
+
+    [
+      ["starts with markup", '<img src=x onerror="window.labelPayload=1">'],
+      ["contains markup", 'x <img src=x onerror="window.labelPayload=1">'],
+    ].forEach(function ([label, value]) {
+      it("should not parse a for attribute that " + label + " as HTML", async function () {
+        window.labelPayload = 0;
+        const $label = $("<label>").attr("for", value).appendTo("#main");
+
+        $label.resetForm();
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        assert.strictEqual(window.labelPayload, 0);
+      });
+    });
+
+    it("should ignore a for attribute that names no element", function () {
+      const $label = $('<label for="no-such-control"><input value="nested"></label>').appendTo(
+        "#main"
+      );
+      $label.find("input").val("changed");
+
+      $label.resetForm();
+
+      assert.strictEqual($label.find("input").val(), "nested");
+    });
+
+    it("should not reset a label again when its for attribute names an ancestor", function () {
+      const $outer = $('<div id="label-owner"><label for="label-owner">L</label></div>').appendTo(
+        "#main"
+      );
+
+      const reset = () => $outer.find("label").resetForm();
+
+      assert.doesNotThrow(reset);
     });
 
     it("should reset nested fields of a label without a for attribute", function () {
