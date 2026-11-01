@@ -34,8 +34,17 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **`formToArray` with `semantic: true` matches `form="…"` controls by comparing the attribute (GHSA-g7mw-rwc2-4h3g),** so a form id with quotes or brackets no longer throws or adds unrelated fields.
 - **`target` inserts only string responses (GHSA-4w39-46xw-8jm2).** If jQuery has parsed the response (JSON or XML), the target is left unchanged, a `debug` message is logged, and `success` is still called.
 
+## Phase 12
+
+- **Controls named like more form members no longer break the plugin.** Controls named `getAttribute`, `getElementsByTagName`, `ownerDocument`, `tagName` or `nodeType` no longer make `formToArray`, `ajaxSubmit`, iframe uploads, `resetForm` or `ajaxForm`'s submit handler throw or skip the form. jQuery 1.7.2's selector engine (and jQuery 3's, for `getElementsByTagName` with `semantic`) still fails on some of them first. The `method`, `action` and `target` values used for the request are unchanged: the property, or the raw attribute when a control shadows it.
+- **A control named `parentNode` throws a clear error instead of hanging the page.** `ajaxSubmit` and `ajaxForm`'s click capture throw `jquery.form: a form control named "parentNode" hides the form's parentNode; rename the control`. The plugin's own tree walks use the real parent.
+- **An iframe upload puts the form's attributes back exactly (#380).** `action`, `target`, `method`, `enctype` and `encoding` are restored to their raw values, or removed when they were absent, also with `skipEncodingOverride` and when the subject is not a form. The `action` no longer becomes absolute, no `encoding` attribute is left behind, and a later submit of the same form without files no longer picks the multipart transport.
+- **`resetForm` resets a form whose controls are named `reset`.** One or more controls named `reset` used to make it do nothing or throw; the `resetForm` option of `ajaxSubmit` follows.
+- **The classic build runs its whole factory in strict mode.** The `'use strict'` directive moved to the top of the UMD factory (the same three `dist` files, ADR-0001).
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
 - **`delegation: true` is not selector-scoped on jQuery 3 and later**, and `ajaxForm` called on an empty selection before DOM ready is dropped. See `selector-context-delegation.md`.
 - **No `exports` map** on 4.x so deep paths keep resolving; planned for 5.0.
+- **A control named `clk`, `clk_x` or `clk_y` still breaks submitter capture.** `ajaxForm`'s click capture writes those properties on the form, which throws in strict mode when a control has the name. The submitter work replaces the capture.

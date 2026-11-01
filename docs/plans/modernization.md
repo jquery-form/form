@@ -60,7 +60,7 @@ content: "Phase 11: release 4.4.0 with Phases 0-10 and the W1-W4 fixes, publish 
 status: pending
 - id: cleanup-4x
 content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
-status: pending
+status: in_progress
 - id: breaking-5
 content: "Phase 13: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
 status: pending
@@ -357,6 +357,9 @@ Release day, in one sitting:
 
 ## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
+Status (local `phase-12` branch): the test split and the characterization sweep are done; the form
+members slice is done (`src/form-members.js`, see `docs/research/4x-behavior-changes.md`).
+
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
 - Then pin current behavior with characterization tests, area by area, before any refactor. Bugs
@@ -371,7 +374,8 @@ Release day, in one sitting:
 - Decide on the JSON body (#545, PR #557).
 - Deprecation warnings (under `debug`, and in the docs) for everything Phase 13 removes.
 - Phase 10 observations: the iframe `beforeSend` veto never fires `ajaxStop`, and controls named
-  `ownerDocument` or `getElementsByTagName` still shadow those form members.
+  `ownerDocument` or `getElementsByTagName` still shadow those form members (fixed by the form
+  members slice).
 - Run the custom CodeQL query on every refactor branch, so moved code can't reopen a W1–W4 sink.
 
 Release the result as a 4.x minor, the same way as Phase 11 but without the advisory steps. Cut
