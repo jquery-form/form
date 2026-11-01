@@ -64,6 +64,9 @@ import jQuery from "jquery";
 
   var rCRLF = /\r?\n/g;
 
+  // The form attributes an iframe upload changes while it posts.
+  var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
+
   /**
    * Feature detection
    */
@@ -733,20 +736,22 @@ import jQuery from "jquery";
 
       // take a breath so that pending repaints get some cpu time before the upload starts
       function doSubmit() {
-        // make sure form attrs are set
-        var t = formProperty(form, "target"),
-          a = formProperty(form, "action"),
-          mp = "multipart/form-data",
-          et = formAttribute(form, "enctype") || formAttribute(form, "encoding") || mp;
+        var mp = "multipart/form-data";
+        // the raw attributes the upload changes, null when absent, to put back exactly (#380)
+        var saved = {};
+
+        $.each(uploadAttributes, function (i, name) {
+          saved[name] = callFormMethod(form, "hasAttribute", name)
+            ? callFormMethod(form, "getAttribute", name)
+            : null;
+        });
 
         // update form attrs in IE friendly way
         setFormAttribute("target", id);
         if (!method || /post/i.test(method)) {
           setFormAttribute("method", "POST");
         }
-        if (a !== s.url) {
-          setFormAttribute("action", s.url);
-        }
+        setFormAttribute("action", s.url);
 
         // ie borks in some cases when setting encoding
         if (!s.skipEncodingOverride && (!method || /post/i.test(method))) {
@@ -839,18 +844,13 @@ import jQuery from "jquery";
           }
         } finally {
           // reset attrs and remove "extra" input elements
-          if (typeof a === "string") {
-            setFormAttribute("action", a);
-          } else {
-            // a control named action hid a missing action attribute
-            callFormMethod(form, "removeAttribute", "action");
-          }
-          setFormAttribute("enctype", et); // #380
-          if (t) {
-            setFormAttribute("target", t);
-          } else {
-            callFormMethod(form, "removeAttribute", "target");
-          }
+          $.each(uploadAttributes, function (i, name) {
+            if (saved[name] === null) {
+              callFormMethod(form, "removeAttribute", name);
+            } else {
+              setFormAttribute(name, saved[name]);
+            }
+          });
           $(extraInputs).remove();
         }
       }

@@ -697,26 +697,23 @@ describe("form", function () {
         }
       );
 
-      it.fails(
-        "should use the plain transport when the same form is submitted again after an iframe upload",
-        async function () {
-          const $form = makeForm(
-            '<form action="ajax/iframe-text.html" method="post"><input name="title" value="t"></form>'
-          );
-          await new Promise(function (resolve) {
-            $form.ajaxSubmit({
-              iframe: true,
-              forceSync: true,
-              dataType: "text",
-              complete: resolve,
-            });
+      it("should use the plain transport when the same form is submitted again after an iframe upload", async function () {
+        const $form = makeForm(
+          '<form action="ajax/iframe-text.html" method="post"><input name="title" value="t"></form>'
+        );
+        await new Promise(function (resolve) {
+          $form.ajaxSubmit({
+            iframe: true,
+            forceSync: true,
+            dataType: "text",
+            complete: resolve,
           });
+        });
 
-          const result = submitTransport($form);
+        const result = submitTransport($form);
 
-          assert.strictEqual(result.transport, "plain");
-        }
-      );
+        assert.strictEqual(result.transport, "plain");
+      });
     });
 
     describe("controls named like form members", function () {

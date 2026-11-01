@@ -2178,7 +2178,7 @@ describe("form", function () {
             assert.include(events, "ajaxStop");
           });
 
-          it.fails("should not leave upload attributes on a non-form element", function () {
+          it("should not leave upload attributes on a non-form element", function () {
             const $div = $('<div><input name="upload" value="yes"></div>').appendTo("#main");
 
             try {
@@ -2708,47 +2708,55 @@ describe("form", function () {
             return $form[0];
           }
 
-          it.fails("should restore a missing method attribute after an iframe upload", function () {
+          it("should restore a missing method attribute after an iframe upload", function () {
             const form = uploadWithoutAttributes({});
 
             assert.strictEqual(form.getAttribute("method"), null);
           });
 
-          it.fails(
-            "should restore a relative action attribute after an iframe upload",
-            function () {
-              const form = uploadWithoutAttributes({});
+          it("should restore a relative action attribute after an iframe upload", function () {
+            const form = uploadWithoutAttributes({});
 
-              assert.strictEqual(form.getAttribute("action"), "ajax/iframe-text.html");
-            }
-          );
+            assert.strictEqual(form.getAttribute("action"), "ajax/iframe-text.html");
+          });
 
-          it.fails(
-            "should restore a missing enctype attribute after an iframe upload",
-            function () {
-              const form = uploadWithoutAttributes({});
+          it("should restore a missing enctype attribute after an iframe upload", function () {
+            const form = uploadWithoutAttributes({});
 
-              assert.strictEqual(form.getAttribute("enctype"), null);
-            }
-          );
+            assert.strictEqual(form.getAttribute("enctype"), null);
+          });
 
-          it.fails(
-            "should restore a missing encoding attribute after an iframe upload",
-            function () {
-              const form = uploadWithoutAttributes({});
+          it("should restore a missing encoding attribute after an iframe upload", function () {
+            const form = uploadWithoutAttributes({});
 
-              assert.strictEqual(form.getAttribute("encoding"), null);
-            }
-          );
+            assert.strictEqual(form.getAttribute("encoding"), null);
+          });
 
-          it.fails(
-            "should not add an enctype attribute when skipEncodingOverride is set",
-            function () {
-              const form = uploadWithoutAttributes({ skipEncodingOverride: true });
+          it("should restore the exact attributes a form had after an iframe upload", function () {
+            const attributes = {
+              action: "ajax/iframe-text.html",
+              target: "_self",
+              method: "post",
+              enctype: "text/plain",
+              encoding: "text/plain",
+            };
+            const $form = $('<form><input name="upload" value="yes"></form>')
+              .attr(attributes)
+              .appendTo("#main");
 
-              assert.strictEqual(form.getAttribute("enctype"), null);
-            }
-          );
+            startStubbedUpload($form, { type: "POST" });
+
+            assert.deepEqual(
+              Object.keys(attributes).map((name) => $form[0].getAttribute(name)),
+              Object.values(attributes)
+            );
+          });
+
+          it("should not add an enctype attribute when skipEncodingOverride is set", function () {
+            const form = uploadWithoutAttributes({ skipEncodingOverride: true });
+
+            assert.strictEqual(form.getAttribute("enctype"), null);
+          });
         });
 
         describe("closeKeepAlive", function () {
