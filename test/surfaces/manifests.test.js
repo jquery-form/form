@@ -64,7 +64,7 @@ describe("when the package manifests are read", () => {
 
 describe("when the dist files are read", () => {
   // #553: a block ESLint configuration comment in the classic build applies to code concatenated after it.
-  it.fails("should not ship file-wide ESLint configuration comments", () => {
+  it("should not ship file-wide ESLint configuration comments", () => {
     const builds = ["dist/jquery.form.js", "dist/jquery.form.mjs"];
 
     const sources = builds.map((file) =>

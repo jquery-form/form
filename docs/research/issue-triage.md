@@ -46,6 +46,8 @@ jQuery 1.7.2, 3.7.1 and 4.0.0.
 | #600  | `clearForm should skip nodes without a tag name` (`clearFields`)                  | `TypeError` reading `toLowerCase` of `undefined`       |
 | #553  | `dist files should not ship file-wide ESLint configuration comments` (surfaces)   | `/* eslint consistent-this … */` found in both builds  |
 
+Phase 10 fixed #588, #600 and #553; their tests are now `it`.
+
 Not reproduced: #541 (needs a slim-build test harness; deferred with the 5.0 item), #525 (EdgeHTML upload progress; that browser is retired), #548 is #353 (already an
 `it.fails`), #590 is server-side naming (see below).
 

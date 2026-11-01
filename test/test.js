@@ -307,6 +307,36 @@ describe("form", function () {
       assert.deepEqual(formData, [{ name: "upload", value: "", type: "file" }]);
       assert.deepEqual(elements, [$form[0].elements[0]]);
     });
+
+    it("should collect every control when one is named elements", function () {
+      const $form = $('<form><input name="a" value="1"><input name="elements" value="2"></form>');
+
+      const names = $form.formToArray().map((field) => field.name);
+
+      assert.deepEqual(names, ["a", "elements"]);
+    });
+
+    it("should collect the controls of a fieldset", function () {
+      const $fieldset = $('<fieldset><input name="a" value="1"></fieldset>');
+
+      const formData = $fieldset.formToArray();
+
+      assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
+    });
+
+    it("should read form.elements in browsers without DOM prototype accessors", function () {
+      const $form = $('<form><input name="a" value="1"></form>');
+      const HTMLFormElement = window.HTMLFormElement;
+      window.HTMLFormElement = undefined;
+
+      try {
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
+      } finally {
+        window.HTMLFormElement = HTMLFormElement;
+      }
+    });
   });
 
   describe("formSerialize", function () {
@@ -345,13 +375,15 @@ describe("form", function () {
       assert.strictEqual($label.find("input").val(), "nested");
     });
 
-    // #600: resetForm reads tagName, which the document and text nodes lack.
-    it.fails("should skip nodes without a tag name", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should reset the fields of a document and skip text nodes", function () {
+      const $input = $('<input value="default">').appendTo("#main").val("changed");
       const $nodes = $([document, document.createTextNode("text")]);
 
       const reset = () => $nodes.resetForm();
 
       assert.doesNotThrow(reset);
+      assert.strictEqual($input.val(), "default");
     });
 
     it("should reset nested fields of a label without a for attribute", function () {
@@ -553,8 +585,8 @@ describe("form", function () {
       assert.strictEqual($fields.eq(1).val(), "");
     });
 
-    // #600: clearFields reads tagName, which the document and text nodes lack.
-    it.fails("should skip nodes without a tag name", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should skip nodes without a tag name", function () {
       const $nodes = $([document, document.createTextNode("text")]);
 
       const clear = () => $nodes.clearFields();
@@ -605,6 +637,15 @@ describe("form", function () {
   });
 
   describe("fieldValue", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should return no values for nodes without a tag name", function () {
+      const $nodes = $([document, document.createTextNode("text")]);
+
+      const values = $nodes.fieldValue(false);
+
+      assert.deepEqual(values, ["", ""]);
+    });
+
     it("should return null for an unselected select when success is not required", function () {
       const select = $('<select name="choice"><option>a</option></select>')[0];
       select.selectedIndex = -1;
@@ -897,6 +938,15 @@ describe("form", function () {
   });
 
   describe("enable and selected", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should skip nodes without a tag name when selecting", function () {
+      const $nodes = $([document, document.createTextNode("text")]);
+
+      const select = () => $nodes.selected();
+
+      assert.doesNotThrow(select);
+    });
+
     it("should leave controls that cannot be selected unchanged", function () {
       const input = $('<input type="text" value="x">')[0];
 
@@ -1164,6 +1214,50 @@ describe("form", function () {
             assert.strictEqual(body.get("title"), "multipart only", "includes form controls");
           }
         );
+      });
+
+      // Submits a multipart form with one control through a stubbed $.ajax; returns the FormData.
+      async function captureMultipartBody(options) {
+        const $form = $(
+          '<form action="ajax/upload" method="post" enctype="multipart/form-data">' +
+            '<input name="title" value="t">' +
+            "</form>"
+        ).appendTo("#main");
+        let body;
+
+        await withAjaxStub(
+          function (settings) {
+            const requestSettings = {};
+            settings.beforeSend({}, requestSettings);
+            body = requestSettings.data;
+            return {};
+          },
+          async function () {
+            $form.ajaxSubmit(options);
+            await Promise.resolve();
+          }
+        );
+
+        return body;
+      }
+
+      it("should not add a field for an empty data object", async function () {
+        const body = await captureMultipartBody({ data: {} });
+
+        assert.deepEqual(Array.from(body.entries()), [["title", "t"]]);
+      });
+
+      it("should serialize extra data with the global traditional setting", async function () {
+        const traditional = $.ajaxSettings.traditional;
+        $.ajaxSettings.traditional = true;
+
+        try {
+          const body = await captureMultipartBody({ data: { labels: ["a", "b"] } });
+
+          assert.deepEqual(body.getAll("labels"), ["a", "b"]);
+        } finally {
+          $.ajaxSettings.traditional = traditional;
+        }
       });
 
       it("should send caller-provided FormData instead of generated form contents", async function () {
@@ -1958,6 +2052,28 @@ describe("form", function () {
         }
       });
 
+      it("should not send CSRF metadata to another origin", function () {
+        const $form = createIframeForm("https://upload.example.invalid/form");
+        const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
+        const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
+          document.head
+        );
+        let submittedTokens;
+        $form[0].submit = function () {
+          submittedTokens = $(this).find('[name="authenticity_token"]').length;
+        };
+
+        try {
+          $form.ajaxSubmit({ iframe: true, forceSync: true, error: function () {} });
+          $form.data("jqxhr").abort();
+
+          assert.strictEqual(submittedTokens, 0);
+        } finally {
+          $token.remove();
+          $param.remove();
+        }
+      });
+
       it("should override the action during submission and then restore it", async function () {
         const $form = createIframeForm("ajax/original.html");
         let submittedAction;
@@ -2116,8 +2232,16 @@ describe("form", function () {
         assert.deepEqual(result.events, ["error", "complete"]);
       });
 
-      // A parsed status code overwrites parsererror with success.
-      it.fails("should report malformed JSON as a parser error", async function () {
+      it("should report an emulated HTTP error before a parser error", async function () {
+        const $form = createIframeForm("ajax/iframe-error.html");
+
+        const result = await submitThroughIframe($form, { dataType: "json" });
+
+        assert.strictEqual(result.error[1], "error");
+        assert.deepEqual(result.events, ["error", "complete"]);
+      });
+
+      it("should report malformed JSON as a parser error despite a success status", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
 
         const result = await submitThroughIframe($form, { dataType: "json" });
@@ -2286,6 +2410,59 @@ describe("form", function () {
         assert.deepEqual(submitted, { own: "kept" });
       });
 
+      // jQuery 1.7.2's selector engine calls setAttribute on the form itself, so it cannot run there.
+      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
+        "should submit and restore a form whose controls shadow its methods",
+        async function () {
+          const $form = createIframeForm("ajax/iframe-text.html");
+          $(
+            '<input name="setAttribute" value="a"><input name="removeAttribute" value="b">'
+          ).appendTo($form);
+
+          const result = await submitThroughIframe($form, { dataType: "text" });
+
+          assert.deepEqual(result.events, ["success", "complete"]);
+          assert.match($form[0].getAttribute("action"), /ajax\/iframe-text\.html$/);
+          assert.strictEqual($form[0].hasAttribute("target"), false);
+        }
+      );
+
+      it("should leave a missing action attribute missing when a control is named action", async function () {
+        const $form = $('<form method="post"><input name="action" value="save"></form>').appendTo(
+          "#main"
+        );
+
+        const result = await submitThroughIframe($form, {
+          url: "ajax/iframe-text.html",
+          dataType: "text",
+        });
+
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.strictEqual($form[0].hasAttribute("action"), false);
+      });
+
+      it("should submit extraData keys and buttons named hasOwnProperty", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const button = $('<button type="submit" name="hasOwnProperty" value="go">').appendTo($form);
+        $form[0].clk = button[0];
+        const submitted = {};
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        const result = await submitThroughIframe($form, {
+          data: { pair: { name: "field", value: "kept", hasOwnProperty: "shadowed" } },
+          dataType: "text",
+        });
+
+        assert.deepEqual(submitted, { field: "kept", hasOwnProperty: "go" });
+        assert.deepEqual(result.events, ["success", "complete"]);
+      });
+
       it("should succeed without global events", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const events = [];
@@ -2376,31 +2553,27 @@ describe("form", function () {
           assert.strictEqual(result.xhr.state(), "rejected");
         });
 
-        // The cb keeps running after abort, so complete fires again with a null status.
-        it.fails(
-          "should complete once when aborted while filtering the response",
-          async function () {
-            const $form = createIframeForm("ajax/iframe-plain.html");
-            const completions = [];
-            let request;
+        it("should complete once when aborted while filtering the response", async function () {
+          const $form = createIframeForm("ajax/iframe-plain.html");
+          const completions = [];
+          let request;
 
-            $form.ajaxSubmit({
-              iframe: true,
-              dataType: "text",
-              beforeSend: (xhr) => {
-                request = xhr;
-              },
-              dataFilter: (data) => {
-                request.abort();
-                return data;
-              },
-              complete: (_xhr, status) => completions.push(status),
-            });
-            await new Promise((resolve) => setTimeout(resolve, 150));
+          $form.ajaxSubmit({
+            iframe: true,
+            dataType: "text",
+            beforeSend: (xhr) => {
+              request = xhr;
+            },
+            dataFilter: (data) => {
+              request.abort();
+              return data;
+            },
+            complete: (_xhr, status) => completions.push(status),
+          });
+          await new Promise((resolve) => setTimeout(resolve, 150));
 
-            assert.deepEqual(completions, ["aborted"]);
-          }
-        );
+          assert.deepEqual(completions, ["aborted"]);
+        });
 
         it("should prefer an IE XMLDocument island as the XML response", async function () {
           const $form = createIframeForm("ajax/iframe-xml-island.html");
@@ -2631,8 +2804,7 @@ describe("form", function () {
         });
       });
 
-      // abort calls callbacks but leaves the returned Deferred pending.
-      it.fails("should reject the returned deferred when aborted", async function () {
+      it("should reject the returned deferred when aborted", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const resultPromise = submitThroughIframe($form, {});
         const xhr = $form.data("jqxhr");
@@ -2643,6 +2815,86 @@ describe("form", function () {
         assert.strictEqual(result.error[1], "aborted");
         assert.strictEqual(result.complete[1], "aborted");
         assert.strictEqual(xhr.state(), "rejected");
+      });
+
+      it("should reject an aborted upload with the abort status", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        submitThroughIframe($form, {});
+        const xhr = $form.data("jqxhr");
+        const rejection = new Promise((resolve) => xhr.fail((...args) => resolve(args)));
+
+        xhr.abort("manual");
+        const [rejectedXhr, status, reason] = await rejection;
+
+        assert.strictEqual(status, "aborted");
+        assert.strictEqual(reason, "manual");
+        assert.strictEqual(rejectedXhr.aborted, 1);
+      });
+
+      it("should end the global events and the active count when aborted", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const active = $.active;
+        const events = [];
+        $(document).on("ajaxError.abort ajaxComplete.abort ajaxStop.abort", (event) =>
+          events.push(event.type)
+        );
+
+        try {
+          const resultPromise = submitThroughIframe($form, {});
+          $form.data("jqxhr").abort();
+          await resultPromise;
+
+          assert.deepEqual(events, ["ajaxError", "ajaxComplete", "ajaxStop"]);
+          assert.strictEqual($.active, active);
+        } finally {
+          $(document).off(".abort");
+        }
+      });
+
+      it("should complete once when aborted twice", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const resultPromise = submitThroughIframe($form, {});
+        const xhr = $form.data("jqxhr");
+
+        xhr.abort();
+        xhr.abort();
+        const result = await resultPromise;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        assert.deepEqual(result.events, ["error", "complete"]);
+      });
+
+      it("should ignore an abort after the upload completed", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { dataType: "text" });
+        result.xhr.abort();
+
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.strictEqual(result.xhr.state(), "resolved");
+      });
+
+      it("should ignore an abort from the success callback", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const events = [];
+
+        await new Promise((resolve) => {
+          $form.ajaxSubmit({
+            iframe: true,
+            dataType: "text",
+            success: function (data, status, xhr) {
+              events.push("success");
+              xhr.abort();
+            },
+            error: () => events.push("error"),
+            complete: () => {
+              events.push("complete");
+              resolve();
+            },
+          });
+        });
+
+        assert.deepEqual(events, ["success", "complete"]);
       });
     });
 
@@ -2742,12 +2994,36 @@ describe("form", function () {
         assert.strictEqual(settings.url, window.location.href.split("#")[0]);
       });
 
-      it("should drop a raw action attribute that is only a fragment", function () {
+      it("should use the page URL for a raw action attribute that is only a fragment", function () {
         const $form = $('<form method="post" action="#fragment"><input name="action"></form>');
 
         const settings = captureAjaxOptions($form.appendTo("#main"), {});
 
-        assert.strictEqual(settings.url, undefined);
+        assert.strictEqual(settings.url, window.location.href.split("#")[0]);
+      });
+
+      it("should build a GET url for a raw action attribute that is only a fragment", function () {
+        const $form = $(
+          '<form method="get" action="#fragment"><input name="action" value="x"></form>'
+        );
+
+        const settings = captureAjaxOptions($form.appendTo("#main"), {});
+
+        assert.ok(settings.url.startsWith(window.location.href.split("#")[0]), settings.url);
+        assert.match(settings.url, /[?&]action=x$/);
+      });
+
+      [
+        ["ajax/text.html#frag", "ajax/text.html?a=1#frag"],
+        ["ajax/text.html?b=2#frag", "ajax/text.html?b=2&a=1#frag"],
+      ].forEach(function ([url, expected]) {
+        it("should put the GET query before the fragment of " + url, function () {
+          const $form = $('<form><input name="a" value="1"></form>').appendTo("#main");
+
+          const settings = captureAjaxOptions($form, { type: "GET", url: url });
+
+          assert.strictEqual(settings.url, expected);
+        });
       });
 
       it("should use the default AJAX type when a control named method shadows the form", function () {
@@ -2986,8 +3262,8 @@ describe("form", function () {
       assert.strictEqual($form[0].clk, button);
     });
 
-    // #588: the click handler matches [type=submit], which a button without a type attribute lacks.
-    it.fails("should capture a button without a type attribute", function () {
+    // #588: a button without a type attribute is a submit button.
+    it("should capture a button without a type attribute", function () {
       const $form = $(
         '<form><button name="choice" value="untyped"><span>Send</span></button></form>'
       ).appendTo("#main");
@@ -3006,6 +3282,25 @@ describe("form", function () {
       $form.find("span").trigger("click");
 
       assert.strictEqual($form[0].clk, undefined);
+    });
+
+    [
+      ["a text input", '<input name="q">'],
+      ["an element with a submit type attribute", '<span type="submit">Send</span>'],
+      [
+        "a submit button that belongs to no form",
+        '<button type="submit" form="no-such-form">Send</button>',
+      ],
+    ].forEach(function ([label, html]) {
+      it("should ignore clicks on " + label, function () {
+        const $form = $("<form></form>").append(html).appendTo("#main");
+        $form.ajaxForm();
+
+        const click = () => $form.children().trigger("click");
+
+        assert.doesNotThrow(click);
+        assert.strictEqual($form[0].clk, undefined);
+      });
     });
 
     // jQuery 3.7 removed the selection selector needed to scope delegated handlers.

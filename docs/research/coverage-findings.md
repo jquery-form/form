@@ -38,6 +38,8 @@
   it to `success` for a 2xx response.
 - Test treatment: `it.fails`; its exercised source lines still count toward coverage.
 - Suggested fix: only derive success/error from `xhr.status` when response parsing has not failed.
+- Fixed in Phase 10: an emulated error status still reports `error`, but a 2xx status keeps the
+  parse error, and the test is an `it`.
 
 ## Aborting an iframe upload while its response is processed completes twice
 
@@ -48,6 +50,8 @@
 - Test treatment: `it.fails`; its exercised source lines still count toward coverage.
 - Suggested fix: return from `cb` after the `xhr.aborted` check instead of continuing with a null
   status.
+- Fixed in Phase 10: `cb` returns after an abort, abort is ignored once the upload has completed,
+  and the test is an `it`.
 
 ## Aborting an iframe upload leaves its Deferred pending
 
@@ -57,3 +61,5 @@
 - Test treatment: `it.fails`; its exercised source lines still count toward coverage.
 - Suggested fix: reject the Deferred exactly once from the abort path with the same arguments used by
   the timeout and server-abort paths.
+- Fixed in Phase 10: abort rejects the Deferred once and also fires `ajaxComplete` and `ajaxStop`,
+  which the abort and timeout paths used to skip. The test is an `it`.

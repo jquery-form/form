@@ -19,8 +19,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-/* global ActiveXObject */
-
 import jQuery from "jquery";
 
 (function ($) {
@@ -74,6 +72,43 @@ import jQuery from "jquery";
   feature.formdata = typeof window.FormData !== "undefined";
 
   var hasProp = !!$.fn.prop;
+  // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
+  var hasOwn = Object.prototype.hasOwnProperty;
+
+  // A control named like a form member (elements, setAttribute) shadows that member on the form,
+  // so forms are read and changed through members a control cannot shadow.
+  var plainForm = document.createElement("form");
+
+  // Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
+  // apply to both sides of the comparison.
+  function isSameOrigin(url) {
+    var origin = document.createElement("a");
+    var target = document.createElement("a");
+
+    origin.href = window.location.href;
+    target.href = url;
+    // IE fills in the host of a relative URL only once the resolved href is assigned back
+    target.href = target.href; // eslint-disable-line no-self-assign
+
+    return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
+  }
+
+  // Nodes such as the document and text nodes have no tag name (#600).
+  function tagName(el) {
+    return typeof el.tagName === "string" ? el.tagName.toLowerCase() : "";
+  }
+
+  function formElements(form) {
+    var proto = window.HTMLFormElement && window.HTMLFormElement.prototype;
+    var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "elements");
+
+    try {
+      return descriptor.get.call(form);
+    } catch (e) {
+      // no DOM prototype accessors, or another element with controls such as a fieldset
+      return form.elements;
+    }
+  }
 
   // attr2 uses prop when it can but checks the return type for
   // an expected string. This accounts for the case where a form
@@ -110,7 +145,6 @@ import jQuery from "jquery";
       return this;
     }
 
-    /* eslint consistent-this: ["error", "$form"] */
     var method,
       action,
       url,
@@ -138,11 +172,8 @@ import jQuery from "jquery";
     action = options.url || this.attr2("action");
 
     url = typeof action === "string" ? action.trim() : "";
-    url = url || window.location.href;
-    if (url) {
-      // clean url (don't include hash vaue)
-      url = (url.match(/^([^#]+)/) || [])[1];
-    }
+    // clean url (don't include hash value); an action that is only a fragment means this page
+    url = url.split("#")[0] || window.location.href.split("#")[0];
     // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
     // Instead of using javascript:false always, let's only apply it for IE.
     isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
@@ -217,7 +248,12 @@ import jQuery from "jquery";
     }
 
     if (options.type.toUpperCase() === "GET") {
-      options.url += (options.url.indexOf("?") >= 0 ? "&" : "?") + q;
+      // the query goes before any fragment in the url option
+      var hashAt = options.url.indexOf("#");
+      var base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
+
+      options.url =
+        base + (base.indexOf("?") >= 0 ? "&" : "?") + q + options.url.slice(base.length);
       options.data = null; // data is null for 'get'
     } else {
       options.data = q; // data is the query string for 'post'
@@ -337,7 +373,8 @@ import jQuery from "jquery";
 
     // utility fn for deep serialization
     function deepSerialize(extraData) {
-      var serialized = $.param(extraData, options.traditional).split("&");
+      var param = $.param(extraData, traditional);
+      var serialized = param ? param.split("&") : [];
       var len = serialized.length;
       var result = [];
       var i, part;
@@ -438,7 +475,8 @@ import jQuery from "jquery";
         xhr,
         sub,
         n,
-        timeoutHandle;
+        timeoutHandle,
+        callbackProcessed;
       var deferred = $.Deferred();
 
       // #341
@@ -487,33 +525,71 @@ import jQuery from "jquery";
         getResponseHeader: function () {},
         setRequestHeader: function () {},
         abort: function (status) {
-          var e = status === "timeout" ? "timeout" : "aborted";
-
-          log("aborting upload... " + e);
-          this.aborted = 1;
-
-          try {
-            // #214, #257
-            if (io.contentWindow.document.execCommand) {
-              io.contentWindow.document.execCommand("Stop");
-            }
-          } catch (ignore) {}
-
-          $io.attr("src", s.iframeSrc); // abort op in progress
-          xhr.error = e;
-          if (s.error) {
-            s.error.call(s.context, xhr, e, status);
-          }
-
-          if (g) {
-            $.event.trigger("ajaxError", [xhr, s, e]);
-          }
-
-          if (s.complete) {
-            s.complete.call(s.context, xhr, e);
-          }
+          abortUpload(status, [xhr, "aborted", status]);
         },
       };
+
+      // Completes an aborted upload once and rejects the Deferred with `rejection`.
+      function abortUpload(status, rejection) {
+        var e = status === "timeout" ? "timeout" : "aborted";
+
+        if (xhr.aborted || callbackProcessed) {
+          return;
+        }
+
+        log("aborting upload... " + e);
+        xhr.aborted = 1;
+
+        try {
+          // #214, #257
+          if (io.contentWindow.document.execCommand) {
+            io.contentWindow.document.execCommand("Stop");
+          }
+        } catch (ignore) {}
+
+        $io.attr("src", s.iframeSrc); // abort op in progress
+        xhr.error = e;
+        if (s.error) {
+          s.error.call(s.context, xhr, e, status);
+        }
+        deferred.reject.apply(deferred, rejection);
+
+        if (g) {
+          $.event.trigger("ajaxError", [xhr, s, e]);
+        }
+
+        complete(e);
+      }
+
+      // The steps every finished or aborted upload ends with, in $.ajax order.
+      function complete(status) {
+        if (g) {
+          $.event.trigger("ajaxComplete", [xhr, s]);
+        }
+
+        if (g && !--$.active) {
+          $.event.trigger("ajaxStop");
+        }
+
+        if (s.complete) {
+          s.complete.call(s.context, xhr, status);
+        }
+
+        if (s.timeout) {
+          clearTimeout(timeoutHandle);
+        }
+
+        // clean up
+        setTimeout(function () {
+          if (!s.iframeTarget) {
+            $io.remove();
+          } else {
+            // adding else to clean up existing iframe response.
+            $io.attr("src", s.iframeSrc);
+          }
+          xhr.responseXML = null;
+        }, 100);
+      }
 
       g = s.global;
       // trigger ajax global events so that activity/block indicators work like normal
@@ -534,8 +610,7 @@ import jQuery from "jquery";
       }
 
       if (xhr.aborted) {
-        deferred.reject();
-
+        // abort() in beforeSend already rejected the Deferred
         return deferred;
       }
 
@@ -593,13 +668,17 @@ import jQuery from "jquery";
         return doc;
       }
 
-      // Rails CSRF hack (thanks to Yvan Barthelemy)
+      // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin
       var csrf_token = $("meta[name=csrf-token]").attr("content");
       var csrf_param = $("meta[name=csrf-param]").attr("content");
 
-      if (csrf_param && csrf_token) {
+      if (csrf_param && csrf_token && isSameOrigin(s.url)) {
         s.extraData = s.extraData || {};
         s.extraData[csrf_param] = csrf_token;
+      }
+
+      function setFormAttribute(name, value) {
+        plainForm.setAttribute.call(form, name, value);
       }
 
       // take a breath so that pending repaints get some cpu time before the upload starts
@@ -611,20 +690,18 @@ import jQuery from "jquery";
           et = $form.attr("enctype") || $form.attr("encoding") || mp;
 
         // update form attrs in IE friendly way
-        form.setAttribute("target", id);
+        setFormAttribute("target", id);
         if (!method || /post/i.test(method)) {
-          form.setAttribute("method", "POST");
+          setFormAttribute("method", "POST");
         }
         if (a !== s.url) {
-          form.setAttribute("action", s.url);
+          setFormAttribute("action", s.url);
         }
 
         // ie borks in some cases when setting encoding
         if (!s.skipEncodingOverride && (!method || /post/i.test(method))) {
-          $form.attr({
-            encoding: "multipart/form-data",
-            enctype: "multipart/form-data",
-          });
+          setFormAttribute("encoding", mp);
+          setFormAttribute("enctype", mp);
         }
 
         // support timout
@@ -659,12 +736,12 @@ import jQuery from "jquery";
         try {
           if (s.extraData) {
             for (var n in s.extraData) {
-              if (s.extraData.hasOwnProperty(n)) {
+              if (hasOwn.call(s.extraData, n)) {
                 // if using the $.param format that allows for multiple values with the same name
                 if (
                   $.isPlainObject(s.extraData[n]) &&
-                  s.extraData[n].hasOwnProperty("name") &&
-                  s.extraData[n].hasOwnProperty("value")
+                  hasOwn.call(s.extraData[n], "name") &&
+                  hasOwn.call(s.extraData[n], "value")
                 ) {
                   extraInputs.push(
                     $('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument)
@@ -699,18 +776,21 @@ import jQuery from "jquery";
             form.submit();
           } catch (err) {
             // just in case form has element with name/id of 'submit'
-            var submitFn = document.createElement("form").submit;
-
-            submitFn.apply(form);
+            plainForm.submit.call(form);
           }
         } finally {
           // reset attrs and remove "extra" input elements
-          form.setAttribute("action", a);
-          form.setAttribute("enctype", et); // #380
-          if (t) {
-            form.setAttribute("target", t);
+          if (typeof a === "string") {
+            setFormAttribute("action", a);
           } else {
-            $form.removeAttr("target");
+            // a control named action hid a missing action attribute
+            plainForm.removeAttribute.call(form, "action");
+          }
+          setFormAttribute("enctype", et); // #380
+          if (t) {
+            setFormAttribute("target", t);
+          } else {
+            plainForm.removeAttribute.call(form, "target");
           }
           $(extraInputs).remove();
         }
@@ -724,8 +804,7 @@ import jQuery from "jquery";
 
       var data,
         doc,
-        domCheckCount = 50,
-        callbackProcessed;
+        domCheckCount = 50;
 
       function cb(e) {
         if (xhr.aborted || callbackProcessed) {
@@ -738,14 +817,12 @@ import jQuery from "jquery";
           e = SERVER_ABORT;
         }
         if (e === CLIENT_TIMEOUT_ABORT && xhr) {
-          xhr.abort("timeout");
-          deferred.reject(xhr, "timeout");
+          abortUpload("timeout", [xhr, "timeout"]);
 
           return;
         }
         if (e === SERVER_ABORT && xhr) {
-          xhr.abort("server abort");
-          deferred.reject(xhr, "error", "server abort");
+          abortUpload("server abort", [xhr, "error", "server abort"]);
 
           return;
         }
@@ -840,15 +917,18 @@ import jQuery from "jquery";
         }
 
         if (xhr.aborted) {
+          // abort() completed the upload while its response was processed
           log("upload aborted");
-          status = null;
+
+          return;
         }
 
-        if (xhr.status) {
-          // we've set xhr.status
-          status =
-            (xhr.status >= 200 && xhr.status < 300) || xhr.status === 304 ? "success" : "error";
+        // an emulated HTTP error status wins, as in $.ajax; a parse error is kept otherwise
+        if (xhr.status && !((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304)) {
+          status = "error";
         }
+
+        callbackProcessed = true;
 
         // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
         if (status === "success") {
@@ -859,7 +939,7 @@ import jQuery from "jquery";
           if (g) {
             $.event.trigger("ajaxSuccess", [xhr, s]);
           }
-        } else if (status) {
+        } else {
           if (typeof errMsg === "undefined") {
             errMsg = xhr.statusText;
           }
@@ -872,33 +952,7 @@ import jQuery from "jquery";
           }
         }
 
-        if (g) {
-          $.event.trigger("ajaxComplete", [xhr, s]);
-        }
-
-        if (g && !--$.active) {
-          $.event.trigger("ajaxStop");
-        }
-
-        if (s.complete) {
-          s.complete.call(s.context, xhr, status);
-        }
-
-        callbackProcessed = true;
-        if (s.timeout) {
-          clearTimeout(timeoutHandle);
-        }
-
-        // clean up
-        setTimeout(function () {
-          if (!s.iframeTarget) {
-            $io.remove();
-          } else {
-            // adding else to clean up existing iframe response.
-            $io.attr("src", s.iframeSrc);
-          }
-          xhr.responseXML = null;
-        }, 100);
+        complete(status);
       }
 
       var httpData = function (xhr, type, s) {
@@ -1014,20 +1068,21 @@ import jQuery from "jquery";
 
   function captureSubmittingElement(e) {
     /* jshint validthis:true */
-    var target = e.target;
-    var $el = $(target);
+    // the clicked control, or the button around the clicked content (ex: a span within a button)
+    var $el = $(e.target).closest("button,input");
+    var target = $el[0];
 
-    if (!$el.is("[type=submit],[type=image]")) {
-      // is this a child element of the submit el?  (ex: a span within a button)
-      var t = $el.closest("[type=submit]");
-
-      if (t.length === 0) {
-        return;
-      }
-      target = t[0];
+    // the type property, unlike the attribute, is "submit" for a button without a type (#588)
+    if (!target || (target.type !== "submit" && target.type !== "image")) {
+      return;
     }
 
     var form = target.form;
+
+    if (!form) {
+      // a submit control that belongs to no form
+      return;
+    }
 
     form.clk = target;
 
@@ -1079,7 +1134,7 @@ import jQuery from "jquery";
     var els =
       semantic || typeof form.elements === "undefined"
         ? form.getElementsByTagName("*")
-        : form.elements;
+        : formElements(form);
     var els2;
 
     if (els) {
@@ -1269,7 +1324,7 @@ import jQuery from "jquery";
   $.fieldValue = function (el, successful) {
     var n = el.name,
       t = el.type,
-      tag = el.tagName.toLowerCase();
+      tag = tagName(el);
 
     if (typeof successful === "undefined") {
       successful = true;
@@ -1351,7 +1406,7 @@ import jQuery from "jquery";
 
     return this.each(function () {
       var t = this.type,
-        tag = this.tagName.toLowerCase();
+        tag = tagName(this);
 
       if (re.test(t) || tag === "textarea") {
         this.value = "";
@@ -1393,7 +1448,7 @@ import jQuery from "jquery";
   $.fn.resetForm = function () {
     return this.each(function () {
       var el = $(this);
-      var tag = this.tagName.toLowerCase();
+      var tag = tagName(this);
 
       switch (tag) {
         case "input":
@@ -1493,7 +1548,7 @@ import jQuery from "jquery";
 
       if (t === "checkbox" || t === "radio") {
         this.checked = select;
-      } else if (this.tagName.toLowerCase() === "option") {
+      } else if (tagName(this) === "option") {
         var $sel = $(this).parent("select");
 
         if (select && $sel[0] && $sel[0].type === "select-one") {

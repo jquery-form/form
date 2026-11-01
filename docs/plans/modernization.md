@@ -54,7 +54,7 @@ content: "Coverage to 100%: remove dead and over-defensive branches, refactor fo
 status: pending
 - id: security-fixes
 content: "Security and bug fixes: private advisories, review findings, P1 and Phase 5 it.fails bugs"
-status: pending
+status: in_progress
 - id: cleanup-4x
 content: "4.x cleanup and rearchitecture without breaking changes: source modules, lower complexity, additive options, deprecations"
 status: pending
@@ -297,6 +297,15 @@ enforces it. Each removed branch and the reason it was dead are in `docs/researc
 - The review's findings 4, 6, 7 and 8. Fixing finding 7 also clears the three `no-prototype-builtins` warnings.
 - The P1 bugs #588, #597, #600 and #553, and the remaining Phase 5 `it.fails` records: label lookup, iframe parsererror overwrite, double completion and pending Deferred on abort.
 - Each `it.fails` becomes an `it`, and coverage stays at 100%.
+
+Status: the public fixes are on `phase-10-fixes`. They cover findings 4, 6, 7 and 8, #588, #600 and #553, and the
+iframe parsererror, double-completion and abort records. Coverage stays at 100%.
+
+- The label record and #597 land with W1–W4 on release day.
+- Decisions: an aborted upload also fires `ajaxComplete` and `ajaxStop`, and the `clk` expandos stay
+  on the form until 5.x.
+- `npm audit` now reports 6 moderate advisories in dev dependencies only (`minimatch` via ESLint,
+  GHSA-g3hv-75wg-m249); the runtime dependency has none.
 
 ## Phase 11: 4.x cleanup and rearchitecture (no breaking change)
 

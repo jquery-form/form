@@ -7,7 +7,7 @@ const sourceRules = {
   "arrow-body-style": "error",
   "class-methods-use-this": "error",
   "consistent-return": "error",
-  "consistent-this": ["error", "that", "outerThis", "self"],
+  "consistent-this": ["error", "$form", "that", "outerThis", "self"],
   "default-case": "error",
   "dot-notation": "error",
   eqeqeq: "error",
@@ -75,7 +75,6 @@ const sourceRules = {
   "sort-imports": "error",
   yoda: "error",
   "no-unused-vars": ["error", { vars: "local", args: "none", caughtErrors: "none" }],
-  "no-prototype-builtins": "warn",
 };
 
 export default [
