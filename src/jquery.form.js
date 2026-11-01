@@ -20,7 +20,7 @@
  * Lesser General Public License for more details.
  */
 import { assertRealParent, callFormMethod, closestByTag, tagName } from "./form-members.js";
-import { captureSubmitter, submitterElement } from "./submitter.js";
+import { captureEventSubmitter, captureSubmitter, submitterElement } from "./submitter.js";
 import {
   createSuccessfulControls,
   isSuccessful,
@@ -233,7 +233,11 @@ import { log } from "./diagnostics.js";
       // if event has been canceled, don't proceed
       e.preventDefault();
       // the form is found through the real tree: a control named nodeType misleads jQuery's closest
-      $(closestByTag(e.target, ["form"])).ajaxSubmit(options); // #365
+      var form = closestByTag(e.target, ["form"]);
+
+      // a button outside the form (form attribute), or requestSubmit(button), sends no click here
+      captureEventSubmitter(e, form);
+      $(form).ajaxSubmit(options); // #365
     }
   }
 

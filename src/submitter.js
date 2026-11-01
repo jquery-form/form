@@ -83,6 +83,18 @@ export function captureSubmitter(e) {
 }
 
 /**
+ * Records the submitter a submit event names (SubmitEvent.submitter), when no click was captured.
+ * An image submitter gets the point 0,0, as native submission sends it without a click.
+ */
+export function captureEventSubmitter(e, form) {
+  var el = e.originalEvent && e.originalEvent.submitter;
+
+  if (el && !submitterOf(form)) {
+    record(form, el, 0, 0);
+  }
+}
+
+/**
  * The form's submitter as { el, x, y } (x and y for an image button), or null.
  */
 export function submitterOf(form) {

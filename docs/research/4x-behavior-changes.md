@@ -80,6 +80,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Controls named `clk`, `clk_x` or `clk_y` no longer break the clicked submitter.** `ajaxForm` keeps the clicked button in a private store; a click on such a form used to throw, and `formToArray` sent a submit button named `clk` as if it had been clicked. The form's `clk`, `clk_x` and `clk_y` properties are still set when they can be, and a submitter a page sets there is still sent when no click was captured.
 
+- **`ajaxForm` sends the submitter the browser names when no click was captured (D-05).** A submit button outside the form (`form="id"`) and the button passed to `requestSubmit()` are now sent, from `SubmitEvent.submitter` where the browser has it; an image submitter sends the point `0,0`, as native submission does. A captured click still wins.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

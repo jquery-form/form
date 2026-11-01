@@ -884,7 +884,9 @@ describe("form", function () {
             $button.trigger("click");
           });
 
-          assert.strictEqual($form[0].clk, jQueryMajor < 3 ? undefined : $button[0]);
+          // jQuery 1.7.2 misses the click; the submit event names the button where browsers can
+          const named = jQueryMajor >= 3 || "submitter" in SubmitEvent.prototype;
+          assert.strictEqual($form[0].clk, named ? $button[0] : undefined);
         } finally {
           $(document).off(".form-plugin");
         }
@@ -1291,7 +1293,7 @@ describe("form", function () {
         assert.strictEqual(requests.length, 0);
       });
 
-      it.fails("should include the submitter passed to requestSubmit", async function () {
+      it("should include the submitter passed to requestSubmit", async function () {
         const $form = $(
           '<form method="post" action="ajax/text.html"><button name="choice" value="passed">Send</button></form>'
         ).appendTo("#main");
@@ -1303,7 +1305,52 @@ describe("form", function () {
           });
         });
 
-        assert.match(requests[0].data, /choice=passed/);
+        if ("submitter" in SubmitEvent.prototype) {
+          assert.match(requests[0].data, /choice=passed/);
+        } else {
+          assert.notMatch(requests[0].data, /choice=passed/);
+        }
+      });
+
+      it("should send the point 0,0 for an image passed to requestSubmit", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>'
+        ).appendTo("#main");
+        $form.ajaxForm();
+
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(function () {
+            $form[0].requestSubmit($form.find("[name=im]")[0]);
+          });
+        });
+
+        if ("submitter" in SubmitEvent.prototype) {
+          assert.strictEqual(requests[0].data, "a=1&im=&im.x=0&im.y=0");
+        } else {
+          assert.strictEqual(requests[0].data, "a=1");
+        }
+      });
+
+      it("should prefer a captured click over the submitter passed to requestSubmit", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><button name="choice" value="clicked">A</button><button name="choice" value="passed">B</button></form>'
+        ).appendTo("#main");
+        $form
+          .find("button")
+          .first()
+          .on("click", function (event) {
+            event.preventDefault();
+          });
+        $form.ajaxForm();
+
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(function () {
+            $form.find("button").first().trigger("click");
+            $form[0].requestSubmit($form.find("button")[1]);
+          });
+        });
+
+        assert.strictEqual(requests[0].data, "choice=clicked");
       });
 
       it("should include the default button when the form is submitted with Enter", async function () {
@@ -1342,26 +1389,27 @@ describe("form", function () {
         assert.strictEqual(requests[0].data, "q=1");
       });
 
-      it.fails(
-        "should include a submit button associated by the form attribute from outside the form",
-        async function () {
-          const $form = $(
-            '<form id="outside-owner" method="post" action="ajax/text.html"><input name="q" value="1"></form>'
-          ).appendTo("#main");
-          const $button = $(
-            '<button type="submit" form="outside-owner" name="choice" value="outside">Send</button>'
-          ).appendTo("#main");
-          $form.ajaxForm();
+      it("should include a submit button associated by the form attribute from outside the form", async function () {
+        const $form = $(
+          '<form id="outside-owner" method="post" action="ajax/text.html"><input name="q" value="1"></form>'
+        ).appendTo("#main");
+        const $button = $(
+          '<button type="submit" form="outside-owner" name="choice" value="outside">Send</button>'
+        ).appendTo("#main");
+        $form.ajaxForm();
 
-          const requests = await withNavigationStopped(function () {
-            return withAjaxCapture(function () {
-              $button[0].click();
-            });
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(function () {
+            $button[0].click();
           });
+        });
 
+        if ("submitter" in SubmitEvent.prototype) {
           assert.match(requests[0].data, /choice=outside/);
+        } else {
+          assert.notMatch(requests[0].data, /choice=outside/);
         }
-      );
+      });
 
       it("should let a native submit through after ajaxFormUnbind", async function () {
         const $form = $('<form method="post" action="ajax/text.html"></form>').appendTo("#main");
