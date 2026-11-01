@@ -357,6 +357,10 @@ Release day, in one sitting:
 
 ## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
+- First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
+  bodies stay the same, and the test-name list before and after must match.
+- Then pin current behavior with characterization tests, area by area, before any refactor. Bugs
+  found this way become `it.fails` records that describe the wanted behavior.
 - Split `src/jquery.form.js` into source modules: serialization, field helpers, XHR transport, iframe transport, `ajaxForm` binding. Rollup emits the same `dist` files, and the surface tests prove ADR-0001 still holds.
 - Lower the complexity hot spots that `npm run metrics` reports.
 - Additive options and docs:
