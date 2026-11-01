@@ -1,5 +1,5 @@
 import { afterAll, assert, beforeAll, describe, it } from "vitest";
-import { resetFixture, selectFiles } from "./helpers.js";
+import { resetFixture, selectFiles, submitTransport } from "./helpers.js";
 
 const pluginFields = [
   "attr2",
@@ -184,6 +184,52 @@ describe("form", function () {
         { name: "up", value: "C:\\fakepath\\x.txt", type: "file", required: false },
         { name: "empty", value: "", type: "file", required: false },
       ]);
+    });
+  });
+
+  describe("without FormData", function () {
+    let saved;
+
+    // The plugin detects FormData once at load, so reload it while window.FormData is missing.
+    beforeAll(async function () {
+      saved = { fn: {}, fieldValue: $.fieldValue };
+      pluginFields.forEach((name) => {
+        saved.fn[name] = $.fn[name];
+      });
+      const formData = Object.getOwnPropertyDescriptor(window, "FormData");
+      Object.defineProperty(window, "FormData", { configurable: true, value: undefined });
+
+      try {
+        await import("../../src/jquery.form.js?without-formdata");
+      } finally {
+        Object.defineProperty(window, "FormData", formData);
+      }
+    });
+
+    afterAll(function () {
+      Object.assign($.fn, saved.fn);
+      $.fieldValue = saved.fieldValue;
+    });
+
+    it("should use the iframe transport when a file is selected even after FormData returns", function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post"><input type="file" name="up"></form>'
+      ).appendTo("#main");
+      selectFiles($form.find("input")[0], ["x.txt"]);
+
+      const result = submitTransport($form);
+
+      assert.strictEqual(result.transport, "iframe");
+    });
+
+    it("should use the iframe transport when the form is multipart and has no file", function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post" enctype="multipart/form-data"></form>'
+      ).appendTo("#main");
+
+      const result = submitTransport($form);
+
+      assert.strictEqual(result.transport, "iframe");
     });
   });
 });

@@ -142,3 +142,32 @@ export async function withAjaxSettings(overrides, run) {
     });
   }
 }
+
+// Submits through a stubbed $.ajax and names the transport ajaxSubmit chose: "formdata" or
+// "plain" for the $.ajax paths, "iframe" when the plugin itself calls beforeSend (vetoed here, so
+// nothing is posted), or "none". Returns { transport, settings }.
+export function submitTransport($form, options) {
+  const ajax = $.ajax;
+  const result = { transport: "none", settings: undefined };
+  $.ajax = function (settings) {
+    result.settings = settings;
+    result.transport =
+      settings.contentType === false && settings.processData === false ? "formdata" : "plain";
+    return {};
+  };
+
+  try {
+    $form.ajaxSubmit(
+      $.extend({ global: false }, options, {
+        beforeSend: function () {
+          result.transport = "iframe";
+          return false;
+        },
+      })
+    );
+  } finally {
+    $.ajax = ajax;
+  }
+
+  return result;
+}
