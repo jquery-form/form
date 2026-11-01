@@ -32,7 +32,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: none
-          queries: security-extended
+          queries: security-extended,./.github/codeql/pack-smoke-test
           # Scan the source once: every dist/ build repeats its alerts, and tests and the docs site are
           # not shipped.
           config: |
