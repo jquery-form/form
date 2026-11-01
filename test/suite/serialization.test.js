@@ -423,6 +423,41 @@ describe("form", function () {
     });
 
     describe("candidate elements", function () {
+      it("should skip a descendant whose form attribute names another form when semantic is true", function () {
+        $('<form id="ser-elsewhere"></form>').appendTo("#main");
+        const $form = $(
+          '<form id="ser-here"><input name="a" value="1"><input name="b" value="2" form="ser-elsewhere"></form>'
+        ).appendTo("#main");
+
+        const names = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should give outside controls only to the form that owns them when semantic is true", function () {
+        const $first = $('<form id="ser-twice"><input name="a" value="1"></form>').appendTo(
+          "#main"
+        );
+        const $second = $('<form id="ser-twice"><input name="b" value="2"></form>').appendTo(
+          "#main"
+        );
+        $('<input name="out" value="o" form="ser-twice">').appendTo("#main");
+
+        const first = $first.formToArray(true).map((field) => field.name);
+        const second = $second.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual([first, second], [["a", "out"], ["b"]]);
+      });
+
+      it("should not give document controls to a detached form when semantic is true", function () {
+        const $form = $('<form id="ser-detached"><input name="a" value="1"></form>');
+        $('<input name="out" value="o" form="ser-detached">').appendTo("#main");
+
+        const names = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
       it("should keep tree order for an outside control placed before the form when semantic is false", function () {
         $('<input name="out" value="o" form="ser-order">').appendTo("#main");
         const $form = $('<form id="ser-order"><input name="a" value="1"></form>').appendTo("#main");

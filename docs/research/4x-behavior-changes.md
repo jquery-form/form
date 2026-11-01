@@ -74,6 +74,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Controls in a disabled `<fieldset>` and options in a disabled `<optgroup>` are no longer sent.** This aligns `formToArray`, `ajaxSubmit`, `formSerialize` and `$.fieldValue` with the HTML spec, native submission and jQuery 3's `serializeArray`: a control is disabled also through a disabled ancestor (controls in the fieldset's first `<legend>` stay enabled). Servers receive fewer fields from such forms. Browsers without `Element.matches` read only the control's own `disabled`.
 
+- **`semantic: true` sends only the controls the form owns.** This aligns semantic mode with the HTML spec's form owner: a descendant whose `form` attribute names another form, or names no form in the page, is no longer sent; an outside control naming the form's id is sent only to the form that owns it (the first form with that id in the document), so a second form with the same id or a detached form no longer collects it. Subjects that are not forms (a fieldset, the document) are unchanged.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

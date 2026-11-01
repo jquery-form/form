@@ -225,19 +225,31 @@ function urlencodedFields(fields) {
 function createSuccessfulControls(feature) {
   var $ = jQuery;
 
-  // #386; inputs that name the form in their form attribute, other than the candidates found
-  function outsideControls(formId, els) {
+  // #386; inputs that name the form in their form attribute, other than the candidates found.
+  // A form only gets the ones it owns.
+  function outsideControls(formId, els, owner) {
     // hat tip @thet; the id is compared, never built into a selector
     return $(":input[form]")
       .filter(function () {
-        return this.getAttribute("form") === formId && $.inArray(this, els) < 0;
+        return (
+          this.getAttribute("form") === formId &&
+          (!owner || this.form === owner) &&
+          $.inArray(this, els) < 0
+        );
       })
       .get();
   }
 
+  // A descendant of a form is a candidate unless it is a control another form owns.
+  function ownedBy(els, owner) {
+    return $.grep(els, function (el) {
+      return typeof el.form === "undefined" || el.form === owner;
+    });
+  }
+
   /**
-   * The candidate controls of a form, in order: its elements, or every descendant in semantic
-   * mode, then the outside controls that name it.
+   * The candidate controls of a form, in order: its elements, or every descendant it owns in
+   * semantic mode, then the outside controls it owns that name it.
    */
   function controlsOf(form, semantic) {
     var formId = formAttribute(form, "id");
@@ -252,9 +264,16 @@ function createSuccessfulControls(feature) {
 
     els = $.makeArray(els);
 
+    // the subject may also be a fieldset, the document or another container
+    var owner = tagName(form) === "form" ? form : null;
+
+    if (semantic && owner) {
+      els = ownedBy(els, owner);
+    }
+
     // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
     if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      els = els.concat(outsideControls(formId, els));
+      els = els.concat(outsideControls(formId, els, owner));
     }
 
     return els;
