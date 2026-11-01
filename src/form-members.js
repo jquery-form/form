@@ -47,3 +47,36 @@ export function callFormMethod(form, name) {
 
   return method.apply(form, Array.prototype.slice.call(arguments, 2));
 }
+
+// Nodes such as the document and text nodes have no tag name (#600).
+export function tagName(el) {
+  var name = formMember(el, "tagName");
+
+  return typeof name === "string" ? name.toLowerCase() : "";
+}
+
+// Elements only: the subject of formToArray may also be the document or a plain object.
+export function isElement(node) {
+  return formMember(node, "nodeType") === 1;
+}
+
+// A control named parentNode makes every parentNode walk (jQuery's trigger and closest among
+// them) cycle between the form and the control.
+export function assertRealParent(el) {
+  if (el.parentNode !== formMember(el, "parentNode")) {
+    throw new Error(
+      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control'
+    );
+  }
+}
+
+// The element itself or its nearest ancestor with one of the tag names, through the real tree.
+export function closestByTag(el, names) {
+  for (var node = el; node; node = formMember(node, "parentNode")) {
+    if (names.indexOf(tagName(node)) >= 0) {
+      return node;
+    }
+  }
+
+  return null;
+}

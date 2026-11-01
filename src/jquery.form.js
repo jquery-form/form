@@ -19,8 +19,16 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-import { callFormMethod, formMember } from "./form-members.js";
+import {
+  assertRealParent,
+  callFormMethod,
+  closestByTag,
+  formMember,
+  isElement,
+  tagName,
+} from "./form-members.js";
 import { shorthandOptions, submitOptions } from "./options.js";
+import { createSubmission } from "./submission.js";
 import jQuery from "jquery";
 import { log } from "./diagnostics.js";
 
@@ -95,18 +103,6 @@ import { log } from "./diagnostics.js";
     return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
   }
 
-  // Nodes such as the document and text nodes have no tag name (#600).
-  function tagName(el) {
-    var name = formMember(el, "tagName");
-
-    return typeof name === "string" ? name.toLowerCase() : "";
-  }
-
-  // Elements only: the subject of formToArray may also be the document or a plain object.
-  function isElement(node) {
-    return formMember(node, "nodeType") === 1;
-  }
-
   // An attribute of a form, or undefined when it is absent, as jQuery's attr returns it.
   function formAttribute(form, name) {
     if (!isElement(form)) {
@@ -127,26 +123,7 @@ import { log } from "./diagnostics.js";
     return typeof value === "string" ? value : formAttribute(form, name);
   }
 
-  // A control named parentNode makes every parentNode walk (jQuery's trigger and closest among
-  // them) cycle between the form and the control.
-  function assertRealParent(el) {
-    if (el.parentNode !== formMember(el, "parentNode")) {
-      throw new Error(
-        'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control'
-      );
-    }
-  }
-
-  // The element itself or its nearest ancestor with one of the tag names, through the real tree.
-  function closestByTag(el, names) {
-    for (var node = el; node; node = formMember(node, "parentNode")) {
-      if (names.indexOf(tagName(node)) >= 0) {
-        return node;
-      }
-    }
-
-    return null;
-  }
+  var steps = createSubmission(feature, { attribute: formAttribute, property: formProperty });
 
   // attr2 uses prop when it can but checks the return type for
   // an expected string. This accounts for the case where a form
@@ -183,203 +160,25 @@ import { log } from "./diagnostics.js";
       return this;
     }
 
-    var method,
-      action,
-      url,
-      isMsie,
-      iframeSrc,
-      $form = this;
+    var submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
 
-    this.each(function () {
-      assertRealParent(this);
-    });
-
-    options = submitOptions(options, data, dataType, onSuccess);
-
-    method = options.method || options.type || formProperty(this[0], "method");
-    action = options.url || formProperty(this[0], "action");
-
-    url = typeof action === "string" ? action.trim() : "";
-    // clean url (don't include hash value); an action that is only a fragment means this page
-    url = url.split("#")[0] || window.location.href.split("#")[0];
-    // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
-    // Instead of using javascript:false always, let's only apply it for IE.
-    isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
-    iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
-
-    options = $.extend(
-      true,
-      {
-        url: url,
-        success: $.ajaxSettings.success,
-        type: method || $.ajaxSettings.type,
-        iframeSrc: iframeSrc,
-      },
-      options
-    );
-
-    // hook for manipulating the form data before it is extracted;
-    // convenient for use with rich editors like tinyMCE or FCKEditor
-    var veto = {};
-
-    this.trigger("form-pre-serialize", [this, options, veto]);
-
-    if (veto.veto) {
-      log("ajaxSubmit: submit vetoed via form-pre-serialize trigger");
-
+    if (!submission) {
       return this;
     }
 
-    // provide opportunity to alter form data before it is serialized
-    if (options.beforeSerialize && options.beforeSerialize(this, options) === false) {
-      log("ajaxSubmit: submit aborted via beforeSerialize callback");
+    steps.deliver(submission);
 
-      return this;
-    }
+    var $form = this,
+      method = submission.method,
+      traditional = submission.traditional,
+      elements = submission.controls,
+      a = submission.fields,
+      transport = steps.chooseTransport(submission),
+      jqxhr;
 
-    var traditional = options.traditional;
+    options = submission.options;
 
-    if (typeof traditional === "undefined") {
-      traditional = $.ajaxSettings.traditional;
-    }
-
-    var elements = [];
-    var qx,
-      a = this.formToArray(options.semantic, elements, options.filtering);
-
-    if (options.data) {
-      var optionsData = typeof options.data === "function" ? options.data(a) : options.data;
-
-      options.extraData = optionsData;
-      qx = $.param(optionsData, traditional);
-    }
-
-    // give pre-submit callback an opportunity to abort the submit
-    if (options.beforeSubmit && options.beforeSubmit(a, this, options) === false) {
-      log("ajaxSubmit: submit aborted via beforeSubmit callback");
-
-      return this;
-    }
-
-    // fire vetoable 'validate' event
-    this.trigger("form-submit-validate", [a, this, options, veto]);
-    if (veto.veto) {
-      log("ajaxSubmit: submit vetoed via form-submit-validate trigger");
-
-      return this;
-    }
-
-    var q = $.param(a, traditional);
-
-    if (qx) {
-      q = q ? q + "&" + qx : qx;
-    }
-
-    if (options.type.toUpperCase() === "GET") {
-      // the query goes before any fragment in the url option
-      var hashAt = options.url.indexOf("#");
-      var base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
-
-      options.url =
-        base + (base.indexOf("?") >= 0 ? "&" : "?") + q + options.url.slice(base.length);
-      options.data = null; // data is null for 'get'
-    } else {
-      options.data = q; // data is the query string for 'post'
-    }
-
-    var callbacks = [];
-
-    if (options.resetForm) {
-      callbacks.push(function () {
-        $form.resetForm();
-      });
-    }
-
-    if (options.clearForm) {
-      callbacks.push(function () {
-        $form.clearForm(options.includeHidden);
-      });
-    }
-
-    // perform a load on the target only if dataType is not provided
-    if (!options.dataType && options.target) {
-      var oldSuccess = options.success || function () {};
-
-      callbacks.push(function (data, textStatus, jqXHR) {
-        var successArguments = arguments,
-          fn = options.replaceTarget ? "replaceWith" : "html",
-          $target = $(options.target);
-
-        // Only a string response is inserted. jQuery has already parsed a JSON or XML response,
-        // and inserting it would parse each of its strings as HTML.
-        if (typeof data === "string") {
-          $target[fn](data);
-        } else {
-          log("target: the response was parsed by jQuery, so it is not inserted");
-        }
-
-        $target.each(function () {
-          oldSuccess.apply(this, successArguments);
-        });
-      });
-    } else if (options.success) {
-      if (Array.isArray(options.success)) {
-        $.merge(callbacks, options.success);
-      } else {
-        callbacks.push(options.success);
-      }
-    }
-
-    options.success = function (data, status, xhr) {
-      // jQuery 1.4+ passes xhr as 3rd arg
-      var context = options.context || this; // jQuery 1.4+ supports scope context
-
-      for (var i = 0, max = callbacks.length; i < max; i++) {
-        callbacks[i].apply(context, [data, status, xhr || $form, $form]);
-      }
-    };
-
-    if (options.error) {
-      var oldError = options.error;
-
-      options.error = function (xhr, status, error) {
-        var context = options.context || this;
-
-        oldError.apply(context, [xhr, status, error, $form]);
-      };
-    }
-
-    if (options.complete) {
-      var oldComplete = options.complete;
-
-      options.complete = function (xhr, status) {
-        var context = options.context || this;
-
-        oldComplete.apply(context, [xhr, status, $form]);
-      };
-    }
-
-    // are there files to upload?
-
-    // [value] (issue #113), also see comment:
-    // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
-    var fileInputs = $("input[type=file]:enabled", this).filter(function () {
-      return $(this).val() !== "";
-    });
-    var hasFileInputs = fileInputs.length > 0;
-    var mp = "multipart/form-data";
-    var multipart =
-      formAttribute($form[0], "enctype") === mp || formAttribute($form[0], "encoding") === mp;
-    var fileAPI = feature.fileapi && feature.formdata;
-
-    log("fileAPI :" + fileAPI);
-
-    var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
-    var jqxhr;
-
-    // options.iframe allows user to force iframe mode
-    // 06-NOV-09: now defaulting to iframe mode if file input is detected
-    if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
+    if (transport === "iframe") {
       // hack to fix Safari hang (thanks to Tim Molendijk for this)
       // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
       if (options.closeKeepAlive) {
@@ -389,7 +188,7 @@ import { log } from "./diagnostics.js";
       } else {
         jqxhr = fileUploadIframe(a);
       }
-    } else if ((hasFileInputs || multipart) && fileAPI) {
+    } else if (transport === "formdata") {
       jqxhr = fileUploadXhr(a);
     } else {
       jqxhr = $.ajax(options);
