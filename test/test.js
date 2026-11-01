@@ -375,13 +375,15 @@ describe("form", function () {
       assert.strictEqual($label.find("input").val(), "nested");
     });
 
-    // #600: resetForm reads tagName, which the document and text nodes lack.
-    it.fails("should skip nodes without a tag name", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should reset the fields of a document and skip text nodes", function () {
+      const $input = $('<input value="default">').appendTo("#main").val("changed");
       const $nodes = $([document, document.createTextNode("text")]);
 
       const reset = () => $nodes.resetForm();
 
       assert.doesNotThrow(reset);
+      assert.strictEqual($input.val(), "default");
     });
 
     it("should reset nested fields of a label without a for attribute", function () {
@@ -583,8 +585,8 @@ describe("form", function () {
       assert.strictEqual($fields.eq(1).val(), "");
     });
 
-    // #600: clearFields reads tagName, which the document and text nodes lack.
-    it.fails("should skip nodes without a tag name", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should skip nodes without a tag name", function () {
       const $nodes = $([document, document.createTextNode("text")]);
 
       const clear = () => $nodes.clearFields();
@@ -635,6 +637,15 @@ describe("form", function () {
   });
 
   describe("fieldValue", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should return no values for nodes without a tag name", function () {
+      const $nodes = $([document, document.createTextNode("text")]);
+
+      const values = $nodes.fieldValue(false);
+
+      assert.deepEqual(values, ["", ""]);
+    });
+
     it("should return null for an unselected select when success is not required", function () {
       const select = $('<select name="choice"><option>a</option></select>')[0];
       select.selectedIndex = -1;
@@ -927,6 +938,15 @@ describe("form", function () {
   });
 
   describe("enable and selected", function () {
+    // #600: the document and text nodes have no tag name.
+    it("should skip nodes without a tag name when selecting", function () {
+      const $nodes = $([document, document.createTextNode("text")]);
+
+      const select = () => $nodes.selected();
+
+      assert.doesNotThrow(select);
+    });
+
     it("should leave controls that cannot be selected unchanged", function () {
       const input = $('<input type="text" value="x">')[0];
 

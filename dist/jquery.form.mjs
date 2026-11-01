@@ -94,6 +94,11 @@ export { default } from 'jquery';
     return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
   }
 
+  // Nodes such as the document and text nodes have no tag name (#600).
+  function tagName(el) {
+    return typeof el.tagName === "string" ? el.tagName.toLowerCase() : "";
+  }
+
   function formElements(form) {
     var proto = window.HTMLFormElement && window.HTMLFormElement.prototype;
     var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "elements");
@@ -1308,7 +1313,7 @@ export { default } from 'jquery';
   $.fieldValue = function (el, successful) {
     var n = el.name,
       t = el.type,
-      tag = el.tagName.toLowerCase();
+      tag = tagName(el);
 
     if (typeof successful === "undefined") {
       successful = true;
@@ -1390,7 +1395,7 @@ export { default } from 'jquery';
 
     return this.each(function () {
       var t = this.type,
-        tag = this.tagName.toLowerCase();
+        tag = tagName(this);
 
       if (re.test(t) || tag === "textarea") {
         this.value = "";
@@ -1432,7 +1437,7 @@ export { default } from 'jquery';
   $.fn.resetForm = function () {
     return this.each(function () {
       var el = $(this);
-      var tag = this.tagName.toLowerCase();
+      var tag = tagName(this);
 
       switch (tag) {
         case "input":
@@ -1532,7 +1537,7 @@ export { default } from 'jquery';
 
       if (t === "checkbox" || t === "radio") {
         this.checked = select;
-      } else if (this.tagName.toLowerCase() === "option") {
+      } else if (tagName(this) === "option") {
         var $sel = $(this).parent("select");
 
         if (select && $sel[0] && $sel[0].type === "select-one") {
