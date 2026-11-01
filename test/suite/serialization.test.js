@@ -1199,6 +1199,26 @@ describe("form", function () {
   });
 
   describe("fieldValue", function () {
+    it("should be used by formToArray, fieldSerialize and fieldValue when a page overrides it", function () {
+      const $form = $('<form><input name="a" value="1"></form>');
+      const saved = $.fieldValue;
+      $.fieldValue = function () {
+        return "over";
+      };
+
+      try {
+        const results = [
+          $form.formToArray()[0].value,
+          $form.find("input").fieldSerialize(),
+          $form.find("input").fieldValue(),
+        ];
+
+        assert.deepEqual(results, ["over", "a=over", ["over"]]);
+      } finally {
+        $.fieldValue = saved;
+      }
+    });
+
     it("should return null for a control inside a disabled fieldset", function () {
       const input = $('<fieldset disabled><input name="a" value="1"></fieldset>').find("input")[0];
 

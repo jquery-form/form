@@ -317,6 +317,14 @@ function createSuccessfulControls(feature) {
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
     var n = el.name;
+    // read at call time, so a page that replaces $.fieldValue changes what is sent
+    var v = $.fieldValue(el, true);
+
+    if (v && v.constructor === Array) {
+      return $.map(v, function (value) {
+        return { name: n, value: value };
+      });
+    }
 
     if (feature.fileapi && el.type === "file") {
       var files = el.files;
@@ -329,16 +337,8 @@ function createSuccessfulControls(feature) {
         : [{ name: n, value: "", type: el.type }];
     }
 
-    var v = isSuccessful(el, el.form && el.form.clk) ? valueOf(el) : null;
-
     if (v === null || typeof v === "undefined") {
       return null;
-    }
-
-    if (v.constructor === Array) {
-      return $.map(v, function (value) {
-        return { name: n, value: value };
-      });
     }
 
     return [{ name: n, value: v, type: el.type, required: el.required }];
