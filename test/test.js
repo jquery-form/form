@@ -2232,8 +2232,16 @@ describe("form", function () {
         assert.deepEqual(result.events, ["error", "complete"]);
       });
 
-      // A parsed status code overwrites parsererror with success.
-      it.fails("should report malformed JSON as a parser error", async function () {
+      it("should report an emulated HTTP error before a parser error", async function () {
+        const $form = createIframeForm("ajax/iframe-error.html");
+
+        const result = await submitThroughIframe($form, { dataType: "json" });
+
+        assert.strictEqual(result.error[1], "error");
+        assert.deepEqual(result.events, ["error", "complete"]);
+      });
+
+      it("should report malformed JSON as a parser error despite a success status", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
 
         const result = await submitThroughIframe($form, { dataType: "json" });
@@ -2545,31 +2553,27 @@ describe("form", function () {
           assert.strictEqual(result.xhr.state(), "rejected");
         });
 
-        // The cb keeps running after abort, so complete fires again with a null status.
-        it.fails(
-          "should complete once when aborted while filtering the response",
-          async function () {
-            const $form = createIframeForm("ajax/iframe-plain.html");
-            const completions = [];
-            let request;
+        it("should complete once when aborted while filtering the response", async function () {
+          const $form = createIframeForm("ajax/iframe-plain.html");
+          const completions = [];
+          let request;
 
-            $form.ajaxSubmit({
-              iframe: true,
-              dataType: "text",
-              beforeSend: (xhr) => {
-                request = xhr;
-              },
-              dataFilter: (data) => {
-                request.abort();
-                return data;
-              },
-              complete: (_xhr, status) => completions.push(status),
-            });
-            await new Promise((resolve) => setTimeout(resolve, 150));
+          $form.ajaxSubmit({
+            iframe: true,
+            dataType: "text",
+            beforeSend: (xhr) => {
+              request = xhr;
+            },
+            dataFilter: (data) => {
+              request.abort();
+              return data;
+            },
+            complete: (_xhr, status) => completions.push(status),
+          });
+          await new Promise((resolve) => setTimeout(resolve, 150));
 
-            assert.deepEqual(completions, ["aborted"]);
-          }
-        );
+          assert.deepEqual(completions, ["aborted"]);
+        });
 
         it("should prefer an IE XMLDocument island as the XML response", async function () {
           const $form = createIframeForm("ajax/iframe-xml-island.html");
@@ -2800,8 +2804,7 @@ describe("form", function () {
         });
       });
 
-      // abort calls callbacks but leaves the returned Deferred pending.
-      it.fails("should reject the returned deferred when aborted", async function () {
+      it("should reject the returned deferred when aborted", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const resultPromise = submitThroughIframe($form, {});
         const xhr = $form.data("jqxhr");
@@ -2812,6 +2815,86 @@ describe("form", function () {
         assert.strictEqual(result.error[1], "aborted");
         assert.strictEqual(result.complete[1], "aborted");
         assert.strictEqual(xhr.state(), "rejected");
+      });
+
+      it("should reject an aborted upload with the abort status", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        submitThroughIframe($form, {});
+        const xhr = $form.data("jqxhr");
+        const rejection = new Promise((resolve) => xhr.fail((...args) => resolve(args)));
+
+        xhr.abort("manual");
+        const [rejectedXhr, status, reason] = await rejection;
+
+        assert.strictEqual(status, "aborted");
+        assert.strictEqual(reason, "manual");
+        assert.strictEqual(rejectedXhr.aborted, 1);
+      });
+
+      it("should end the global events and the active count when aborted", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const active = $.active;
+        const events = [];
+        $(document).on("ajaxError.abort ajaxComplete.abort ajaxStop.abort", (event) =>
+          events.push(event.type)
+        );
+
+        try {
+          const resultPromise = submitThroughIframe($form, {});
+          $form.data("jqxhr").abort();
+          await resultPromise;
+
+          assert.deepEqual(events, ["ajaxError", "ajaxComplete", "ajaxStop"]);
+          assert.strictEqual($.active, active);
+        } finally {
+          $(document).off(".abort");
+        }
+      });
+
+      it("should complete once when aborted twice", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const resultPromise = submitThroughIframe($form, {});
+        const xhr = $form.data("jqxhr");
+
+        xhr.abort();
+        xhr.abort();
+        const result = await resultPromise;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        assert.deepEqual(result.events, ["error", "complete"]);
+      });
+
+      it("should ignore an abort after the upload completed", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const result = await submitThroughIframe($form, { dataType: "text" });
+        result.xhr.abort();
+
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.strictEqual(result.xhr.state(), "resolved");
+      });
+
+      it("should ignore an abort from the success callback", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const events = [];
+
+        await new Promise((resolve) => {
+          $form.ajaxSubmit({
+            iframe: true,
+            dataType: "text",
+            success: function (data, status, xhr) {
+              events.push("success");
+              xhr.abort();
+            },
+            error: () => events.push("error"),
+            complete: () => {
+              events.push("complete");
+              resolve();
+            },
+          });
+        });
+
+        assert.deepEqual(events, ["success", "complete"]);
       });
     });
 

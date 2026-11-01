@@ -476,7 +476,8 @@ export { default } from 'jquery';
         xhr,
         sub,
         n,
-        timeoutHandle;
+        timeoutHandle,
+        callbackProcessed;
       var deferred = $.Deferred();
 
       // #341
@@ -525,33 +526,71 @@ export { default } from 'jquery';
         getResponseHeader: function () {},
         setRequestHeader: function () {},
         abort: function (status) {
-          var e = status === "timeout" ? "timeout" : "aborted";
-
-          log("aborting upload... " + e);
-          this.aborted = 1;
-
-          try {
-            // #214, #257
-            if (io.contentWindow.document.execCommand) {
-              io.contentWindow.document.execCommand("Stop");
-            }
-          } catch (ignore) {}
-
-          $io.attr("src", s.iframeSrc); // abort op in progress
-          xhr.error = e;
-          if (s.error) {
-            s.error.call(s.context, xhr, e, status);
-          }
-
-          if (g) {
-            $.event.trigger("ajaxError", [xhr, s, e]);
-          }
-
-          if (s.complete) {
-            s.complete.call(s.context, xhr, e);
-          }
+          abortUpload(status, [xhr, "aborted", status]);
         },
       };
+
+      // Completes an aborted upload once and rejects the Deferred with `rejection`.
+      function abortUpload(status, rejection) {
+        var e = status === "timeout" ? "timeout" : "aborted";
+
+        if (xhr.aborted || callbackProcessed) {
+          return;
+        }
+
+        log("aborting upload... " + e);
+        xhr.aborted = 1;
+
+        try {
+          // #214, #257
+          if (io.contentWindow.document.execCommand) {
+            io.contentWindow.document.execCommand("Stop");
+          }
+        } catch (ignore) {}
+
+        $io.attr("src", s.iframeSrc); // abort op in progress
+        xhr.error = e;
+        if (s.error) {
+          s.error.call(s.context, xhr, e, status);
+        }
+        deferred.reject.apply(deferred, rejection);
+
+        if (g) {
+          $.event.trigger("ajaxError", [xhr, s, e]);
+        }
+
+        complete(e);
+      }
+
+      // The steps every finished or aborted upload ends with, in $.ajax order.
+      function complete(status) {
+        if (g) {
+          $.event.trigger("ajaxComplete", [xhr, s]);
+        }
+
+        if (g && !--$.active) {
+          $.event.trigger("ajaxStop");
+        }
+
+        if (s.complete) {
+          s.complete.call(s.context, xhr, status);
+        }
+
+        if (s.timeout) {
+          clearTimeout(timeoutHandle);
+        }
+
+        // clean up
+        setTimeout(function () {
+          if (!s.iframeTarget) {
+            $io.remove();
+          } else {
+            // adding else to clean up existing iframe response.
+            $io.attr("src", s.iframeSrc);
+          }
+          xhr.responseXML = null;
+        }, 100);
+      }
 
       g = s.global;
       // trigger ajax global events so that activity/block indicators work like normal
@@ -572,8 +611,7 @@ export { default } from 'jquery';
       }
 
       if (xhr.aborted) {
-        deferred.reject();
-
+        // abort() in beforeSend already rejected the Deferred
         return deferred;
       }
 
@@ -767,8 +805,7 @@ export { default } from 'jquery';
 
       var data,
         doc,
-        domCheckCount = 50,
-        callbackProcessed;
+        domCheckCount = 50;
 
       function cb(e) {
         if (xhr.aborted || callbackProcessed) {
@@ -781,14 +818,12 @@ export { default } from 'jquery';
           e = SERVER_ABORT;
         }
         if (e === CLIENT_TIMEOUT_ABORT && xhr) {
-          xhr.abort("timeout");
-          deferred.reject(xhr, "timeout");
+          abortUpload("timeout", [xhr, "timeout"]);
 
           return;
         }
         if (e === SERVER_ABORT && xhr) {
-          xhr.abort("server abort");
-          deferred.reject(xhr, "error", "server abort");
+          abortUpload("server abort", [xhr, "error", "server abort"]);
 
           return;
         }
@@ -883,15 +918,18 @@ export { default } from 'jquery';
         }
 
         if (xhr.aborted) {
+          // abort() completed the upload while its response was processed
           log("upload aborted");
-          status = null;
+
+          return;
         }
 
-        if (xhr.status) {
-          // we've set xhr.status
-          status =
-            (xhr.status >= 200 && xhr.status < 300) || xhr.status === 304 ? "success" : "error";
+        // an emulated HTTP error status wins, as in $.ajax; a parse error is kept otherwise
+        if (xhr.status && !((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304)) {
+          status = "error";
         }
+
+        callbackProcessed = true;
 
         // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
         if (status === "success") {
@@ -902,7 +940,7 @@ export { default } from 'jquery';
           if (g) {
             $.event.trigger("ajaxSuccess", [xhr, s]);
           }
-        } else if (status) {
+        } else {
           if (typeof errMsg === "undefined") {
             errMsg = xhr.statusText;
           }
@@ -915,33 +953,7 @@ export { default } from 'jquery';
           }
         }
 
-        if (g) {
-          $.event.trigger("ajaxComplete", [xhr, s]);
-        }
-
-        if (g && !--$.active) {
-          $.event.trigger("ajaxStop");
-        }
-
-        if (s.complete) {
-          s.complete.call(s.context, xhr, status);
-        }
-
-        callbackProcessed = true;
-        if (s.timeout) {
-          clearTimeout(timeoutHandle);
-        }
-
-        // clean up
-        setTimeout(function () {
-          if (!s.iframeTarget) {
-            $io.remove();
-          } else {
-            // adding else to clean up existing iframe response.
-            $io.attr("src", s.iframeSrc);
-          }
-          xhr.responseXML = null;
-        }, 100);
+        complete(status);
       }
 
       var httpData = function (xhr, type, s) {
