@@ -88,6 +88,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`ajaxFormUnbind()` also removes delegated bindings; `ajaxFormUnbind(selector)` removes one.** Called without a string, it removes the selection's handlers and every `delegation` binding the plugin made on the document (`true` and selectors); delegated handlers used to stay until `$(document).off(".form-plugin")`. With a selector string it removes only that selector's binding and leaves the selection alone. `ajaxForm`'s own rebind of a selection still leaves the document handlers in place.
 
+- **`delegation: true` warns on jQuery 3 and later.** When the selection has no `.selector` (jQuery 3.0 removed it), each such `ajaxForm` call logs one `console.warn`, even with `debug` off: the binding covers every form on the page, so its options (`data`, `headers`) go with any form's submission. Pass a selector instead. Nothing is logged on jQuery 1.7.2 or without `console.warn`; the binding itself is unchanged.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

@@ -397,7 +397,24 @@ function bindLater($sel, options) {
   return $sel;
 }
 
+// delegation: true on jQuery 3 and later, where the selection has no selector: always warned,
+// debug or not, once per ajaxForm call.
+function warnUnscoped() {
+  var console = window.console || {};
+
+  if (typeof console.warn === "function") {
+    console.warn(
+      "[jquery.form] delegation: true binds every form on the page on jQuery 3 and later; " +
+        'pass a selector instead, e.g. delegation: "form.ajax"'
+    );
+  }
+}
+
 function bindDelegated($sel, options) {
+  if ($sel.selector === undefined) {
+    warnUnscoped();
+  }
+
   jQuery(document)
     .off("submit.form-plugin", $sel.selector, doAjaxSubmit)
     .off("click.form-plugin", $sel.selector, captureSubmittingElement)

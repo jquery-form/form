@@ -847,6 +847,76 @@ describe("form", function () {
     });
 
     describe("with delegation", function () {
+      describe("on a selection without selector metadata", function () {
+        let warn;
+        let warnings;
+
+        beforeEach(function () {
+          warn = console.warn;
+          warnings = [];
+          console.warn = function (message) {
+            warnings.push(message);
+          };
+        });
+
+        afterEach(function () {
+          console.warn = warn;
+          $(document).off(".form-plugin");
+        });
+
+        it("should warn once per call that every form on the page is bound, with debug off", function () {
+          const $form = $("<form></form>").appendTo("#main");
+
+          $form.ajaxForm({ delegation: true });
+
+          const expected = $form.selector === undefined ? 1 : 0;
+          assert.strictEqual($.fn.ajaxSubmit.debug, false);
+          assert.strictEqual(warnings.length, expected);
+          assert.strictEqual(
+            warnings.every((message) => /every form on the page/.test(message)),
+            true
+          );
+        });
+
+        it("should not warn when delegation is a selector", function () {
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+
+          assert.strictEqual(warnings.length, 0);
+        });
+
+        it("should not warn when the selection keeps old jQuery selector metadata", function () {
+          const $form = $("<form></form>").appendTo("#main");
+          $form.selector = "form";
+
+          $form.ajaxForm({ delegation: true });
+
+          assert.strictEqual(warnings.length, 0);
+        });
+
+        it("should bind without warning when there is no console", function () {
+          const $form = $("<form></form>").appendTo("#main");
+          const console = window.console;
+          window.console = undefined;
+
+          try {
+            $form.ajaxForm({ delegation: true });
+          } finally {
+            window.console = console;
+          }
+
+          assert.strictEqual($._data(document, "events").submit.length, 1);
+        });
+
+        it("should bind without warning when the console has no warn", function () {
+          const $form = $("<form></form>").appendTo("#main");
+          console.warn = undefined;
+
+          $form.ajaxForm({ delegation: true });
+
+          assert.strictEqual($._data(document, "events").submit.length, 1);
+        });
+      });
+
       it("should return the selection", function () {
         const $form = $("<form></form>").appendTo("#main");
 
