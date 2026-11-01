@@ -241,6 +241,11 @@ export function createIframeTransport(hasProp, forms) {
 
     // An exception while posting settles the upload with "error" and the exception.
     function post() {
+      if (life.done()) {
+        // aborted before the delayed post
+        return;
+      }
+
       try {
         doSubmit();
       } catch (err) {

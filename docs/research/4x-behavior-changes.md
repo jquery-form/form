@@ -54,6 +54,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Every iframe upload settles once, also when it fails with an exception.** An `iframeTarget` that matches nothing, or a subject that is not a form, used to throw and leave `$.active` raised with no `ajaxStop`. The upload now settles with `"error"` and the exception: the `error` callback, a rejected Deferred, `ajaxError`, `complete`, `ajaxComplete` and `ajaxStop`. A `success` callback that throws no longer leaves the Deferred pending and the global events open; its exception still reaches the console, after the upload settled. `beforeSend` that aborts and returns `false` no longer decrements `$.active` twice.
 
+- **`abort()` before the delayed iframe post cancels it.** Without `forceSync`, the form is posted about 10 ms after `ajaxSubmit` returns. An `abort()` in that window reported `aborted` and still posted the form; the form is no longer posted.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

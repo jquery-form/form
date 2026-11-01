@@ -2335,19 +2335,16 @@ describe("form", function () {
             );
           });
 
-          it.fails(
-            "should not post the form when the upload is aborted before the delayed post",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              let posts = 0;
-              const deferred = startStubbedUpload($form, { forceSync: false }, () => posts++);
+          it("should not post the form when the upload is aborted before the delayed post", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let posts = 0;
+            const deferred = startStubbedUpload($form, { forceSync: false }, () => posts++);
 
-              deferred.abort();
-              await wait(50);
+            deferred.abort();
+            await wait(50);
 
-              assert.strictEqual(posts, 0);
-            }
-          );
+            assert.strictEqual(posts, 0);
+          });
         });
 
         describe("response reading", function () {
