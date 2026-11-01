@@ -68,6 +68,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **A clicked image button is sent when it is the form's only control.** With `semantic` off, `formToArray` returned no fields when the form had no other listed control, so the image's name, value and coordinates were dropped.
 
+- **Selected files are sent by name, never as `[object File]`, and outside file inputs are uploaded (D-03).** `formSerialize` now gives a selected file's name, as native urlencoded submission does. A file input outside the form that belongs to it through `form="id"` now makes `ajaxSubmit` choose the FormData upload; it used to be ignored and the file was sent as `[object File]`.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

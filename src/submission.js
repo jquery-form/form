@@ -349,9 +349,12 @@ export function createSubmission(feature, forms, serialization) {
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
-    var fileInputs = $("input[type=file]:enabled", $set).filter(function () {
-      return $(this).val() !== "";
-    });
+    // and the file inputs outside the form that belong to it through their form attribute
+    var fileInputs = $("input[type=file]:enabled", $set)
+      .add($(submission.controls).filter("input[type=file]"))
+      .filter(function () {
+        return $(this).val() !== "";
+      });
     var hasFileInputs = fileInputs.length > 0;
     var mp = "multipart/form-data";
     var multipart =

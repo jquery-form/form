@@ -83,6 +83,17 @@ export function valueOf(el) {
 }
 
 /**
+ * The fields as a urlencoded body sends them: a selected file as its name.
+ */
+export function urlencodedFields(fields) {
+  return jQuery.map(fields, function (field) {
+    return field.type === "file" && typeof field.value !== "string"
+      ? { name: field.name, value: field.value.name }
+      : field;
+  });
+}
+
+/**
  * The serialization steps. `feature` holds what the entry detected at load (fileapi).
  */
 export function createSuccessfulControls(feature) {

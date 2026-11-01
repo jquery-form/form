@@ -679,23 +679,18 @@ describe("form", function () {
         }
       );
 
-      it.fails(
-        "should upload the file when the file input belongs to the form through the form attribute",
-        function () {
-          const $form = makeForm(
-            '<form id="xhr-owner" action="ajax/text.html" method="post"><input name="title" value="t"></form>'
-          );
-          const $input = $('<input type="file" name="document" form="xhr-owner">').appendTo(
-            "#main"
-          );
-          const files = selectFiles($input[0], ["report.txt"]);
+      it("should upload the file when the file input belongs to the form through the form attribute", function () {
+        const $form = makeForm(
+          '<form id="xhr-owner" action="ajax/text.html" method="post"><input name="title" value="t"></form>'
+        );
+        const $input = $('<input type="file" name="document" form="xhr-owner">').appendTo("#main");
+        const files = selectFiles($input[0], ["report.txt"]);
 
-          const result = submitTransport($form);
+        const result = submitTransport($form);
 
-          assert.strictEqual(result.transport, "formdata");
-          assert.strictEqual(uploadBody(result.settings).get("document"), files[0]);
-        }
-      );
+        assert.strictEqual(result.transport, "formdata");
+        assert.strictEqual(uploadBody(result.settings).get("document"), files[0]);
+      });
 
       it("should use the plain transport when the same form is submitted again after an iframe upload", async function () {
         const $form = makeForm(

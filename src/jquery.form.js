@@ -20,7 +20,12 @@
  * Lesser General Public License for more details.
  */
 import { assertRealParent, callFormMethod, closestByTag, tagName } from "./form-members.js";
-import { createSuccessfulControls, isSuccessful, valueOf } from "./successful-controls.js";
+import {
+  createSuccessfulControls,
+  isSuccessful,
+  urlencodedFields,
+  valueOf,
+} from "./successful-controls.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
 import { shorthandOptions, submitOptions } from "./options.js";
 import { createIframeTransport } from "./iframe-transport.js";
@@ -305,7 +310,7 @@ import { log } from "./diagnostics.js";
    */
   $.fn.formSerialize = function (semantic) {
     // hand off to jQuery.param for proper encoding
-    return $.param(this.formToArray(semantic));
+    return $.param(urlencodedFields(this.formToArray(semantic)));
   };
 
   /**

@@ -1103,7 +1103,7 @@ describe("form", function () {
       assert.strictEqual(plain, "a=1&b=2&map=go&map.x=3&map.y=4");
     });
 
-    it.fails("should send the file name when a file is selected", function () {
+    it("should send the file name when a file is selected", function () {
       const $form = $('<form><input name="a" value="1"><input type="file" name="up"></form>');
       selectFiles($form.find('[type="file"]')[0], ["x.txt"]);
 
