@@ -483,6 +483,19 @@ describe("form", function () {
         assert.ok($("#targetDiv").text().match("Lorem ipsum"), "targetDiv updated");
       });
 
+      it("should insert what dataFilter returns into the target", async function () {
+        $("#targetDiv").empty();
+        const opts = {
+          target: "#targetDiv",
+          dataFilter: (data) => "filtered " + data.length,
+        };
+
+        const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
+
+        assert.ok(seen.success, "post-callback");
+        assert.match($("#targetDiv").text(), /^filtered \d+$/);
+      });
+
       it("should run each script of a loaded document exactly once", async function () {
         $("#targetDiv").empty();
         const opts = {

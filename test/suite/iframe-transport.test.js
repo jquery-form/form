@@ -321,6 +321,18 @@ describe("form", function () {
         }
       });
 
+      it("should insert what dataFilter returns into the target on an upload", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const $target = $('<div id="iframe-filter-target">kept</div>').appendTo("#main");
+
+        await submitThroughIframe($form, {
+          target: $target,
+          dataFilter: (data) => "filtered " + typeof data,
+        });
+
+        assert.strictEqual($target.text(), "filtered string");
+      });
+
       it("should parse textarea JSON and apply dataFilter", async function () {
         const $form = createIframeForm("ajax/iframe-json.html");
         let filtered;
