@@ -70,6 +70,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Selected files are sent by name, never as `[object File]`, and outside file inputs are uploaded (D-03).** `formSerialize` now gives a selected file's name, as native urlencoded submission does. A file input outside the form that belongs to it through `form="id"` now makes `ajaxSubmit` choose the FormData upload; it used to be ignored and the file was sent as `[object File]`.
 
+- **`fieldSerialize` skips forms (D-28).** A named `<form>` in the set used to be sent as an empty field (`other=`).
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

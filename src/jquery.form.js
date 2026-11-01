@@ -323,7 +323,8 @@ import { log } from "./diagnostics.js";
     this.each(function () {
       var n = this.name;
 
-      if (!n) {
+      // a form is not a field, though it may have a name
+      if (!n || tagName(this) === "form") {
         return;
       }
 

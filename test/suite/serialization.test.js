@@ -1438,7 +1438,7 @@ describe("form", function () {
       assert.strictEqual(result, "up=C%3A%5Cfakepath%5Cx.txt");
     });
 
-    it.fails("should skip forms", function () {
+    it("should skip forms", function () {
       const $form = $('<form name="other"><input name="a" value="1"></form>');
 
       const result = $form.fieldSerialize();
