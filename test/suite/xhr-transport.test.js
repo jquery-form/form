@@ -666,18 +666,25 @@ describe("form", function () {
         assert.deepEqual(transports, ["plain", "formdata"]);
       });
 
-      it.fails(
-        "should use the FormData transport when the enctype is Multipart/Form-Data",
-        function () {
-          const $form = makeForm(
-            '<form action="ajax/text.html" method="post" enctype="Multipart/Form-Data"></form>'
-          );
+      it("should use the FormData transport when the enctype is Multipart/Form-Data", function () {
+        const $form = makeForm(
+          '<form action="ajax/text.html" method="post" enctype="Multipart/Form-Data"></form>'
+        );
 
-          const result = submitTransport($form);
+        const result = submitTransport($form);
 
-          assert.strictEqual(result.transport, "formdata");
-        }
-      );
+        assert.strictEqual(result.transport, "formdata");
+      });
+
+      it("should use the FormData transport when the enctype has surrounding spaces", function () {
+        const $form = makeForm(
+          '<form action="ajax/text.html" method="post" enctype=" multipart/form-data "></form>'
+        );
+
+        const result = submitTransport($form);
+
+        assert.strictEqual(result.transport, "formdata");
+      });
 
       it("should upload the file when the file input belongs to the form through the form attribute", function () {
         const $form = makeForm(

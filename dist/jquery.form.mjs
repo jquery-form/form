@@ -2132,9 +2132,10 @@ function createSubmission(feature, forms, serialization) {
         return $(this).val() !== "";
       });
     var hasFileInputs = fileInputs.length > 0;
-    var mp = "multipart/form-data";
+    // compared as the browser does: ASCII case-insensitive, without surrounding whitespace
+    var mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
     var multipart =
-      forms.attribute($set[0], "enctype") === mp || forms.attribute($set[0], "encoding") === mp;
+      mp.test(forms.attribute($set[0], "enctype")) || mp.test(forms.attribute($set[0], "encoding"));
     var fileAPI = feature.fileapi && feature.formdata;
 
     log("fileAPI :" + fileAPI);
