@@ -96,7 +96,7 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 10. ~~Dependency modernization (Phase 6)~~ — done
 11. ~~Issue triage (Phase 7)~~ — done (`docs/research/issue-triage.md`)
 12. ~~Architecture and vulnerability review (Phase 8)~~ — done (`docs/research/security-review.md`)
-13. Coverage to 100% (Phase 9)
+13. ~~Coverage to 100% (Phase 9)~~ — done; see Phase 9 below
 14. Security and bug fixes (Phase 10)
 15. 4.x cleanup and rearchitecture (Phase 11), then the 4.x release
 16. 5.0 (Phase 12), then the 5.0 release; 5.x features after
@@ -137,7 +137,7 @@ Each remaining step gets the cheapest model that fits it: a strong reasoner wher
 | Issue triage (Phase 7)                          | Gemini 4 Argon    | Long-context reading of many issues and PRs; classification more than deep reasoning.                                                                                        |
 | Architecture and vulnerability review (Phase 8) | Claude Opus 5.5   | Security analysis (XSS, script eval, iframe parsing, prototype pollution) where missed findings are costly.                                                                  |
 | Coverage to 100% (Phase 9)                      | GPT-5.6 Sol       | Same branch-by-branch reasoning as Phase 5; each deletion must be proven dead on every supported jQuery and browser.                                                         |
-| Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes in private advisory forks; a weak fix reopens an XSS.                                                                                                         |
+| Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes on a local branch until release; a weak fix reopens an XSS.                                                                                                   |
 | 4.x cleanup and rearchitecture (Phase 11)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                    |
 | 5.0 (Phase 12)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
 
@@ -275,9 +275,25 @@ The phases below run in order before the releases. Each records a before-and-aft
 - Refactor for testability where a branch needs it. For the IE-on-HTTPS `javascript:false` default, either move the decision into a small helper the suite can drive, or add an HTTPS test project. Pick the cheaper option.
 - Raise the coverage thresholds to 100%. Add no `/* v8 ignore */` comments.
 
+Status: done. Coverage is 100% on lines, branches, functions and statements, and `npm test`
+enforces it. Each removed branch and the reason it was dead are in `docs/research/coverage-gaps.md`.
+
+- The timeout path was simplified, not restructured: the `timedOut` flag was never read while true, so
+  it is gone. The outer `catch` in the iframe callback is reached by a stubbed IE8 access denial.
+- For `javascript:false`, the helper option was cheaper and avoids a second test project. The HTTPS
+  check reads `document.URL`, which the suite can redefine.
+- Explicit `dataType: "script"` now evaluates iframe responses (`docs/research/4x-behavior-changes.md`).
+- The CodeQL baseline on `main` is 3 open alerts in `src/` (alerts 1, 4 and 7).
+
 ## Phase 10: Security and bug fixes (4.x)
 
-- W1–W4 from `security-review.md`, developed in the advisories' private forks and merged at release.
+- W1–W4 from `security-review.md`. There are no private advisory forks: the fixes stay on a local
+  branch until release day.
+- Four draft advisories exist: the two accepted reports (severity high) and W3 and W4 (severity
+  medium). CVEs were requested for all four on 2026-10-31. Reporters are not invited as
+  collaborators. Set `patched_versions` on each before publishing.
+- A custom CodeQL query that catches W1–W4, which the built-in queries miss. It must flag them before
+  the fixes and pass after. Keep it private until the fixed release ships, since it reveals the sinks.
 - The review's findings 4, 6, 7 and 8. Fixing finding 7 also clears the three `no-prototype-builtins` warnings.
 - The P1 bugs #588, #597, #600 and #553, and the remaining Phase 5 `it.fails` records: label lookup, iframe parsererror overwrite, double completion and pending Deferred on abort.
 - Each `it.fails` becomes an `it`, and coverage stays at 100%.

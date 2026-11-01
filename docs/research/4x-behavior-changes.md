@@ -9,6 +9,10 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **`package.json` has a `files` list** (`dist`, `src`). The published tarball no longer carries tests, docs, CI config or the other repository files. `main`, `module` and `browser` still point at `dist/`.
 - **`form.jquery.json` no longer lists the old Grunt, Mocha and Chai `devDependencies`.**
 
+## Phase 9
+
+- **Iframe uploads with `dataType: "script"` now run the response.** The iframe transport returned the script text without evaluating it; it now evaluates it with `$.globalEval`, as `$.ajax` does. Only an explicit `dataType: "script"` does this. Other data types are unchanged.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
