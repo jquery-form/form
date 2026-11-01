@@ -100,6 +100,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **A multipart `enctype` is recognized without regard to case or surrounding spaces (D-25).** `enctype="Multipart/Form-Data"` sent the form urlencoded; it now chooses the FormData upload, as the browser does.
 
+- **`uploadProgress` keeps a custom `xhr` factory (D-15).** With `uploadProgress`, an `xhr` option (or `$.ajaxSetup({xhr})`) was replaced by jQuery's default factory and never called. The plugin now wraps the factory in use and adds its progress listener to the object it returns.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

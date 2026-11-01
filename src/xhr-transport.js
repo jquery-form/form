@@ -57,9 +57,12 @@ export function sendFormData(submission) {
   keepContext(s, [$.ajaxSettings, options]);
 
   if (options.uploadProgress) {
-    // workaround because jqXHR does not expose upload property
+    // workaround because jqXHR does not expose upload property: wraps the xhr factory, the
+    // caller's or jQuery's
+    var createXhr = s.xhr;
+
     s.xhr = function () {
-      var xhr = $.ajaxSettings.xhr();
+      var xhr = createXhr.call(this);
 
       if (xhr.upload) {
         xhr.upload.addEventListener(

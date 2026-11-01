@@ -1249,7 +1249,7 @@ describe("form", function () {
         assert.strictEqual(seen.context, seen.options);
       });
 
-      it.fails("should use the custom xhr option when uploadProgress is given", async function () {
+      it("should use the custom xhr option when uploadProgress is given", async function () {
         const upload = uploadForm();
         let calls = 0;
 
