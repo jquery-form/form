@@ -38,16 +38,22 @@ jobs:
       - run: npm test
       - name: Check committed dist matches the build
         run: git diff --exit-code -- dist
-      - name: Check the tag matches the package version
+      - name: Check the tag matches an unpublished package version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          version="v$(node -p "require('./package.json').version")"
-          if [ "$version" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package.json version $version."
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version v$version."
             exit 1
           fi
+          if [ -n "$(npm view "jquery-form@$version" version 2>/dev/null)" ]; then
+            echo "jquery-form@$version is already on npm."
+            exit 1
+          fi
+      # npm pack lists the same files as npm publish without asking the registry, so a rehearsal from
+      # a branch passes even though its version is already published.
       - name: Show the tarball that would be published
-        run: npm publish --dry-run
+        run: npm pack --dry-run
 
   publish:
     needs: verify
