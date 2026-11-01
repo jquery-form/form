@@ -73,6 +73,56 @@ function callFormMethod(form, name) {
   return method.apply(form, Array.prototype.slice.call(arguments, 2));
 }
 
+// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
+
+/**
+ * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
+ * the url; anything else is returned as given.
+ */
+function shorthandOptions(options, data, dataType, onSuccess) {
+  if (typeof options !== "string" && options !== false) {
+    return options;
+  }
+
+  var result = { url: options, data: data, dataType: dataType };
+
+  if (typeof onSuccess === "function") {
+    result.success = onSuccess;
+  }
+
+  return result;
+}
+
+/**
+ * The options ajaxSubmit starts from: a function is the success callback, the shorthand is
+ * expanded, and no options at all is an empty object.
+ */
+function submitOptions(options, data, dataType, onSuccess) {
+  if (typeof options === "function") {
+    return { success: options };
+  }
+
+  options = shorthandOptions(options, data, dataType, onSuccess);
+
+  return typeof options === "undefined" ? {} : options;
+}
+
+// Debug logging, switched on by $.fn.ajaxSubmit.debug. The flag is read on every call, so it can
+// be turned on after the plugin loads.
+function log() {
+  if (!jQuery.fn.ajaxSubmit.debug) {
+    return;
+  }
+
+  var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
+
+  if (window.console && window.console.log) {
+    window.console.log(msg);
+  } else if (window.opera && window.opera.postError) {
+    window.opera.postError(msg);
+  }
+}
+
 (function ($) {
 
   /*
@@ -242,21 +292,7 @@ function callFormMethod(form, name) {
       assertRealParent(this);
     });
 
-    if (typeof options === "function") {
-      options = { success: options };
-    } else if (typeof options === "string" || (options === false && arguments.length > 0)) {
-      options = {
-        url: options,
-        data: data,
-        dataType: dataType,
-      };
-
-      if (typeof onSuccess === "function") {
-        options.success = onSuccess;
-      }
-    } else if (typeof options === "undefined") {
-      options = {};
-    }
+    options = submitOptions(options, data, dataType, onSuccess);
 
     method = options.method || options.type || formProperty(this[0], "method");
     action = options.url || formProperty(this[0], "action");
@@ -1122,19 +1158,7 @@ function callFormMethod(form, name) {
    * the form itself.
    */
   $.fn.ajaxForm = function (options, data, dataType, onSuccess) {
-    if (typeof options === "string" || (options === false && arguments.length > 0)) {
-      options = {
-        url: options,
-        data: data,
-        dataType: dataType,
-      };
-
-      if (typeof onSuccess === "function") {
-        options.success = onSuccess;
-      }
-    }
-
-    options = options || {};
+    options = shorthandOptions(options, data, dataType, onSuccess) || {};
     options.delegation = options.delegation && typeof $.fn.on === "function";
 
     // in jQuery 1.3+ we can fix mistakes with the ready state
@@ -1687,19 +1711,4 @@ function callFormMethod(form, name) {
 
   // expose debug var
   $.fn.ajaxSubmit.debug = false;
-
-  // helper fn for console logging
-  function log() {
-    if (!$.fn.ajaxSubmit.debug) {
-      return;
-    }
-
-    var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
-
-    if (window.console && window.console.log) {
-      window.console.log(msg);
-    } else if (window.opera && window.opera.postError) {
-      window.opera.postError(msg);
-    }
-  }
 })(jQuery);

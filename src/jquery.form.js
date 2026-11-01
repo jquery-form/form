@@ -20,7 +20,9 @@
  * Lesser General Public License for more details.
  */
 import { callFormMethod, formMember } from "./form-members.js";
+import { shorthandOptions, submitOptions } from "./options.js";
 import jQuery from "jquery";
+import { log } from "./diagnostics.js";
 
 (function ($) {
   "use strict";
@@ -192,21 +194,7 @@ import jQuery from "jquery";
       assertRealParent(this);
     });
 
-    if (typeof options === "function") {
-      options = { success: options };
-    } else if (typeof options === "string" || (options === false && arguments.length > 0)) {
-      options = {
-        url: options,
-        data: data,
-        dataType: dataType,
-      };
-
-      if (typeof onSuccess === "function") {
-        options.success = onSuccess;
-      }
-    } else if (typeof options === "undefined") {
-      options = {};
-    }
+    options = submitOptions(options, data, dataType, onSuccess);
 
     method = options.method || options.type || formProperty(this[0], "method");
     action = options.url || formProperty(this[0], "action");
@@ -1072,19 +1060,7 @@ import jQuery from "jquery";
    * the form itself.
    */
   $.fn.ajaxForm = function (options, data, dataType, onSuccess) {
-    if (typeof options === "string" || (options === false && arguments.length > 0)) {
-      options = {
-        url: options,
-        data: data,
-        dataType: dataType,
-      };
-
-      if (typeof onSuccess === "function") {
-        options.success = onSuccess;
-      }
-    }
-
-    options = options || {};
+    options = shorthandOptions(options, data, dataType, onSuccess) || {};
     options.delegation = options.delegation && typeof $.fn.on === "function";
 
     // in jQuery 1.3+ we can fix mistakes with the ready state
@@ -1637,21 +1613,6 @@ import jQuery from "jquery";
 
   // expose debug var
   $.fn.ajaxSubmit.debug = false;
-
-  // helper fn for console logging
-  function log() {
-    if (!$.fn.ajaxSubmit.debug) {
-      return;
-    }
-
-    var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
-
-    if (window.console && window.console.log) {
-      window.console.log(msg);
-    } else if (window.opera && window.opera.postError) {
-      window.opera.postError(msg);
-    }
-  }
 })(jQuery);
 
 export default jQuery;
