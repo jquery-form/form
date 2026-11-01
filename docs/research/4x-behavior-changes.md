@@ -64,6 +64,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **A control inside a form whose `form` attribute names that same form is sent once.** With `semantic: true` such a control was collected twice, as a descendant and again as an outside control.
 
+- **Named `fieldset`, `output` and `object` elements are no longer sent.** `formToArray` (and so `ajaxSubmit` and `formSerialize`) sent them as fields, `output` with its text; native submission never includes them.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

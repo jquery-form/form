@@ -514,12 +514,22 @@ describe("form", function () {
         assert.deepEqual(names, ["a"]);
       });
 
-      it.fails("should skip named fieldset, output and object elements", function () {
+      it("should skip named fieldset, output and object elements", function () {
         const $form = $(
           '<form><fieldset name="fs"><input name="a" value="1"></fieldset><output name="o">out</output><object name="obj"></object></form>'
         ).appendTo("#main");
 
         const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should skip named fieldset, output and object elements when semantic is true", function () {
+        const $form = $(
+          '<form><fieldset name="fs"><input name="a" value="1"></fieldset><output name="o">out</output><object name="obj"></object></form>'
+        );
+
+        const names = $form.formToArray(true).map((field) => field.name);
 
         assert.deepEqual(names, ["a"]);
       });

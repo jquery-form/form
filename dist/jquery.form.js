@@ -149,6 +149,9 @@ function formAttribute(form, name) {
 
 var rCRLF = /\r?\n/g;
 
+// Listed form elements that are never submitted.
+var rUnsubmittable = /^(?:fieldset|object|output)$/;
+
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
@@ -306,7 +309,7 @@ function createSuccessfulControls(feature) {
 
   // Adds one candidate control's fields, and the control when it has a value to send.
   function addCandidate(collected, form, el, semantic) {
-    if (!el.name || el.disabled) {
+    if (!el.name || el.disabled || rUnsubmittable.test(tagName(el))) {
       return;
     }
 
