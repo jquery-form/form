@@ -1196,6 +1196,50 @@ describe("form", function () {
         );
       });
 
+      // Submits a multipart form with one control through a stubbed $.ajax; returns the FormData.
+      async function captureMultipartBody(options) {
+        const $form = $(
+          '<form action="ajax/upload" method="post" enctype="multipart/form-data">' +
+            '<input name="title" value="t">' +
+            "</form>"
+        ).appendTo("#main");
+        let body;
+
+        await withAjaxStub(
+          function (settings) {
+            const requestSettings = {};
+            settings.beforeSend({}, requestSettings);
+            body = requestSettings.data;
+            return {};
+          },
+          async function () {
+            $form.ajaxSubmit(options);
+            await Promise.resolve();
+          }
+        );
+
+        return body;
+      }
+
+      it("should not add a field for an empty data object", async function () {
+        const body = await captureMultipartBody({ data: {} });
+
+        assert.deepEqual(Array.from(body.entries()), [["title", "t"]]);
+      });
+
+      it("should serialize extra data with the global traditional setting", async function () {
+        const traditional = $.ajaxSettings.traditional;
+        $.ajaxSettings.traditional = true;
+
+        try {
+          const body = await captureMultipartBody({ data: { labels: ["a", "b"] } });
+
+          assert.deepEqual(body.getAll("labels"), ["a", "b"]);
+        } finally {
+          $.ajaxSettings.traditional = traditional;
+        }
+      });
+
       it("should send caller-provided FormData instead of generated form contents", async function () {
         const upload = appendUploadForm();
         const customData = new FormData();

@@ -393,7 +393,8 @@
 
     // utility fn for deep serialization
     function deepSerialize(extraData) {
-      var serialized = $.param(extraData, options.traditional).split("&");
+      var param = $.param(extraData, traditional);
+      var serialized = param ? param.split("&") : [];
       var len = serialized.length;
       var result = [];
       var i, part;
