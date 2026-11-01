@@ -99,9 +99,8 @@ export function sendFormData(submission) {
       o.data = formdata;
     }
 
-    if (beforeSend) {
-      beforeSend.call(this, xhr, o);
-    }
+    // a veto (false) cancels the upload, as on the other transports
+    return beforeSend ? beforeSend.call(this, xhr, o) : undefined;
   };
 
   return $.ajax(s);

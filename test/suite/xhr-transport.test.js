@@ -1388,7 +1388,7 @@ describe("form", function () {
         );
       });
 
-      it.fails("should not send the upload when beforeSend returns false", async function () {
+      it("should not send the upload when beforeSend returns false", async function () {
         const upload = uploadForm();
 
         const request = await recordRequest(function (complete) {

@@ -104,6 +104,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`uploadProgress` reports position 0 and 0 percent for the first event (D-15).** An event with `loaded: 0` reported the deprecated `position` property instead (`undefined`, so the percent was `NaN`). `position` is now read only when the event has no `loaded`.
 
+- **`beforeSend` returning `false` cancels a FormData upload.** The plugin's wrapper dropped the return value, so the upload was sent anyway; a `false` from the `beforeSend` option or from `$.ajaxSetup` now cancels it, as it already did for plain requests and iframe uploads.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
