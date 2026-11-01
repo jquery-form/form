@@ -6,6 +6,7 @@ import {
   restoreAjaxState,
   submitAndSettle,
   withAjaxStub,
+  formHidingParentNode,
 } from "./helpers.js";
 
 const jQueryMajor = Number($.fn.jquery.split(".")[0]);
@@ -1244,21 +1245,18 @@ describe("form", function () {
         );
       });
 
-      // jQuery 3 and 4 read the control in place of the form's nodeType inside closest("form").
-      (jQueryMajor < 3 ? it : it.fails)(
-        "should submit the form when a control is named nodeType",
-        async function () {
-          const $form = $('<form><input name="nodeType" value="1"></form>').appendTo("#main");
+      // jQuery 3 and 4 would read the control in place of the form's nodeType inside closest("form").
+      it("should submit the form when a control is named nodeType", async function () {
+        const $form = $('<form><input name="nodeType" value="1"></form>').appendTo("#main");
 
-          const calls = await withAjaxSubmitStub(async function (calls) {
-            $form.ajaxForm();
-            $form.trigger("submit");
-            return calls;
-          });
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.trigger("submit");
+          return calls;
+        });
 
-          assert.strictEqual(calls[0].form, $form[0]);
-        }
-      );
+        assert.strictEqual(calls[0].form, $form[0]);
+      });
     });
 
     describe("native submission", function () {
@@ -1570,6 +1568,32 @@ describe("form", function () {
           assert.deepEqual(posted, ["stale", "stale"]);
         });
       });
+    });
+
+    describe("controls named like form members", function () {
+      it("should throw a clear error on a click when a control named parentNode hides the form's parent", function () {
+        const form = formHidingParentNode("<span>content</span>");
+        const $form = $(form).ajaxForm();
+        const click = $.Event("click", { target: form.querySelector("span") });
+
+        const capture = () => $form.triggerHandler(click);
+
+        assert.throws(capture, /control named "parentNode"/);
+      }, 2000);
+
+      it("should capture the button around the clicked content through the real tree when delegating", function () {
+        const form = formHidingParentNode('<button type="submit"><span>Go</span></button>');
+        const click = $.Event("click", { target: form.querySelector("span") });
+
+        try {
+          $(form).ajaxForm({ delegation: true });
+          $(document).triggerHandler(click);
+
+          assert.strictEqual(form.clk, form.querySelector("button"));
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      }, 2000);
     });
 
     describe("ajaxFormUnbind", function () {

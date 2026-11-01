@@ -606,23 +606,20 @@ describe("form", function () {
       assert.strictEqual($form.find("input").eq(0).val(), "a");
     });
 
-    it.fails(
-      "should reset natively when a control named tagName shadows the form's tag name",
-      function () {
-        $(
-          '<form id="tag-owner"><input name="tagName"></form><input form="tag-owner" value="default">'
-        ).appendTo("#main");
-        const $form = $("#tag-owner");
-        const $outside = $("#main input[form=tag-owner]").val("changed");
-        let resets = 0;
-        $form.on("reset", () => resets++);
+    it("should reset natively when a control named tagName shadows the form's tag name", function () {
+      $(
+        '<form id="tag-owner"><input name="tagName"></form><input form="tag-owner" value="default">'
+      ).appendTo("#main");
+      const $form = $("#tag-owner");
+      const $outside = $("#main input[form=tag-owner]").val("changed");
+      let resets = 0;
+      $form.on("reset", () => resets++);
 
-        $form.resetForm();
+      $form.resetForm();
 
-        assert.strictEqual(resets, 1);
-        assert.strictEqual($outside.val(), "default");
-      }
-    );
+      assert.strictEqual(resets, 1);
+      assert.strictEqual($outside.val(), "default");
+    });
 
     it("should reset a nested form natively when a container is reset", function () {
       const $container = $('<div><form><input value="default"></form></div>').appendTo("#main");

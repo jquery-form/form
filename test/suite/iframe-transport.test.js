@@ -684,6 +684,25 @@ describe("form", function () {
         assert.strictEqual($form[0].hasAttribute("action"), false);
       });
 
+      [
+        ["ownerDocument", "the form's document"],
+        ["getAttribute", "the form's attributes"],
+      ].forEach(function ([name, member]) {
+        // jQuery 1.7.2's selector engine reads both members on the form itself.
+        it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
+          `should upload when a control named ${name} shadows ${member}`,
+          async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $(`<input name="${name}" value="x">`).appendTo($form);
+
+            const result = await submitThroughIframe($form, { dataType: "text" });
+
+            assert.deepEqual(result.events, ["success", "complete"]);
+            assert.strictEqual(result.success[0].trim(), "iframe response");
+          }
+        );
+      });
+
       it("should submit extraData keys and buttons named hasOwnProperty", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const button = $('<button type="submit" name="hasOwnProperty" value="go">').appendTo($form);

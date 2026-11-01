@@ -172,6 +172,27 @@ export function submitTransport($form, options) {
   return result;
 }
 
+// Builds a form without jQuery's HTML parsing, which calls getElementsByTagName on the form and
+// so cannot build one whose control shadows that method.
+export function buildForm(innerHtml, action) {
+  const form = document.createElement("form");
+  form.innerHTML = innerHtml;
+  if (action) {
+    form.setAttribute("action", action);
+  }
+
+  return form;
+}
+
+// Builds a form whose control named parentNode hides the form's parentNode, without passing it
+// through jQuery: jQuery's own parentNode walks would cycle between the form and the control.
+export function formHidingParentNode(innerHtml) {
+  const form = document.createElement("form");
+  form.innerHTML = '<select name="parentNode"></select>' + (innerHtml || "");
+
+  return form;
+}
+
 // Restores $.active and removes generated upload frames after each test, since some iframe exit
 // paths never settle and would leak into the next test.
 export function restoreAjaxState() {

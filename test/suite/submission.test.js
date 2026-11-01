@@ -10,6 +10,8 @@ import {
   withAjaxStub,
   withAjaxSettings,
   selectFiles,
+  formHidingParentNode,
+  buildForm,
 } from "./helpers.js";
 
 function makeForm(html) {
@@ -2040,6 +2042,49 @@ describe("form", function () {
         }
         assert.strictEqual(notified, true);
       });
+    });
+
+    describe("controls named like form members", function () {
+      // jQuery 1.7.2's selector engine calls getAttribute on the form itself, so it cannot run there.
+      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
+        "should submit when a control named getAttribute shadows the form",
+        function () {
+          const $form = $(
+            '<form action="ajax/text.html" method="post"><input name="getAttribute" value="x"></form>'
+          ).appendTo("#main");
+
+          const settings = captureAjaxOptions($form, {});
+
+          assert.strictEqual(settings.data, "getAttribute=x");
+          assert.strictEqual(settings.type, "post");
+        }
+      );
+
+      // jQuery 3's selector engine calls getElementsByTagName on the form for the file input lookup.
+      it.skipIf(Number($.fn.jquery.split(".")[0]) === 3)(
+        "should submit semantically when a control named getElementsByTagName shadows the form",
+        function () {
+          const $form = $(
+            buildForm('<input name="getElementsByTagName" value="x">', "ajax/text.html")
+          );
+
+          const settings = captureAjaxOptions($form, { semantic: true });
+
+          assert.match(settings.url, /\?getElementsByTagName=x$/);
+        }
+      );
+
+      it("should throw a clear error when a control named parentNode hides the form's parent", function () {
+        const $form = $(formHidingParentNode());
+        let settings;
+
+        const submit = () => {
+          settings = captureAjaxOptions($form, {});
+        };
+
+        assert.throws(submit, /control named "parentNode"/);
+        assert.strictEqual(settings, undefined);
+      }, 2000);
     });
 
     describe("debug logging", function () {

@@ -719,6 +719,22 @@ describe("form", function () {
       );
     });
 
+    describe("controls named like form members", function () {
+      // jQuery 1.7.2's selector engine calls getAttribute on the form itself, so it cannot run there.
+      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
+        "should read a multipart enctype when a control named getAttribute shadows the form",
+        function () {
+          const $form = makeForm(
+            '<form enctype="multipart/form-data" action="ajax/text.html" method="post"><input name="getAttribute"></form>'
+          );
+
+          const result = submitTransport($form, {});
+
+          assert.strictEqual(result.transport, "formdata");
+        }
+      );
+    });
+
     describe("plain transport", function () {
       it("should pass the options object given to beforeSubmit and form-submit-notify to $.ajax", function () {
         const $form = makeForm('<form action="ajax/text.html" method="post"></form>');

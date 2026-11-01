@@ -92,7 +92,55 @@ import jQuery from "jquery";
 
   // Nodes such as the document and text nodes have no tag name (#600).
   function tagName(el) {
-    return typeof el.tagName === "string" ? el.tagName.toLowerCase() : "";
+    var name = formMember(el, "tagName");
+
+    return typeof name === "string" ? name.toLowerCase() : "";
+  }
+
+  // Elements only: the subject of formToArray may also be the document or a plain object.
+  function isElement(node) {
+    return formMember(node, "nodeType") === 1;
+  }
+
+  // An attribute of a form, or undefined when it is absent, as jQuery's attr returns it.
+  function formAttribute(form, name) {
+    if (!isElement(form)) {
+      return $(form).attr(name);
+    }
+
+    var value = callFormMethod(form, "getAttribute", name);
+
+    return value === null ? undefined : value;
+  }
+
+  // What attr2 returns for a form: the property when it is a string, otherwise the attribute. The
+  // property is read plainly on purpose: a control named like it shadows it, and then the raw
+  // attribute is used.
+  function formProperty(form, name) {
+    var value = hasProp ? form[name] : undefined;
+
+    return typeof value === "string" ? value : formAttribute(form, name);
+  }
+
+  // A control named parentNode makes every parentNode walk (jQuery's trigger and closest among
+  // them) cycle between the form and the control.
+  function assertRealParent(el) {
+    if (el.parentNode !== formMember(el, "parentNode")) {
+      throw new Error(
+        'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control'
+      );
+    }
+  }
+
+  // The element itself or its nearest ancestor with one of the tag names, through the real tree.
+  function closestByTag(el, names) {
+    for (var node = el; node; node = formMember(node, "parentNode")) {
+      if (names.indexOf(tagName(node)) >= 0) {
+        return node;
+      }
+    }
+
+    return null;
   }
 
   // attr2 uses prop when it can but checks the return type for
@@ -137,6 +185,10 @@ import jQuery from "jquery";
       iframeSrc,
       $form = this;
 
+    this.each(function () {
+      assertRealParent(this);
+    });
+
     if (typeof options === "function") {
       options = { success: options };
     } else if (typeof options === "string" || (options === false && arguments.length > 0)) {
@@ -153,8 +205,8 @@ import jQuery from "jquery";
       options = {};
     }
 
-    method = options.method || options.type || this.attr2("method");
-    action = options.url || this.attr2("action");
+    method = options.method || options.type || formProperty(this[0], "method");
+    action = options.url || formProperty(this[0], "action");
 
     url = typeof action === "string" ? action.trim() : "";
     // clean url (don't include hash value); an action that is only a fragment means this page
@@ -325,7 +377,8 @@ import jQuery from "jquery";
     });
     var hasFileInputs = fileInputs.length > 0;
     var mp = "multipart/form-data";
-    var multipart = $form.attr("enctype") === mp || $form.attr("encoding") === mp;
+    var multipart =
+      formAttribute($form[0], "enctype") === mp || formAttribute($form[0], "encoding") === mp;
     var fileAPI = feature.fileapi && feature.formdata;
 
     log("fileAPI :" + fileAPI);
@@ -489,14 +542,14 @@ import jQuery from "jquery";
       s = $.extend(true, {}, $.ajaxSettings, options);
       s.context = s.context || s;
       id = "jqFormIO" + new Date().getTime();
-      var ownerDocument = form.ownerDocument;
-      var $body = $form.closest("body");
+      var ownerDocument = formMember(form, "ownerDocument");
+      var $body = $(closestByTag(form, ["body"]));
 
       if (s.iframeTarget) {
         $io = $(s.iframeTarget, ownerDocument);
-        n = $io.attr2("name");
+        n = $io.attr("name");
         if (!n) {
-          $io.attr2("name", id);
+          $io.attr("name", id);
         } else {
           id = n;
         }
@@ -667,7 +720,7 @@ import jQuery from "jquery";
       // only when the form is posted, since a get form would put the token in the url
       var csrf_token = $("meta[name=csrf-token]").attr("content");
       var csrf_param = $("meta[name=csrf-param]").attr("content");
-      var posts = !method || /post/i.test(method) || /post/i.test($form.attr2("method"));
+      var posts = !method || /post/i.test(method) || /post/i.test(formProperty(form, "method"));
 
       if (csrf_param && csrf_token && posts && isSameOrigin(s.url)) {
         s.extraData = s.extraData || {};
@@ -681,10 +734,10 @@ import jQuery from "jquery";
       // take a breath so that pending repaints get some cpu time before the upload starts
       function doSubmit() {
         // make sure form attrs are set
-        var t = $form.attr2("target"),
-          a = $form.attr2("action"),
+        var t = formProperty(form, "target"),
+          a = formProperty(form, "action"),
           mp = "multipart/form-data",
-          et = $form.attr("enctype") || $form.attr("encoding") || mp;
+          et = formAttribute(form, "enctype") || formAttribute(form, "encoding") || mp;
 
         // update form attrs in IE friendly way
         setFormAttribute("target", id);
@@ -1068,15 +1121,18 @@ import jQuery from "jquery";
     if (!e.isDefaultPrevented()) {
       // if event has been canceled, don't proceed
       e.preventDefault();
-      $(e.target).closest("form").ajaxSubmit(options); // #365
+      // the form is found through the real tree: a control named nodeType misleads jQuery's closest
+      $(closestByTag(e.target, ["form"])).ajaxSubmit(options); // #365
     }
   }
 
   function captureSubmittingElement(e) {
     /* jshint validthis:true */
+    assertRealParent(this);
+
     // the clicked control, or the button around the clicked content (ex: a span within a button)
-    var $el = $(e.target).closest("button,input");
-    var target = $el[0];
+    var target = closestByTag(e.target, ["button", "input"]);
+    var $el = $(target);
 
     // the type property, unlike the attribute, is "submit" for a button without a type (#588)
     if (!target || (target.type !== "submit" && target.type !== "image")) {
@@ -1136,12 +1192,16 @@ import jQuery from "jquery";
     }
 
     var form = this[0];
-    var formId = this.attr("id");
-    var els =
-      semantic || typeof form.elements === "undefined"
-        ? form.getElementsByTagName("*")
-        : formMember(form, "elements");
+    var formId = formAttribute(form, "id");
+    var els = formMember(form, "elements");
     var els2;
+
+    if (semantic || typeof els === "undefined") {
+      // the document is not an element; it has its own getElementsByTagName
+      els = isElement(form)
+        ? callFormMethod(form, "getElementsByTagName", "*")
+        : form.getElementsByTagName("*");
+    }
 
     if (els) {
       els = $.makeArray(els); // convert to standard array

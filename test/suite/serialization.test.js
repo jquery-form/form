@@ -1,5 +1,5 @@
 import { assert, describe, it } from "vitest";
-import { resetFixture, arrayCount, arrayValue, selectFiles } from "./helpers.js";
+import { resetFixture, arrayCount, arrayValue, selectFiles, buildForm } from "./helpers.js";
 
 describe("form", function () {
   resetFixture();
@@ -695,6 +695,30 @@ describe("form", function () {
             ["a", "1"],
             [name, "x"],
           ])
+        );
+      });
+    });
+
+    describe("controls named like form members", function () {
+      it("should serialize when a control named getAttribute shadows the form", function () {
+        const $form = $('<form id="members"><input name="getAttribute" value="x"></form>');
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(
+          formData.map((field) => [field.name, field.value]),
+          [["getAttribute", "x"]]
+        );
+      });
+
+      it("should serialize semantically when a control named getElementsByTagName shadows the form", function () {
+        const $form = $(buildForm('<input name="a" value="1"><input name="getElementsByTagName">'));
+
+        const formData = $form.formToArray(true);
+
+        assert.deepEqual(
+          formData.map((field) => field.name),
+          ["a", "getElementsByTagName"]
         );
       });
     });
