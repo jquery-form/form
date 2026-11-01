@@ -1709,7 +1709,7 @@ describe("form", function () {
         });
 
         describe("start and beforeSend", function () {
-          it("should fire ajaxStart and ajaxSend before calling beforeSend with the settings", function () {
+          it("should fire ajaxStart before and ajaxSend after calling beforeSend with the settings", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const log = [];
             const seen = {};
@@ -1727,7 +1727,7 @@ describe("form", function () {
               },
             });
 
-            assert.deepEqual(log, ["ajaxStart", "ajaxSend", "beforeSend"]);
+            assert.deepEqual(log, ["ajaxStart", "beforeSend", "ajaxSend"]);
             assert.strictEqual(seen.self, seen.args[1]);
             assert.strictEqual(seen.sent[0], seen.args[0]);
             assert.strictEqual(seen.sent[1], seen.args[1]);
@@ -1741,7 +1741,7 @@ describe("form", function () {
 
             $form.ajaxSubmit({ iframe: true, beforeSend: () => false });
 
-            assert.deepEqual(events, ["ajaxSend"]);
+            assert.deepEqual(events, ["ajaxError", "ajaxComplete"]);
             assert.strictEqual($.active, 1);
           });
 
@@ -1777,14 +1777,14 @@ describe("form", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const onContext = [];
             const onDocument = [];
-            $(context).on("ajaxSend", () => onContext.push("ajaxSend"));
-            $(document).on("ajaxSend.ifrlog", () => onDocument.push("ajaxSend"));
+            $(context).on("ajaxComplete", () => onContext.push("ajaxComplete"));
+            $(document).on("ajaxComplete.ifrlog", () => onDocument.push("ajaxComplete"));
 
             $form.ajaxSubmit({ iframe: true, context: context, beforeSend: () => false });
 
             // jQuery 1.7.2 triggers a global event on every element that handles it.
-            assert.deepEqual(onContext, majorVersion < 3 ? ["ajaxSend"] : []);
-            assert.deepEqual(onDocument, ["ajaxSend"]);
+            assert.deepEqual(onContext, majorVersion < 3 ? ["ajaxComplete"] : []);
+            assert.deepEqual(onDocument, ["ajaxComplete"]);
           });
 
           it("should post to a url that beforeSend changed on the settings", function () {
@@ -1834,19 +1834,16 @@ describe("form", function () {
             assert.strictEqual($("iframe").length, frames);
           });
 
-          it.fails(
-            "should end the global events without ajaxSend when beforeSend vetoes",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              const events = [];
-              recordGlobalEvents(events);
-              $.active = 0;
+          it("should end the global events without ajaxSend when beforeSend vetoes", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+            $.active = 0;
 
-              $form.ajaxSubmit({ iframe: true, beforeSend: () => false });
+            $form.ajaxSubmit({ iframe: true, beforeSend: () => false });
 
-              assert.deepEqual(events, ["ajaxStart", "ajaxError", "ajaxComplete", "ajaxStop"]);
-            }
-          );
+            assert.deepEqual(events, ["ajaxStart", "ajaxError", "ajaxComplete", "ajaxStop"]);
+          });
 
           it("should call error before the global events and complete once when beforeSend aborts", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
@@ -1863,18 +1860,11 @@ describe("form", function () {
               complete: () => completions++,
             });
 
-            assert.deepEqual(log, [
-              "ajaxStart",
-              "ajaxSend",
-              "error",
-              "ajaxError",
-              "ajaxComplete",
-              "ajaxStop",
-            ]);
+            assert.deepEqual(log, ["ajaxStart", "error", "ajaxError", "ajaxComplete", "ajaxStop"]);
             assert.strictEqual(completions, 1);
           });
 
-          it.fails("should restore $.active when beforeSend aborts and returns false", function () {
+          it("should restore $.active when beforeSend aborts and returns false", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $.active = 0;
 
@@ -2547,7 +2537,7 @@ describe("form", function () {
             );
           });
 
-          it.fails("should call complete before ajaxComplete and ajaxStop", async function () {
+          it("should call complete before ajaxComplete and ajaxStop", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const log = [];
             recordGlobalEvents(log);
@@ -2582,7 +2572,7 @@ describe("form", function () {
             assert.strictEqual(resolvedWith, '{"transport":"iframe"}');
           });
 
-          it.fails("should pass the data to ajaxSuccess handlers", async function () {
+          it("should pass the data to ajaxSuccess handlers", async function () {
             const $form = createIframeForm("ajax/iframe-json.html");
             let data;
             $(document).on("ajaxSuccess.ifrlog", function (event, xhr, settings, received) {
@@ -2944,7 +2934,7 @@ describe("form", function () {
               release();
             });
 
-            assert.deepEqual(log, ["notify", "released", "ajaxStart", "ajaxSend", "beforeSend"]);
+            assert.deepEqual(log, ["notify", "released", "ajaxStart", "beforeSend", "ajaxSend"]);
           });
 
           it("should wrap the upload's start in the keep-alive request's global events", async function () {
@@ -2971,14 +2961,14 @@ describe("form", function () {
               "ajaxStart",
               "ajaxSend",
               "notify",
-              "ajaxSend",
               "beforeSend",
+              "ajaxSend",
               "ajaxSuccess",
               "ajaxComplete",
               "ajaxSuccess",
+              "complete",
               "ajaxComplete",
               "ajaxStop",
-              "complete",
             ]);
           });
 

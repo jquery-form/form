@@ -376,9 +376,9 @@ for #545; close PR #557 on release day).
   - a clear error on jQuery slim (#541)
 - Decide on the JSON body (#545, PR #557).
 - Deprecation warnings (under `debug`, and in the docs) for everything Phase 13 removes.
-- Phase 10 observations: the iframe `beforeSend` veto never fires `ajaxStop`, and controls named
-  `ownerDocument` or `getElementsByTagName` still shadow those form members (fixed by the form
-  members slice).
+- Phase 10 observations: the iframe `beforeSend` veto never fires `ajaxStop` (fixed by the iframe
+  lifecycle slice), and controls named `ownerDocument` or `getElementsByTagName` still shadow
+  those form members (fixed by the form members slice).
 - Run the custom CodeQL query on every refactor branch, so moved code can't reopen a W1–W4 sink.
 
 Release the result as a 4.x minor, the same way as Phase 11 but without the advisory steps. Cut

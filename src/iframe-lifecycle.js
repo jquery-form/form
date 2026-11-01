@@ -64,8 +64,8 @@ export function createLifecycle(s, frame) {
     complete(e);
   }
 
-  // The steps every finished or aborted upload ends with, in $.ajax order.
-  function complete(status) {
+  // The global events that end every upload, cancelled ones included.
+  function endGlobalEvents() {
     if (g) {
       $.event.trigger("ajaxComplete", [xhr, s]);
     }
@@ -73,11 +73,15 @@ export function createLifecycle(s, frame) {
     if (g && !--$.active) {
       $.event.trigger("ajaxStop");
     }
+  }
 
+  // The steps every finished or aborted upload ends with, in $.ajax order.
+  function complete(status) {
     if (s.complete) {
       s.complete.call(s.context, xhr, status);
     }
 
+    endGlobalEvents();
     clearTimeout(timeoutHandle);
 
     // clean up
@@ -87,6 +91,21 @@ export function createLifecycle(s, frame) {
     }, 100);
   }
 
+  // A beforeSend veto ends the upload as $.ajax cancels a request: no callbacks, the global
+  // events end with ajaxError "canceled".
+  function cancel() {
+    if (done()) {
+      return;
+    }
+
+    callbackProcessed = true;
+    deferred.reject();
+    if (g) {
+      $.event.trigger("ajaxError", [xhr, s, "canceled"]);
+    }
+    endGlobalEvents();
+  }
+
   // Fires the start events and beforeSend; false when the upload must not be posted.
   function start() {
     g = s.global;
@@ -94,20 +113,23 @@ export function createLifecycle(s, frame) {
     if (g && $.active++ === 0) {
       $.event.trigger("ajaxStart");
     }
-    if (g) {
-      $.event.trigger("ajaxSend", [xhr, s]);
-    }
 
     if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
-      if (s.global) {
-        $.active--;
-      }
-      deferred.reject();
+      cancel();
 
       return false;
     }
 
-    // abort() in beforeSend already rejected the Deferred
+    if (xhr.aborted) {
+      // abort() in beforeSend already completed the upload
+      return false;
+    }
+
+    if (g) {
+      $.event.trigger("ajaxSend", [xhr, s]);
+    }
+
+    // an ajaxSend handler may abort too
     return !xhr.aborted;
   }
 
@@ -137,7 +159,7 @@ export function createLifecycle(s, frame) {
       deferred.resolve(xhr.responseText, "success", xhr);
 
       if (g) {
-        $.event.trigger("ajaxSuccess", [xhr, s]);
+        $.event.trigger("ajaxSuccess", [xhr, s, result.data]);
       }
     } else {
       if (typeof errMsg === "undefined") {
