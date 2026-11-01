@@ -93,5 +93,5 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
-- **`delegation: true` is not selector-scoped on jQuery 3 and later**, and `ajaxForm` called on an empty selection before DOM ready is dropped. See `selector-context-delegation.md`.
+- **`delegation: true` is not selector-scoped on jQuery 3 and later** (use `delegation: "<selector>"`; it warns), and `ajaxForm` called on an empty selection before DOM ready is dropped. See `selector-context-delegation.md`.
 - **No `exports` map** on 4.x so deep paths keep resolving; planned for 5.0.

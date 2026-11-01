@@ -56,6 +56,17 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 
 **'script'**: if dataType == 'script' the server response is evaluated in the global context
 
+### delegation
+
+Default: `undefined`  
+A selector string, or `true`, to handle forms through a binding on the document, so forms added later are handled too (`ajaxForm` only; requires jQuery 1.7+). With a selector, a form is submitted through the plugin when it, or an element around it, matches the selector; the selection is ignored, and binding the same selector again replaces its options. An empty string throws an error. `ajaxFormUnbind()` removes every delegated binding; `ajaxFormUnbind(selector)` removes one.
+
+```javascript
+$(document).ajaxForm({ delegation: "form.ajax" });
+```
+
+**Warning:** `delegation: true` binds **every form on the page** on jQuery 3 and later (jQuery 3.0 removed the selector it relied on), so the options (`data`, `headers`) go with any form's submission. The plugin logs a `console.warn` for each such call, even with `debug` off. Use a selector.
+
 ### error
 
 Callback function to be invoked upon error. It is passed the following arguments:
