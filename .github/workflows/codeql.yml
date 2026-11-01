@@ -32,7 +32,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: none
-          queries: security-extended
+          # The local pack covers sinks the built-in queries miss: HTML built from option keys and DOM
+          # text, DOM text used as a selector, and parsed responses inserted as HTML.
+          queries: security-extended,./.github/codeql/jquery-form-queries
           # Scan the source once: every dist/ build repeats its alerts, and tests and the docs site are
           # not shipped.
           config: |
