@@ -1005,15 +1005,35 @@ describe("form", function () {
         assert.deepEqual(values, ["a\r\nb", "c\r\nd", "e\r\nf"]);
       });
 
-      it("should handle a lone carriage return per jQuery version", function () {
+      it("should send a lone carriage return as CRLF on every jQuery version", function () {
         const $form = $('<form><input type="hidden" name="h"></form>');
-        $form.find("input")[0].value = "a\rb";
+        $form.find("input")[0].value = "a\rb\r";
 
         const formData = $form.formToArray();
 
-        // jQuery before 4.0 strips carriage returns in .val(); 4.0 keeps them.
-        const expected = Number($.fn.jquery.split(".")[0]) < 4 ? "ab" : "a\rb";
-        assert.strictEqual(formData[0].value, expected);
+        assert.strictEqual(formData[0].value, "a\r\nb\r\n");
+      });
+
+      it("should keep the value a jQuery valHook returns", function () {
+        const $form = $('<form><input type="hidden" name="h" value="raw"></form>');
+        const saved = $.valHooks.hidden;
+        $.valHooks.hidden = {
+          get: function () {
+            return "hooked";
+          },
+        };
+
+        try {
+          const formData = $form.formToArray();
+
+          assert.strictEqual(formData[0].value, "hooked");
+        } finally {
+          if (saved) {
+            $.valHooks.hidden = saved;
+          } else {
+            delete $.valHooks.hidden;
+          }
+        }
       });
 
       it("should send the literal value of a hidden input named _charset_ and nothing for dirname", function () {

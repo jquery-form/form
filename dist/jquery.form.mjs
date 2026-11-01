@@ -123,7 +123,9 @@ function formAttribute(form, name) {
 // Successful controls: which controls of a form are sent, and as which name/value fields
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
 
-var rCRLF = /\r?\n/g;
+// Line breaks, sent as CRLF
+var rLineBreak = /\r\n|\r|\n/g;
+var rCR = /\r/g;
 
 // Listed form elements that are never submitted.
 var rUnsubmittable = /^(?:fieldset|object|output)$/;
@@ -198,14 +200,23 @@ function selectValue(el) {
 
 /**
  * The value of a control, whether or not it is successful: a list for a multiple select, null
- * for a select with nothing selected, otherwise a string with CRLF line breaks.
+ * for a select with nothing selected, otherwise a string with CRLF line breaks (a lone CR or LF
+ * included).
  */
 function valueOf(el) {
   if (tagName(el) === "select") {
     return selectValue(el);
   }
 
-  return jQuery(el).val().replace(rCRLF, "\r\n");
+  var v = jQuery(el).val();
+  var raw = el.value;
+
+  // jQuery before 4.0 drops carriage returns from .val(); read them from the value itself
+  if (typeof raw === "string" && raw.replace(rCR, "") === v) {
+    v = raw;
+  }
+
+  return v.replace(rLineBreak, "\r\n");
 }
 
 /**

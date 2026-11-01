@@ -76,6 +76,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`semantic: true` sends only the controls the form owns.** This aligns semantic mode with the HTML spec's form owner: a descendant whose `form` attribute names another form, or names no form in the page, is no longer sent; an outside control naming the form's id is sent only to the form that owns it (the first form with that id in the document), so a second form with the same id or a detached form no longer collects it. Subjects that are not forms (a fieldset, the document) are unchanged.
 
+- **A lone carriage return is sent as CRLF on every jQuery version (D-26).** `formToArray`, `formSerialize`, `fieldValue` and `ajaxSubmit` used to drop it on jQuery before 4.0 (`.val()` strips carriage returns) and send it bare on 4.0. A value a jQuery `valHook` returns is still used as-is, apart from line breaks.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
