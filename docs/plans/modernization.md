@@ -358,7 +358,8 @@ Release day, in one sitting:
 ## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
 Status (local `phase-12` branch): the test split and the characterization sweep are done; the form
-members slice is done (`src/form-members.js`, see `docs/research/4x-behavior-changes.md`).
+members slice is done (`src/form-members.js`, see `docs/research/4x-behavior-changes.md`); the
+Submission refactor is done (options, submission and transport modules, no behavior change).
 
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
