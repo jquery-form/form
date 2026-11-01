@@ -52,6 +52,17 @@ describe("form", function () {
       assert.strictEqual(action, "relative.html");
     });
 
+    it("should pass getters and setters through to attr even after prop is restored", function () {
+      const $form = $('<form action="relative.html" method="PUT"><input name="action"></form>');
+
+      const values = [$form.attr2("action"), $form.attr2("method"), $form.attr2("target")];
+      const result = $form.attr2("data-y", "v");
+
+      assert.deepEqual(values, ["relative.html", "PUT", undefined]);
+      assert.strictEqual(result, $form);
+      assert.strictEqual($form[0].getAttribute("data-y"), "v");
+    });
+
     it("should re-enable controls disabled before an iframe upload", async function () {
       const $form = $('<form action="ajax/iframe-text.html" method="post"></form>').appendTo(
         "#main"
@@ -75,6 +86,64 @@ describe("form", function () {
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       assert.strictEqual(disabledAtSubmit, false);
+    });
+  });
+
+  describe("when the plugin loads again", function () {
+    let saved;
+    let otherEnable;
+    let added;
+    let nodesBefore;
+    let nodesAfter;
+
+    // Removes the plugin's members (and puts another plugin's enable in place) before reloading.
+    beforeAll(async function () {
+      saved = { fn: {}, fieldValue: $.fieldValue };
+      pluginFields.forEach((name) => {
+        saved.fn[name] = $.fn[name];
+        delete $.fn[name];
+      });
+      delete $.fieldValue;
+      otherEnable = function () {};
+      $.fn.enable = otherEnable;
+      const fnBefore = Object.keys($.fn);
+      const staticBefore = Object.keys($);
+      nodesBefore = document.getElementsByTagName("*").length;
+
+      try {
+        await import("../../src/jquery.form.js?reload");
+      } finally {
+        nodesAfter = document.getElementsByTagName("*").length;
+        added = {
+          fn: Object.keys($.fn).filter((name) => !fnBefore.includes(name)),
+          static: Object.keys($).filter((name) => !staticBefore.includes(name)),
+        };
+      }
+    });
+
+    afterAll(function () {
+      Object.assign($.fn, saved.fn);
+      $.fieldValue = saved.fieldValue;
+    });
+
+    it("should install every helper on $.fn and $.fieldValue, replacing an existing enable, with debug off", function () {
+      const enable = $.fn.enable;
+
+      const expected = pluginFields.filter((name) => name !== "enable");
+
+      assert.sameMembers(added.fn, expected);
+      assert.deepEqual(added.static, ["fieldValue"]);
+      assert.notStrictEqual(enable, otherEnable);
+      assert.strictEqual(typeof enable, "function");
+      assert.strictEqual($.fn.ajaxSubmit.debug, false);
+    });
+
+    it("should add no nodes to the document when the plugin loads", function () {
+      const before = nodesBefore;
+
+      const after = nodesAfter;
+
+      assert.strictEqual(after, before);
     });
   });
 
