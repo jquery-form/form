@@ -167,11 +167,8 @@ import jQuery from "jquery";
     action = options.url || this.attr2("action");
 
     url = typeof action === "string" ? action.trim() : "";
-    url = url || window.location.href;
-    if (url) {
-      // clean url (don't include hash vaue)
-      url = (url.match(/^([^#]+)/) || [])[1];
-    }
+    // clean url (don't include hash value); an action that is only a fragment means this page
+    url = url.split("#")[0] || window.location.href.split("#")[0];
     // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
     // Instead of using javascript:false always, let's only apply it for IE.
     isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
@@ -246,7 +243,12 @@ import jQuery from "jquery";
     }
 
     if (options.type.toUpperCase() === "GET") {
-      options.url += (options.url.indexOf("?") >= 0 ? "&" : "?") + q;
+      // the query goes before any fragment in the url option
+      var hashAt = options.url.indexOf("#");
+      var base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
+
+      options.url =
+        base + (base.indexOf("?") >= 0 ? "&" : "?") + q + options.url.slice(base.length);
       options.data = null; // data is null for 'get'
     } else {
       options.data = q; // data is the query string for 'post'

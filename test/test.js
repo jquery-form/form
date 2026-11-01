@@ -2847,12 +2847,36 @@ describe("form", function () {
         assert.strictEqual(settings.url, window.location.href.split("#")[0]);
       });
 
-      it("should drop a raw action attribute that is only a fragment", function () {
+      it("should use the page URL for a raw action attribute that is only a fragment", function () {
         const $form = $('<form method="post" action="#fragment"><input name="action"></form>');
 
         const settings = captureAjaxOptions($form.appendTo("#main"), {});
 
-        assert.strictEqual(settings.url, undefined);
+        assert.strictEqual(settings.url, window.location.href.split("#")[0]);
+      });
+
+      it("should build a GET url for a raw action attribute that is only a fragment", function () {
+        const $form = $(
+          '<form method="get" action="#fragment"><input name="action" value="x"></form>'
+        );
+
+        const settings = captureAjaxOptions($form.appendTo("#main"), {});
+
+        assert.ok(settings.url.startsWith(window.location.href.split("#")[0]), settings.url);
+        assert.match(settings.url, /[?&]action=x$/);
+      });
+
+      [
+        ["ajax/text.html#frag", "ajax/text.html?a=1#frag"],
+        ["ajax/text.html?b=2#frag", "ajax/text.html?b=2&a=1#frag"],
+      ].forEach(function ([url, expected]) {
+        it("should put the GET query before the fragment of " + url, function () {
+          const $form = $('<form><input name="a" value="1"></form>').appendTo("#main");
+
+          const settings = captureAjaxOptions($form, { type: "GET", url: url });
+
+          assert.strictEqual(settings.url, expected);
+        });
       });
 
       it("should use the default AJAX type when a control named method shadows the form", function () {
