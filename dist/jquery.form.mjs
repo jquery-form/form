@@ -541,7 +541,8 @@ function readDocument(doc, xhr, s, isXml) {
     s.dataType = "xml";
   }
   xhr.getResponseHeader = function (header) {
-    var headers = { "content-type": s.dataType };
+    // the dataType in lowercase, as $.ajax reads it
+    var headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
 
     return headers[header.toLowerCase()];
   };
@@ -586,7 +587,7 @@ function readResponse(doc, xhr, s, retry) {
     errMsg;
 
   try {
-    var isXml = s.dataType === "xml" || doc.XMLDocument || $$2.isXMLDoc(doc);
+    var isXml = /^xml$/i.test(s.dataType) || doc.XMLDocument || $$2.isXMLDoc(doc);
 
     log("isXml=" + isXml);
 

@@ -2418,12 +2418,20 @@ describe("form", function () {
             );
           });
 
-          it.fails("should parse JSON when dataType is JSON in capitals", async function () {
+          it("should parse JSON when dataType is JSON in capitals", async function () {
             const $form = createIframeForm("ajax/iframe-json.html");
 
             const result = await submitThroughIframe($form, { dataType: "JSON" });
 
             assert.deepEqual(result.success[0], { transport: "iframe" });
+          });
+
+          it("should read the response as XML when dataType is XML in capitals", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            const result = await submitThroughIframe($form, { dataType: "XML" });
+
+            assert.strictEqual(result.success[0].nodeType, 9);
           });
 
           it("should report parsererror when an XML response has no root element", async function () {
