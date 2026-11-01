@@ -364,7 +364,9 @@ submission fixes are done (D-09, D-06, D-18, D-02, D-04, D-01, #541, and `reques
 for #545; close PR #557 on release day). The iframe lifecycle slice is done (response reader, form post and
 lifecycle modules behind the iframe adapter; D-08, D-07, D-16, D-22, D-21, D-33). The successful
 controls slice is done (`src/successful-controls.js` behind formToArray and `$.fieldValue`; SER-18,
-SER-24, D-34, D-03, D-28, the disabled fieldset and form owner spec alignment, D-26).
+SER-24, D-34, D-03, D-28, the disabled fieldset and form owner spec alignment, D-26). The submitter
+slice is done (`src/submitter.js`; controls named `clk`, `SubmitEvent.submitter`, file names in
+GET uploads).
 
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
