@@ -19,8 +19,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-import { assertRealParent, callFormMethod, closestByTag, tagName } from "./form-members.js";
-import { captureEventSubmitter, captureSubmitter, submitterElement } from "./submitter.js";
+import { ajaxForm, ajaxFormUnbind } from "./ajax-form.js";
+import { callFormMethod, tagName } from "./form-members.js";
 import {
   createSuccessfulControls,
   isSuccessful,
@@ -28,12 +28,13 @@ import {
   valueOf,
 } from "./successful-controls.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
-import { shorthandOptions, submitOptions } from "./options.js";
 import { createIframeTransport } from "./iframe-transport.js";
 import { createSubmission } from "./submission.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 import { log } from "./diagnostics.js";
+import { submitOptions } from "./options.js";
+import { submitterElement } from "./submitter.js";
 
 (function ($) {
   "use strict";
@@ -167,90 +168,8 @@ import { log } from "./diagnostics.js";
     return this;
   };
 
-  /**
-   * ajaxForm() provides a mechanism for fully automating form submission.
-   *
-   * The advantages of using this method instead of ajaxSubmit() are:
-   *
-   * 1: This method will include coordinates for <input type="image"> elements (if the element
-   *	is used to submit the form).
-   * 2. This method will include the submit element's name/value data (for the element that was
-   *	used to submit the form).
-   * 3. This method binds the submit() method to the form for you.
-   *
-   * The options argument for ajaxForm works exactly as it does for ajaxSubmit. ajaxForm merely
-   * passes the options argument along after properly binding events for submit elements and
-   * the form itself.
-   */
-  $.fn.ajaxForm = function (options, data, dataType, onSuccess) {
-    options = shorthandOptions(options, data, dataType, onSuccess) || {};
-    options.delegation = options.delegation && typeof $.fn.on === "function";
-
-    // in jQuery 1.3+ we can fix mistakes with the ready state
-    if (!options.delegation && this.length === 0) {
-      var o = { s: this.selector, c: this.context };
-
-      if (!$.isReady && o.s) {
-        log("DOM not ready, queuing ajaxForm");
-        $(function () {
-          $(o.s, o.c).ajaxForm(options);
-        });
-
-        return this;
-      }
-
-      // is your DOM ready?  http://docs.jquery.com/Tutorials:Introducing_$(document).ready()
-      log("terminating; zero elements found by selector" + ($.isReady ? "" : " (DOM not ready)"));
-
-      return this;
-    }
-
-    if (options.delegation) {
-      $(document)
-        .off("submit.form-plugin", this.selector, doAjaxSubmit)
-        .off("click.form-plugin", this.selector, captureSubmittingElement)
-        .on("submit.form-plugin", this.selector, options, doAjaxSubmit)
-        .on("click.form-plugin", this.selector, options, captureSubmittingElement);
-
-      return this;
-    }
-
-    if (options.beforeFormUnbind) {
-      options.beforeFormUnbind(this, options);
-    }
-
-    return this.ajaxFormUnbind()
-      .on("submit.form-plugin", options, doAjaxSubmit)
-      .on("click.form-plugin", options, captureSubmittingElement);
-  };
-
-  // private event handlers
-  function doAjaxSubmit(e) {
-    /* jshint validthis:true */
-    var options = e.data;
-
-    if (!e.isDefaultPrevented()) {
-      // if event has been canceled, don't proceed
-      e.preventDefault();
-      // the form is found through the real tree: a control named nodeType misleads jQuery's closest
-      var form = closestByTag(e.target, ["form"]);
-
-      // a button outside the form (form attribute), or requestSubmit(button), sends no click here
-      captureEventSubmitter(e, form);
-      $(form).ajaxSubmit(options); // #365
-    }
-  }
-
-  function captureSubmittingElement(e) {
-    /* jshint validthis:true */
-    assertRealParent(this);
-    captureSubmitter(e);
-  }
-
-  // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
-  $.fn.ajaxFormUnbind = function () {
-    return this.off("submit.form-plugin click.form-plugin");
-  };
+  $.fn.ajaxForm = ajaxForm;
+  $.fn.ajaxFormUnbind = ajaxFormUnbind;
 
   /**
    * formToArray() gathers form element data into an array of objects that can

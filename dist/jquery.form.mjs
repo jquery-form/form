@@ -246,6 +246,172 @@ function submitterElement(form) {
   return sub ? sub.el : null;
 }
 
+// Debug logging, switched on by $.fn.ajaxSubmit.debug. The flag is read on every call, so it can
+// be turned on after the plugin loads.
+function log() {
+  if (!jQuery.fn.ajaxSubmit.debug) {
+    return;
+  }
+
+  var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
+
+  if (window.console && window.console.log) {
+    window.console.log(msg);
+  } else if (window.opera && window.opera.postError) {
+    window.opera.postError(msg);
+  }
+}
+
+// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
+
+/**
+ * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
+ * the url; anything else is returned as given.
+ */
+function shorthandOptions(options, data, dataType, onSuccess) {
+  if (typeof options !== "string" && options !== false) {
+    return options;
+  }
+
+  var result = { url: options, data: data, dataType: dataType };
+
+  if (typeof onSuccess === "function") {
+    result.success = onSuccess;
+  }
+
+  return result;
+}
+
+// A copy of options without its url, so the form action is used.
+function withoutUrl(options) {
+  var result = {};
+
+  for (var key in options) {
+    if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
+      result[key] = options[key];
+    }
+  }
+
+  return result;
+}
+
+/**
+ * The options ajaxSubmit starts from: a function is the success callback, the shorthand is
+ * expanded, and no options at all is an empty object. A url of false or "" means the form action.
+ */
+function submitOptions(options, data, dataType, onSuccess) {
+  if (typeof options === "function") {
+    return { success: options };
+  }
+
+  options = shorthandOptions(options, data, dataType, onSuccess);
+
+  if (typeof options === "undefined") {
+    return {};
+  }
+
+  return options.url === false || options.url === "" ? withoutUrl(options) : options;
+}
+
+/**
+ * jQuery treats `context` as a flat option: after a deep merge, the settings get back the
+ * caller's own object from the last source that has one, so `this` in callbacks is that object.
+ */
+function keepContext(settings, sources) {
+  for (var i = 0; i < sources.length; i++) {
+    if (sources[i].context !== undefined) {
+      settings.context = sources[i].context;
+    }
+  }
+
+  return settings;
+}
+
+// ajaxForm binding: the submit and click handlers that send a form through ajaxSubmit. The
+// handlers look up $.fn.ajaxSubmit when they run, so a replacement installed later is used.
+
+function doAjaxSubmit(e) {
+  var options = e.data;
+
+  if (!e.isDefaultPrevented()) {
+    // if event has been canceled, don't proceed
+    e.preventDefault();
+    // the form is found through the real tree: a control named nodeType misleads jQuery's closest
+    var form = closestByTag(e.target, ["form"]);
+
+    // a button outside the form (form attribute), or requestSubmit(button), sends no click here
+    captureEventSubmitter(e, form);
+    jQuery(form).ajaxSubmit(options); // #365
+  }
+}
+
+function captureSubmittingElement(e) {
+  /* jshint validthis:true */
+  assertRealParent(this);
+  captureSubmitter(e);
+}
+
+// An empty selection: queued until the DOM is ready (old jQuery keeps the selector), or dropped.
+function bindLater($sel, options) {
+  var o = { s: $sel.selector, c: $sel.context };
+
+  if (!jQuery.isReady && o.s) {
+    log("DOM not ready, queuing ajaxForm");
+    jQuery(function () {
+      jQuery(o.s, o.c).ajaxForm(options);
+    });
+
+    return $sel;
+  }
+
+  // is your DOM ready?  http://docs.jquery.com/Tutorials:Introducing_$(document).ready()
+  log("terminating; zero elements found by selector" + (jQuery.isReady ? "" : " (DOM not ready)"));
+
+  return $sel;
+}
+
+function bindDelegated($sel, options) {
+  jQuery(document)
+    .off("submit.form-plugin", $sel.selector, doAjaxSubmit)
+    .off("click.form-plugin", $sel.selector, captureSubmittingElement)
+    .on("submit.form-plugin", $sel.selector, options, doAjaxSubmit)
+    .on("click.form-plugin", $sel.selector, options, captureSubmittingElement);
+
+  return $sel;
+}
+
+/**
+ * ajaxForm() binds the selected forms so a submit is sent with ajaxSubmit, with the clicked
+ * submit button (and image coordinates) included. The options work as for ajaxSubmit.
+ */
+function ajaxForm(options, data, dataType, onSuccess) {
+  options = shorthandOptions(options, data, dataType, onSuccess) || {};
+  options.delegation = options.delegation && typeof jQuery.fn.on === "function";
+
+  if (!options.delegation && this.length === 0) {
+    return bindLater(this, options);
+  }
+
+  if (options.delegation) {
+    return bindDelegated(this, options);
+  }
+
+  if (options.beforeFormUnbind) {
+    options.beforeFormUnbind(this, options);
+  }
+
+  return this.ajaxFormUnbind()
+    .on("submit.form-plugin", options, doAjaxSubmit)
+    .on("click.form-plugin", options, captureSubmittingElement);
+}
+
+/**
+ * ajaxFormUnbind() removes the handlers ajaxForm bound on the selection.
+ */
+function ajaxFormUnbind() {
+  return this.off("submit.form-plugin click.form-plugin");
+}
+
 /**
  * An attribute of a form, or undefined when it is absent, as jQuery's attr returns it. The
  * subject may also be the document or a plain object, read through jQuery.
@@ -541,71 +707,6 @@ function createSuccessfulControls(feature) {
   };
 }
 
-// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
-
-/**
- * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
- * the url; anything else is returned as given.
- */
-function shorthandOptions(options, data, dataType, onSuccess) {
-  if (typeof options !== "string" && options !== false) {
-    return options;
-  }
-
-  var result = { url: options, data: data, dataType: dataType };
-
-  if (typeof onSuccess === "function") {
-    result.success = onSuccess;
-  }
-
-  return result;
-}
-
-// A copy of options without its url, so the form action is used.
-function withoutUrl(options) {
-  var result = {};
-
-  for (var key in options) {
-    if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
-      result[key] = options[key];
-    }
-  }
-
-  return result;
-}
-
-/**
- * The options ajaxSubmit starts from: a function is the success callback, the shorthand is
- * expanded, and no options at all is an empty object. A url of false or "" means the form action.
- */
-function submitOptions(options, data, dataType, onSuccess) {
-  if (typeof options === "function") {
-    return { success: options };
-  }
-
-  options = shorthandOptions(options, data, dataType, onSuccess);
-
-  if (typeof options === "undefined") {
-    return {};
-  }
-
-  return options.url === false || options.url === "" ? withoutUrl(options) : options;
-}
-
-/**
- * jQuery treats `context` as a flat option: after a deep merge, the settings get back the
- * caller's own object from the last source that has one, so `this` in callbacks is that object.
- */
-function keepContext(settings, sources) {
-  for (var i = 0; i < sources.length; i++) {
-    if (sources[i].context !== undefined) {
-      settings.context = sources[i].context;
-    }
-  }
-
-  return settings;
-}
-
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
 var $$4 = jQuery;
 
@@ -863,22 +964,6 @@ function submitForm(form) {
   } catch (err) {
     // just in case form has element with name/id of 'submit'
     callFormMethod(form, "submit");
-  }
-}
-
-// Debug logging, switched on by $.fn.ajaxSubmit.debug. The flag is read on every call, so it can
-// be turned on after the plugin loads.
-function log() {
-  if (!jQuery.fn.ajaxSubmit.debug) {
-    return;
-  }
-
-  var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
-
-  if (window.console && window.console.log) {
-    window.console.log(msg);
-  } else if (window.opera && window.opera.postError) {
-    window.opera.postError(msg);
   }
 }
 
@@ -2063,90 +2148,8 @@ function createSubmission(feature, forms, serialization) {
     return this;
   };
 
-  /**
-   * ajaxForm() provides a mechanism for fully automating form submission.
-   *
-   * The advantages of using this method instead of ajaxSubmit() are:
-   *
-   * 1: This method will include coordinates for <input type="image"> elements (if the element
-   *	is used to submit the form).
-   * 2. This method will include the submit element's name/value data (for the element that was
-   *	used to submit the form).
-   * 3. This method binds the submit() method to the form for you.
-   *
-   * The options argument for ajaxForm works exactly as it does for ajaxSubmit. ajaxForm merely
-   * passes the options argument along after properly binding events for submit elements and
-   * the form itself.
-   */
-  $.fn.ajaxForm = function (options, data, dataType, onSuccess) {
-    options = shorthandOptions(options, data, dataType, onSuccess) || {};
-    options.delegation = options.delegation && typeof $.fn.on === "function";
-
-    // in jQuery 1.3+ we can fix mistakes with the ready state
-    if (!options.delegation && this.length === 0) {
-      var o = { s: this.selector, c: this.context };
-
-      if (!$.isReady && o.s) {
-        log("DOM not ready, queuing ajaxForm");
-        $(function () {
-          $(o.s, o.c).ajaxForm(options);
-        });
-
-        return this;
-      }
-
-      // is your DOM ready?  http://docs.jquery.com/Tutorials:Introducing_$(document).ready()
-      log("terminating; zero elements found by selector" + ($.isReady ? "" : " (DOM not ready)"));
-
-      return this;
-    }
-
-    if (options.delegation) {
-      $(document)
-        .off("submit.form-plugin", this.selector, doAjaxSubmit)
-        .off("click.form-plugin", this.selector, captureSubmittingElement)
-        .on("submit.form-plugin", this.selector, options, doAjaxSubmit)
-        .on("click.form-plugin", this.selector, options, captureSubmittingElement);
-
-      return this;
-    }
-
-    if (options.beforeFormUnbind) {
-      options.beforeFormUnbind(this, options);
-    }
-
-    return this.ajaxFormUnbind()
-      .on("submit.form-plugin", options, doAjaxSubmit)
-      .on("click.form-plugin", options, captureSubmittingElement);
-  };
-
-  // private event handlers
-  function doAjaxSubmit(e) {
-    /* jshint validthis:true */
-    var options = e.data;
-
-    if (!e.isDefaultPrevented()) {
-      // if event has been canceled, don't proceed
-      e.preventDefault();
-      // the form is found through the real tree: a control named nodeType misleads jQuery's closest
-      var form = closestByTag(e.target, ["form"]);
-
-      // a button outside the form (form attribute), or requestSubmit(button), sends no click here
-      captureEventSubmitter(e, form);
-      $(form).ajaxSubmit(options); // #365
-    }
-  }
-
-  function captureSubmittingElement(e) {
-    /* jshint validthis:true */
-    assertRealParent(this);
-    captureSubmitter(e);
-  }
-
-  // ajaxFormUnbind unbinds the event handlers that were bound by ajaxForm
-  $.fn.ajaxFormUnbind = function () {
-    return this.off("submit.form-plugin click.form-plugin");
-  };
+  $.fn.ajaxForm = ajaxForm;
+  $.fn.ajaxFormUnbind = ajaxFormUnbind;
 
   /**
    * formToArray() gathers form element data into an array of objects that can
