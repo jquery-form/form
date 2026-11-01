@@ -414,14 +414,9 @@ import { submitterElement } from "./submitter.js";
           return true;
 
         case "select":
-          // eslint-disable-next-line consistent-return -- jQuery .each() break semantics
-          el.find("option").each(function (i) {
+          // in order, as the native reset: of several default options, a single select keeps the last
+          el.find("option").each(function () {
             this.selected = this.defaultSelected;
-            if (this.defaultSelected && !el[0].multiple) {
-              el[0].selectedIndex = i;
-
-              return false;
-            }
           });
 
           return true;

@@ -515,19 +515,16 @@ describe("form", function () {
       assert.strictEqual(option.selected, true);
     });
 
-    it.fails(
-      "should select the last default option when a single select with two default options is reset",
-      function () {
-        const $select = $(
-          "<select><option selected>a</option><option selected>b</option><option>c</option></select>"
-        );
-        $select.val("c");
+    it("should select the last default option when a single select with two default options is reset", function () {
+      const $select = $(
+        "<select><option selected>a</option><option selected>b</option><option>c</option></select>"
+      );
+      $select.val("c");
 
-        $select.resetForm();
+      $select.resetForm();
 
-        assert.strictEqual($select.val(), "b");
-      }
-    );
+      assert.strictEqual($select.val(), "b");
+    });
 
     it("should select the first option of a dropdown and none of a list box when no option is a default", function () {
       const $dropdown = $("<select><option>a</option><option>b</option></select>");
