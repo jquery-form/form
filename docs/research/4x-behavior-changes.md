@@ -82,6 +82,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`ajaxForm` sends the submitter the browser names when no click was captured (D-05).** A submit button outside the form (`form="id"`) and the button passed to `requestSubmit()` are now sent, from `SubmitEvent.submitter` where the browser has it; an image submitter sends the point `0,0`, as native submission does. A captured click still wins.
 
+- **A file upload with a GET method puts the file name in the url, never `[object File]` (D-03).** `ajaxSubmit` builds the query string of a GET upload (and of a container that is not a form, before FormData posts it) from the file names, as `formSerialize` does.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

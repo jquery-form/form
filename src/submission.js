@@ -2,6 +2,7 @@ import { assertRealParent } from "./form-members.js";
 import jQuery from "jquery";
 import { keepContext } from "./options.js";
 import { log } from "./diagnostics.js";
+import { urlencodedFields } from "./successful-controls.js";
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
 // { form, $form, fields, controls, options, method, traditional }. `options` is the object the
@@ -247,7 +248,7 @@ export function createSubmission(feature, forms, serialization) {
     if (options.requestFormat === "json") {
       jsonBody(options, fields);
     } else {
-      encode(options, $.param(fields, traditional), qx);
+      encode(options, $.param(urlencodedFields(fields), traditional), qx);
     }
 
     return {

@@ -616,7 +616,7 @@ describe("form", function () {
         assert.strictEqual(after.settings.type, "POST");
         assert.strictEqual(
           after.settings.url,
-          "ajax/text.html?" + $.param({ title: "t", document: "[object File]" })
+          "ajax/text.html?" + $.param({ title: "t", document: "report.txt" })
         );
       });
 
@@ -1202,20 +1202,17 @@ describe("form", function () {
         assert.strictEqual(settings.type, "PUT");
       });
 
-      it.fails(
-        "should send the file name instead of [object File] when uploading with GET",
-        function () {
-          const upload = uploadForm();
-          upload.$form.attr("method", "get");
+      it("should send the file name instead of [object File] when uploading with GET", function () {
+        const upload = uploadForm();
+        upload.$form.attr("method", "get");
 
-          const settings = captureAjaxOptions(upload.$form, {});
+        const settings = captureAjaxOptions(upload.$form, {});
 
-          assert.strictEqual(
-            settings.url.split("?")[1],
-            $.param({ title: "quarterly report", document: "report.txt" })
-          );
-        }
-      );
+        assert.strictEqual(
+          settings.url.split("?")[1],
+          $.param({ title: "quarterly report", document: "report.txt" })
+        );
+      });
     });
 
     describe("upload progress", function () {

@@ -1794,7 +1794,7 @@ function createSubmission(feature, forms, serialization) {
     if (options.requestFormat === "json") {
       jsonBody(options, fields);
     } else {
-      encode(options, $.param(fields, traditional), qx);
+      encode(options, $.param(urlencodedFields(fields), traditional), qx);
     }
 
     return {
