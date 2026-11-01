@@ -41,6 +41,7 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **An iframe upload puts the form's attributes back exactly (#380).** `action`, `target`, `method`, `enctype` and `encoding` are restored to their raw values, or removed when they were absent, also with `skipEncodingOverride` and when the subject is not a form. The `action` no longer becomes absolute, no `encoding` attribute is left behind, and a later submit of the same form without files no longer picks the multipart transport.
 - **`resetForm` resets a form whose controls are named `reset`.** One or more controls named `reset` used to make it do nothing or throw; the `resetForm` option of `ajaxSubmit` follows.
 - **The classic build runs its whole factory in strict mode.** The `'use strict'` directive moved to the top of the UMD factory (the same three `dist` files, ADR-0001).
+- **An iframe upload whose frame is not in the document fails instead of opening a new window.** When a connected form sits outside `<body>`, or `iframeTarget` is a frame not in the document, the native submit is no longer called (it posted the form into a new top-level window and reported `aborted`/`server abort`). The upload settles once with `error` and `jquery.form: the upload frame is not in the document`: the `error` callback, a rejected Deferred, and `ajaxError`/`ajaxComplete`/`ajaxStop`. A form not in the document still reports a server abort.
 
 ## Known behavior, not changed
 

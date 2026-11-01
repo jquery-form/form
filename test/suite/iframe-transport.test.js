@@ -1513,6 +1513,105 @@ describe("form", function () {
               assert.include(events, "ajaxStop");
             }
           );
+
+          describe("when the frame is not in the document", function () {
+            const message = "jquery.form: the upload frame is not in the document";
+
+            // Starts an upload whose native post is only counted, so a real post never opens a window.
+            function uploadWithoutFrame($form, options) {
+              const result = { submits: 0, events: [], rejected: null };
+              recordGlobalEvents(result.events);
+              $form[0].submit = function () {
+                result.submits++;
+              };
+              const active = $.active;
+              $form.ajaxSubmit(
+                $.extend(
+                  {
+                    iframe: true,
+                    forceSync: true,
+                    extraData: { extra: "1" },
+                    error: function () {
+                      result.error = Array.from(arguments);
+                    },
+                  },
+                  options
+                )
+              );
+              const deferred = $form.data("jqxhr");
+              deferred.fail(function () {
+                result.rejected = Array.from(arguments);
+              });
+              result.activeDelta = $.active - active;
+
+              return result;
+            }
+
+            function formOutsideBody() {
+              const $form = $(
+                '<form method="get" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+              );
+              document.documentElement.appendChild($form[0]);
+
+              return $form;
+            }
+
+            it("should settle with an error, not post, when a connected form is outside body", function () {
+              const $form = formOutsideBody();
+
+              try {
+                const result = uploadWithoutFrame($form, { type: "POST" });
+
+                assert.strictEqual(result.submits, 0);
+                assert.deepEqual(result.error.slice(1, 3), ["error", message]);
+                assert.deepEqual(result.rejected.slice(1), ["error", message]);
+                assert.deepEqual(result.events, [
+                  "ajaxStart",
+                  "ajaxSend",
+                  "ajaxError",
+                  "ajaxComplete",
+                  "ajaxStop",
+                ]);
+                assert.strictEqual(result.activeDelta, 0);
+              } finally {
+                $form.remove();
+              }
+            });
+
+            it("should restore the form when a connected form outside body settles", function () {
+              const $form = formOutsideBody();
+
+              try {
+                uploadWithoutFrame($form, { type: "POST" });
+
+                assert.deepEqual(
+                  ["method", "target", "enctype", "encoding"].map((name) =>
+                    $form[0].getAttribute(name)
+                  ),
+                  ["get", null, null, null]
+                );
+                assert.strictEqual($form.find("[name=extra]").length, 0);
+              } finally {
+                $form.remove();
+              }
+            });
+
+            it("should settle with an error, not post, when the iframeTarget is detached", function () {
+              const $form = createIframeForm("ajax/iframe-text.html");
+
+              const result = uploadWithoutFrame($form, {
+                iframeTarget: $("<iframe></iframe>"),
+              });
+
+              assert.strictEqual(result.submits, 0);
+              assert.deepEqual(result.error.slice(1, 3), ["error", message]);
+              assert.deepEqual(result.rejected.slice(1), ["error", message]);
+              assert.include(result.events, "ajaxStop");
+              assert.strictEqual(result.activeDelta, 0);
+              assert.strictEqual($form.attr("target"), undefined);
+              assert.strictEqual($form.find("[name=extra]").length, 0);
+            });
+          });
         });
 
         describe("mock xhr", function () {

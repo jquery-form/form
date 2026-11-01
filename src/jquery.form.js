@@ -581,8 +581,9 @@ import jQuery from "jquery";
       };
 
       // Completes an aborted upload once and rejects the Deferred with `rejection`.
-      function abortUpload(status, rejection) {
-        var e = status === "timeout" ? "timeout" : "aborted";
+      // `textStatus` replaces the default "timeout"/"aborted" text status.
+      function abortUpload(status, rejection, textStatus) {
+        var e = textStatus || (status === "timeout" ? "timeout" : "aborted");
 
         if (xhr.aborted || callbackProcessed) {
           return;
@@ -826,6 +827,17 @@ import jQuery from "jquery";
           if (!s.iframeTarget) {
             // add iframe to doc and submit the form
             $io.appendTo($body);
+          }
+
+          // A connected form posting into a frame outside the document opens a new window.
+          var root = ownerDocument.documentElement;
+
+          if (io && $.contains(root, form) && !$.contains(root, io)) {
+            var notInDocument = "jquery.form: the upload frame is not in the document";
+
+            abortUpload(notInDocument, [xhr, "error", notInDocument], "error");
+
+            return;
           }
 
           if (io.attachEvent) {
