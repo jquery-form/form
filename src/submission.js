@@ -9,9 +9,10 @@ import { log } from "./diagnostics.js";
 
 /**
  * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and attr2-style properties (attribute, property).
+ * `forms` reads form attributes and attr2-style properties (attribute, property), and
+ * `serialization` collects the form's fields and controls.
  */
-export function createSubmission(feature, forms) {
+export function createSubmission(feature, forms, serialization) {
   var $ = jQuery;
 
   function refuse(message) {
@@ -225,8 +226,9 @@ export function createSubmission(feature, forms) {
       traditional = $.ajaxSettings.traditional;
     }
 
-    var controls = [];
-    var fields = $set.formToArray(options.semantic, controls, options.filtering);
+    var collected = serialization.collect($set[0], options.semantic, options.filtering);
+    var fields = collected.fields;
+    var controls = collected.controls;
     var qx = extraQuery(fields, options, traditional);
 
     // give pre-submit callback an opportunity to abort the submit

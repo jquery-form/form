@@ -106,6 +106,245 @@ function closestByTag(el, names) {
   return null;
 }
 
+/**
+ * An attribute of a form, or undefined when it is absent, as jQuery's attr returns it. The
+ * subject may also be the document or a plain object, read through jQuery.
+ */
+function formAttribute(form, name) {
+  if (!isElement(form)) {
+    return jQuery(form).attr(name);
+  }
+
+  var value = callFormMethod(form, "getAttribute", name);
+
+  return value === null ? undefined : value;
+}
+
+// Successful controls: which controls of a form are sent, and as which name/value fields
+// (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
+
+var rCRLF = /\r?\n/g;
+
+/**
+ * The successful-control rule: whether a control is sent. `submitter` is the button that
+ * submitted the control's form; other submit and image buttons of a form are not sent.
+ */
+function isSuccessful(el, submitter) {
+  var t = el.type;
+
+  if (!el.name || el.disabled || t === "reset" || t === "button") {
+    return false;
+  }
+
+  if (t === "checkbox" || t === "radio") {
+    return !!el.checked;
+  }
+
+  if (t === "submit" || t === "image") {
+    return !el.form || submitter === el;
+  }
+
+  return tagName(el) !== "select" || el.selectedIndex !== -1;
+}
+
+// The value of a select: the selected option's value for one, a list for several.
+function selectValue(el) {
+  var index = el.selectedIndex;
+
+  if (index < 0) {
+    return null;
+  }
+
+  var a = [],
+    ops = el.options;
+  var one = el.type === "select-one";
+  var max = one ? index + 1 : ops.length;
+
+  for (var i = one ? index : 0; i < max; i++) {
+    var op = ops[i];
+
+    if (op.selected && !op.disabled) {
+      var v = op.value;
+
+      if (!v) {
+        // extra pain for IE...
+        v =
+          op.attributes && op.attributes.value && !op.attributes.value.specified
+            ? op.text
+            : op.value;
+      }
+
+      if (one) {
+        return v;
+      }
+
+      a.push(v);
+    }
+  }
+
+  return a;
+}
+
+/**
+ * The value of a control, whether or not it is successful: a list for a multiple select, null
+ * for a select with nothing selected, otherwise a string with CRLF line breaks.
+ */
+function valueOf(el) {
+  if (tagName(el) === "select") {
+    return selectValue(el);
+  }
+
+  return jQuery(el).val().replace(rCRLF, "\r\n");
+}
+
+/**
+ * The serialization steps. `feature` holds what the entry detected at load (fileapi).
+ */
+function createSuccessfulControls(feature) {
+  var $ = jQuery;
+
+  // #386; inputs outside the form that name it in their form attribute
+  function outsideControls(formId) {
+    // hat tip @thet; the id is compared, never built into a selector
+    return $(":input[form]")
+      .filter(function () {
+        return this.getAttribute("form") === formId;
+      })
+      .get();
+  }
+
+  /**
+   * The candidate controls of a form, in order: its elements, or every descendant in semantic
+   * mode, then the outside controls that name it.
+   */
+  function controlsOf(form, semantic) {
+    var formId = formAttribute(form, "id");
+    var els = formMember(form, "elements");
+
+    if (semantic || typeof els === "undefined") {
+      // the document is not an element; it has its own getElementsByTagName
+      els = isElement(form)
+        ? callFormMethod(form, "getElementsByTagName", "*")
+        : form.getElementsByTagName("*");
+    }
+
+    els = $.makeArray(els);
+
+    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
+    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
+      els = els.concat(outsideControls(formId));
+    }
+
+    return els;
+  }
+
+  // The fields of a control's value, or null when the control is not sent.
+  function fieldsOf(el) {
+    var n = el.name;
+
+    if (feature.fileapi && el.type === "file") {
+      var files = el.files;
+
+      // #180: an empty field when no file is selected
+      return files.length
+        ? $.map(files, function (file) {
+            return { name: n, value: file, type: el.type };
+          })
+        : [{ name: n, value: "", type: el.type }];
+    }
+
+    var v = isSuccessful(el, el.form && el.form.clk) ? valueOf(el) : null;
+
+    if (v === null || typeof v === "undefined") {
+      return null;
+    }
+
+    if (v.constructor === Array) {
+      return $.map(v, function (value) {
+        return { name: n, value: value };
+      });
+    }
+
+    return [{ name: n, value: v, type: el.type, required: el.required }];
+  }
+
+  // The clicked image's value and coordinates.
+  function imageFields(form, input, type) {
+    var n = input.name;
+    var value = { name: n, value: $(input).val() };
+
+    if (type) {
+      value.type = type;
+    }
+
+    return [value, { name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y }];
+  }
+
+  // Adds one candidate control's fields, and the control when it has a value to send.
+  function addCandidate(collected, form, el, semantic) {
+    if (!el.name || el.disabled) {
+      return;
+    }
+
+    if (semantic && form.clk && el.type === "image") {
+      // handle image inputs on the fly when semantic == true
+      if (form.clk === el) {
+        collected.fields.push.apply(collected.fields, imageFields(form, el, el.type));
+      }
+
+      return;
+    }
+
+    var own = fieldsOf(el);
+
+    if (own) {
+      collected.controls.push(el);
+      collected.fields.push.apply(collected.fields, own);
+    }
+  }
+
+  // input type=='image' are not found in elements array! handle it here
+  function addClickedImage(collected, form) {
+    var input = form.clk && $(form.clk)[0];
+
+    if (input && input.name && !input.disabled && input.type === "image") {
+      collected.fields.push.apply(collected.fields, imageFields(form, input));
+    }
+  }
+
+  /**
+   * The fields of a form, as formToArray returns them, and the controls they came from.
+   */
+  function collect(form, semantic, filtering) {
+    var collected = { fields: [], controls: [] };
+    var els = form ? controlsOf(form, semantic) : [];
+
+    if (!els.length) {
+      return collected;
+    }
+
+    if (typeof filtering === "function") {
+      els = $.map(els, filtering);
+    }
+
+    for (var i = 0; i < els.length; i++) {
+      addCandidate(collected, form, els[i], semantic);
+    }
+
+    if (!semantic) {
+      addClickedImage(collected, form);
+    }
+
+    return collected;
+  }
+
+  return {
+    controlsOf: controlsOf,
+    fieldsOf: fieldsOf,
+    collect: collect,
+  };
+}
+
 // The arguments ajaxSubmit and ajaxForm accept in place of an options object.
 
 /**
@@ -1129,9 +1368,10 @@ function createIframeTransport(hasProp, forms) {
 
 /**
  * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and attr2-style properties (attribute, property).
+ * `forms` reads form attributes and attr2-style properties (attribute, property), and
+ * `serialization` collects the form's fields and controls.
  */
-function createSubmission(feature, forms) {
+function createSubmission(feature, forms, serialization) {
   var $ = jQuery;
 
   function refuse(message) {
@@ -1345,8 +1585,9 @@ function createSubmission(feature, forms) {
       traditional = $.ajaxSettings.traditional;
     }
 
-    var controls = [];
-    var fields = $set.formToArray(options.semantic, controls, options.filtering);
+    var collected = serialization.collect($set[0], options.semantic, options.filtering);
+    var fields = collected.fields;
+    var controls = collected.controls;
     var qx = extraQuery(fields, options, traditional);
 
     // give pre-submit callback an opportunity to abort the submit
@@ -1539,8 +1780,6 @@ function createSubmission(feature, forms) {
 		at the appropriate time.
 	*/
 
-  var rCRLF = /\r?\n/g;
-
   /**
    * Feature detection
    */
@@ -1550,17 +1789,6 @@ function createSubmission(feature, forms) {
   feature.formdata = typeof window.FormData !== "undefined";
 
   var hasProp = !!$.fn.prop;
-  // An attribute of a form, or undefined when it is absent, as jQuery's attr returns it.
-  function formAttribute(form, name) {
-    if (!isElement(form)) {
-      return $(form).attr(name);
-    }
-
-    var value = callFormMethod(form, "getAttribute", name);
-
-    return value === null ? undefined : value;
-  }
-
   // What attr2 returns for a form: the property when it is a string, otherwise the attribute. The
   // property is read plainly on purpose: a control named like it shadows it, and then the raw
   // attribute is used.
@@ -1571,7 +1799,8 @@ function createSubmission(feature, forms) {
   }
 
   var forms = { attribute: formAttribute, property: formProperty };
-  var steps = createSubmission(feature, forms);
+  var serialization = createSuccessfulControls(feature);
+  var steps = createSubmission(feature, forms, serialization);
   var transports = {
     iframe: createIframeTransport(hasProp, forms),
     formdata: sendFormData,
@@ -1772,113 +2001,13 @@ function createSubmission(feature, forms) {
    * ajaxSubmit() and ajaxForm() methods.
    */
   $.fn.formToArray = function (semantic, elements, filtering) {
-    var a = [];
+    var collected = serialization.collect(this[0], semantic, filtering);
 
-    if (this.length === 0) {
-      return a;
+    if (elements) {
+      elements.push.apply(elements, collected.controls);
     }
 
-    var form = this[0];
-    var formId = formAttribute(form, "id");
-    var els = formMember(form, "elements");
-    var els2;
-
-    if (semantic || typeof els === "undefined") {
-      // the document is not an element; it has its own getElementsByTagName
-      els = isElement(form)
-        ? callFormMethod(form, "getElementsByTagName", "*")
-        : form.getElementsByTagName("*");
-    }
-
-    if (els) {
-      els = $.makeArray(els); // convert to standard array
-    }
-
-    // #386; account for inputs outside the form which use the 'form' attribute
-    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
-    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      // hat tip @thet; the id is compared, never built into a selector
-      els2 = $(":input[form]")
-        .filter(function () {
-          return this.getAttribute("form") === formId;
-        })
-        .get();
-      if (els2.length) {
-        els = els.concat(els2);
-      }
-    }
-
-    if (!els || !els.length) {
-      return a;
-    }
-
-    if (typeof filtering === "function") {
-      els = $.map(els, filtering);
-    }
-
-    var i, j, n, v, el, max, jmax;
-
-    for (i = 0, max = els.length; i < max; i++) {
-      el = els[i];
-      n = el.name;
-      if (!n || el.disabled) {
-        continue;
-      }
-
-      if (semantic && form.clk && el.type === "image") {
-        // handle image inputs on the fly when semantic == true
-        if (form.clk === el) {
-          a.push({ name: n, value: $(el).val(), type: el.type });
-          a.push({ name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y });
-        }
-        continue;
-      }
-
-      v = $.fieldValue(el, true);
-      if (v && v.constructor === Array) {
-        if (elements) {
-          elements.push(el);
-        }
-        for (j = 0, jmax = v.length; j < jmax; j++) {
-          a.push({ name: n, value: v[j] });
-        }
-      } else if (feature.fileapi && el.type === "file") {
-        if (elements) {
-          elements.push(el);
-        }
-
-        var files = el.files;
-
-        if (files.length) {
-          for (j = 0; j < files.length; j++) {
-            a.push({ name: n, value: files[j], type: el.type });
-          }
-        } else {
-          // #180
-          a.push({ name: n, value: "", type: el.type });
-        }
-      } else if (v !== null && typeof v !== "undefined") {
-        if (elements) {
-          elements.push(el);
-        }
-        a.push({ name: n, value: v, type: el.type, required: el.required });
-      }
-    }
-
-    if (!semantic && form.clk) {
-      // input type=='image' are not found in elements array! handle it here
-      var $input = $(form.clk),
-        input = $input[0];
-
-      n = input.name;
-
-      if (n && !input.disabled && input.type === "image") {
-        a.push({ name: n, value: $input.val() });
-        a.push({ name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y });
-      }
-    }
-
-    return a;
+    return collected.fields;
   };
 
   /**
@@ -1980,65 +2109,13 @@ function createSubmission(feature, forms) {
    * Returns the value of the field element.
    */
   $.fieldValue = function (el, successful) {
-    var n = el.name,
-      t = el.type,
-      tag = tagName(el);
+    var required = typeof successful === "undefined" || successful;
 
-    if (typeof successful === "undefined") {
-      successful = true;
-    }
-
-    if (
-      successful &&
-      (!n ||
-        el.disabled ||
-        t === "reset" ||
-        t === "button" ||
-        ((t === "checkbox" || t === "radio") && !el.checked) ||
-        ((t === "submit" || t === "image") && el.form && el.form.clk !== el) ||
-        (tag === "select" && el.selectedIndex === -1))
-    ) {
+    if (required && !isSuccessful(el, el.form && el.form.clk)) {
       return null;
     }
 
-    if (tag === "select") {
-      var index = el.selectedIndex;
-
-      if (index < 0) {
-        return null;
-      }
-
-      var a = [],
-        ops = el.options;
-      var one = t === "select-one";
-      var max = one ? index + 1 : ops.length;
-
-      for (var i = one ? index : 0; i < max; i++) {
-        var op = ops[i];
-
-        if (op.selected && !op.disabled) {
-          var v = op.value;
-
-          if (!v) {
-            // extra pain for IE...
-            v =
-              op.attributes && op.attributes.value && !op.attributes.value.specified
-                ? op.text
-                : op.value;
-          }
-
-          if (one) {
-            return v;
-          }
-
-          a.push(v);
-        }
-      }
-
-      return a;
-    }
-
-    return $(el).val().replace(rCRLF, "\r\n");
+    return valueOf(el);
   };
 
   /**

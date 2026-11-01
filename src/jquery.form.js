@@ -19,18 +19,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-import {
-  assertRealParent,
-  callFormMethod,
-  closestByTag,
-  formMember,
-  isElement,
-  tagName,
-} from "./form-members.js";
+import { assertRealParent, callFormMethod, closestByTag, tagName } from "./form-members.js";
+import { createSuccessfulControls, isSuccessful, valueOf } from "./successful-controls.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
 import { shorthandOptions, submitOptions } from "./options.js";
 import { createIframeTransport } from "./iframe-transport.js";
 import { createSubmission } from "./submission.js";
+import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 import { log } from "./diagnostics.js";
 
@@ -74,8 +69,6 @@ import { log } from "./diagnostics.js";
 		at the appropriate time.
 	*/
 
-  var rCRLF = /\r?\n/g;
-
   /**
    * Feature detection
    */
@@ -85,17 +78,6 @@ import { log } from "./diagnostics.js";
   feature.formdata = typeof window.FormData !== "undefined";
 
   var hasProp = !!$.fn.prop;
-  // An attribute of a form, or undefined when it is absent, as jQuery's attr returns it.
-  function formAttribute(form, name) {
-    if (!isElement(form)) {
-      return $(form).attr(name);
-    }
-
-    var value = callFormMethod(form, "getAttribute", name);
-
-    return value === null ? undefined : value;
-  }
-
   // What attr2 returns for a form: the property when it is a string, otherwise the attribute. The
   // property is read plainly on purpose: a control named like it shadows it, and then the raw
   // attribute is used.
@@ -106,7 +88,8 @@ import { log } from "./diagnostics.js";
   }
 
   var forms = { attribute: formAttribute, property: formProperty };
-  var steps = createSubmission(feature, forms);
+  var serialization = createSuccessfulControls(feature);
+  var steps = createSubmission(feature, forms, serialization);
   var transports = {
     iframe: createIframeTransport(hasProp, forms),
     formdata: sendFormData,
@@ -307,113 +290,13 @@ import { log } from "./diagnostics.js";
    * ajaxSubmit() and ajaxForm() methods.
    */
   $.fn.formToArray = function (semantic, elements, filtering) {
-    var a = [];
+    var collected = serialization.collect(this[0], semantic, filtering);
 
-    if (this.length === 0) {
-      return a;
+    if (elements) {
+      elements.push.apply(elements, collected.controls);
     }
 
-    var form = this[0];
-    var formId = formAttribute(form, "id");
-    var els = formMember(form, "elements");
-    var els2;
-
-    if (semantic || typeof els === "undefined") {
-      // the document is not an element; it has its own getElementsByTagName
-      els = isElement(form)
-        ? callFormMethod(form, "getElementsByTagName", "*")
-        : form.getElementsByTagName("*");
-    }
-
-    if (els) {
-      els = $.makeArray(els); // convert to standard array
-    }
-
-    // #386; account for inputs outside the form which use the 'form' attribute
-    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
-    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      // hat tip @thet; the id is compared, never built into a selector
-      els2 = $(":input[form]")
-        .filter(function () {
-          return this.getAttribute("form") === formId;
-        })
-        .get();
-      if (els2.length) {
-        els = els.concat(els2);
-      }
-    }
-
-    if (!els || !els.length) {
-      return a;
-    }
-
-    if (typeof filtering === "function") {
-      els = $.map(els, filtering);
-    }
-
-    var i, j, n, v, el, max, jmax;
-
-    for (i = 0, max = els.length; i < max; i++) {
-      el = els[i];
-      n = el.name;
-      if (!n || el.disabled) {
-        continue;
-      }
-
-      if (semantic && form.clk && el.type === "image") {
-        // handle image inputs on the fly when semantic == true
-        if (form.clk === el) {
-          a.push({ name: n, value: $(el).val(), type: el.type });
-          a.push({ name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y });
-        }
-        continue;
-      }
-
-      v = $.fieldValue(el, true);
-      if (v && v.constructor === Array) {
-        if (elements) {
-          elements.push(el);
-        }
-        for (j = 0, jmax = v.length; j < jmax; j++) {
-          a.push({ name: n, value: v[j] });
-        }
-      } else if (feature.fileapi && el.type === "file") {
-        if (elements) {
-          elements.push(el);
-        }
-
-        var files = el.files;
-
-        if (files.length) {
-          for (j = 0; j < files.length; j++) {
-            a.push({ name: n, value: files[j], type: el.type });
-          }
-        } else {
-          // #180
-          a.push({ name: n, value: "", type: el.type });
-        }
-      } else if (v !== null && typeof v !== "undefined") {
-        if (elements) {
-          elements.push(el);
-        }
-        a.push({ name: n, value: v, type: el.type, required: el.required });
-      }
-    }
-
-    if (!semantic && form.clk) {
-      // input type=='image' are not found in elements array! handle it here
-      var $input = $(form.clk),
-        input = $input[0];
-
-      n = input.name;
-
-      if (n && !input.disabled && input.type === "image") {
-        a.push({ name: n, value: $input.val() });
-        a.push({ name: n + ".x", value: form.clk_x }, { name: n + ".y", value: form.clk_y });
-      }
-    }
-
-    return a;
+    return collected.fields;
   };
 
   /**
@@ -515,65 +398,13 @@ import { log } from "./diagnostics.js";
    * Returns the value of the field element.
    */
   $.fieldValue = function (el, successful) {
-    var n = el.name,
-      t = el.type,
-      tag = tagName(el);
+    var required = typeof successful === "undefined" || successful;
 
-    if (typeof successful === "undefined") {
-      successful = true;
-    }
-
-    if (
-      successful &&
-      (!n ||
-        el.disabled ||
-        t === "reset" ||
-        t === "button" ||
-        ((t === "checkbox" || t === "radio") && !el.checked) ||
-        ((t === "submit" || t === "image") && el.form && el.form.clk !== el) ||
-        (tag === "select" && el.selectedIndex === -1))
-    ) {
+    if (required && !isSuccessful(el, el.form && el.form.clk)) {
       return null;
     }
 
-    if (tag === "select") {
-      var index = el.selectedIndex;
-
-      if (index < 0) {
-        return null;
-      }
-
-      var a = [],
-        ops = el.options;
-      var one = t === "select-one";
-      var max = one ? index + 1 : ops.length;
-
-      for (var i = one ? index : 0; i < max; i++) {
-        var op = ops[i];
-
-        if (op.selected && !op.disabled) {
-          var v = op.value;
-
-          if (!v) {
-            // extra pain for IE...
-            v =
-              op.attributes && op.attributes.value && !op.attributes.value.specified
-                ? op.text
-                : op.value;
-          }
-
-          if (one) {
-            return v;
-          }
-
-          a.push(v);
-        }
-      }
-
-      return a;
-    }
-
-    return $(el).val().replace(rCRLF, "\r\n");
+    return valueOf(el);
   };
 
   /**
