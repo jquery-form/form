@@ -18,9 +18,22 @@ export function shorthandOptions(options, data, dataType, onSuccess) {
   return result;
 }
 
+// A copy of options without its url, so the form action is used.
+function withoutUrl(options) {
+  var result = {};
+
+  for (var key in options) {
+    if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
+      result[key] = options[key];
+    }
+  }
+
+  return result;
+}
+
 /**
  * The options ajaxSubmit starts from: a function is the success callback, the shorthand is
- * expanded, and no options at all is an empty object.
+ * expanded, and no options at all is an empty object. A url of false or "" means the form action.
  */
 export function submitOptions(options, data, dataType, onSuccess) {
   if (typeof options === "function") {
@@ -29,5 +42,9 @@ export function submitOptions(options, data, dataType, onSuccess) {
 
   options = shorthandOptions(options, data, dataType, onSuccess);
 
-  return typeof options === "undefined" ? {} : options;
+  if (typeof options === "undefined") {
+    return {};
+  }
+
+  return options.url === false || options.url === "" ? withoutUrl(options) : options;
 }

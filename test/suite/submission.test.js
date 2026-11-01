@@ -111,7 +111,7 @@ describe("form", function () {
       });
 
       [
-        [false, false],
+        [false, "ajax/text.html"],
         [undefined, "ajax/text.html"],
       ].forEach(function ([value, expectedUrl]) {
         it("should normalize the url when options are " + String(value), async function () {
@@ -126,11 +126,7 @@ describe("form", function () {
               $("#form3").ajaxSubmit(value);
               await Promise.resolve();
 
-              if (expectedUrl === false) {
-                assert.strictEqual(ajaxOptions.url, false, "explicit false url");
-              } else {
-                assert.ok(ajaxOptions.url.endsWith(expectedUrl), "form action");
-              }
+              assert.ok(ajaxOptions.url.endsWith(expectedUrl), "form action");
             }
           );
         });
@@ -1102,21 +1098,13 @@ describe("form", function () {
         assert.strictEqual(settings.iframeSrc, "ajax/text.html");
       });
 
-      it("should send an empty string url to $.ajax", function () {
-        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
-
-        const settings = submitWith($form, [""]);
-
-        assert.strictEqual(settings.url, "");
-      });
-
       [
         [false, "post"],
         [false, "get"],
         ["", "post"],
         ["", "get"],
       ].forEach(function ([url, method]) {
-        it.fails(
+        it(
           "should submit to the form action when the url is " +
             JSON.stringify(url) +
             " and the form uses " +
@@ -1132,6 +1120,22 @@ describe("form", function () {
               String(settings.url).startsWith(absolute("ajax/text.html")),
               String(settings.url)
             );
+          }
+        );
+      });
+
+      [false, ""].forEach(function (url) {
+        it(
+          "should submit to the form action when the url option is " + JSON.stringify(url),
+          function () {
+            const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+            const options = { url: url, type: "post" };
+
+            const settings = submitWith($form, [options]);
+
+            assert.strictEqual(settings.url, absolute("ajax/text.html"));
+            assert.strictEqual(settings.type, "post");
+            assert.strictEqual(options.url, url);
           }
         );
       });

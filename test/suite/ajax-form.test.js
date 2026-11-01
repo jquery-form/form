@@ -1226,7 +1226,7 @@ describe("form", function () {
         ["empty", "", "get"],
         ["empty", "", "post"],
       ].forEach(function ([label, url, method]) {
-        it.fails(
+        it(
           "should submit a " + method + " form to its action when the shorthand url is " + label,
           async function () {
             const $form = $(

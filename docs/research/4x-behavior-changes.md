@@ -42,6 +42,7 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **`resetForm` resets a form whose controls are named `reset`.** One or more controls named `reset` used to make it do nothing or throw; the `resetForm` option of `ajaxSubmit` follows.
 - **The classic build runs its whole factory in strict mode.** The `'use strict'` directive moved to the top of the UMD factory (the same three `dist` files, ADR-0001).
 - **An iframe upload whose frame is not in the document fails instead of opening a new window.** When a connected form sits outside `<body>`, or `iframeTarget` is a frame not in the document, the native submit is no longer called (it posted the form into a new top-level window and reported `aborted`/`server abort`). The upload settles once with `error` and `jquery.form: the upload frame is not in the document`: the `error` callback, a rejected Deferred, and `ajaxError`/`ajaxComplete`/`ajaxStop`. A form not in the document still reports a server abort.
+- **`false` or `""` as the url submits to the form action.** `ajaxSubmit(false)`, `ajaxSubmit("")`, `ajaxForm(false)` and a `url` option of `false` or `""` used to throw on a GET form or post to the page URL (or `/false`); they now use the form's `action`, like no url at all.
 
 ## Known behavior, not changed
 
