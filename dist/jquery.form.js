@@ -972,6 +972,22 @@ function createSubmission(feature, forms) {
     }
   }
 
+  // A callback option as a list: an array as given, one function, or none.
+  function callbackList(callback) {
+    if (Array.isArray(callback)) {
+      return callback;
+    }
+
+    return callback ? [callback] : [];
+  }
+
+  // Calls each callback in order with the same this and arguments.
+  function callEach(callbacks, context, args) {
+    for (var i = 0; i < callbacks.length; i++) {
+      callbacks[i].apply(context, args);
+    }
+  }
+
   /**
    * Resolves the options, serializes the form, and runs the vetoes: the Submission, or null when
    * an event or callback stopped it.
@@ -1035,7 +1051,8 @@ function createSubmission(feature, forms) {
   }
 
   /**
-   * Wraps success, error and complete so each also receives the form, and adds the resetForm,
+   * Wraps success, error and complete (a function or an array of them, as $.ajax takes) so each
+   * also receives the form, and adds the resetForm,
    * clearForm and target steps before the success callbacks.
    */
   function deliver(submission) {
@@ -1057,7 +1074,7 @@ function createSubmission(feature, forms) {
 
     // perform a load on the target only if dataType is not provided
     if (!options.dataType && options.target) {
-      var oldSuccess = options.success || function () {};
+      var successes = callbackList(options.success);
 
       callbacks.push(function (data, textStatus, jqXHR) {
         var successArguments = arguments,
@@ -1073,15 +1090,11 @@ function createSubmission(feature, forms) {
         }
 
         $target.each(function () {
-          oldSuccess.apply(this, successArguments);
+          callEach(successes, this, successArguments);
         });
       });
-    } else if (options.success) {
-      if (Array.isArray(options.success)) {
-        $.merge(callbacks, options.success);
-      } else {
-        callbacks.push(options.success);
-      }
+    } else {
+      $.merge(callbacks, callbackList(options.success));
     }
 
     options.success = function (data, status, xhr) {
@@ -1094,22 +1107,18 @@ function createSubmission(feature, forms) {
     };
 
     if (options.error) {
-      var oldError = options.error;
+      var errors = callbackList(options.error);
 
       options.error = function (xhr, status, error) {
-        var context = options.context || this;
-
-        oldError.apply(context, [xhr, status, error, $set]);
+        callEach(errors, options.context || this, [xhr, status, error, $set]);
       };
     }
 
     if (options.complete) {
-      var oldComplete = options.complete;
+      var completes = callbackList(options.complete);
 
       options.complete = function (xhr, status) {
-        var context = options.context || this;
-
-        oldComplete.apply(context, [xhr, status, $set]);
+        callEach(completes, options.context || this, [xhr, status, $set]);
       };
     }
   }

@@ -1975,24 +1975,21 @@ describe("form", function () {
         assert.strictEqual(calls, 1);
       });
 
-      it.fails(
-        "should call every success callback when target is set and success is an array",
-        function () {
-          const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
-          $("#targetDiv").empty();
-          const calls = [];
+      it("should call every success callback when target is set and success is an array", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        $("#targetDiv").empty();
+        const calls = [];
 
-          submitWith(
-            $form,
-            [{ target: "#targetDiv", success: [() => calls.push(1), () => calls.push(2)] }],
-            (s) => s.success("x", "success", {})
-          );
+        submitWith(
+          $form,
+          [{ target: "#targetDiv", success: [() => calls.push(1), () => calls.push(2)] }],
+          (s) => s.success("x", "success", {})
+        );
 
-          assert.deepEqual(calls, [1, 2]);
-        }
-      );
+        assert.deepEqual(calls, [1, 2]);
+      });
 
-      it.fails("should call every error callback given as an array", function () {
+      it("should call every error callback given as an array", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const calls = [];
 
@@ -2003,7 +2000,7 @@ describe("form", function () {
         assert.deepEqual(calls, [1, 2]);
       });
 
-      it.fails("should call every complete callback given as an array", function () {
+      it("should call every complete callback given as an array", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const calls = [];
 
@@ -2012,6 +2009,60 @@ describe("form", function () {
         );
 
         assert.deepEqual(calls, [1, 2]);
+      });
+
+      it("should give every error and complete callback in an array the form when a request fails", async function () {
+        const $form = $("#form3");
+        const seen = [];
+        const record = (name) =>
+          function () {
+            seen.push([name, arguments[arguments.length - 1]]);
+          };
+
+        await new Promise(function (resolve) {
+          $form.ajaxSubmit({
+            url: "ajax/404.html",
+            error: [record("error1"), record("error2")],
+            complete: [record("complete1"), record("complete2"), () => resolve()],
+          });
+        });
+
+        assert.deepEqual(
+          seen.map(([name]) => name),
+          ["error1", "error2", "complete1", "complete2"]
+        );
+        seen.forEach(([name, $last]) => assert.strictEqual($last[0], $form[0], name));
+      });
+
+      it("should call every success callback once per target element when success is an array", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        const $targets = $('<div class="t"></div><div class="t"></div>').appendTo("#main");
+        const calls = [];
+
+        submitWith(
+          $form,
+          [
+            {
+              target: $targets,
+              success: [
+                function () {
+                  calls.push([1, this]);
+                },
+                function () {
+                  calls.push([2, this]);
+                },
+              ],
+            },
+          ],
+          (s) => s.success("x", "success", {})
+        );
+
+        assert.deepEqual(calls, [
+          [1, $targets[0]],
+          [2, $targets[0]],
+          [1, $targets[1]],
+          [2, $targets[1]],
+        ]);
       });
     });
 
