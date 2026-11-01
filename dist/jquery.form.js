@@ -196,11 +196,11 @@ function keepContext(settings, sources) {
 }
 
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
-var $$3 = jQuery;
+var $$4 = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 function deepSerialize(extraData, traditional) {
-  var param = $$3.param(extraData, traditional);
+  var param = $$4.param(extraData, traditional);
   var serialized = param ? param.split("&") : [];
   var len = serialized.length;
   var result = [];
@@ -241,19 +241,19 @@ function sendFormData(submission) {
 
   options.data = null;
 
-  var s = $$3.extend(true, {}, $$3.ajaxSettings, options, {
+  var s = $$4.extend(true, {}, $$4.ajaxSettings, options, {
     contentType: false,
     processData: false,
     cache: false,
     type: submission.method || "POST",
   });
 
-  keepContext(s, [$$3.ajaxSettings, options]);
+  keepContext(s, [$$4.ajaxSettings, options]);
 
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property
     s.xhr = function () {
-      var xhr = $$3.ajaxSettings.xhr();
+      var xhr = $$4.ajaxSettings.xhr();
 
       if (xhr.upload) {
         xhr.upload.addEventListener(
@@ -294,19 +294,19 @@ function sendFormData(submission) {
     }
   };
 
-  return $$3.ajax(s);
+  return $$4.ajax(s);
 }
 
 /**
  * Sends the encoded fields with $.ajax.
  */
 function sendAjax(submission) {
-  return $$3.ajax(submission.options);
+  return $$4.ajax(submission.options);
 }
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
 // posting and restored after, and the native submit.
-var $$2 = jQuery;
+var $$3 = jQuery;
 
 // The form attributes an iframe upload changes while it posts.
 var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
@@ -355,8 +355,8 @@ function addSubmitterFields(s, form) {
 function addCsrfField(s, form, method, forms) {
   // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
   // only when the form is posted, since a get form would put the token in the url
-  var csrf_token = $$2("meta[name=csrf-token]").attr("content");
-  var csrf_param = $$2("meta[name=csrf-param]").attr("content");
+  var csrf_token = $$3("meta[name=csrf-token]").attr("content");
+  var csrf_param = $$3("meta[name=csrf-param]").attr("content");
   var posts =
     !isGet(method) &&
     (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
@@ -375,7 +375,7 @@ function setFormAttribute(form, name, value) {
 function saveAttributes(form) {
   var saved = {};
 
-  $$2.each(uploadAttributes, function (i, name) {
+  $$3.each(uploadAttributes, function (i, name) {
     saved[name] = callFormMethod(form, "hasAttribute", name)
       ? callFormMethod(form, "getAttribute", name)
       : null;
@@ -386,7 +386,7 @@ function saveAttributes(form) {
 
 /** Puts back the attributes saveAttributes recorded, removing those that were absent. */
 function restoreAttributes(form, saved) {
-  $$2.each(uploadAttributes, function (i, name) {
+  $$3.each(uploadAttributes, function (i, name) {
     if (saved[name] === null) {
       callFormMethod(form, "removeAttribute", name);
     } else {
@@ -424,7 +424,7 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
 
     input.type = "hidden";
     input.name = name;
-    added.push($$2(input).val(value).appendTo(form)[0]);
+    added.push($$3(input).val(value).appendTo(form)[0]);
   }
 
   if (extraData) {
@@ -432,7 +432,7 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
       if (hasOwn.call(extraData, n)) {
         // if using the $.param format that allows for multiple values with the same name
         if (
-          $$2.isPlainObject(extraData[n]) &&
+          $$3.isPlainObject(extraData[n]) &&
           hasOwn.call(extraData[n], "name") &&
           hasOwn.call(extraData[n], "value")
         ) {
@@ -481,7 +481,7 @@ function log() {
 
 // The iframe response reader: turns the frame's document into the mock xhr's text, XML, status
 // and dataType, then parses it as $.ajax would (dataFilter, JSON, script).
-var $$1 = jQuery;
+var $$2 = jQuery;
 
 /** The frame's document, or null when the browser denies access to it. */
 function getDoc(frame) {
@@ -530,8 +530,8 @@ function httpData(xhr, type, s) {
     data = xml ? xhr.responseXML : xhr.responseText;
 
   if (xml && data.documentElement.nodeName === "parsererror") {
-    if ($$1.error) {
-      $$1.error("parsererror");
+    if ($$2.error) {
+      $$2.error("parsererror");
     }
   }
   if (s && s.dataFilter) {
@@ -541,7 +541,7 @@ function httpData(xhr, type, s) {
     if ((type === "json" || !type) && ct.indexOf("json") >= 0) {
       data = JSON.parse(data);
     } else if (type === "script") {
-      $$1.globalEval(data);
+      $$2.globalEval(data);
     }
   }
 
@@ -610,7 +610,7 @@ function readResponse(doc, xhr, s, retry) {
     errMsg;
 
   try {
-    var isXml = s.dataType === "xml" || doc.XMLDocument || $$1.isXMLDoc(doc);
+    var isXml = s.dataType === "xml" || doc.XMLDocument || $$2.isXMLDoc(doc);
 
     log("isXml=" + isXml);
 
@@ -644,6 +644,180 @@ function readResponse(doc, xhr, s, retry) {
   return { status: status, data: data, errMsg: errMsg };
 }
 
+// The iframe upload's lifecycle: the mock xhr and the Deferred, the global ajax events, the
+// beforeSend veto, the timeout, abort and settling.
+var $$1 = jQuery;
+
+/**
+ * Creates the lifecycle of one upload with the merged settings `s`. `frame.stop()` stops the
+ * frame's load and `frame.release()` removes or resets the frame after the upload.
+ */
+function createLifecycle(s, frame) {
+  var g,
+    timeoutHandle,
+    callbackProcessed,
+    deferred = $$1.Deferred();
+
+  var xhr = {
+    // mock object
+    aborted: 0,
+    responseText: null,
+    responseXML: null,
+    status: 0,
+    statusText: "n/a",
+    getAllResponseHeaders: function () {},
+    getResponseHeader: function () {},
+    setRequestHeader: function () {},
+    abort: function (status) {
+      abort(status, [xhr, "aborted", status]);
+    },
+  };
+
+  // #341
+  deferred.abort = function (status) {
+    xhr.abort(status);
+  };
+
+  function done() {
+    return xhr.aborted || callbackProcessed;
+  }
+
+  // Completes an aborted upload once and rejects the Deferred with `rejection`.
+  // `textStatus` replaces the default "timeout"/"aborted" text status.
+  function abort(status, rejection, textStatus) {
+    var e = textStatus || (status === "timeout" ? "timeout" : "aborted");
+
+    if (done()) {
+      return;
+    }
+
+    log("aborting upload... " + e);
+    xhr.aborted = 1;
+    frame.stop();
+    xhr.error = e;
+    if (s.error) {
+      s.error.call(s.context, xhr, e, status);
+    }
+    deferred.reject.apply(deferred, rejection);
+
+    if (g) {
+      $$1.event.trigger("ajaxError", [xhr, s, e]);
+    }
+
+    complete(e);
+  }
+
+  // The steps every finished or aborted upload ends with, in $.ajax order.
+  function complete(status) {
+    if (g) {
+      $$1.event.trigger("ajaxComplete", [xhr, s]);
+    }
+
+    if (g && !--$$1.active) {
+      $$1.event.trigger("ajaxStop");
+    }
+
+    if (s.complete) {
+      s.complete.call(s.context, xhr, status);
+    }
+
+    clearTimeout(timeoutHandle);
+
+    // clean up
+    setTimeout(function () {
+      frame.release();
+      xhr.responseXML = null;
+    }, 100);
+  }
+
+  // Fires the start events and beforeSend; false when the upload must not be posted.
+  function start() {
+    g = s.global;
+    // trigger ajax global events so that activity/block indicators work like normal
+    if (g && $$1.active++ === 0) {
+      $$1.event.trigger("ajaxStart");
+    }
+    if (g) {
+      $$1.event.trigger("ajaxSend", [xhr, s]);
+    }
+
+    if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
+      if (s.global) {
+        $$1.active--;
+      }
+      deferred.reject();
+
+      return false;
+    }
+
+    // abort() in beforeSend already rejected the Deferred
+    return !xhr.aborted;
+  }
+
+  // Settles the upload with the response reader's {status, data, errMsg}.
+  function settle(result) {
+    var status = result.status,
+      errMsg = result.errMsg;
+
+    if (xhr.aborted) {
+      // abort() completed the upload while its response was processed
+      log("upload aborted");
+
+      return;
+    }
+
+    // an emulated HTTP error status wins, as in $.ajax; a parse error is kept otherwise
+    if (xhr.status && !((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304)) {
+      status = "error";
+    }
+
+    callbackProcessed = true;
+
+    // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
+    if (status === "success") {
+      s.success.call(s.context, result.data, "success", xhr);
+
+      deferred.resolve(xhr.responseText, "success", xhr);
+
+      if (g) {
+        $$1.event.trigger("ajaxSuccess", [xhr, s]);
+      }
+    } else {
+      if (typeof errMsg === "undefined") {
+        errMsg = xhr.statusText;
+      }
+      if (s.error) {
+        s.error.call(s.context, xhr, status, errMsg);
+      }
+      deferred.reject(xhr, "error", errMsg);
+      if (g) {
+        $$1.event.trigger("ajaxError", [xhr, s, errMsg]);
+      }
+    }
+
+    complete(status);
+  }
+
+  return {
+    xhr: xhr,
+    deferred: deferred,
+    start: start,
+    done: done,
+    abort: abort,
+    settle: settle,
+    // Runs `onTimeout` after s.timeout, when set.
+    startTimer: function (onTimeout) {
+      if (s.timeout) {
+        timeoutHandle = setTimeout(onTimeout, s.timeout);
+      }
+    },
+    stopTimer: function () {
+      clearTimeout(timeoutHandle);
+      timeoutHandle = undefined;
+    },
+  };
+}
+
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // for file uploads without the File API or when the iframe option asks for it.
 var $ = jQuery;
@@ -653,46 +827,26 @@ var $ = jQuery;
  * form property as attr2 does.
  */
 function createIframeTransport(hasProp, forms) {
-  // private function for handling file uploads (hat tip to YAHOO!)
-  function fileUploadIframe(submission) {
-    var elements = submission.controls,
-      options = submission.options,
-      method = submission.method,
-      traditional = submission.traditional;
-    var form = submission.form,
-      el,
-      i,
-      s,
-      g,
-      id,
-      $io,
-      io,
-      xhr,
-      n,
-      timeoutHandle,
-      callbackProcessed;
-    var deferred = $.Deferred();
+  var CLIENT_TIMEOUT_ABORT = 1;
+  var SERVER_ABORT = 2;
 
-    // #341
-    deferred.abort = function (status) {
-      xhr.abort(status);
-    };
+  // ensure that every serialized input is still enabled
+  function enableControls(elements) {
+    for (var i = 0; i < elements.length; i++) {
+      var el = $(elements[i]);
 
-    // ensure that every serialized input is still enabled
-    for (i = 0; i < elements.length; i++) {
-      el = $(elements[i]);
       if (hasProp) {
         el.prop("disabled", false);
       } else {
         el.removeAttr("disabled");
       }
     }
+  }
 
-    s = keepContext($.extend(true, {}, $.ajaxSettings, options), [$.ajaxSettings, options]);
-    s.context = s.context || s;
-    id = "jqFormIO" + new Date().getTime();
-    var ownerDocument = formMember(form, "ownerDocument");
-    var $body = $(closestByTag(form, ["body"]));
+  // The frame the form posts into: the iframeTarget, named `id` when it has no name, or a new
+  // hidden frame named `id`. Returns the frame and the name the form targets.
+  function createFrame(s, id, ownerDocument) {
+    var $io, n;
 
     if (s.iframeTarget) {
       $io = $(s.iframeTarget, ownerDocument);
@@ -703,159 +857,117 @@ function createIframeTransport(hasProp, forms) {
         id = n;
       }
     } else {
-      io = ownerDocument.createElement("iframe");
+      var io = ownerDocument.createElement("iframe");
+
       io.setAttribute("name", id);
       io.setAttribute("src", s.iframeSrc);
       $io = $(io);
       $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
     }
-    io = $io[0];
 
-    xhr = {
-      // mock object
-      aborted: 0,
-      responseText: null,
-      responseXML: null,
-      status: 0,
-      statusText: "n/a",
-      getAllResponseHeaders: function () {},
-      getResponseHeader: function () {},
-      setRequestHeader: function () {},
-      abort: function (status) {
-        abortUpload(status, [xhr, "aborted", status]);
+    return { $io: $io, id: id };
+  }
+
+  // The frame hooks the lifecycle calls: stop a load in progress, and release after the upload.
+  function frameHooks(s, $io) {
+    return {
+      stop: function () {
+        try {
+          // #214, #257
+          if ($io[0].contentWindow.document.execCommand) {
+            $io[0].contentWindow.document.execCommand("Stop");
+          }
+        } catch (ignore) {}
+
+        $io.attr("src", s.iframeSrc); // abort op in progress
       },
-    };
-
-    // Completes an aborted upload once and rejects the Deferred with `rejection`.
-    // `textStatus` replaces the default "timeout"/"aborted" text status.
-    function abortUpload(status, rejection, textStatus) {
-      var e = textStatus || (status === "timeout" ? "timeout" : "aborted");
-
-      if (xhr.aborted || callbackProcessed) {
-        return;
-      }
-
-      log("aborting upload... " + e);
-      xhr.aborted = 1;
-
-      try {
-        // #214, #257
-        if (io.contentWindow.document.execCommand) {
-          io.contentWindow.document.execCommand("Stop");
-        }
-      } catch (ignore) {}
-
-      $io.attr("src", s.iframeSrc); // abort op in progress
-      xhr.error = e;
-      if (s.error) {
-        s.error.call(s.context, xhr, e, status);
-      }
-      deferred.reject.apply(deferred, rejection);
-
-      if (g) {
-        $.event.trigger("ajaxError", [xhr, s, e]);
-      }
-
-      complete(e);
-    }
-
-    // The steps every finished or aborted upload ends with, in $.ajax order.
-    function complete(status) {
-      if (g) {
-        $.event.trigger("ajaxComplete", [xhr, s]);
-      }
-
-      if (g && !--$.active) {
-        $.event.trigger("ajaxStop");
-      }
-
-      if (s.complete) {
-        s.complete.call(s.context, xhr, status);
-      }
-
-      if (s.timeout) {
-        clearTimeout(timeoutHandle);
-      }
-
-      // clean up
-      setTimeout(function () {
+      release: function () {
         if (!s.iframeTarget) {
           $io.remove();
         } else {
           // adding else to clean up existing iframe response.
           $io.attr("src", s.iframeSrc);
         }
-        xhr.responseXML = null;
-      }, 100);
-    }
+      },
+    };
+  }
 
-    g = s.global;
-    // trigger ajax global events so that activity/block indicators work like normal
-    if (g && $.active++ === 0) {
-      $.event.trigger("ajaxStart");
+  function listen(io, cb) {
+    if (io.attachEvent) {
+      io.attachEvent("onload", cb);
+    } else {
+      io.addEventListener("load", cb, false);
     }
-    if (g) {
-      $.event.trigger("ajaxSend", [xhr, s]);
+  }
+
+  function unlisten(io, cb) {
+    if (io.detachEvent) {
+      io.detachEvent("onload", cb);
+    } else {
+      io.removeEventListener("load", cb, false);
     }
+  }
 
-    if (s.beforeSend && s.beforeSend.call(s.context, xhr, s) === false) {
-      if (s.global) {
-        $.active--;
-      }
-      deferred.reject();
+  // private function for handling file uploads (hat tip to YAHOO!)
+  function fileUploadIframe(submission) {
+    var form = submission.form,
+      method = submission.method;
 
-      return deferred;
-    }
+    enableControls(submission.controls);
 
-    if (xhr.aborted) {
-      // abort() in beforeSend already rejected the Deferred
-      return deferred;
+    var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
+      $.ajaxSettings,
+      submission.options,
+    ]);
+
+    s.context = s.context || s;
+    var ownerDocument = formMember(form, "ownerDocument");
+    var $body = $(closestByTag(form, ["body"]));
+    var frame = createFrame(s, "jqFormIO" + new Date().getTime(), ownerDocument);
+    var $io = frame.$io,
+      io = $io[0];
+    var life = createLifecycle(s, frameHooks(s, $io));
+    var domCheckCount = 50;
+
+    if (!life.start()) {
+      return life.deferred;
     }
 
     addSubmitterFields(s, form);
-
-    var CLIENT_TIMEOUT_ABORT = 1;
-    var SERVER_ABORT = 2;
-
     addCsrfField(s, form, method, forms);
+
+    // look for server aborts
+    function checkState() {
+      try {
+        var state = getDoc(io).readyState;
+
+        log("state = " + state);
+        if (state && state.toLowerCase() === "uninitialized") {
+          setTimeout(checkState, 50);
+        }
+      } catch (e) {
+        log("Server abort: ", e, " (", e.name, ")");
+        cb(SERVER_ABORT);
+        life.stopTimer();
+      }
+    }
 
     // take a breath so that pending repaints get some cpu time before the upload starts
     function doSubmit() {
       var saved = saveAttributes(form);
 
-      setUploadAttributes(form, id, method, s, forms);
+      setUploadAttributes(form, frame.id, method, s, forms);
 
       // support timout
-      if (s.timeout) {
-        timeoutHandle = setTimeout(function () {
-          cb(CLIENT_TIMEOUT_ABORT);
-        }, s.timeout);
-      }
-
-      // look for server aborts
-      function checkState() {
-        try {
-          var state = getDoc(io).readyState;
-
-          log("state = " + state);
-          if (state && state.toLowerCase() === "uninitialized") {
-            setTimeout(checkState, 50);
-          }
-        } catch (e) {
-          log("Server abort: ", e, " (", e.name, ")");
-          cb(SERVER_ABORT);
-          if (timeoutHandle) {
-            clearTimeout(timeoutHandle);
-          }
-          timeoutHandle = undefined;
-        }
-      }
+      life.startTimer(function () {
+        cb(CLIENT_TIMEOUT_ABORT);
+      });
 
       // add "extra" data to form if provided in options
       var extraInputs = [];
 
       try {
-        addExtraInputs(form, ownerDocument, s.extraData, traditional, extraInputs);
+        addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
 
         if (!s.iframeTarget) {
           // add iframe to doc and submit the form
@@ -868,19 +980,13 @@ function createIframeTransport(hasProp, forms) {
         if (io && $.contains(root, form) && !$.contains(root, io)) {
           var notInDocument = "jquery.form: the upload frame is not in the document";
 
-          abortUpload(notInDocument, [xhr, "error", notInDocument], "error");
+          life.abort(notInDocument, [life.xhr, "error", notInDocument], "error");
 
           return;
         }
 
-        if (io.attachEvent) {
-          io.attachEvent("onload", cb);
-        } else {
-          io.addEventListener("load", cb, false);
-        }
-
+        listen(io, cb);
         setTimeout(checkState, 15);
-
         submitForm(form);
       } finally {
         // reset attrs and remove "extra" input elements
@@ -889,32 +995,36 @@ function createIframeTransport(hasProp, forms) {
       }
     }
 
-    if (s.forceSync) {
-      doSubmit();
-    } else {
-      setTimeout(doSubmit, 10); // this lets dom updates render
+    // Reads the next document by Opera's rules: false once the retries are used up.
+    function retry() {
+      if (--domCheckCount) {
+        log("requeing onLoad callback, DOM not available");
+        setTimeout(cb, 250);
+
+        return true;
+      }
+
+      return false;
     }
 
-    var doc,
-      domCheckCount = 50;
-
     function cb(e) {
-      if (xhr.aborted || callbackProcessed) {
+      if (life.done()) {
         return;
       }
 
-      doc = getDoc(io);
+      var doc = getDoc(io);
+
       if (!doc) {
         log("cannot access response document");
         e = SERVER_ABORT;
       }
-      if (e === CLIENT_TIMEOUT_ABORT && xhr) {
-        abortUpload("timeout", [xhr, "timeout"]);
+      if (e === CLIENT_TIMEOUT_ABORT) {
+        life.abort("timeout", [life.xhr, "timeout"]);
 
         return;
       }
-      if (e === SERVER_ABORT && xhr) {
-        abortUpload("server abort", [xhr, "error", "server abort"]);
+      if (e === SERVER_ABORT) {
+        life.abort("server abort", [life.xhr, "error", "server abort"]);
 
         return;
       }
@@ -924,71 +1034,22 @@ function createIframeTransport(hasProp, forms) {
         return;
       }
 
-      if (io.detachEvent) {
-        io.detachEvent("onload", cb);
-      } else {
-        io.removeEventListener("load", cb, false);
+      unlisten(io, cb);
+
+      var result = readResponse(doc, life.xhr, s, retry);
+
+      if (result) {
+        life.settle(result);
       }
-
-      var result = readResponse(doc, xhr, s, function () {
-        if (--domCheckCount) {
-          log("requeing onLoad callback, DOM not available");
-          setTimeout(cb, 250);
-
-          return true;
-        }
-
-        return false;
-      });
-
-      if (!result) {
-        return;
-      }
-
-      var status = result.status,
-        data = result.data,
-        errMsg = result.errMsg;
-
-      if (xhr.aborted) {
-        // abort() completed the upload while its response was processed
-        log("upload aborted");
-
-        return;
-      }
-
-      // an emulated HTTP error status wins, as in $.ajax; a parse error is kept otherwise
-      if (xhr.status && !((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304)) {
-        status = "error";
-      }
-
-      callbackProcessed = true;
-
-      // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
-      if (status === "success") {
-        s.success.call(s.context, data, "success", xhr);
-
-        deferred.resolve(xhr.responseText, "success", xhr);
-
-        if (g) {
-          $.event.trigger("ajaxSuccess", [xhr, s]);
-        }
-      } else {
-        if (typeof errMsg === "undefined") {
-          errMsg = xhr.statusText;
-        }
-        if (s.error) {
-          s.error.call(s.context, xhr, status, errMsg);
-        }
-        deferred.reject(xhr, "error", errMsg);
-        if (g) {
-          $.event.trigger("ajaxError", [xhr, s, errMsg]);
-        }
-      }
-
-      complete(status);
     }
 
-    return deferred;
+    if (s.forceSync) {
+      doSubmit();
+    } else {
+      setTimeout(doSubmit, 10); // this lets dom updates render
+    }
+
+    return life.deferred;
   }
 
   return function sendIframe(submission) {
