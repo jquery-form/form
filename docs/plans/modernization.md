@@ -362,7 +362,9 @@ members slice is done (`src/form-members.js`, see `docs/research/4x-behavior-cha
 Submission refactor is done (options, submission and transport modules, no behavior change). The
 submission fixes are done (D-09, D-06, D-18, D-02, D-04, D-01, #541, and `requestFormat: "json"`
 for #545; close PR #557 on release day). The iframe lifecycle slice is done (response reader, form post and
-lifecycle modules behind the iframe adapter; D-08, D-07, D-16, D-22, D-21, D-33).
+lifecycle modules behind the iframe adapter; D-08, D-07, D-16, D-22, D-21, D-33). The successful
+controls slice is done (`src/successful-controls.js` behind formToArray and `$.fieldValue`; SER-18,
+SER-24, D-34, D-03, D-28, the disabled fieldset and form owner spec alignment, D-26).
 
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
@@ -400,6 +402,7 @@ Release the result as a 4.x minor, the same way as Phase 11 but without the advi
 - The iframe transport runs only with `iframe: true`, and FormData detection is removed. Delegation requires a selector.
 - Remove the deprecated API: `clearInputs`, `$.fn.attr2`, and whatever the `enable`/`selected` audit decides.
 - Move to ES2015+ syntax and revisit Prettier `trailingComma`.
+- Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x
 
