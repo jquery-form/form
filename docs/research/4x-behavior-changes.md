@@ -72,6 +72,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`fieldSerialize` skips forms (D-28).** A named `<form>` in the set used to be sent as an empty field (`other=`).
 
+- **Controls in a disabled `<fieldset>` and options in a disabled `<optgroup>` are no longer sent.** This aligns `formToArray`, `ajaxSubmit`, `formSerialize` and `$.fieldValue` with the HTML spec, native submission and jQuery 3's `serializeArray`: a control is disabled also through a disabled ancestor (controls in the fieldset's first `<legend>` stay enabled). Servers receive fewer fields from such forms. Browsers without `Element.matches` read only the control's own `disabled`.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

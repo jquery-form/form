@@ -28,6 +28,15 @@ describe("successful controls", function () {
       assert.deepEqual(results, [false, false]);
     });
 
+    it("should read disabled from the property when the control cannot match selectors", function () {
+      const disabled = { name: "a", type: "text", disabled: true };
+      const enabled = { name: "a", type: "text", disabled: false, tagName: "INPUT" };
+
+      const results = [isSuccessful(disabled, null), isSuccessful(enabled, null)];
+
+      assert.deepEqual(results, [false, true]);
+    });
+
     it("should reject reset and plain buttons", function () {
       const reset = control('<input type="reset" name="r">');
       const button = control('<button type="button" name="b">');

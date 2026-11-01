@@ -583,6 +583,36 @@ describe("form", function () {
     });
 
     describe("skipped controls", function () {
+      it("should skip controls inside a disabled fieldset", function () {
+        const $form = $(
+          '<form><fieldset disabled><input name="secret" value="s"><select name="sel"><option>o</option></select></fieldset><input name="a" value="1"></form>'
+        );
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should keep controls in the first legend of a disabled fieldset", function () {
+        const $form = $(
+          '<form><fieldset disabled><legend><input name="kept" value="k"></legend><input name="b" value="2"></fieldset></form>'
+        );
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["kept"]);
+      });
+
+      it("should skip selected options inside a disabled optgroup", function () {
+        const $form = $(
+          '<form><select name="s" multiple><optgroup disabled><option selected>x</option></optgroup><option selected>y</option></select></form>'
+        );
+
+        const values = $form.formToArray().map((field) => field.value);
+
+        assert.deepEqual(values, ["y"]);
+      });
+
       it("should skip controls without a name in both modes", function () {
         const $form = $(
           '<form><input value="x"><input name="" value="y"><div name="d"></div><input name="a" value="1"></form>'
@@ -1114,6 +1144,14 @@ describe("form", function () {
   });
 
   describe("fieldValue", function () {
+    it("should return null for a control inside a disabled fieldset", function () {
+      const input = $('<fieldset disabled><input name="a" value="1"></fieldset>').find("input")[0];
+
+      const value = $.fieldValue(input);
+
+      assert.strictEqual(value, null);
+    });
+
     // #600: the document and text nodes have no tag name.
     it("should return no values for nodes without a tag name", function () {
       const $nodes = $([document, document.createTextNode("text")]);

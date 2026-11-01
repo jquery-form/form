@@ -153,13 +153,21 @@ var rCRLF = /\r?\n/g;
 var rUnsubmittable = /^(?:fieldset|object|output)$/;
 
 /**
+ * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
+ * selector matching, only its own disabled property is read.
+ */
+function isDisabled(el) {
+  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
+}
+
+/**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
  */
 function isSuccessful(el, submitter) {
   var t = el.type;
 
-  if (!el.name || el.disabled || t === "reset" || t === "button") {
+  if (!el.name || isDisabled(el) || t === "reset" || t === "button") {
     return false;
   }
 
@@ -190,7 +198,7 @@ function selectValue(el) {
   for (var i = one ? index : 0; i < max; i++) {
     var op = ops[i];
 
-    if (op.selected && !op.disabled) {
+    if (op.selected && !isDisabled(op)) {
       var v = op.value;
 
       if (!v) {
@@ -320,7 +328,7 @@ function createSuccessfulControls(feature) {
 
   // Adds one candidate control's fields, and the control when it has a value to send.
   function addCandidate(collected, form, el, semantic) {
-    if (!el.name || el.disabled || rUnsubmittable.test(tagName(el))) {
+    if (!el.name || isDisabled(el) || rUnsubmittable.test(tagName(el))) {
       return;
     }
 
@@ -345,7 +353,7 @@ function createSuccessfulControls(feature) {
   function addClickedImage(collected, form) {
     var input = form.clk && $(form.clk)[0];
 
-    if (input && input.name && !input.disabled && input.type === "image") {
+    if (input && input.name && !isDisabled(input) && input.type === "image") {
       collected.fields.push.apply(collected.fields, imageFields(form, input));
     }
   }
