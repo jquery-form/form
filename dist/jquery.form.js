@@ -46,8 +46,8 @@
 	}
 
 }(function (jQuery) {
-(function ($) {
 	'use strict';
+(function ($) {
 
   /*
 		Usage Note:

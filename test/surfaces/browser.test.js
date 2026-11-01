@@ -44,6 +44,29 @@ describe("when the classic build is loaded by a script tag", () => {
   });
 });
 
+describe("when the classic build runs its factory", () => {
+  it("should run the factory body in strict mode", async () => {
+    // A sloppy-mode write to a read-only property is silently ignored; a strict one throws.
+    const page = `<script src="${jquery3}"></script>
+      <script>
+        Object.defineProperty(jQuery.fn, "attr2", { value: null, writable: false });
+        window.onerror = function (message) {
+          window.result = message;
+        };
+      </script>
+      <script src="/raw/dist/jquery.form.js"></script>
+      <script>
+        if (!("result" in window)) {
+          window.result = "no error";
+        }
+      </script>`;
+
+    const result = await loadPage(page);
+
+    expect(result).toMatch(/read.only property 'attr2'/);
+  });
+});
+
 describe("when the classic build is loaded through AMD", () => {
   it("should register on the jquery module and define no value", async () => {
     const page = `<script src="/raw/node_modules/requirejs/require.js"></script>
