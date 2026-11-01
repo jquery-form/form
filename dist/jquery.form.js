@@ -344,11 +344,12 @@ function createSuccessfulControls(feature) {
    */
   function collect(form, semantic, filtering) {
     var collected = { fields: [], controls: [] };
-    var els = form ? controlsOf(form, semantic) : [];
 
-    if (!els.length) {
+    if (!form) {
       return collected;
     }
+
+    var els = controlsOf(form, semantic);
 
     if (typeof filtering === "function") {
       els = $.map(els, filtering);

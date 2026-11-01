@@ -66,6 +66,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Named `fieldset`, `output` and `object` elements are no longer sent.** `formToArray` (and so `ajaxSubmit` and `formSerialize`) sent them as fields, `output` with its text; native submission never includes them.
 
+- **A clicked image button is sent when it is the form's only control.** With `semantic` off, `formToArray` returned no fields when the form had no other listed control, so the image's name, value and coordinates were dropped.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

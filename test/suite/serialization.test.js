@@ -769,23 +769,20 @@ describe("form", function () {
         assert.deepEqual(unnamedNames, ["a"]);
       });
 
-      it.fails(
-        "should append the clicked image when it is the only control and semantic is false",
-        function () {
-          const $form = $('<form><input type="image" name="map" value="go"></form>');
-          $form[0].clk = $form.find("input")[0];
-          $form[0].clk_x = 4;
-          $form[0].clk_y = 6;
+      it("should append the clicked image when it is the only control and semantic is false", function () {
+        const $form = $('<form><input type="image" name="map" value="go"></form>');
+        $form[0].clk = $form.find("input")[0];
+        $form[0].clk_x = 4;
+        $form[0].clk_y = 6;
 
-          const formData = $form.formToArray();
+        const formData = $form.formToArray();
 
-          assert.deepEqual(formData, [
-            { name: "map", value: "go" },
-            { name: "map.x", value: 4 },
-            { name: "map.y", value: 6 },
-          ]);
-        }
-      );
+        assert.deepEqual(formData, [
+          { name: "map", value: "go" },
+          { name: "map.x", value: 4 },
+          { name: "map.y", value: 6 },
+        ]);
+      });
 
       it("should append a clicked image from outside the form when semantic is false", function () {
         const $form = $('<form><input name="a" value="1"></form>');
