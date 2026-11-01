@@ -84,6 +84,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **A file upload with a GET method puts the file name in the url, never `[object File]` (D-03).** `ajaxSubmit` builds the query string of a GET upload (and of a container that is not a form, before FormData posts it) from the file names, as `formSerialize` does.
 
+- **New: `delegation: "<selector>"` scopes `ajaxForm` delegation.** The plugin binds one submit and one click handler on the document for that selector, used as given, and the selection is ignored. A form submits through the plugin only when it or an ancestor matches. Binding the same selector again replaces its options. An empty string throws `jquery.form: delegation needs a selector, or true`; it used to mean no delegation. The string stays in the options object (it was rewritten to `true`). `delegation: true` is unchanged.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

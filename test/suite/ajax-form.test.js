@@ -348,10 +348,10 @@ describe("form", function () {
       });
     });
 
-    // jQuery 3.7 removed the selection selector needed to scope delegated handlers.
-    it.fails("should scope delegated handlers to the selected forms", function () {
+    // jQuery 3.0 removed the selection selector, so the scope is given as delegation: "<selector>".
+    it("should scope delegated handlers to the selected forms", function () {
       const $selected = $('<form class="delegated"></form>').appendTo("#main");
-      const $unselected = $("<form></form>").appendTo("#main");
+      const $unselected = $("<form></form>").appendTo("#main").on("submit", false);
       const ajaxSubmit = $.fn.ajaxSubmit;
       let submissions = 0;
       $.fn.ajaxSubmit = function () {
@@ -360,7 +360,7 @@ describe("form", function () {
       };
 
       try {
-        $selected.ajaxForm({ delegation: true });
+        $selected.ajaxForm({ delegation: ".delegated" });
         $unselected.trigger("submit");
 
         assert.strictEqual(submissions, 0);
@@ -684,7 +684,7 @@ describe("form", function () {
         assert.strictEqual(options.delegation, undefined);
       });
 
-      [1, ".selected-ajax-form"].forEach(function (value) {
+      [1].forEach(function (value) {
         it(
           "should rewrite a delegation value of " + JSON.stringify(value) + " to true",
           function () {
@@ -702,7 +702,30 @@ describe("form", function () {
         );
       });
 
-      [false, 0, null, ""].forEach(function (value) {
+      it("should keep a delegation selector in the options object", function () {
+        const options = { delegation: ".selected-ajax-form" };
+
+        try {
+          $(".selected-ajax-form").ajaxForm(options);
+
+          assert.strictEqual(options.delegation, ".selected-ajax-form");
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      });
+
+      it("should throw a clear error without binding when delegation is an empty string", function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        const bind = () => $form.ajaxForm({ delegation: "" });
+
+        assert.throws(bind, /delegation/);
+        assert.strictEqual($._data($form[0], "events"), undefined);
+        const events = $._data(document, "events");
+        assert.strictEqual(events && events.submit, undefined);
+      });
+
+      [false, 0, null].forEach(function (value) {
         it("should keep a falsy delegation value of " + JSON.stringify(value), function () {
           const $form = $("<form></form>").appendTo("#main");
           const options = { delegation: value };
@@ -890,6 +913,228 @@ describe("form", function () {
         } finally {
           $(document).off(".form-plugin");
         }
+      });
+    });
+
+    describe("with a delegation selector", function () {
+      afterEach(function () {
+        $(document).off(".form-plugin");
+      });
+
+      it("should return the selection", function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        const result = $form.ajaxForm({ delegation: ".scoped-ajax-form" });
+
+        assert.strictEqual(result, $form);
+      });
+
+      it("should submit a matching form added after binding through the plugin", async function () {
+        $().ajaxForm({ delegation: ".scoped-ajax-form" });
+        const $form = $('<form class="scoped-ajax-form"></form>').appendTo("#main");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].form, $form[0]);
+      });
+
+      it("should use the selector and ignore the selection", async function () {
+        const $selected = $("<form></form>").appendTo("#main").on("submit", false);
+        const $matching = $('<form class="scoped-ajax-form"></form>').appendTo("#main");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $selected.ajaxForm({ delegation: ".scoped-ajax-form" });
+          $selected.trigger("submit");
+          $matching.trigger("submit");
+          return calls;
+        });
+
+        assert.deepEqual(
+          calls.map((call) => call.form),
+          [$matching[0]]
+        );
+        assert.strictEqual($._data($selected[0], "events").submit.length, 1);
+      });
+
+      it("should not call beforeFormUnbind", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        let calls = 0;
+
+        $form.ajaxForm({
+          delegation: ".scoped-ajax-form",
+          beforeFormUnbind: function () {
+            calls++;
+          },
+        });
+
+        assert.strictEqual(calls, 0);
+      });
+
+      it("should leave a submit that does not match to the browser", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        $().ajaxForm({ delegation: ".scoped-ajax-form" });
+        const event = $.Event("submit", { target: $form[0] });
+
+        $(document).triggerHandler(event);
+
+        assert.strictEqual(event.isDefaultPrevented(), false);
+      });
+
+      it("should ignore a submit triggered on the document itself", async function () {
+        $().ajaxForm({ delegation: ".scoped-ajax-form" });
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $(document).triggerHandler("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 0);
+      });
+
+      it("should submit the form inside a matching container", async function () {
+        const $form = $('<div class="scoped-ajax-container"><form></form></div>')
+          .appendTo("#main")
+          .find("form");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $().ajaxForm({ delegation: ".scoped-ajax-container" });
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls[0].form, $form[0]);
+      });
+
+      it("should not submit when an earlier handler prevented the submit", async function () {
+        const $form = $('<form class="scoped-ajax-form"></form>').appendTo("#main");
+        $form.on("submit", false);
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 0);
+      });
+
+      it("should capture the clicked submit button of a matching form", async function () {
+        const $form = $(
+          '<form class="scoped-ajax-form"><button type="submit">Send</button></form>'
+        ).appendTo("#main");
+        const button = $form.find("button")[0];
+
+        await withAjaxSubmitStub(async function () {
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+          $form.on("submit", false);
+          $(button).trigger("click");
+        });
+
+        assert.strictEqual($form[0].clk, button);
+      });
+
+      it("should not capture clicks in a form that does not match", async function () {
+        const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
+        $form.on("submit", false);
+
+        await withAjaxSubmitStub(async function () {
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+          $form.find("button").trigger("click");
+        });
+
+        assert.strictEqual($form[0].clk, undefined);
+      });
+
+      it("should use the latest options when the same selector is bound twice", async function () {
+        const $form = $('<form class="scoped-ajax-form"></form>').appendTo("#main");
+        const first = { url: "ajax/first.html", delegation: ".scoped-ajax-form" };
+        const second = { url: "ajax/second.html", delegation: ".scoped-ajax-form" };
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $().ajaxForm(first);
+          $().ajaxForm(second);
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].options, second);
+      });
+
+      it("should keep each selector's own options", async function () {
+        const $first = $('<form class="first-ajax-form"></form>').appendTo("#main");
+        const $second = $('<form class="second-ajax-form"></form>').appendTo("#main");
+        const first = { delegation: ".first-ajax-form" };
+        const second = { delegation: ".second-ajax-form" };
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $().ajaxForm(first);
+          $().ajaxForm(second);
+          $first.trigger("submit");
+          $second.trigger("submit");
+          return calls;
+        });
+
+        assert.deepEqual(
+          calls.map((call) => call.options),
+          [first, second]
+        );
+      });
+
+      describe("without Element.prototype.closest", function () {
+        let closest;
+
+        beforeEach(function () {
+          closest = Element.prototype.closest;
+          delete Element.prototype.closest;
+        });
+
+        afterEach(function () {
+          Element.prototype.closest = closest;
+        });
+
+        it("should submit a form inside a matching container", async function () {
+          const $form = $('<div class="scoped-ajax-container"><form></form></div>')
+            .appendTo("#main")
+            .find("form");
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $().ajaxForm({ delegation: ".scoped-ajax-container" });
+            $form.trigger("submit");
+            return calls;
+          });
+
+          assert.strictEqual(calls[0].form, $form[0]);
+        });
+
+        it("should not submit a detached form that does not match", async function () {
+          const form = document.createElement("form");
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $().ajaxForm({ delegation: ".scoped-ajax-form" });
+            $(document).triggerHandler($.Event("submit", { target: form }));
+            return calls;
+          });
+
+          assert.strictEqual(calls.length, 0);
+        });
+
+        it("should not submit an attached form that does not match", async function () {
+          const $form = $("<form></form>").appendTo("#main");
+          $form.on("submit", false);
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $().ajaxForm({ delegation: ".scoped-ajax-form" });
+            $form.trigger("submit");
+            return calls;
+          });
+
+          assert.strictEqual(calls.length, 0);
+        });
       });
     });
 
@@ -1661,6 +1906,20 @@ describe("form", function () {
 
         try {
           $(form).ajaxForm({ delegation: true });
+          $(document).triggerHandler(click);
+
+          assert.strictEqual(form.clk, form.querySelector("button"));
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      }, 2000);
+      it("should capture the button around the clicked content when delegating to a selector", function () {
+        const form = formHidingParentNode('<button type="submit"><span>Go</span></button>');
+        form.className = "scoped-ajax-form";
+        const click = $.Event("click", { target: form.querySelector("span") });
+
+        try {
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
           $(document).triggerHandler(click);
 
           assert.strictEqual(form.clk, form.querySelector("button"));
