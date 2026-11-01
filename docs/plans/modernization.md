@@ -51,18 +51,18 @@ content: Architecture and vulnerability review with findings doc and issues
 status: completed
 - id: coverage-100
 content: "Coverage to 100%: remove dead and over-defensive branches, refactor for testability, raise thresholds"
-status: pending
+status: completed
 - id: security-fixes
 content: "Security and bug fixes: private advisories, review findings, P1 and Phase 5 it.fails bugs"
-status: in_progress
-- id: cleanup-4x
-content: "4.x cleanup and rearchitecture without breaking changes: source modules, lower complexity, additive options, deprecations"
-status: pending
+status: completed
 - id: release-4x
-content: "Release 4.x: tag, publish with provenance, publish advisories and release notes"
+content: "Phase 11: release 4.4.0 with Phases 0-10 and the W1-W4 fixes, publish with npm provenance, publish the advisories and release notes"
+status: pending
+- id: cleanup-4x
+content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
 status: pending
 - id: breaking-5
-content: "5.0: jQuery >=3.5 peer, exports map, drop jQuery <3 and IE/Opera shims, explicit iframe transport and delegation selector"
+content: "Phase 13: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
 status: pending
 
 ---
@@ -97,9 +97,14 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 11. ~~Issue triage (Phase 7)~~ — done (`docs/research/issue-triage.md`)
 12. ~~Architecture and vulnerability review (Phase 8)~~ — done (`docs/research/security-review.md`)
 13. ~~Coverage to 100% (Phase 9)~~ — done; see Phase 9 below
-14. Security and bug fixes (Phase 10)
-15. 4.x cleanup and rearchitecture (Phase 11), then the 4.x release
-16. 5.0 (Phase 12), then the 5.0 release; 5.x features after
+14. ~~Security and bug fixes (Phase 10)~~ — done; the W1–W4 fixes merge in Phase 11
+15. 4.4.0 release with the work so far (Phase 11)
+16. 4.x cleanup and rearchitecture (Phase 12), then a 4.x minor release
+17. 5.0 (Phase 13), then the 5.0 release; 5.x features after
+
+Phase 11 was added on 2026-10-31. The cleanup phase splits `src/jquery.form.js` into modules, which
+would move every W1–W4 sink while the fixes are still on a local branch. Releasing first ships the
+fixes sooner and lets the refactor start from the fixed code. The phases after it moved up by one.
 
 ### Architecture/CI decisions (Phase 3)
 
@@ -138,8 +143,9 @@ Each remaining step gets the cheapest model that fits it: a strong reasoner wher
 | Architecture and vulnerability review (Phase 8) | Claude Opus 5.5   | Security analysis (XSS, script eval, iframe parsing, prototype pollution) where missed findings are costly.                                                                  |
 | Coverage to 100% (Phase 9)                      | GPT-5.6 Sol       | Same branch-by-branch reasoning as Phase 5; each deletion must be proven dead on every supported jQuery and browser.                                                         |
 | Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes on a local branch until release; a weak fix reopens an XSS.                                                                                                   |
-| 4.x cleanup and rearchitecture (Phase 11)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                    |
-| 5.0 (Phase 12)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
+| 4.4.0 release (Phase 11)                        | Claude Opus 5.5   | Disclosure order and publishing can't be undone; the merge, tag, npm publish and advisories must land in one sitting.                                                        |
+| 4.x cleanup and rearchitecture (Phase 12)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                    |
+| 5.0 (Phase 13)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
 
 ## Commit grouping principle
 
@@ -260,7 +266,7 @@ Status: done. Findings, the `target` recommendation and the 5.0 carry-overs are 
 - CodeQL advanced setup runs on `main` and PRs (`.github/workflows/codeql.yml`).
 - `npm run metrics` records source size and complexity. The v4.3.0 and Phase 8 baselines are in `docs/metrics.md`.
 
-The phases below run in order before the releases. Each records a before-and-after metrics column and keeps `npm test`, the jQuery matrix and CodeQL green.
+The phases below run in order. Each records a before-and-after metrics column and keeps `npm test`, the jQuery matrix and CodeQL green.
 
 ## Phase 9: Coverage to 100% (4.x, no compatibility change)
 
@@ -298,16 +304,55 @@ enforces it. Each removed branch and the reason it was dead are in `docs/researc
 - The P1 bugs #588, #597, #600 and #553, and the remaining Phase 5 `it.fails` records: label lookup, iframe parsererror overwrite, double completion and pending Deferred on abort.
 - Each `it.fails` becomes an `it`, and coverage stays at 100%.
 
-Status: the public fixes are on `phase-10-fixes`. They cover findings 4, 6, 7 and 8, #588, #600 and #553, and the
-iframe parsererror, double-completion and abort records. Coverage stays at 100%.
+Status: done. The public fixes merged in PR #632 (eff1ea9): findings 4, 6, 7 and 8, #588, #600 and
+#553, and the iframe parsererror, double-completion and abort records. Coverage stays at 100%.
 
-- The label record and #597 land with W1–W4 on release day.
+- The W1–W4 fixes, the custom CodeQL query, the label record and #597 are on a local branch, verified
+  on `main` at eff1ea9. They merge in Phase 11.
 - Decisions: an aborted upload also fires `ajaxComplete` and `ajaxStop`, and the `clk` expandos stay
   on the form until 5.x.
 - `npm audit` now reports 6 moderate advisories in dev dependencies only (`minimatch` via ESLint,
   GHSA-g3hv-75wg-m249); the runtime dependency has none.
 
-## Phase 11: 4.x cleanup and rearchitecture (no breaking change)
+## Phase 11: 4.4.0 release
+
+A minor release of Phases 0–10 and the W1–W4 fixes. It changes no API; the consumer-visible changes
+are in `docs/research/4x-behavior-changes.md`.
+
+Prepare in public (normal PRs, nothing about W1–W4):
+
+- A release workflow (`.github/workflows/release.yml`) that publishes a `v*` tag to npm with npm
+  trusted publishing, which adds provenance. It needs `id-token: write`, and it runs `npm test`
+  before publishing.
+- On npmjs.com, the maintainer adds that workflow as the trusted publisher for `jquery-form`. Then
+  set publishing access to require 2FA and disallow tokens, and review the package's maintainer list.
+- Wait until GitHub has assigned a CVE ID to each of the four draft advisories. Review their text,
+  affected range (`<= 4.3.0`) and credits.
+- Check that the custom CodeQL query pack resolves its `codeql/javascript-all` dependency in Actions,
+  since it couldn't be run there before release day.
+
+Release day, in one sitting:
+
+1. Rebase the local fix branch on `main`. Run `npm test`, the jQuery matrix, the probes, and the
+   custom CodeQL query on `main` and on the branch.
+2. On that branch:
+   - Bump the version to 4.4.0 in `package.json`, `package-lock.json`, `form.jquery.json` and the
+     `src` header, and rebuild `dist`.
+   - Add the W1–W4 entries to `4x-behavior-changes.md`.
+   - Move the W1–W4 details into `security-review.md`.
+   - Update this plan, `coverage-findings.md` and `issue-triage.md`.
+   - Add a 4.4.0 column to `docs/metrics.md`.
+3. Push the branch, open the PR and merge it once CI and CodeQL pass.
+4. Tag `v4.4.0` on the merge commit and push the tag. The workflow publishes to npm. Check
+   `npm view jquery-form`, the provenance badge, jsDelivr, cdnjs (git autoupdate) and Packagist.
+5. Set `patched_versions` to `4.4.0` on the four advisories and publish them. GitHub then publishes
+   the CVE records and the GitHub Advisory Database entries, which feed `npm audit` and Dependabot.
+6. Publish the GitHub release notes from `4x-behavior-changes.md`.
+7. Comment on and close #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org
+   #3607794. Credit Rudloff for W1 and W2.
+8. Delete the local fix branch and the probe copies.
+
+## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
 - Split `src/jquery.form.js` into source modules: serialization, field helpers, XHR transport, iframe transport, `ajaxForm` binding. Rollup emits the same `dist` files, and the surface tests prove ADR-0001 still holds.
 - Lower the complexity hot spots that `npm run metrics` reports.
@@ -317,16 +362,15 @@ iframe parsererror, double-completion and abort records. Coverage stays at 100%.
   - iframe response requirements
   - a clear error on jQuery slim (#541)
 - Decide on the JSON body (#545, PR #557).
-- Deprecation warnings (under `debug`, and in the docs) for everything Phase 12 removes.
+- Deprecation warnings (under `debug`, and in the docs) for everything Phase 13 removes.
+- Phase 10 observations: the iframe `beforeSend` veto never fires `ajaxStop`, and controls named
+  `ownerDocument` or `getElementsByTagName` still shadow those form members.
+- Run the custom CodeQL query on every refactor branch, so moved code can't reopen a W1–W4 sink.
 
-## 4.x release
+Release the result as a 4.x minor, the same way as Phase 11 but without the advisory steps. Cut
+`release/4.x` when 5.0 lands (ADR-0002).
 
-- Tag the release and publish it with npm provenance.
-- Publish the advisories, then the release notes from `docs/research/4x-behavior-changes.md`.
-- Move the W1–W4 details into `security-review.md`.
-- Close #616, #618, #553, #554 and #604. Cut `release/4.x` when 5.0 lands (ADR-0002).
-
-## Phase 12: 5.0 (breaking)
+## Phase 13: 5.0 (breaking)
 
 - jQuery becomes a peer dependency, `>=3.5.0`. Add the `exports` map from `security-review.md`.
 - Remove the jQuery < 3 paths: `attr2`/`hasProp`, the `.selector`/`.context` delegation and DOM-ready queue, and the `$.fn.on` and `$.fn.offset` checks.
@@ -344,7 +388,7 @@ iframe parsererror, double-completion and abort records. Coverage stays at 100%.
 
 ## 5.x
 
-- Use `SubmitEvent.submitter` instead of the click-capture `clk` properties. This fixes #588 natively.
+- Use `SubmitEvent.submitter` instead of the click-capture `clk` properties. It replaces the capture that #588 fixed in 4.4.0.
 - Use `new FormData(form, submitter)`.
 - Ship type declarations generated from JSDoc, and keep the source in plain JS.
 - Add a promise-friendly API alongside chaining.
@@ -352,7 +396,7 @@ iframe parsererror, double-completion and abort records. Coverage stays at 100%.
 ## Metrics (throughout)
 
 - `docs/metrics.md` is the committed record of before-and-after numbers, used for the v4 and v5 release announcements.
-- The before column is the v4.3.0 baseline. Add a column whenever a phase changes a metric (at minimum after Phase 3, Phase 5, Phase 6, the 4.x release, and 5.0).
+- The before column is the v4.3.0 baseline. Add a column whenever a phase changes a metric (at minimum after Phase 3, Phase 5, Phase 6, each 4.x release, and 5.0).
 - Track: test count, suite wall time, full `npm test` time, coverage (lines, branches, functions, statements), minified and gzipped size, `npm audit` counts, number of dev deps, supported jQuery versions tested, CI duration, and open issues and PRs.
 - Measure the same way each time, and note the command and machine in the file.
 
