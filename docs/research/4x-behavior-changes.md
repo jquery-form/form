@@ -78,9 +78,10 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **A lone carriage return is sent as CRLF on every jQuery version (D-26).** `formToArray`, `formSerialize`, `fieldValue` and `ajaxSubmit` used to drop it on jQuery before 4.0 (`.val()` strips carriage returns) and send it bare on 4.0. A value a jQuery `valHook` returns is still used as-is, apart from line breaks.
 
+- **Controls named `clk`, `clk_x` or `clk_y` no longer break the clicked submitter.** `ajaxForm` keeps the clicked button in a private store; a click on such a form used to throw, and `formToArray` sent a submit button named `clk` as if it had been clicked. The form's `clk`, `clk_x` and `clk_y` properties are still set when they can be, and a submitter a page sets there is still sent when no click was captured.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
 - **`delegation: true` is not selector-scoped on jQuery 3 and later**, and `ajaxForm` called on an empty selection before DOM ready is dropped. See `selector-context-delegation.md`.
 - **No `exports` map** on 4.x so deep paths keep resolving; planned for 5.0.
-- **A control named `clk`, `clk_x` or `clk_y` still breaks submitter capture.** `ajaxForm`'s click capture writes those properties on the form, which throws in strict mode when a control has the name. The submitter work replaces the capture.

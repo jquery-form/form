@@ -731,7 +731,7 @@ describe("form", function () {
         assert.deepEqual(names, ["a", "go"]);
       });
 
-      it.fails("should not treat a submit button named clk as clicked", function () {
+      it("should not treat a submit button named clk as clicked", function () {
         const $form = $(
           '<form><input name="a" value="1"><input type="submit" name="clk" value="go"><input type="submit" name="other" value="no"></form>'
         );

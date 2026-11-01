@@ -1,21 +1,45 @@
-import { closestByTag } from "./form-members.js";
+import { closestByTag, formMember } from "./form-members.js";
 import jQuery from "jquery";
 
 // The submitter: the button that submitted a form, captured from ajaxForm's clicks. It is kept in
-// the form's clk, clk_x and clk_y properties and cleared shortly after the click.
+// a private store and cleared shortly after the click. The form's clk, clk_x and clk_y properties
+// are still written for pages that read them, and read when the store has none.
+
+var storeKey = "jqFormSubmitter";
+
+// Writes a property on the form; a control with that name makes it read-only.
+function setExpando(form, name, value) {
+  try {
+    form[name] = value;
+  } catch (ignore) {
+    // the control keeps the name; the store has the submitter
+  }
+}
+
+// A property the page set on the form, never a control of the form with that name.
+function expando(form, name) {
+  var value = form[name];
+  var els = formMember(form, "elements");
+
+  return els && value && els.namedItem(name) === value ? undefined : value;
+}
 
 // Records a submitter for a form until the click window ends.
 function record(form, el, x, y) {
-  form.clk = el;
+  jQuery.data(form, storeKey, { el: el, x: x, y: y });
+  setExpando(form, "clk", el);
 
   if (el.type === "image") {
-    form.clk_x = x;
-    form.clk_y = y;
+    setExpando(form, "clk_x", x);
+    setExpando(form, "clk_y", y);
   }
 
   // clear form vars
   setTimeout(function () {
-    form.clk = form.clk_x = form.clk_y = null;
+    jQuery.data(form, storeKey, null);
+    setExpando(form, "clk", null);
+    setExpando(form, "clk_x", null);
+    setExpando(form, "clk_y", null);
   }, 100);
 }
 
@@ -62,9 +86,19 @@ export function captureSubmitter(e) {
  * The form's submitter as { el, x, y } (x and y for an image button), or null.
  */
 export function submitterOf(form) {
-  var el = form && form.clk;
+  if (!form) {
+    return null;
+  }
 
-  return el ? { el: el, x: form.clk_x, y: form.clk_y } : null;
+  var stored = jQuery.data(form, storeKey);
+
+  if (stored) {
+    return stored;
+  }
+
+  var el = expando(form, "clk");
+
+  return el ? { el: el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
 }
 
 /**

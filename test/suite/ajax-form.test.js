@@ -1533,6 +1533,32 @@ describe("form", function () {
         assert.strictEqual($form[0].clk, $form.find("button")[0]);
       });
 
+      it("should send the clicked button when a control named clk is in the form", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="clk" value="1"><button type="submit" name="choice" value="go">Send</button></form>'
+        ).appendTo("#main");
+        $form.ajaxForm();
+
+        const requests = await withAjaxCapture(function () {
+          $form.find("button").trigger("click");
+        });
+
+        assert.strictEqual(requests[0].data, "clk=1&choice=go");
+      });
+
+      it("should send the clicked image's coordinates when controls named clk_x and clk_y are in the form", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="clk_x" value="1"><input name="clk_y" value="2"><input type="image" name="im" src="data:,"></form>'
+        ).appendTo("#visible-fixture");
+        $form.ajaxForm();
+
+        const requests = await withAjaxCapture(function () {
+          $form.find("[name=im]").trigger($.Event("click", { offsetX: 3, offsetY: 4 }));
+        });
+
+        assert.strictEqual(requests[0].data, "clk_x=1&clk_y=2&im=&im.x=3&im.y=4");
+      });
+
       it("should send NaN image coordinates when the click is triggered without coordinates", async function () {
         const $form = $(
           '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>'
