@@ -106,8 +106,18 @@ predicate objectKeyStep(DataFlow::Node pred, DataFlow::Node succ) {
 }
 
 /**
+ * A function value tracked from where it is created, through helper returns, parameters and
+ * imports or exports between modules.
+ */
+private DataFlow::SourceNode trackedFunction(DataFlow::FunctionNode f, DataFlow::TypeTracker t) {
+  t.start() and result = f
+  or
+  exists(DataFlow::TypeTracker t2 | result = trackedFunction(f, t2).track(t2, t))
+}
+
+/**
  * Holds if `callbacks[i].apply(context, [a, b])` passes `pred` to `succ`, a parameter of a
- * function pushed onto `callbacks`.
+ * function pushed onto `callbacks`, wherever that function was created.
  */
 predicate callbackListStep(DataFlow::Node pred, DataFlow::Node succ) {
   exists(
@@ -119,7 +129,7 @@ predicate callbackListStep(DataFlow::Node pred, DataFlow::Node succ) {
     args = apply.getArgument(1).getALocalSource() and
     push.getMethodName() = "push" and
     refersTo(push.getReceiver(), list, "") and
-    push.getAnArgument().getALocalSource() = callback and
+    trackedFunction(callback, DataFlow::TypeTracker::end()).flowsTo(push.getAnArgument()) and
     pred = args.getElement(i) and
     succ = callback.getParameter(i)
   )
