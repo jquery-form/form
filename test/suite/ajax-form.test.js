@@ -1,5 +1,60 @@
-import { assert, describe, it } from "vitest";
-import { resetFixture, arrayValue, submitAndSettle } from "./helpers.js";
+import { afterEach, assert, beforeEach, describe, it } from "vitest";
+import { userEvent } from "vitest/browser";
+import {
+  resetFixture,
+  arrayValue,
+  restoreAjaxState,
+  submitAndSettle,
+  withAjaxStub,
+} from "./helpers.js";
+
+const jQueryMajor = Number($.fn.jquery.split(".")[0]);
+
+// Focus, keyboard input and image clicks need rendered controls, but #main is hidden. Tests that
+// need them append to #visible-fixture, which each test gets fresh.
+function visibleFixture() {
+  beforeEach(function () {
+    $('<div id="visible-fixture"></div>').appendTo(document.body);
+  });
+
+  afterEach(function () {
+    $("#visible-fixture").remove();
+  });
+}
+
+// Runs `run` with $.ajax replaced by a recorder and passes it the settings of every request.
+async function withAjaxCapture(run) {
+  const requests = [];
+
+  await withAjaxStub(
+    function (settings) {
+      requests.push(settings);
+      return {};
+    },
+    function () {
+      return run(requests);
+    }
+  );
+
+  return requests;
+}
+
+// Runs `run` with a bubbling window submit listener that stops navigation after the plugin's
+// handlers have run. Passes it the defaultPrevented state each submit reached the window with.
+async function withNavigationStopped(run) {
+  const reached = [];
+  const stop = function (event) {
+    reached.push(event.defaultPrevented);
+    event.preventDefault();
+  };
+  window.addEventListener("submit", stop);
+
+  try {
+    return await run(reached);
+  } finally {
+    window.removeEventListener("submit", stop);
+  }
+}
 
 // Runs `run` with $.fn.ajaxSubmit replaced by a recorder, so a jQuery-triggered click that falls
 // through to the native click submits through the plugin without sending a request.
@@ -7,7 +62,7 @@ async function withAjaxSubmitStub(run) {
   const ajaxSubmit = $.fn.ajaxSubmit;
   const calls = [];
   $.fn.ajaxSubmit = function (options) {
-    calls.push({ form: this[0], options: options });
+    calls.push({ form: this[0], options: options, clk: this[0] ? this[0].clk : undefined });
     return this;
   };
 
@@ -20,6 +75,7 @@ async function withAjaxSubmitStub(run) {
 
 describe("form", function () {
   resetFixture();
+  visibleFixture();
 
   describe("ajaxForm", function () {
     it("should pass URL shorthand options to ajaxSubmit", function () {
@@ -111,6 +167,82 @@ describe("form", function () {
 
         assert.strictEqual(result, $pending);
         assert.strictEqual($._data($form[0], "events"), undefined);
+      });
+
+      it("should bind on a later macrotask, not synchronously, when queued", async function () {
+        const $pending = $(".later-ajax-form");
+        $pending.selector = ".later-ajax-form";
+        const $form = $('<form class="later-ajax-form"></form>').appendTo("#main");
+
+        withDomNotReady(() => $pending.ajaxForm());
+        const boundAtOnce = $._data($form[0], "events");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual(boundAtOnce, undefined);
+        assert.strictEqual($._data($form[0], "events").submit.length, 1);
+      });
+
+      it("should bind the queued call with the same options object", async function () {
+        const $pending = $(".same-options-ajax-form");
+        $pending.selector = ".same-options-ajax-form";
+        const options = { url: "ajax/text.html" };
+        withDomNotReady(() => $pending.ajaxForm(options));
+        const $form = $('<form class="same-options-ajax-form"></form>').appendTo("#main");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].options, options);
+      });
+
+      it("should call beforeFormUnbind only when the queued call runs", async function () {
+        const $pending = $(".unbind-later-ajax-form");
+        $pending.selector = ".unbind-later-ajax-form";
+        let calls = 0;
+        const options = {
+          beforeFormUnbind: function () {
+            calls++;
+          },
+        };
+
+        withDomNotReady(() => $pending.ajaxForm(options));
+        const callsAtOnce = calls;
+        $('<form class="unbind-later-ajax-form"></form>').appendTo("#main");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual(callsAtOnce, 0);
+        assert.strictEqual(calls, 1);
+      });
+
+      it("should not queue again when the queued call still finds nothing", async function () {
+        const $pending = $(".never-ajax-form");
+        $pending.selector = ".never-ajax-form";
+
+        withDomNotReady(() => $pending.ajaxForm());
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const $form = $('<form class="never-ajax-form"></form>').appendTo("#main");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual($._data($form[0], "events"), undefined);
+      });
+
+      it("should query the queued selector in the original context", async function () {
+        const $context = $("<div></div>").appendTo("#main");
+        const $pending = $(".context-ajax-form");
+        $pending.selector = ".context-ajax-form";
+        $pending.context = $context[0];
+
+        withDomNotReady(() => $pending.ajaxForm());
+        const $inside = $('<form class="context-ajax-form"></form>').appendTo($context);
+        const $outside = $('<form class="context-ajax-form"></form>').appendTo("#main");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual($._data($inside[0], "events").submit.length, 1);
+        assert.strictEqual($._data($outside[0], "events"), undefined);
       });
     });
 
@@ -452,6 +584,1035 @@ describe("form", function () {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       assert.strictEqual(callbacks, 0, "no callbacks after unbind");
+    });
+
+    describe("options", function () {
+      it("should not set success when the shorthand callback is not a function", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm("/shorthand", null, null, "not a function");
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(
+          Object.prototype.hasOwnProperty.call(calls[0].options, "success"),
+          false
+        );
+      });
+
+      [null, 0].forEach(function (value) {
+        it("should start from fresh empty options when called with " + value, async function () {
+          const $first = $("<form></form>").appendTo("#main");
+          const $second = $("<form></form>").appendTo("#main");
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $first.ajaxForm(value);
+            $second.ajaxForm(value);
+            $first.trigger("submit");
+            $second.trigger("submit");
+            return calls;
+          });
+
+          assert.deepEqual(Object.keys(calls[0].options), ["delegation"]);
+          assert.notStrictEqual(calls[0].options, calls[1].options);
+        });
+      });
+
+      it("should use a function passed as options as the options object", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const callback = function () {};
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm(callback);
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls[0].options, callback);
+        assert.strictEqual(Object.prototype.hasOwnProperty.call(callback, "delegation"), true);
+      });
+
+      it("should call a function passed as options as the success callback", async function () {
+        const $form = $('<form method="post" action="ajax/text.html"></form>').appendTo("#main");
+        const received = [];
+
+        await withAjaxStub(
+          function (settings) {
+            settings.success("response", "success", {});
+            return {};
+          },
+          function () {
+            $form.ajaxForm(function (data) {
+              received.push(data);
+            });
+            $form.trigger("submit");
+          }
+        );
+
+        assert.deepEqual(received, ["response"]);
+      });
+
+      [true, 1].forEach(function (value) {
+        it("should throw a TypeError without binding when the options are " + value, function () {
+          const $form = $("<form></form>").appendTo("#main");
+
+          const bind = () => $form.ajaxForm(value);
+
+          assert.throws(bind, TypeError);
+          assert.strictEqual($._data($form[0], "events"), undefined);
+        });
+      });
+
+      it("should throw a TypeError when the options object is frozen", function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        const bind = () => $form.ajaxForm(Object.freeze({}));
+
+        assert.throws(bind, TypeError);
+      });
+
+      it("should add a delegation property to the options object when it had none", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const options = {};
+
+        $form.ajaxForm(options);
+
+        assert.strictEqual(Object.prototype.hasOwnProperty.call(options, "delegation"), true);
+        assert.strictEqual(options.delegation, undefined);
+      });
+
+      [1, ".selected-ajax-form"].forEach(function (value) {
+        it(
+          "should rewrite a delegation value of " + JSON.stringify(value) + " to true",
+          function () {
+            const $form = $('<form class="selected-ajax-form"></form>').appendTo("#main");
+            const options = { delegation: value };
+
+            try {
+              $form.ajaxForm(options);
+
+              assert.strictEqual(options.delegation, true);
+            } finally {
+              $(document).off(".form-plugin");
+            }
+          }
+        );
+      });
+
+      [false, 0, null, ""].forEach(function (value) {
+        it("should keep a falsy delegation value of " + JSON.stringify(value), function () {
+          const $form = $("<form></form>").appendTo("#main");
+          const options = { delegation: value };
+
+          $form.ajaxForm(options);
+
+          assert.strictEqual(options.delegation, value);
+        });
+      });
+
+      it("should set delegation to false and throw when $.fn.on is missing", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const options = { delegation: true };
+        const on = $.fn.on;
+        $.fn.on = undefined;
+        let bind;
+
+        try {
+          bind = () => $form.ajaxForm(options);
+
+          assert.throws(bind, TypeError);
+        } finally {
+          $.fn.on = on;
+        }
+
+        assert.strictEqual(options.delegation, false);
+      });
+
+      it("should use options changed after binding on the next submit", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const options = { url: "ajax/first.html" };
+        $form.ajaxForm(options);
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          options.url = "ajax/second.html";
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls[0].options, options);
+        assert.strictEqual(calls[0].options.url, "ajax/second.html");
+      });
+
+      it("should not keep changes a callback makes to its options argument", async function () {
+        const $form = $('<form method="post" action="ajax/text.html"></form>').appendTo("#main");
+        const seen = [];
+        const options = {
+          beforeSubmit: function (data, $submitted, submittedOptions) {
+            seen.push(submittedOptions.custom);
+            submittedOptions.custom = "changed";
+          },
+        };
+        $form.ajaxForm(options);
+
+        await withAjaxCapture(function () {
+          $form.trigger("submit");
+          $form.trigger("submit");
+        });
+
+        assert.deepEqual(seen, [undefined, undefined]);
+        assert.strictEqual(options.custom, undefined);
+      });
+
+      it("should submit each form with the shared options when one call binds several forms", async function () {
+        const $first = $("<form></form>").appendTo("#main");
+        const $second = $("<form></form>").appendTo("#main");
+        const options = {};
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $first.add($second).ajaxForm(options);
+          $second.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].form, $second[0]);
+        assert.strictEqual(calls[0].options, options);
+      });
+    });
+
+    describe("an empty selection", function () {
+      it("should not log when debug is off", function () {
+        const logged = [];
+        const log = console.log;
+        console.log = (text) => logged.push(text);
+
+        try {
+          $(".missing-ajax-form").ajaxForm();
+        } finally {
+          console.log = log;
+        }
+
+        assert.deepEqual(logged, []);
+      });
+
+      it("should not call beforeFormUnbind", function () {
+        let calls = 0;
+
+        $(".missing-ajax-form").ajaxForm({
+          beforeFormUnbind: function () {
+            calls++;
+          },
+        });
+
+        assert.strictEqual(calls, 0);
+      });
+
+      it("should bind delegated handlers on the document when delegation is true", function () {
+        try {
+          $(".missing-ajax-form").ajaxForm({ delegation: true });
+
+          const events = $._data(document, "events");
+          assert.strictEqual(events.submit.length, 1);
+          assert.strictEqual(events.click.length, 1);
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      });
+    });
+
+    describe("with delegation", function () {
+      it("should return the selection", function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        try {
+          const result = $form.ajaxForm({ delegation: true });
+
+          assert.strictEqual(result, $form);
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      });
+
+      it("should not call beforeFormUnbind", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        let calls = 0;
+
+        try {
+          $form.ajaxForm({
+            delegation: true,
+            beforeFormUnbind: function () {
+              calls++;
+            },
+          });
+
+          assert.strictEqual(calls, 0);
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      });
+
+      it("should submit once when a form has both direct and delegated bindings", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        try {
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $form.ajaxForm();
+            $form.ajaxForm({ delegation: true });
+            $form.trigger("submit");
+            return calls;
+          });
+
+          assert.strictEqual(calls.length, 1);
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      });
+
+      // jQuery 1.7.2 delegates clicks with the selection's selector, which the button does not match.
+      it("should capture a submit button outside the form that names it", async function () {
+        const $form = $('<form id="delegated-owner"></form>').appendTo("#main");
+        const $button = $('<button type="submit" form="delegated-owner">Send</button>').appendTo(
+          "#main"
+        );
+
+        try {
+          await withAjaxSubmitStub(async function () {
+            $("#delegated-owner").ajaxForm({ delegation: true });
+            $button.trigger("click");
+          });
+
+          assert.strictEqual($form[0].clk, jQueryMajor < 3 ? undefined : $button[0]);
+        } finally {
+          $(document).off(".form-plugin");
+        }
+      });
+    });
+
+    describe("binding", function () {
+      it("should call beforeFormUnbind with the options as this and ignore its return value", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        let context;
+        const options = {
+          beforeFormUnbind: function () {
+            context = this;
+            return false;
+          },
+        };
+
+        $form.ajaxForm(options);
+
+        assert.strictEqual(context, options);
+        assert.strictEqual($._data($form[0], "events").submit.length, 1);
+      });
+
+      it("should leave the previous handlers bound when beforeFormUnbind throws", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const first = {};
+        $form.ajaxForm(first);
+        const rebind = () =>
+          $form.ajaxForm({
+            beforeFormUnbind: function () {
+              throw new Error("unbind refused");
+            },
+          });
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          assert.throws(rebind, /unbind refused/);
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].options, first);
+      });
+
+      it("should remove user click handlers in the form-plugin namespace when binding", function () {
+        const $form = $("<form><span>Text</span></form>").appendTo("#main");
+        let userClicks = 0;
+        $form.on("click.form-plugin", function () {
+          userClicks++;
+        });
+
+        $form.ajaxForm();
+        $form.find("span").trigger("click");
+
+        assert.strictEqual(userClicks, 0);
+        assert.strictEqual($._data($form[0], "events").click.length, 1);
+      });
+
+      it("should leave handlers of other namespaces bound when binding and unbinding", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        $form.on("submit", function () {});
+        $form.on("submit.mine", function () {});
+        $form.on("click.mine", function () {});
+
+        $form.ajaxForm().ajaxFormUnbind();
+
+        const events = $._data($form[0], "events");
+        assert.strictEqual(events.submit.length, 2);
+        assert.strictEqual(events.click.length, 1);
+      });
+
+      it("should bind one submit and one click handler and return the same selection", function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        const result = $form.ajaxForm();
+
+        const events = $._data($form[0], "events");
+        assert.strictEqual(result, $form);
+        assert.strictEqual(events.submit.length, 1);
+        assert.strictEqual(events.click.length, 1);
+      });
+
+      it("should use the latest options when ajaxForm is called twice", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const latest = {};
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm({});
+          $form.ajaxForm(latest);
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].options, latest);
+      });
+
+      it("should run the plugin after user handlers bound between two ajaxForm calls", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        let preventedBeforeUser;
+        $form.ajaxForm();
+        $form.on("submit", function (event) {
+          preventedBeforeUser = event.isDefaultPrevented();
+        });
+
+        await withAjaxSubmitStub(async function () {
+          $form.ajaxForm();
+          $form.trigger("submit");
+        });
+
+        assert.strictEqual(preventedBeforeUser, false);
+      });
+
+      it("should submit the descendant form when ajaxForm is bound on a container", async function () {
+        const $container = $(
+          '<div><form><button type="submit" name="choice" value="inner">Send</button></form></div>'
+        ).appendTo("#main");
+        const $form = $container.find("form");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $container.ajaxForm();
+          $form.find("button").trigger("click");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].form, $form[0]);
+        assert.strictEqual(calls[0].clk, $form.find("button")[0]);
+      });
+
+      it("should submit a detached form when submit is triggered", async function () {
+        const $form = $("<form></form>");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].form, $form[0]);
+      });
+
+      it("should not change the form or start a request when binding", function () {
+        const $form = $('<form action="ajax/text.html"><input name="q" value="1"></form>').appendTo(
+          "#main"
+        );
+        const html = $form[0].outerHTML;
+        const active = $.active;
+        const ownKeys = Object.keys($form[0]).filter((key) => key.indexOf("jQuery") !== 0);
+
+        $form.ajaxForm();
+
+        assert.strictEqual($form[0].outerHTML, html);
+        assert.strictEqual($.active, active);
+        assert.deepEqual(
+          Object.keys($form[0]).filter((key) => key.indexOf("jQuery") !== 0),
+          ownKeys
+        );
+      });
+
+      it("should call the current $.fn.ajaxFormUnbind on the selection", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const ajaxFormUnbind = $.fn.ajaxFormUnbind;
+        const unbound = [];
+        $.fn.ajaxFormUnbind = function () {
+          unbound.push(this);
+          return ajaxFormUnbind.apply(this, arguments);
+        };
+
+        try {
+          $form.ajaxForm();
+        } finally {
+          $.fn.ajaxFormUnbind = ajaxFormUnbind;
+        }
+
+        assert.deepEqual(unbound, [$form]);
+      });
+    });
+
+    describe("the submit handler", function () {
+      it("should not submit when an earlier submit handler returns false", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        $form.on("submit", function () {
+          return false;
+        });
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 0);
+      });
+
+      it("should not run when an earlier submit handler stops immediate propagation", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const event = $.Event("submit");
+        $form.on("submit", function (submitEvent) {
+          submitEvent.stopImmediatePropagation();
+        });
+        $form[0].submit = function () {};
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.trigger(event);
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 0);
+        assert.strictEqual(event.isDefaultPrevented(), false);
+      });
+
+      it("should submit even when a later submit handler prevents default", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        let preventedBefore;
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.on("submit", function (event) {
+            preventedBefore = event.isDefaultPrevented();
+            return false;
+          });
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(preventedBefore, true);
+      });
+
+      it("should prevent the default action and let the submit event propagate", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const event = $.Event("submit");
+        let reachedParent = false;
+        $("#main").on("submit.ajax-form-test", function () {
+          reachedParent = true;
+        });
+
+        try {
+          await withAjaxSubmitStub(async function () {
+            $form.ajaxForm();
+            $form.trigger(event);
+          });
+        } finally {
+          $("#main").off("submit.ajax-form-test");
+        }
+
+        assert.strictEqual(event.isDefaultPrevented(), true);
+        assert.strictEqual(reachedParent, true);
+      });
+
+      it("should call a replacement ajaxSubmit installed after binding", async function () {
+        const $form = $("<form></form>").appendTo("#main");
+        $form.ajaxForm();
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+      });
+
+      it("should prevent default without sending when the submit target is not in a form", async function () {
+        const $container = $("<div><span>Not a form</span></div>").appendTo("#main");
+        const event = $.Event("submit");
+        $container.ajaxForm();
+
+        const requests = await withAjaxCapture(function () {
+          $container.find("span").trigger(event);
+        });
+
+        assert.strictEqual(event.isDefaultPrevented(), true);
+        assert.strictEqual(requests.length, 0);
+      });
+
+      it("should rethrow ajaxSubmit errors from trigger after preventing default", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        const event = $.Event("submit");
+        const ajaxSubmit = $.fn.ajaxSubmit;
+        $.fn.ajaxSubmit = function () {
+          throw new Error("submit failed");
+        };
+        $form.ajaxForm();
+
+        try {
+          const submit = () => $form.trigger(event);
+
+          assert.throws(submit, /submit failed/);
+          assert.strictEqual(event.isDefaultPrevented(), true);
+        } finally {
+          $.fn.ajaxSubmit = ajaxSubmit;
+        }
+      });
+
+      it("should not capture a submitter or call native submit when submit is triggered", async function () {
+        const $form = $('<form><button type="submit" name="choice">Send</button></form>').appendTo(
+          "#main"
+        );
+        let nativeSubmits = 0;
+        $form[0].submit = function () {
+          nativeSubmits++;
+        };
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.trigger("submit");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].clk, undefined);
+        assert.strictEqual(nativeSubmits, 0);
+      });
+
+      it("should store the jqXHR on the form", async function () {
+        const $form = $('<form method="post" action="ajax/text.html"></form>').appendTo("#main");
+        const jqXHR = { readyState: 1 };
+
+        await withAjaxStub(
+          function () {
+            return jqXHR;
+          },
+          async function () {
+            $form.ajaxForm();
+            $form.trigger("submit");
+            await Promise.resolve();
+          }
+        );
+
+        assert.strictEqual($form.data("jqxhr"), jqXHR);
+      });
+
+      [
+        ["false", false, "get"],
+        ["false", false, "post"],
+        ["empty", "", "get"],
+        ["empty", "", "post"],
+      ].forEach(function ([label, url, method]) {
+        it.fails(
+          "should submit a " + method + " form to its action when the shorthand url is " + label,
+          async function () {
+            const $form = $(
+              '<form method="' +
+                method +
+                '" action="ajax/text.html"><input name="q" value="1"></form>'
+            ).appendTo("#main");
+            $form.ajaxForm(url);
+
+            const requests = await withAjaxCapture(function () {
+              $form.trigger("submit");
+            });
+
+            assert.match(String(requests[0].url), /ajax\/text\.html/);
+          }
+        );
+      });
+
+      // jQuery 3 and 4 read the control in place of the form's nodeType inside closest("form").
+      (jQueryMajor < 3 ? it : it.fails)(
+        "should submit the form when a control is named nodeType",
+        async function () {
+          const $form = $('<form><input name="nodeType" value="1"></form>').appendTo("#main");
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $form.ajaxForm();
+            $form.trigger("submit");
+            return calls;
+          });
+
+          assert.strictEqual(calls[0].form, $form[0]);
+        }
+      );
+    });
+
+    describe("native submission", function () {
+      it("should submit through the plugin when requestSubmit is called", async function () {
+        const $form = $('<form method="post" action="ajax/text.html"></form>').appendTo("#main");
+        $form.ajaxForm();
+
+        let reached;
+        const requests = await withNavigationStopped(function (submits) {
+          reached = submits;
+          return withAjaxCapture(function () {
+            $form[0].requestSubmit();
+          });
+        });
+
+        assert.strictEqual(requests.length, 1);
+        assert.deepEqual(reached, [true]);
+      });
+
+      it("should not submit when requestSubmit finds the form invalid", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="q" required></form>'
+        ).appendTo("#main");
+        $form.ajaxForm();
+
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(function () {
+            $form[0].requestSubmit();
+          });
+        });
+
+        assert.strictEqual(requests.length, 0);
+      });
+
+      it.fails("should include the submitter passed to requestSubmit", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><button name="choice" value="passed">Send</button></form>'
+        ).appendTo("#main");
+        $form.ajaxForm();
+
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(function () {
+            $form[0].requestSubmit($form.find("button")[0]);
+          });
+        });
+
+        assert.match(requests[0].data, /choice=passed/);
+      });
+
+      it("should include the default button when the form is submitted with Enter", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="q" value="1"><button name="choice" value="default">Send</button></form>'
+        ).appendTo("#visible-fixture");
+        $form.ajaxForm();
+
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(async function () {
+            $form.find("input")[0].focus();
+            await userEvent.keyboard("{Enter}");
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          });
+        });
+
+        assert.strictEqual(requests.length, 1);
+        assert.match(requests[0].data, /choice=default/);
+      });
+
+      it("should include no submitter when a form without a button is submitted with Enter", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="q" value="1"></form>'
+        ).appendTo("#visible-fixture");
+        $form.ajaxForm();
+
+        const requests = await withNavigationStopped(function () {
+          return withAjaxCapture(async function () {
+            $form.find("input")[0].focus();
+            await userEvent.keyboard("{Enter}");
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          });
+        });
+
+        assert.strictEqual(requests.length, 1);
+        assert.strictEqual(requests[0].data, "q=1");
+      });
+
+      it.fails(
+        "should include a submit button associated by the form attribute from outside the form",
+        async function () {
+          const $form = $(
+            '<form id="outside-owner" method="post" action="ajax/text.html"><input name="q" value="1"></form>'
+          ).appendTo("#main");
+          const $button = $(
+            '<button type="submit" form="outside-owner" name="choice" value="outside">Send</button>'
+          ).appendTo("#main");
+          $form.ajaxForm();
+
+          const requests = await withNavigationStopped(function () {
+            return withAjaxCapture(function () {
+              $button[0].click();
+            });
+          });
+
+          assert.match(requests[0].data, /choice=outside/);
+        }
+      );
+
+      it("should let a native submit through after ajaxFormUnbind", async function () {
+        const $form = $('<form method="post" action="ajax/text.html"></form>').appendTo("#main");
+        $form.ajaxForm().ajaxFormUnbind();
+
+        let reached;
+        const requests = await withNavigationStopped(function (submits) {
+          reached = submits;
+          return withAjaxCapture(function () {
+            $form[0].requestSubmit();
+          });
+        });
+
+        assert.strictEqual(requests.length, 0);
+        assert.deepEqual(reached, [false]);
+      });
+    });
+
+    describe("click capture", function () {
+      [
+        ["a button-typed button", '<button type="button">Go</button>'],
+        ["a reset button", '<button type="reset">Go</button>'],
+        ["a reset input", '<input type="reset">'],
+        ["a button input", '<input type="button" value="Go">'],
+        ["a checkbox", '<input type="checkbox" name="c">'],
+        ["a radio button", '<input type="radio" name="r">'],
+      ].forEach(function ([label, html]) {
+        it("should ignore clicks on " + label, function () {
+          const $form = $("<form></form>").append(html).appendTo("#main");
+          $form.ajaxForm();
+
+          $form.children().trigger("click");
+
+          assert.strictEqual($form[0].clk, undefined);
+        });
+      });
+
+      [
+        ["a button with an invalid type", '<button type="bogus">Go</button>'],
+        ["an input with an upper-case submit type", '<input type="SUBMIT">'],
+      ].forEach(function ([label, html]) {
+        it("should capture " + label, async function () {
+          const $form = $("<form></form>").append(html).appendTo("#main");
+
+          await withAjaxSubmitStub(async function () {
+            $form.ajaxForm();
+            $form.children().trigger("click");
+          });
+
+          assert.strictEqual($form[0].clk, $form.children()[0]);
+        });
+      });
+
+      it("should set clk on the form named by the button's form attribute when clicked inside another form", async function () {
+        const $bound = $(
+          '<form><button type="submit" form="named-owner">Send</button></form>'
+        ).appendTo("#main");
+        const $owner = $('<form id="named-owner"></form>').appendTo("#main");
+        $owner.on("submit", false);
+
+        await withAjaxSubmitStub(async function () {
+          $bound.ajaxForm();
+          $bound.find("button").trigger("click");
+        });
+
+        assert.strictEqual($owner[0].clk, $bound.find("button")[0]);
+        assert.strictEqual($bound[0].clk, undefined);
+      });
+
+      it("should submit through the plugin when a submit button click is triggered", async function () {
+        const $form = $('<form><button type="submit" name="choice">Send</button></form>').appendTo(
+          "#main"
+        );
+        const options = {};
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm(options);
+          $form.find("button").trigger("click");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0].form, $form[0]);
+        assert.strictEqual(calls[0].options, options);
+        assert.strictEqual(calls[0].clk, $form.find("button")[0]);
+      });
+
+      it("should leave existing coordinates when a non-image submit is clicked", async function () {
+        const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
+        $form[0].clk_x = 5;
+        $form[0].clk_y = 6;
+
+        await withAjaxSubmitStub(async function () {
+          $form.ajaxForm();
+          $form.find("button").trigger("click");
+        });
+
+        assert.strictEqual($form[0].clk_x, 5);
+        assert.strictEqual($form[0].clk_y, 6);
+      });
+
+      it("should set clk, clk_x and clk_y to null after the click window for a non-image submit", async function () {
+        const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
+
+        await withAjaxSubmitStub(async function () {
+          $form.ajaxForm();
+          $form.find("button").trigger("click");
+          await new Promise((resolve) => setTimeout(resolve, 120));
+        });
+
+        assert.strictEqual($form[0].clk, null);
+        assert.strictEqual($form[0].clk_x, null);
+        assert.strictEqual($form[0].clk_y, null);
+      });
+
+      it("should clear a second click's submitter when the first click's window ends", async function () {
+        const $form = $(
+          '<form><button type="submit" name="a">A</button><button type="submit" name="b">B</button></form>'
+        ).appendTo("#main");
+        const clears = [];
+        const setTimeoutBefore = window.setTimeout;
+
+        await withAjaxSubmitStub(async function () {
+          $form.ajaxForm();
+          window.setTimeout = function (callback) {
+            clears.push(callback);
+            return 0;
+          };
+          try {
+            $form.find("[name=a]").trigger("click");
+            $form.find("[name=b]").trigger("click");
+          } finally {
+            window.setTimeout = setTimeoutBefore;
+          }
+        });
+        const secondCapture = $form[0].clk;
+        clears[0]();
+
+        assert.strictEqual(secondCapture, $form.find("[name=b]")[0]);
+        assert.strictEqual($form[0].clk, null);
+      });
+
+      it("should capture a submitter whose click default was prevented", async function () {
+        const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
+        $form.find("button").on("click", function (event) {
+          event.preventDefault();
+        });
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $form.ajaxForm();
+          $form.find("button").trigger("click");
+          return calls;
+        });
+
+        assert.strictEqual($form[0].clk, $form.find("button")[0]);
+        assert.strictEqual(calls.length, 0);
+      });
+
+      it("should capture a disabled submit button when its click is triggered", async function () {
+        const $form = $('<form><button type="submit" disabled>Send</button></form>').appendTo(
+          "#main"
+        );
+
+        await withAjaxSubmitStub(async function () {
+          $form.ajaxForm();
+          $form.find("button").trigger("click");
+        });
+
+        assert.strictEqual($form[0].clk, $form.find("button")[0]);
+      });
+
+      it("should send NaN image coordinates when the click is triggered without coordinates", async function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>'
+        ).appendTo("#visible-fixture");
+        $form.ajaxForm();
+
+        const requests = await withAjaxCapture(function () {
+          $form.find("[name=im]").trigger("click");
+        });
+
+        assert.match(requests[0].data, /im\.x=NaN&im\.y=NaN/);
+      });
+
+      describe("with an iframe upload", function () {
+        restoreAjaxState();
+
+        it("should post form.clk again when it was not cleared before an iframe upload", async function () {
+          const $form = $(
+            '<form method="post" action="ajax/iframe-text.html"><button type="submit" name="choice" value="stale">Send</button></form>'
+          ).appendTo("#main");
+          const posted = [];
+          $form[0].submit = function () {
+            posted.push($(this).find('input[type="hidden"][name="choice"]').val());
+          };
+          $form[0].clk = $form.find("button")[0];
+
+          for (let upload = 0; upload < 2; upload++) {
+            $form.ajaxSubmit({ iframe: true, forceSync: true, error: function () {} });
+            $form.data("jqxhr").abort();
+          }
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          assert.deepEqual(posted, ["stale", "stale"]);
+        });
+      });
+    });
+
+    describe("ajaxFormUnbind", function () {
+      it("should not capture clicks after ajaxFormUnbind", function () {
+        const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
+        $form.on("submit", false);
+        $form.ajaxForm().ajaxFormUnbind();
+
+        $form.find("button").trigger("click");
+
+        assert.strictEqual($form[0].clk, undefined);
+      });
+
+      it("should return the selection and ignore its arguments", function () {
+        const $form = $("<form></form>").appendTo("#main");
+        $form.ajaxForm();
+
+        const result = $form.ajaxFormUnbind({ delegation: true });
+
+        assert.strictEqual(result, $form);
+        assert.strictEqual($._data($form[0], "events"), undefined);
+      });
+
+      it("should leave other form-plugin events and the captured submitter in place", function () {
+        const $form = $('<form><button type="submit">Send</button></form>').appendTo("#main");
+        const button = $form.find("button")[0];
+        $form.on("form-pre-serialize.form-plugin", function () {});
+        $form.ajaxForm();
+        $form[0].clk = button;
+
+        $form.ajaxFormUnbind();
+
+        assert.strictEqual($._data($form[0], "events")["form-pre-serialize"].length, 1);
+        assert.strictEqual($form[0].clk, button);
+      });
+
+      it("should return an empty selection unchanged", function () {
+        const $missing = $(".missing-ajax-form");
+
+        const result = $missing.ajaxFormUnbind();
+
+        assert.strictEqual(result, $missing);
+      });
     });
   });
 });
