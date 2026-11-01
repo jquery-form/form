@@ -119,3 +119,26 @@ export async function withAjaxStub(stub, run) {
     $.ajax = ajax;
   }
 }
+
+// Runs `run` with `overrides` merged into $.ajaxSettings, then restores each key (or removes it).
+export async function withAjaxSettings(overrides, run) {
+  const saved = {};
+  Object.keys(overrides).forEach(function (key) {
+    saved[key] = Object.prototype.hasOwnProperty.call($.ajaxSettings, key)
+      ? { value: $.ajaxSettings[key] }
+      : null;
+    $.ajaxSettings[key] = overrides[key];
+  });
+
+  try {
+    return await run();
+  } finally {
+    Object.keys(saved).forEach(function (key) {
+      if (saved[key]) {
+        $.ajaxSettings[key] = saved[key].value;
+      } else {
+        delete $.ajaxSettings[key];
+      }
+    });
+  }
+}
