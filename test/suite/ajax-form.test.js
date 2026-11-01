@@ -1963,6 +1963,76 @@ describe("form", function () {
         assert.strictEqual($form[0].clk, button);
       });
 
+      describe("with delegated bindings", function () {
+        afterEach(function () {
+          $(document).off(".form-plugin");
+        });
+
+        it("should keep a delegation selector working when another form is bound directly", async function () {
+          const $scoped = $('<form class="scoped-ajax-form"></form>').appendTo("#main");
+          const $direct = $("<form></form>").appendTo("#main");
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $direct.ajaxForm();
+            $scoped.trigger("submit");
+            return calls;
+          });
+
+          assert.deepEqual(
+            calls.map((call) => call.form),
+            [$scoped[0]]
+          );
+        });
+
+        it("should remove every delegated binding when called without arguments", function () {
+          $().ajaxForm({ delegation: ".first-ajax-form" });
+          $(".missing-ajax-form").ajaxForm({ delegation: true });
+
+          $().ajaxFormUnbind();
+
+          const events = $._data(document, "events");
+          assert.strictEqual(events && events.submit, undefined);
+          assert.strictEqual(events && events.click, undefined);
+        });
+
+        it("should remove only the given selector's delegated binding", async function () {
+          const $first = $('<form class="first-ajax-form"></form>').appendTo("#main");
+          const $second = $('<form class="second-ajax-form"></form>').appendTo("#main");
+          $().ajaxForm({ delegation: ".first-ajax-form" });
+          $().ajaxForm({ delegation: ".second-ajax-form" });
+
+          const calls = await withAjaxSubmitStub(async function (calls) {
+            $().ajaxFormUnbind(".first-ajax-form");
+            $(document).triggerHandler($.Event("submit", { target: $first[0] }));
+            $(document).triggerHandler($.Event("submit", { target: $second[0] }));
+            return calls;
+          });
+
+          assert.deepEqual(
+            calls.map((call) => call.form),
+            [$second[0]]
+          );
+        });
+
+        it("should leave the selection's own handlers when given a selector", function () {
+          const $form = $("<form></form>").appendTo("#main");
+          $form.ajaxForm();
+
+          $form.ajaxFormUnbind(".first-ajax-form");
+
+          assert.strictEqual($._data($form[0], "events").submit.length, 1);
+        });
+
+        it("should ignore a selector that was never bound", function () {
+          $().ajaxForm({ delegation: ".first-ajax-form" });
+
+          $().ajaxFormUnbind(".other-ajax-form");
+
+          assert.strictEqual($._data(document, "events").submit.length, 1);
+        });
+      });
+
       it("should return an empty selection unchanged", function () {
         const $missing = $(".missing-ajax-form");
 

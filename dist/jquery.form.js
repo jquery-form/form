@@ -469,6 +469,9 @@ function bindSelector($sel, selector, options) {
   return $sel;
 }
 
+// Passed by ajaxForm's own rebind: unbind the selection only, never the document handlers.
+var selectionOnly = {};
+
 /**
  * ajaxForm() binds the selected forms so a submit is sent with ajaxSubmit, with the clicked
  * submit button (and image coordinates) included. The options work as for ajaxSubmit.
@@ -494,15 +497,27 @@ function ajaxForm(options, data, dataType, onSuccess) {
     options.beforeFormUnbind(this, options);
   }
 
-  return this.ajaxFormUnbind()
+  return this.ajaxFormUnbind(selectionOnly)
     .on("submit.form-plugin", options, doAjaxSubmit)
     .on("click.form-plugin", options, captureSubmittingElement);
 }
 
 /**
- * ajaxFormUnbind() removes the handlers ajaxForm bound on the selection.
+ * ajaxFormUnbind() removes the handlers ajaxForm bound on the selection and every delegated
+ * binding on the document. ajaxFormUnbind(selector) removes only that delegation selector.
  */
-function ajaxFormUnbind() {
+function ajaxFormUnbind(selector) {
+  if (typeof selector === "string") {
+    unbindSelector(selector);
+
+    return this;
+  }
+
+  if (selector !== selectionOnly) {
+    delegated = {};
+    jQuery(document).off("submit.form-plugin click.form-plugin");
+  }
+
   return this.off("submit.form-plugin click.form-plugin");
 }
 

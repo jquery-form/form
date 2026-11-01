@@ -86,6 +86,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **New: `delegation: "<selector>"` scopes `ajaxForm` delegation.** The plugin binds one submit and one click handler on the document for that selector, used as given, and the selection is ignored. A form submits through the plugin only when it or an ancestor matches. Binding the same selector again replaces its options. An empty string throws `jquery.form: delegation needs a selector, or true`; it used to mean no delegation. The string stays in the options object (it was rewritten to `true`). `delegation: true` is unchanged.
 
+- **`ajaxFormUnbind()` also removes delegated bindings; `ajaxFormUnbind(selector)` removes one.** Called without a string, it removes the selection's handlers and every `delegation` binding the plugin made on the document (`true` and selectors); delegated handlers used to stay until `$(document).off(".form-plugin")`. With a selector string it removes only that selector's binding and leaves the selection alone. `ajaxForm`'s own rebind of a selection still leaves the document handlers in place.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
