@@ -2,7 +2,7 @@
 
 A review of `src/jquery.form.js` on `main` (ac911a2, 2026-10-31). It covers response handling, uploads, request construction and dependency exposure. It also settles the 5.0 carry-overs left open by Phases 0 and 6. Line numbers refer to that commit.
 
-This doc only records findings. Fixes are scheduled in the phases of `docs/plans/modernization.md` (Phases 9–12).
+This doc only records findings. Fixes are scheduled in the phases of `docs/plans/modernization.md` (Phases 9–13).
 
 ## How the review was done
 
@@ -36,16 +36,16 @@ Ranked by severity, then by who controls the input.
 
 | #   | Finding                                                                   | Who controls it     | jQuery | Severity | Fix in             |
 | --- | ------------------------------------------------------------------------- | ------------------- | ------ | -------- | ------------------ |
-| 1   | `target` inserts the response as HTML and runs its scripts                | Server response     | All    | Medium   | Phase 11 (opt-in)  |
-| 2   | `delegation: true` takes over every form on the page                      | Page                | ≥ 3.0  | Medium   | Phase 11, Phase 12 |
-| 3   | The iframe transport renders the response as a same-origin document       | Server response     | All    | Medium   | Docs, Phase 12     |
+| 1   | `target` inserts the response as HTML and runs its scripts                | Server response     | All    | Medium   | Phase 12 (opt-in)  |
+| 2   | `delegation: true` takes over every form on the page                      | Page                | ≥ 3.0  | Medium   | Phase 12, Phase 13 |
+| 3   | The iframe transport renders the response as a same-origin document       | Server response     | All    | Medium   | Docs, Phase 13     |
 | 4   | The Rails CSRF token is sent to cross-origin upload URLs                  | Page, developer     | All    | Medium   | Phase 10 (fixed)   |
-| 5   | The supported jQuery range includes versions with CVEs the plugin reaches | Consumer            | < 3.5  | Medium   | Docs, Phase 12     |
+| 5   | The supported jQuery range includes versions with CVEs the plugin reaches | Consumer            | < 3.5  | Medium   | Docs, Phase 13     |
 | 6   | Form fields named like form properties break serialization and uploads    | DOM text            | All    | Low      | Phase 10 (fixed)   |
 | 7   | `hasOwnProperty` is called as a method on `extraData`                     | Developer           | All    | Low      | Phase 10 (fixed)   |
 | 8   | Robustness: crashes and lost data on unusual input                        | DOM text, developer | Varies | Low      | Phase 10 (fixed)   |
 | 9   | #554 "code injection" is a false positive                                 | —                   | —      | Info     | Close #554         |
-| 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 12           |
+| 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 13           |
 | 11  | Options that are URLs or selectors must be trusted                        | Developer           | All    | Info     | Docs               |
 | 12  | Supply chain                                                              | —                   | —      | Info     | Release            |
 
@@ -58,7 +58,7 @@ Ranked by severity, then by who controls the input.
 **Recommendation: a 4.x opt-in, with no default change in 5.0.**
 
 - **Keep the default.** `target` keeps inserting HTML in 4.x and 5.0. Changing it would break the plugin's most common use for a risk that belongs to the server.
-- **The opt-in already exists.** The `dataFilter` option runs before `target` on both the XHR and the iframe transport (confirmed by probes on all three jQuery versions), so `dataFilter: (html) => DOMPurify.sanitize(html)` sanitizes what is inserted. Phase 11 documents this in `docs/options.md` and the README's security notes, and adds a test that pins the order.
+- **The opt-in already exists.** The `dataFilter` option runs before `target` on both the XHR and the iframe transport (confirmed by probes on all three jQuery versions), so `dataFilter: (html) => DOMPurify.sanitize(html)` sanitizes what is inserted. Phase 12 documents this in `docs/options.md` and the README's security notes, and adds a test that pins the order.
 - **Sanitizing needs jQuery ≥ 3.5.** On older versions, `.html()` rewrites self-closing tags after sanitizing (CVE-2020-11022/11023) and can bring the danger back. The docs say so, and 5.0's peer range (finding 5) enforces it.
 - **No new option.** A dedicated `sanitize` option would duplicate `dataFilter`. Reconsider it only if users ask.
 - **Close PRs #586 and #611 with credit**, pointing to this recommendation.
@@ -69,8 +69,8 @@ W4 is a related but separate problem, fixed in Phase 10 whatever happens here.
 
 - **What happens.** Lines 1017–1025 delegate from `document` using `this.selector`. jQuery 3.0 removed `.selector`, so the selector is `undefined` and the handler catches **every** form submit on the page (`selector-context-delegation.md`).
 - **The security impact is new here.** If the options include `url`, every form on the page posts its fields to that URL. That includes forms the developer never meant to bind, such as a login or payment form. Probes reproduced this on 3.7.1 and 4.0.0; 1.7.2 is scoped correctly.
-- **Fix in Phase 11 (additive):** accept `delegation: "<selector>"` and use it as the delegated selector. `true` keeps its current behavior.
-- **Fix in Phase 12 (breaking):** a selector is required. Bare `true` logs and does nothing, and the `.selector`/`.context` DOM-not-ready queue (lines 999–1015) is removed.
+- **Fix in Phase 12 (additive):** accept `delegation: "<selector>"` and use it as the delegated selector. `true` keeps its current behavior.
+- **Fix in Phase 13 (breaking):** a selector is required. Bare `true` logs and does nothing, and the `.selector`/`.context` DOM-not-ready queue (lines 999–1015) is removed.
 - **Until then:** the README and `docs/options.md` warn that `delegation: true` is not scoped on jQuery 3 and later.
 
 ### 3. The iframe transport renders the response as a same-origin document
@@ -79,9 +79,9 @@ W4 is a related but separate problem, fixed in Phase 10 whatever happens here.
 - **Why the docs' JSON advice is risky.** The docs tell servers to wrap JSON in a `<textarea>`. A JSON value containing `</textarea>` and markup escapes the wrapper.
 - **Status codes can be forged.** The first `<textarea>` or `<pre>` and the `status`/`statusText` attributes are trusted (lines 813–840). Injected markup earlier in the document can fake the status.
 - **Who reaches this.** Only `iframe: true`, or browsers without FormData, use this transport.
-- **Docs (Phase 11).** Iframe responses must be HTML-safe: `text/plain`, or JSON HTML-escaped inside the textarea.
-- **5.0 (Phase 12).** The iframe transport runs only when `iframe: true` is set.
-- **Possible hardening.** `sandbox="allow-same-origin"` on the generated iframe would block scripts and still let the plugin read the document. It is not yet verified across browsers; evaluate it in Phase 12.
+- **Docs (Phase 12).** Iframe responses must be HTML-safe: `text/plain`, or JSON HTML-escaped inside the textarea.
+- **5.0 (Phase 13).** The iframe transport runs only when `iframe: true` is set.
+- **Possible hardening.** `sandbox="allow-same-origin"` on the generated iframe would block scripts and still let the plugin read the document. It is not yet verified across browsers; evaluate it in Phase 13.
 
 ### 4. The CSRF token is sent cross-origin
 
@@ -133,7 +133,7 @@ Each item below was confirmed by a probe except where marked.
 - **`#` action plus a field named `action`.** With a GET form, line 144 leaves `url` undefined, and line 221 throws (all versions).
 - **`url` with a hash.** On a GET, the query is appended after the fragment (line 221). jQuery 3 and 4 then keep it inside the fragment, and jQuery 1.7.2 strips it. Either way the form data is lost. (The hash cleanup at line 144 only applies to `action`, because a `url` option overrides it in the `$.extend`.)
 - **`data: {}` on a FormData upload.** It appends a field with an empty name and the value `undefined` (lines 341–352). Also, `deepSerialize` reads `options.traditional`, not the computed default at line 182 (from reading the code).
-- **Context is copied.** The deep `$.extend` copies a plain-object `context`, so `this` in callbacks is a copy, not the object passed in. The existing tests compare by property for this reason. Info only; it changes in Phase 12 if options stop being deep-copied.
+- **Context is copied.** The deep `$.extend` copies a plain-object `context`, so `this` in callbacks is a copy, not the object passed in. The existing tests compare by property for this reason. Info only; it changes in Phase 13 if options stop being deep-copied.
 
 ### 9. #554 is a false positive
 
@@ -163,7 +163,7 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 
 - The published tarball holds only `dist/` and `src/` (Phase 6 `files`). There is one runtime dependency, and `npm audit` reports 0 vulnerabilities.
 - Releases are tagged and published by hand (ADR-0002).
-- Proposal for the 4.x release: publish from GitHub Actions with npm trusted publishing and `--provenance`, so each tarball can be traced to a commit.
+- Planned for the 4.4.0 release (Phase 11): publish from GitHub Actions with npm trusted publishing and `--provenance`, so each tarball can be traced to a commit.
 
 ## Static analysis (CodeQL)
 
@@ -232,10 +232,10 @@ Yes, as an explicit opt-in only:
 These items are sequenced in the plan.
 
 - **Phase 9: coverage to 100%.** Remove the dead branches listed in `coverage-gaps.md`, and refactor where a branch can't be tested.
-- **Phase 11: no breaking change.**
+- **Phase 12: no breaking change.**
   - Split the 1,560-line IIFE into source modules (serialization, field helpers, XHR transport, iframe transport, `ajaxForm` binding). Rollup emits the same three `dist` files.
   - Reduce the complexity hot spots measured by `npm run metrics`: iframe `cb` 62, `ajaxSubmit` 55, `formToArray` 37, `$.fieldValue` 28, `fileUploadIframe` 24.
-- **Phase 12: breaking.**
+- **Phase 13: breaking.**
   - Delete the jQuery < 3 and IE/Opera/Edge shims.
   - Remove deprecated API: `clearInputs`, and the `$.fn.attr2` helper leaking onto `$.fn`.
   - Move to ES2015+ syntax.
