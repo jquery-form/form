@@ -1007,7 +1007,19 @@ describe("form", function () {
         });
       });
 
-      it.fails("should send the method option when method and type conflict", function () {
+      it("should send a GET method option over a POST type in the url", function () {
+        const $form = makeForm(
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+        );
+
+        const settings = submitWith($form, [{ method: "GET", type: "POST" }]);
+
+        assert.strictEqual(settings.type, "GET");
+        assert.strictEqual(settings.url, absolute("ajax/text.html") + "?a=1");
+        assert.strictEqual(settings.data, null);
+      });
+
+      it("should send the method option when method and type conflict", function () {
         const $form = makeForm(
           '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
         );

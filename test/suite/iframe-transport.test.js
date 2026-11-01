@@ -213,6 +213,31 @@ describe("form", function () {
         });
       }
 
+      for (const [type, method, tokens] of [
+        ["GET", "get", 0],
+        ["PUT", "post", 1],
+      ]) {
+        it(`should submit a post form with ${method} and ${tokens} CSRF field when the type option is ${type}`, function () {
+          const $form = createIframeForm("ajax/iframe-text.html");
+          const $metas = $(
+            '<meta name="csrf-token" content="secret"><meta name="csrf-param" content="authenticity_token">'
+          ).appendTo(document.head);
+          let submitted;
+          $form[0].submit = function () {
+            submitted = [this.method, $(this).find('[name="authenticity_token"]').length];
+          };
+
+          try {
+            $form.ajaxSubmit({ iframe: true, forceSync: true, type: type, error: function () {} });
+            $form.data("jqxhr").abort();
+
+            assert.deepEqual(submitted, [method, tokens]);
+          } finally {
+            $metas.remove();
+          }
+        });
+      }
+
       it("should override the action during submission and then restore it", async function () {
         const $form = createIframeForm("ajax/original.html");
         let submittedAction;
@@ -2056,19 +2081,16 @@ describe("form", function () {
             assert.deepEqual(posted, [null, null]);
           });
 
-          it.fails(
-            "should submit with GET when the type option is GET on a post form",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              let method;
+          it("should submit with GET when the type option is GET on a post form", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let method;
 
-              startStubbedUpload($form, { type: "GET" }, function (form) {
-                method = form.method;
-              });
+            startStubbedUpload($form, { type: "GET" }, function (form) {
+              method = form.method;
+            });
 
-              assert.strictEqual(method, "get");
-            }
-          );
+            assert.strictEqual(method, "get");
+          });
 
           it("should start the timeout only when the delayed post runs", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");

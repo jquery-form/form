@@ -306,6 +306,10 @@ var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
 // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
 var hasOwn = Object.prototype.hasOwnProperty;
 
+function isGet(method) {
+  return /^get$/i.test(method);
+}
+
 // Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
 // apply to both sides of the comparison.
 function isSameOrigin(url) {
@@ -543,7 +547,9 @@ function createIframeTransport(hasProp, forms) {
     // only when the form is posted, since a get form would put the token in the url
     var csrf_token = $("meta[name=csrf-token]").attr("content");
     var csrf_param = $("meta[name=csrf-param]").attr("content");
-    var posts = !method || /post/i.test(method) || /post/i.test(forms.property(form, "method"));
+    var posts =
+      !isGet(method) &&
+      (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
 
     if (csrf_param && csrf_token && posts && isSameOrigin(s.url)) {
       s.extraData = s.extraData || {};
@@ -570,6 +576,9 @@ function createIframeTransport(hasProp, forms) {
       setFormAttribute("target", id);
       if (!method || /post/i.test(method)) {
         setFormAttribute("method", "POST");
+      } else if (isGet(method) && !isGet(forms.property(form, "method"))) {
+        // a form posts natively only with GET or POST; other verbs keep the form's own method
+        setFormAttribute("method", "GET");
       }
       setFormAttribute("action", s.url);
 
@@ -934,6 +943,19 @@ function createSubmission(feature, forms) {
     return keepContext(merged, [options]);
   }
 
+  /**
+   * The one method every transport sends, read after the hooks: `method` wins over `type`, and
+   * `type` is set to it. Undefined when only the ajax default applies, so each transport keeps
+   * its own default.
+   */
+  function resolveMethod(options, defaultType) {
+    var resolved = options.method || options.type;
+
+    options.type = resolved;
+
+    return resolved === defaultType && !options.method ? undefined : resolved;
+  }
+
   // The data option, kept as extraData and encoded, or undefined without one.
   function extraQuery(fields, options, traditional) {
     if (!options.data) {
@@ -996,6 +1018,9 @@ function createSubmission(feature, forms) {
 
     options = withDefaults(form, options, method);
 
+    // the ajax default type, when neither the caller nor the form gave a method
+    var defaultType = method ? undefined : options.type;
+
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
     var veto = {};
@@ -1031,6 +1056,7 @@ function createSubmission(feature, forms) {
       return refuse("ajaxSubmit: submit vetoed via form-submit-validate trigger");
     }
 
+    method = resolveMethod(options, defaultType);
     encode(options, $.param(fields, traditional), qx);
 
     return {

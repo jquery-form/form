@@ -89,7 +89,8 @@ Identifies the iframe element to be used as the response target for file uploads
 ### method
 
 Default: value of form's `method` attribute (or `GET` if none found)  
-The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT'). **(version added: 4.2.0)**
+The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT'). **(version added: 4.2.0)**  
+The method is read after `beforeSubmit` and the `form-submit-validate` event, so a change made there is used by every transport. An iframe upload can only send `GET` or `POST`, as a native form submit does; with any other method it posts with the form's own `method`.
 
 ### replaceTarget
 

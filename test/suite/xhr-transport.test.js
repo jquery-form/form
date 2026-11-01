@@ -1171,7 +1171,7 @@ describe("form", function () {
         assert.strictEqual(request.headers["X-Requested-With"], "XMLHttpRequest");
       });
 
-      it.fails("should use a type changed in beforeSubmit for an upload", function () {
+      it("should use a type changed in beforeSubmit for an upload", function () {
         const upload = uploadForm();
 
         const settings = captureAjaxOptions(upload.$form, {

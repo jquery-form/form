@@ -46,6 +46,19 @@ export function createSubmission(feature, forms) {
     return keepContext(merged, [options]);
   }
 
+  /**
+   * The one method every transport sends, read after the hooks: `method` wins over `type`, and
+   * `type` is set to it. Undefined when only the ajax default applies, so each transport keeps
+   * its own default.
+   */
+  function resolveMethod(options, defaultType) {
+    var resolved = options.method || options.type;
+
+    options.type = resolved;
+
+    return resolved === defaultType && !options.method ? undefined : resolved;
+  }
+
   // The data option, kept as extraData and encoded, or undefined without one.
   function extraQuery(fields, options, traditional) {
     if (!options.data) {
@@ -108,6 +121,9 @@ export function createSubmission(feature, forms) {
 
     options = withDefaults(form, options, method);
 
+    // the ajax default type, when neither the caller nor the form gave a method
+    var defaultType = method ? undefined : options.type;
+
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
     var veto = {};
@@ -143,6 +159,7 @@ export function createSubmission(feature, forms) {
       return refuse("ajaxSubmit: submit vetoed via form-submit-validate trigger");
     }
 
+    method = resolveMethod(options, defaultType);
     encode(options, $.param(fields, traditional), qx);
 
     return {
