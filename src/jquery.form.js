@@ -79,6 +79,20 @@ import jQuery from "jquery";
   // so forms are read and changed through members a control cannot shadow.
   var plainForm = document.createElement("form");
 
+  // Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
+  // apply to both sides of the comparison.
+  function isSameOrigin(url) {
+    var origin = document.createElement("a");
+    var target = document.createElement("a");
+
+    origin.href = window.location.href;
+    target.href = url;
+    // IE fills in the host of a relative URL only once the resolved href is assigned back
+    target.href = target.href; // eslint-disable-line no-self-assign
+
+    return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
+  }
+
   function formElements(form) {
     var proto = window.HTMLFormElement && window.HTMLFormElement.prototype;
     var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "elements");
@@ -608,11 +622,11 @@ import jQuery from "jquery";
         return doc;
       }
 
-      // Rails CSRF hack (thanks to Yvan Barthelemy)
+      // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin
       var csrf_token = $("meta[name=csrf-token]").attr("content");
       var csrf_param = $("meta[name=csrf-param]").attr("content");
 
-      if (csrf_param && csrf_token) {
+      if (csrf_param && csrf_token && isSameOrigin(s.url)) {
         s.extraData = s.extraData || {};
         s.extraData[csrf_param] = csrf_token;
       }
