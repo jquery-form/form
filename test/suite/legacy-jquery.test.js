@@ -1,5 +1,5 @@
 import { afterAll, assert, beforeAll, describe, it } from "vitest";
-import { resetFixture, selectFiles, submitTransport } from "./helpers.js";
+import { recordDeprecations, resetFixture, selectFiles, submitTransport } from "./helpers.js";
 import classicBuild from "../../dist/jquery.form.js?raw";
 import jquery3Slim from "../../node_modules/jquery/dist/jquery.slim.js?raw";
 import jquery4Slim from "../../node_modules/jquery4/dist/jquery.slim.js?raw";
@@ -183,6 +183,32 @@ describe("form", function () {
     afterAll(function () {
       Object.assign($.fn, saved.fn);
       $.fieldValue = saved.fieldValue;
+    });
+
+    it("should warn once under debug when the iframe transport is chosen for a multipart form", function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post" enctype="multipart/form-data"></form>'
+      ).appendTo("#main");
+
+      const warnings = recordDeprecations(true, function () {
+        $form.ajaxSubmit({ beforeSend: () => false });
+        $form.ajaxSubmit({ beforeSend: () => false });
+      });
+
+      assert.strictEqual(warnings.filter((text) => text.includes("iframe: true")).length, 1);
+    });
+
+    it("should not warn about the iframe transport when iframe is true or debug is off", function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post" enctype="multipart/form-data"></form>'
+      ).appendTo("#main");
+
+      const forced = recordDeprecations(true, () =>
+        $form.ajaxSubmit({ iframe: true, beforeSend: () => false })
+      );
+      const quiet = recordDeprecations(false, () => $form.ajaxSubmit({ beforeSend: () => false }));
+
+      assert.isFalse(forced.concat(quiet).some((text) => text.includes("iframe: true")));
     });
 
     it("should send file input values as strings even after the File API returns", function () {

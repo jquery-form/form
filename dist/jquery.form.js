@@ -286,6 +286,42 @@ function log() {
   }
 }
 
+var warned = {};
+
+/**
+ * A deprecation warning: console.warn, only while debug is on, once per id per page. The message
+ * names the replacement; the warning adds that the feature is removed in 5.0.
+ */
+function deprecate(id, message) {
+  if (!jQuery.fn.ajaxSubmit.debug || warned[id]) {
+    return;
+  }
+
+  warned[id] = true;
+
+  if (window.console && typeof window.console.warn === "function") {
+    window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
+  }
+}
+
+// True for a jQuery version string older than 3.5.
+function beforeJQuery35(version) {
+  var parts = String(version).split(".");
+  var major = Number(parts[0]);
+
+  return major < 3 || (major === 3 && Number(parts[1]) < 5);
+}
+
+// 5.0 needs jQuery 3.5 or later: warned on the first ajaxSubmit or ajaxForm, given jQuery's version.
+function deprecateOldJQuery(version) {
+  if (beforeJQuery35(version)) {
+    deprecate(
+      "jquery",
+      "support for jQuery " + version + " is deprecated, 5.0 needs jQuery 3.5 or later"
+    );
+  }
+}
+
 // The arguments ajaxSubmit and ajaxForm accept in place of an options object.
 
 /**
@@ -384,6 +420,11 @@ function bindLater($sel, options) {
 
   if (!jQuery.isReady && o.s) {
     log("DOM not ready, queuing ajaxForm");
+    deprecate(
+      "queue",
+      "queuing ajaxForm until the DOM is ready is deprecated, call ajaxForm inside $(fn) " +
+        'or use delegation: "<selector>"'
+    );
     jQuery(function () {
       jQuery(o.s, o.c).ajaxForm(options);
     });
@@ -494,6 +535,7 @@ var selectionOnly = {};
  * submit button (and image coordinates) included. The options work as for ajaxSubmit.
  */
 function ajaxForm(options, data, dataType, onSuccess) {
+  deprecateOldJQuery(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
   if (typeof options.delegation === "string") {
@@ -2131,6 +2173,13 @@ function createSubmission(feature, forms, serialization) {
       transport = "iframe";
     }
 
+    if (transport === "iframe" && !options.iframe) {
+      deprecate(
+        "iframe",
+        "choosing the iframe transport automatically without FormData is deprecated, set iframe: true"
+      );
+    }
+
     if (transport !== "ajax" && options.requestFormat === "json") {
       throw new Error(
         'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
@@ -2214,6 +2263,8 @@ function createSubmission(feature, forms, serialization) {
   // contains inputs with names like "action" or "method"; in those
   // cases "prop" returns the element
   $.fn.attr2 = function () {
+    deprecate("attr2", "attr2 is deprecated, use .prop() or .attr()");
+
     if (!hasProp) {
       return this.attr.apply(this, arguments);
     }
@@ -2237,6 +2288,8 @@ function createSubmission(feature, forms, serialization) {
    * @param	{function}		onSuccess	ajax success callback function
    */
   $.fn.ajaxSubmit = function (options, data, dataType, onSuccess) {
+    deprecateOldJQuery($.fn.jquery);
+
     // fast fail if nothing selected (http://dev.jquery.com/ticket/2752)
     if (!this.length) {
       log("ajaxSubmit: skipping submit process - no element selected");
@@ -2424,7 +2477,13 @@ function createSubmission(feature, forms, serialization) {
   /**
    * Clears the selected form elements.
    */
-  $.fn.clearFields = $.fn.clearInputs = function (includeHidden) {
+  $.fn.clearInputs = function (includeHidden) {
+    deprecate("clearInputs", "clearInputs is deprecated, use clearFields");
+
+    return this.clearFields(includeHidden);
+  };
+
+  $.fn.clearFields = function (includeHidden) {
     var re =
       /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 

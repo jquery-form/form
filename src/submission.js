@@ -1,7 +1,7 @@
+import { deprecate, log } from "./diagnostics.js";
 import { assertRealParent } from "./form-members.js";
 import jQuery from "jquery";
 import { keepContext } from "./options.js";
-import { log } from "./diagnostics.js";
 import { urlencodedFields } from "./successful-controls.js";
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
@@ -372,6 +372,13 @@ export function createSubmission(feature, forms, serialization) {
     // 06-NOV-09: now defaulting to iframe mode if file input is detected
     if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
       transport = "iframe";
+    }
+
+    if (transport === "iframe" && !options.iframe) {
+      deprecate(
+        "iframe",
+        "choosing the iframe transport automatically without FormData is deprecated, set iframe: true"
+      );
     }
 
     if (transport !== "ajax" && options.requestFormat === "json") {

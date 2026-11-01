@@ -31,12 +31,12 @@ describe("form", function () {
   resetFixture();
 
   describe("plugin installation", function () {
-    it("should install clearInputs as the same function as clearFields when the plugin loads", function () {
-      const clearInputs = $.fn.clearInputs;
+    it("should clear fields through clearInputs as clearFields does", function () {
+      const $input = $('<input type="text" value="x">');
 
-      const clearFields = $.fn.clearFields;
+      const result = $input.clearInputs();
 
-      assert.strictEqual(clearInputs, clearFields);
+      assert.strictEqual(result.val(), "");
     });
 
     it("should turn debug logging off when the plugin loads", function () {

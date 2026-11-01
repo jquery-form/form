@@ -27,12 +27,12 @@ import {
   urlencodedFields,
   valueOf,
 } from "./successful-controls.js";
+import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
 import { createIframeTransport } from "./iframe-transport.js";
 import { createSubmission } from "./submission.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
-import { log } from "./diagnostics.js";
 import { submitOptions } from "./options.js";
 import { submitterElement } from "./submitter.js";
 
@@ -108,6 +108,8 @@ import { submitterElement } from "./submitter.js";
   // contains inputs with names like "action" or "method"; in those
   // cases "prop" returns the element
   $.fn.attr2 = function () {
+    deprecate("attr2", "attr2 is deprecated, use .prop() or .attr()");
+
     if (!hasProp) {
       return this.attr.apply(this, arguments);
     }
@@ -131,6 +133,8 @@ import { submitterElement } from "./submitter.js";
    * @param	{function}		onSuccess	ajax success callback function
    */
   $.fn.ajaxSubmit = function (options, data, dataType, onSuccess) {
+    deprecateOldJQuery($.fn.jquery);
+
     // fast fail if nothing selected (http://dev.jquery.com/ticket/2752)
     if (!this.length) {
       log("ajaxSubmit: skipping submit process - no element selected");
@@ -318,7 +322,13 @@ import { submitterElement } from "./submitter.js";
   /**
    * Clears the selected form elements.
    */
-  $.fn.clearFields = $.fn.clearInputs = function (includeHidden) {
+  $.fn.clearInputs = function (includeHidden) {
+    deprecate("clearInputs", "clearInputs is deprecated, use clearFields");
+
+    return this.clearFields(includeHidden);
+  };
+
+  $.fn.clearFields = function (includeHidden) {
     var re =
       /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 

@@ -1,6 +1,7 @@
 import { afterEach, assert, beforeEach, describe, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import {
+  recordDeprecations,
   resetFixture,
   arrayValue,
   restoreAjaxState,
@@ -157,6 +158,29 @@ describe("form", function () {
 
         assert.strictEqual(result, $pending);
         assert.strictEqual($._data($form[0], "events").submit.length, 1);
+      });
+
+      it("should warn once under debug when ajaxForm is queued until the DOM is ready", function () {
+        const $pending = $(".warned-queue-form");
+        $pending.selector = ".warned-queue-form";
+
+        const warnings = recordDeprecations(true, function () {
+          withDomNotReady(() => $pending.ajaxForm());
+          withDomNotReady(() => $pending.ajaxForm());
+        });
+
+        assert.strictEqual(warnings.filter((text) => text.includes("delegation")).length, 1);
+      });
+
+      it("should not warn about the queue with debug off", function () {
+        const $pending = $(".silent-queue-form");
+        $pending.selector = ".silent-queue-form";
+
+        const warnings = recordDeprecations(false, () =>
+          withDomNotReady(() => $pending.ajaxForm())
+        );
+
+        assert.deepEqual(warnings, []);
       });
 
       it("should not queue an empty selection without selector metadata", async function () {

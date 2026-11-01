@@ -1,7 +1,7 @@
 import { assertRealParent, closestByTag, formMember, isElement } from "./form-members.js";
 import { captureEventSubmitter, captureSubmitter } from "./submitter.js";
+import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
 import jQuery from "jquery";
-import { log } from "./diagnostics.js";
 import { shorthandOptions } from "./options.js";
 
 // ajaxForm binding: the submit and click handlers that send a form through ajaxSubmit. The
@@ -37,6 +37,11 @@ function bindLater($sel, options) {
 
   if (!jQuery.isReady && o.s) {
     log("DOM not ready, queuing ajaxForm");
+    deprecate(
+      "queue",
+      "queuing ajaxForm until the DOM is ready is deprecated, call ajaxForm inside $(fn) " +
+        'or use delegation: "<selector>"'
+    );
     jQuery(function () {
       jQuery(o.s, o.c).ajaxForm(options);
     });
@@ -147,6 +152,7 @@ var selectionOnly = {};
  * submit button (and image coordinates) included. The options work as for ajaxSubmit.
  */
 export function ajaxForm(options, data, dataType, onSuccess) {
+  deprecateOldJQuery(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
   if (typeof options.delegation === "string") {
