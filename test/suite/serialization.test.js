@@ -1,5 +1,5 @@
 import { assert, describe, it } from "vitest";
-import { resetFixture, arrayCount, arrayValue } from "./helpers.js";
+import { resetFixture, arrayCount, arrayValue, selectFiles } from "./helpers.js";
 
 describe("form", function () {
   resetFixture();
@@ -257,6 +257,740 @@ describe("form", function () {
         window.HTMLFormElement = HTMLFormElement;
       }
     });
+
+    describe("selection and subject", function () {
+      it("should leave elements untouched and not call filtering when the selection is empty", function () {
+        const elements = ["kept"];
+        let calls = 0;
+
+        const formData = $(".missing-form").formToArray(false, elements, function (element) {
+          calls++;
+          return element;
+        });
+
+        assert.deepEqual(formData, []);
+        assert.deepEqual(elements, ["kept"]);
+        assert.strictEqual(calls, 0);
+      });
+
+      it("should serialize only the first form when the selection holds several forms", function () {
+        const $forms = $(
+          '<form><input name="first" value="1"></form><form><input name="second" value="2"></form>'
+        );
+
+        const names = $forms.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["first"]);
+      });
+
+      it("should return a new plain array on every call", function () {
+        const $form = $('<form><input name="a" value="1"></form>');
+
+        const first = $form.formToArray();
+        const second = $form.formToArray();
+
+        assert.isTrue(Array.isArray(first));
+        assert.isUndefined(first.jquery);
+        assert.notStrictEqual(first, second);
+        assert.deepEqual(first, second);
+      });
+
+      it("should collect a detached form in document order when semantic is true", function () {
+        const $form = $(
+          '<form><div><input name="a" value="1"></div><input name="b" value="2"></form>'
+        );
+
+        const formData = $form.formToArray(true);
+
+        assert.deepEqual(formData, [
+          { name: "a", value: "1", type: "text", required: false },
+          { name: "b", value: "2", type: "text", required: false },
+        ]);
+      });
+
+      it("should collect named descendants of a div in document order in both modes", function () {
+        const $div = $(
+          '<div><input name="a" value="1"><span><select name="s"><option value="x" selected>x</option></select></span><textarea name="t">z</textarea></div>'
+        );
+
+        const plain = $div.formToArray().map((field) => [field.name, field.value]);
+        const semantic = $div.formToArray(true).map((field) => [field.name, field.value]);
+
+        const expected = [
+          ["a", "1"],
+          ["s", "x"],
+          ["t", "z"],
+        ];
+        assert.deepEqual(plain, expected);
+        assert.deepEqual(semantic, expected);
+      });
+
+      it("should collect fieldset descendants when semantic is true", function () {
+        const $fieldset = $(
+          '<fieldset><div><input name="a" value="1"></div><input name="b" value="2"></fieldset>'
+        );
+
+        const formData = $fieldset.formToArray(true);
+
+        assert.deepEqual(formData, [
+          { name: "a", value: "1", type: "text", required: false },
+          { name: "b", value: "2", type: "text", required: false },
+        ]);
+      });
+
+      it("should return an empty array when the subject is a single control", function () {
+        const $controls = [
+          $('<input name="a" value="1">'),
+          $('<textarea name="t">x</textarea>'),
+          $('<select name="s"><option value="o" selected>o</option></select>'),
+        ];
+
+        const results = $controls.map(($control) => $control.formToArray());
+
+        assert.deepEqual(results, [[], [], []]);
+      });
+
+      it("should serialize the controls of every form when the subject is the document", function () {
+        $('<form><input name="ser-doc-first" value="1"></form>').appendTo("#main");
+        $('<form><input name="ser-doc-second" value="2"></form>').appendTo("#main");
+
+        const names = $(document)
+          .formToArray()
+          .map((field) => field.name);
+
+        const first = names.indexOf("ser-doc-first");
+        const second = names.indexOf("ser-doc-second");
+        assert.isAbove(first, -1);
+        assert.isAbove(second, first);
+      });
+
+      it("should throw a TypeError when the subject is a text node or the window", function () {
+        const $text = $(document.createTextNode("text"));
+        const $window = $(window);
+
+        const serializeText = () => $text.formToArray();
+        const serializeWindow = () => $window.formToArray();
+
+        assert.throws(serializeText, TypeError);
+        assert.throws(serializeWindow, TypeError);
+      });
+
+      it("should serialize a plain object with an array-like elements list", function () {
+        const controls = $('<input name="a" value="1"><input name="b" value="2">').get();
+
+        const formData = $({ elements: controls }).formToArray();
+        const empty = $({ elements: null }).formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "a", value: "1", type: "text", required: false },
+          { name: "b", value: "2", type: "text", required: false },
+        ]);
+        assert.deepEqual(empty, []);
+      });
+
+      it("should serialize only a control named elements in browsers without DOM prototype accessors", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input name="elements" value="e"><input name="b" value="2"></form>'
+        );
+        const HTMLFormElement = window.HTMLFormElement;
+        window.HTMLFormElement = undefined;
+        let names;
+
+        try {
+          names = $form.formToArray().map((field) => field.name);
+        } finally {
+          window.HTMLFormElement = HTMLFormElement;
+        }
+
+        assert.deepEqual(names, ["elements"]);
+      });
+
+      it("should not call filtering when the form has no candidate elements", function () {
+        const $form = $("<form></form>");
+        let calls = 0;
+        const filtering = function (element) {
+          calls++;
+          return element;
+        };
+
+        const plain = $form.formToArray(false, undefined, filtering);
+        const semantic = $form.formToArray(true, undefined, filtering);
+
+        assert.deepEqual(plain, []);
+        assert.deepEqual(semantic, []);
+        assert.strictEqual(calls, 0);
+      });
+    });
+
+    describe("candidate elements", function () {
+      it("should keep tree order for an outside control placed before the form when semantic is false", function () {
+        $('<input name="out" value="o" form="ser-order">').appendTo("#main");
+        const $form = $('<form id="ser-order"><input name="a" value="1"></form>').appendTo("#main");
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["out", "a"]);
+      });
+
+      it("should append an outside control placed before the form after its own controls when semantic is true", function () {
+        $('<input name="out" value="o" form="ser-order">').appendTo("#main");
+        const $form = $('<form id="ser-order"><input name="a" value="1"></form>').appendTo("#main");
+
+        const names = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a", "out"]);
+      });
+
+      it("should ignore outside fieldset and output elements that use the form attribute when semantic is true", function () {
+        const $form = $('<form id="ser-outside-kinds"><input name="a" value="1"></form>').appendTo(
+          "#main"
+        );
+        $(
+          '<fieldset name="fs" form="ser-outside-kinds"></fieldset><output name="o" form="ser-outside-kinds">out</output>'
+        ).appendTo("#main");
+
+        const names = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should serialize named anchors and images when semantic is true", function () {
+        const $form = $(
+          '<form><a name="top">x</a><img name="pic" alt=""><input name="a" value="1"></form>'
+        );
+
+        const pairs = $form.formToArray(true).map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs, [
+          ["top", ""],
+          ["pic", ""],
+          ["a", "1"],
+        ]);
+      });
+
+      it("should serialize a form-associated custom element from its name and value properties", function () {
+        if (!customElements.get("ser-custom-field")) {
+          customElements.define(
+            "ser-custom-field",
+            class extends HTMLElement {
+              static get formAssociated() {
+                return true;
+              }
+
+              constructor() {
+                super();
+                this.internals = this.attachInternals();
+              }
+
+              get name() {
+                return this.getAttribute("name");
+              }
+
+              get value() {
+                return "from-property";
+              }
+            }
+          );
+        }
+        const $form = $(
+          '<form><ser-custom-field name="custom"></ser-custom-field></form>'
+        ).appendTo("#main");
+        $form.find("ser-custom-field")[0].internals.setFormValue("from-internals");
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "custom", value: "from-property", type: undefined, required: undefined },
+        ]);
+      });
+
+      it.fails(
+        "should collect a descendant once when its form attribute names its own form",
+        function () {
+          const $form = $(
+            '<form id="ser-own"><input name="a" value="1" form="ser-own"></form>'
+          ).appendTo("#main");
+
+          const names = $form.formToArray(true).map((field) => field.name);
+
+          assert.deepEqual(names, ["a"]);
+        }
+      );
+
+      it.fails("should skip named fieldset, output and object elements", function () {
+        const $form = $(
+          '<form><fieldset name="fs"><input name="a" value="1"></fieldset><output name="o">out</output><object name="obj"></object></form>'
+        ).appendTo("#main");
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+    });
+
+    describe("filtering", function () {
+      it("should call filtering with each candidate element and its index", function () {
+        const $form = $('<form><div><input name="a" value="1"></div></form>');
+        const calls = [];
+
+        $form.formToArray(true, undefined, function (element, index) {
+          calls.push([element, index]);
+          return element;
+        });
+
+        assert.deepEqual(calls, [
+          [$form.find("div")[0], 0],
+          [$form.find("input")[0], 1],
+        ]);
+      });
+
+      it("should substitute, splice and skip what filtering returns", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input name="b" value="2"><input name="c" value="3"></form>'
+        );
+        const substitute = $('<input name="x" value="9">')[0];
+        const spliced = $('<input name="y" value="8">')[0];
+
+        const names = $form
+          .formToArray(false, undefined, function (element) {
+            if (element.name === "a") {
+              return substitute;
+            }
+            if (element.name === "b") {
+              return [spliced, element];
+            }
+            return "not an element";
+          })
+          .map((field) => field.name);
+
+        assert.deepEqual(names, ["x", "y", "b"]);
+      });
+
+      it("should ignore filtering when it is not a function", function () {
+        const $form = $('<form><input name="a" value="1"><input name="b" value="2"></form>');
+
+        const names = $form.formToArray(false, undefined, "a").map((field) => field.name);
+
+        assert.deepEqual(names, ["a", "b"]);
+      });
+    });
+
+    describe("skipped controls", function () {
+      it("should skip controls without a name in both modes", function () {
+        const $form = $(
+          '<form><input value="x"><input name="" value="y"><div name="d"></div><input name="a" value="1"></form>'
+        );
+
+        const plain = $form.formToArray().map((field) => field.name);
+        const semantic = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(plain, ["a"]);
+        assert.deepEqual(semantic, ["a"]);
+      });
+
+      it("should skip disabled controls in both modes", function () {
+        const $form = $(
+          '<form><input name="a" value="1" disabled><input name="b" value="2"></form>'
+        );
+
+        const plain = $form.formToArray().map((field) => field.name);
+        const semantic = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(plain, ["b"]);
+        assert.deepEqual(semantic, ["b"]);
+      });
+
+      it("should skip button-type and reset-type controls", function () {
+        const $form = $(
+          '<form><input type="button" name="ib" value="1"><button type="button" name="bb" value="2">B</button><input type="reset" name="ir" value="3"><button type="reset" name="br" value="4">R</button><input name="a" value="1"></form>'
+        );
+
+        const plain = $form.formToArray().map((field) => field.name);
+        const semantic = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(plain, ["a"]);
+        assert.deepEqual(semantic, ["a"]);
+      });
+
+      it('should send "on" for a checked checkbox without a value attribute', function () {
+        const $form = $('<form><input type="checkbox" name="c" checked></form>');
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [{ name: "c", value: "on", type: "checkbox", required: false }]);
+      });
+
+      it("should include the clicked submit input at its position in both modes", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input type="submit" name="go" value="Go"><input name="b" value="2"></form>'
+        );
+        $form[0].clk = $form.find('[type="submit"]')[0];
+
+        const plain = $form.formToArray();
+        const semantic = $form.formToArray(true);
+
+        const expected = [
+          { name: "a", value: "1", type: "text", required: false },
+          { name: "go", value: "Go", type: "submit", required: false },
+          { name: "b", value: "2", type: "text", required: false },
+        ];
+        assert.deepEqual(plain, expected);
+        assert.deepEqual(semantic, expected);
+      });
+
+      it("should report required as undefined for a clicked button element", function () {
+        const $form = $('<form><button name="go" value="Go">Go</button></form>');
+        $form[0].clk = $form.find("button")[0];
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "go", value: "Go", type: "submit", required: undefined },
+        ]);
+      });
+
+      it("should serialize a named submit button of a pseudo-form without a click", function () {
+        const $div = $(
+          '<div><input name="a" value="1"><input type="submit" name="go" value="Go"></div>'
+        );
+
+        const names = $div.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["a", "go"]);
+      });
+
+      it.fails("should not treat a submit button named clk as clicked", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input type="submit" name="clk" value="go"><input type="submit" name="other" value="no"></form>'
+        );
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should serialize unchanged when controls shadow other form members", function () {
+        const shadowed = [
+          "submit",
+          "reset",
+          "ownerDocument",
+          "id",
+          "name",
+          "length",
+          "tagName",
+          "type",
+          "disabled",
+          "form",
+        ];
+
+        const results = shadowed.map((name) =>
+          $(`<form><input name="a" value="1"><input name="${name}" value="x"></form>`)
+            .formToArray()
+            .map((field) => [field.name, field.value])
+        );
+
+        assert.deepEqual(
+          results,
+          shadowed.map((name) => [
+            ["a", "1"],
+            [name, "x"],
+          ])
+        );
+      });
+    });
+
+    describe("image submitters", function () {
+      it("should skip every image input when semantic is true and nothing was clicked", function () {
+        const $form = $(
+          '<form><input type="image" name="i1" value="a"><input name="a" value="1"></form>'
+        );
+
+        const names = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should skip images and keep the clicked button in place when semantic is true", function () {
+        const $form = $(
+          '<form><input type="image" name="i1" value="a"><button name="go" value="Go">Go</button><input name="a" value="1"></form>'
+        );
+        $form[0].clk = $form.find("button")[0];
+
+        const names = $form.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["go", "a"]);
+      });
+
+      it("should not append a clicked image that is disabled or unnamed when semantic is false", function () {
+        const $disabled = $(
+          '<form><input name="a" value="1"><input type="image" name="map" value="go" disabled></form>'
+        );
+        const $unnamed = $(
+          '<form><input name="a" value="1"><input type="image" value="go"></form>'
+        );
+        $disabled[0].clk = $disabled.find('[type="image"]')[0];
+        $unnamed[0].clk = $unnamed.find('[type="image"]')[0];
+
+        const disabledNames = $disabled.formToArray().map((field) => field.name);
+        const unnamedNames = $unnamed.formToArray().map((field) => field.name);
+
+        assert.deepEqual(disabledNames, ["a"]);
+        assert.deepEqual(unnamedNames, ["a"]);
+      });
+
+      it("should append a clicked image from outside the form when semantic is false", function () {
+        const $form = $('<form><input name="a" value="1"></form>');
+        $form[0].clk = $('<input type="image" name="far" value="v">')[0];
+        $form[0].clk_x = 1;
+        $form[0].clk_y = 2;
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "a", value: "1", type: "text", required: false },
+          { name: "far", value: "v" },
+          { name: "far.x", value: 1 },
+          { name: "far.y", value: 2 },
+        ]);
+      });
+
+      it("should send an empty value for a clicked image without a value attribute", function () {
+        const $form = $('<form><input name="a" value="1"><input type="image" name="map"></form>');
+        $form[0].clk = $form.find('[type="image"]')[0];
+
+        const plain = $form.formToArray();
+        const semantic = $form.formToArray(true);
+
+        assert.strictEqual(plain[1].value, "");
+        assert.strictEqual(semantic[1].value, "");
+      });
+
+      it("should leave the clicked image out of elements in both modes", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input type="image" name="map" value="go"></form>'
+        );
+        $form[0].clk = $form.find('[type="image"]')[0];
+        const plainElements = [];
+        const semanticElements = [];
+
+        $form.formToArray(false, plainElements);
+        $form.formToArray(true, semanticElements);
+
+        const text = $form.find('[name="a"]')[0];
+        assert.deepEqual(plainElements, [text]);
+        assert.deepEqual(semanticElements, [text]);
+      });
+
+      it("should serialize missing click coordinates as empty values", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input type="image" name="map" value="go"></form>'
+        );
+        $form[0].clk = $form.find('[type="image"]')[0];
+
+        const serialized = $form.formSerialize();
+
+        // jQuery before 3.0 turns undefined into "undefined" in $.param; later versions use "".
+        const missing = Number($.fn.jquery.split(".")[0]) < 3 ? "undefined" : "";
+        assert.strictEqual(serialized, `a=1&map=go&map.x=${missing}&map.y=${missing}`);
+      });
+    });
+
+    describe("values", function () {
+      it("should report the type and required state of scalar entries", function () {
+        const $form = $(
+          '<form><input name="r" value="1" required><textarea name="t">x</textarea><select name="s"><option value="o" selected>o</option></select></form>'
+        );
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "r", value: "1", type: "text", required: true },
+          { name: "t", value: "x", type: "textarea", required: false },
+          { name: "s", value: "o", type: "select-one", required: false },
+        ]);
+      });
+
+      it("should return name and value only for multi-select entries, across optgroups", function () {
+        const $form = $(
+          '<form><select name="m" multiple><optgroup label="g"><option selected>a</option></optgroup><option selected>b</option></select></form>'
+        );
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "m", value: "a" },
+          { name: "m", value: "b" },
+        ]);
+      });
+
+      it("should send the option at selectedIndex for a select-one", function () {
+        const $form = $(
+          '<form><select name="s"><option value="x">x</option><option value="y">y</option></select></form>'
+        );
+        $form.find("select")[0].selectedIndex = 1;
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [
+          { name: "s", value: "y", type: "select-one", required: false },
+        ]);
+      });
+
+      it("should omit a select-one whose selected placeholder option is disabled but list it in elements", function () {
+        const $form = $(
+          '<form><select name="s"><option value="" selected disabled>Choose</option><option value="a">a</option></select></form>'
+        );
+        const elements = [];
+
+        const formData = $form.formToArray(false, elements);
+
+        assert.deepEqual(formData, []);
+        assert.deepEqual(elements, [$form.find("select")[0]]);
+      });
+
+      it("should add a multi-select with only disabled selected options to elements without entries", function () {
+        const $form = $(
+          '<form><select name="m" multiple><option selected disabled>a</option><option>b</option></select></form>'
+        );
+        const elements = [];
+
+        const formData = $form.formToArray(false, elements);
+
+        assert.deepEqual(formData, []);
+        assert.deepEqual(elements, [$form.find("select")[0]]);
+      });
+
+      it("should omit selects with no selected option and leave them out of elements", function () {
+        const $form = $(
+          '<form><select name="s" size="2"><option>a</option></select><select name="m" multiple><option>b</option></select></form>'
+        );
+        const elements = [];
+
+        const formData = $form.formToArray(false, elements);
+
+        assert.deepEqual(formData, []);
+        assert.deepEqual(elements, []);
+      });
+
+      it("should keep line feeds in option values unchanged", function () {
+        const $form = $('<form><select name="s"><option selected>x</option></select></form>');
+        $form.find("option")[0].value = "a\nb";
+
+        const formData = $form.formToArray();
+
+        assert.strictEqual(formData[0].value, "a\nb");
+      });
+
+      it("should normalize line endings of a textarea and of a hidden input", function () {
+        const $form = $(
+          '<form><textarea name="t"></textarea><input type="hidden" name="lf"><input type="hidden" name="crlf"></form>'
+        );
+        $form.find("textarea").val("a\nb");
+        $form.find('[name="lf"]')[0].value = "c\nd";
+        $form.find('[name="crlf"]')[0].value = "e\r\nf";
+
+        const values = $form.formToArray().map((field) => field.value);
+
+        assert.deepEqual(values, ["a\r\nb", "c\r\nd", "e\r\nf"]);
+      });
+
+      it("should handle a lone carriage return per jQuery version", function () {
+        const $form = $('<form><input type="hidden" name="h"></form>');
+        $form.find("input")[0].value = "a\rb";
+
+        const formData = $form.formToArray();
+
+        // jQuery before 4.0 strips carriage returns in .val(); 4.0 keeps them.
+        const expected = Number($.fn.jquery.split(".")[0]) < 4 ? "ab" : "a\rb";
+        assert.strictEqual(formData[0].value, expected);
+      });
+
+      it("should send the literal value of a hidden input named _charset_ and nothing for dirname", function () {
+        const $form = $(
+          '<form><input type="hidden" name="_charset_" value="literal"><input name="t" value="v" dirname="t.dir"></form>'
+        );
+
+        const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs, [
+          ["_charset_", "literal"],
+          ["t", "v"],
+        ]);
+      });
+    });
+
+    describe("file inputs", function () {
+      it("should return one File entry per selected file in FileList order", function () {
+        const $form = $('<form><input type="file" name="up" multiple></form>');
+        selectFiles($form.find("input")[0], ["one.txt", "two.txt"]);
+
+        const formData = $form.formToArray();
+
+        assert.deepEqual(
+          formData.map((field) => [field.name, field.value instanceof File, field.value.name]),
+          [
+            ["up", true, "one.txt"],
+            ["up", true, "two.txt"],
+          ]
+        );
+        assert.deepEqual(
+          formData.map((field) => Object.keys(field)),
+          [
+            ["name", "value", "type"],
+            ["name", "value", "type"],
+          ]
+        );
+      });
+
+      it("should add a file input with selected files to elements once", function () {
+        const $form = $('<form><input type="file" name="up" multiple></form>');
+        const input = $form.find("input")[0];
+        selectFiles(input, ["one.txt", "two.txt"]);
+        const elements = [];
+
+        $form.formToArray(false, elements);
+
+        assert.deepEqual(elements, [input]);
+      });
+
+      it("should skip a disabled or unnamed file input", function () {
+        const $form = $('<form><input type="file" name="up" disabled><input type="file"></form>');
+        selectFiles($form.find("input")[0], ["one.txt"]);
+        selectFiles($form.find("input")[1], ["two.txt"]);
+        const elements = [];
+
+        const formData = $form.formToArray(false, elements);
+
+        assert.deepEqual(formData, []);
+        assert.deepEqual(elements, []);
+      });
+    });
+
+    describe("elements list", function () {
+      it("should push each contributing control once in data order and keep existing contents", function () {
+        const $form = $(
+          '<form><input name="t" value="1"><select name="m" multiple><option selected>a</option><option selected>b</option></select><input type="checkbox" name="c" checked><input type="checkbox" name="u"></form>'
+        );
+        const elements = ["kept"];
+
+        $form.formToArray(false, elements);
+
+        assert.deepEqual(elements, [
+          "kept",
+          $form.find('[name="t"]')[0],
+          $form.find("select")[0],
+          $form.find('[name="c"]')[0],
+        ]);
+      });
+
+      it("should throw a TypeError when elements has no push method", function () {
+        const $form = $('<form><input name="a" value="1"></form>');
+
+        const serialize = () => $form.formToArray(false, {});
+
+        assert.throws(serialize, TypeError);
+      });
+    });
   });
 
   describe("formSerialize", function () {
@@ -276,6 +1010,60 @@ describe("form", function () {
 
       assert.ok(s.constructor == String, "type check");
       assert.ok(s.split("&").length == 3, "string array length");
+    });
+
+    it("should return the $.param string of the first form's fields", function () {
+      const $form = $('<form><input name="a" value="1"><input name="b" value="2"></form>');
+
+      const serialized = $form.formSerialize();
+
+      assert.strictEqual(serialized, "a=1&b=2");
+    });
+
+    it("should return an empty string for an empty selection and serialize only the first form", function () {
+      const $forms = $(
+        '<form><input name="first" value="1"></form><form><input name="second" value="2"></form>'
+      );
+
+      const empty = $(".missing-form").formSerialize();
+      const serialized = $forms.formSerialize();
+
+      assert.strictEqual(empty, "");
+      assert.strictEqual(serialized, "first=1");
+    });
+
+    it("should encode spaces per jQuery version", function () {
+      const $form = $('<form><input name="a" value="x y"></form>');
+
+      const serialized = $form.formSerialize();
+
+      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
+      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
+      assert.strictEqual(serialized, `a=x${space}y`);
+    });
+
+    it("should order the clicked image in place only when semantic is true", function () {
+      const $form = $(
+        '<form><input name="a" value="1"><input type="image" name="map" value="go"><input name="b" value="2"></form>'
+      );
+      $form[0].clk = $form.find('[type="image"]')[0];
+      $form[0].clk_x = 3;
+      $form[0].clk_y = 4;
+
+      const semantic = $form.formSerialize(true);
+      const plain = $form.formSerialize();
+
+      assert.strictEqual(semantic, "a=1&map=go&map.x=3&map.y=4&b=2");
+      assert.strictEqual(plain, "a=1&b=2&map=go&map.x=3&map.y=4");
+    });
+
+    it.fails("should send the file name when a file is selected", function () {
+      const $form = $('<form><input name="a" value="1"><input type="file" name="up"></form>');
+      selectFiles($form.find('[type="file"]')[0], ["x.txt"]);
+
+      const serialized = $form.formSerialize();
+
+      assert.strictEqual(serialized, "a=1&up=x.txt");
     });
   });
 
@@ -327,6 +1115,72 @@ describe("form", function () {
       const values = $textarea.fieldValue();
 
       assert.deepEqual(values, ["first\r\nsecond"]);
+    });
+
+    it("should return an empty array for an empty selection", function () {
+      const $fields = $();
+
+      const values = $fields.fieldValue();
+
+      assert.deepEqual(values, []);
+    });
+
+    it("should treat any falsy successful other than undefined as false", function () {
+      const $checkbox = $('<input type="checkbox" name="c" value="v">');
+
+      const values = [null, 0, ""].map((successful) => $checkbox.fieldValue(successful));
+
+      assert.deepEqual(values, [["v"], ["v"], ["v"]]);
+    });
+
+    it("should return an empty array for a select-one whose selected option is disabled", function () {
+      const select = $(
+        '<select name="s"><option value="" selected disabled>Choose</option><option value="a">a</option></select>'
+      )[0];
+
+      const value = $.fieldValue(select);
+
+      assert.deepEqual(value, []);
+    });
+
+    it("should return null for button-type controls and an unclicked image", function () {
+      const $form = $(
+        '<form><input type="button" name="ib" value="1"><button type="button" name="bb" value="2">B</button><input type="image" name="im" value="3"></form>'
+      );
+
+      const values = $form
+        .find("input, button")
+        .get()
+        .map((el) => $.fieldValue(el));
+
+      assert.deepEqual(values, [null, null, null]);
+    });
+
+    it("should return the value of unnamed and disabled controls when successful is false", function () {
+      const unnamed = $('<input value="x">')[0];
+      const disabled = $('<input name="d" value="y" disabled>')[0];
+
+      const values = [$.fieldValue(unnamed, false), $.fieldValue(disabled, false)];
+
+      assert.deepEqual(values, ["x", "y"]);
+    });
+
+    it("should return the value of the clicked submit button", function () {
+      const $form = $('<form><input type="submit" name="go" value="Go"></form>');
+      const submit = $form.find("input")[0];
+      $form[0].clk = submit;
+
+      const value = $.fieldValue(submit);
+
+      assert.strictEqual(value, "Go");
+    });
+
+    it("should return null for a document and a text node by default", function () {
+      const text = document.createTextNode("text");
+
+      const values = [$.fieldValue(document), $.fieldValue(text)];
+
+      assert.deepEqual(values, [null, null]);
     });
 
     it("should return only successful values when successful is true", function () {
@@ -511,6 +1365,39 @@ describe("form", function () {
       // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
       const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
       assert.strictEqual(result, `choice=a${space}b&choice=c`);
+    });
+
+    it("should skip unnamed fields when successful is false", function () {
+      const $fields = $('<input value="x"><input name="a" value="1">');
+
+      const result = $fields.fieldSerialize(false);
+
+      assert.strictEqual(result, "a=1");
+    });
+
+    it("should return an empty string for an empty selection", function () {
+      const $fields = $();
+
+      const result = $fields.fieldSerialize();
+
+      assert.strictEqual(result, "");
+    });
+
+    it("should serialize a file input's value string", function () {
+      const $input = $('<input type="file" name="up">');
+      selectFiles($input[0], ["x.txt"]);
+
+      const result = $input.fieldSerialize();
+
+      assert.strictEqual(result, "up=C%3A%5Cfakepath%5Cx.txt");
+    });
+
+    it.fails("should skip forms", function () {
+      const $form = $('<form name="other"><input name="a" value="1"></form>');
+
+      const result = $form.fieldSerialize();
+
+      assert.strictEqual(result, "");
     });
   });
 });

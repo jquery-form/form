@@ -21,6 +21,17 @@ export var arrayValue = function (arr, key) {
   return undefined;
 };
 
+// Selects new text files named `names` in a file input and returns them.
+export function selectFiles(input, names) {
+  const transfer = new DataTransfer();
+  names.forEach(function (name) {
+    transfer.items.add(new File(["contents of " + name], name, { type: "text/plain" }));
+  });
+  input.files = transfer.files;
+
+  return Array.prototype.slice.call(input.files);
+}
+
 var fixture;
 
 // Restores the #main fixture before each test.

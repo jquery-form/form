@@ -1,26 +1,27 @@
 import { afterAll, assert, beforeAll, describe, it } from "vitest";
-import { resetFixture } from "./helpers.js";
+import { resetFixture, selectFiles } from "./helpers.js";
+
+const pluginFields = [
+  "attr2",
+  "ajaxSubmit",
+  "ajaxForm",
+  "ajaxFormUnbind",
+  "formToArray",
+  "formSerialize",
+  "fieldSerialize",
+  "fieldValue",
+  "clearForm",
+  "clearFields",
+  "clearInputs",
+  "resetForm",
+  "enable",
+  "selected",
+];
 
 describe("form", function () {
   resetFixture();
 
   describe("with jQuery older than 1.6", function () {
-    const pluginFields = [
-      "attr2",
-      "ajaxSubmit",
-      "ajaxForm",
-      "ajaxFormUnbind",
-      "formToArray",
-      "formSerialize",
-      "fieldSerialize",
-      "fieldValue",
-      "clearForm",
-      "clearFields",
-      "clearInputs",
-      "resetForm",
-      "enable",
-      "selected",
-    ];
     let saved;
 
     // The plugin detects prop support once at load, so reload it while prop is missing.
@@ -74,6 +75,46 @@ describe("form", function () {
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       assert.strictEqual(disabledAtSubmit, false);
+    });
+  });
+
+  describe("without the File API", function () {
+    let saved;
+
+    // The plugin detects the File API once at load, so reload it while input.files is missing.
+    beforeAll(async function () {
+      saved = { fn: {}, fieldValue: $.fieldValue };
+      pluginFields.forEach((name) => {
+        saved.fn[name] = $.fn[name];
+      });
+      const files = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "files");
+      Object.defineProperty(HTMLInputElement.prototype, "files", {
+        configurable: true,
+        get: () => undefined,
+      });
+
+      try {
+        await import("../../src/jquery.form.js?without-fileapi");
+      } finally {
+        Object.defineProperty(HTMLInputElement.prototype, "files", files);
+      }
+    });
+
+    afterAll(function () {
+      Object.assign($.fn, saved.fn);
+      $.fieldValue = saved.fieldValue;
+    });
+
+    it("should send file input values as strings even after the File API returns", function () {
+      const $form = $('<form><input type="file" name="up"><input type="file" name="empty"></form>');
+      selectFiles($form.find("input")[0], ["x.txt"]);
+
+      const formData = $form.formToArray();
+
+      assert.deepEqual(formData, [
+        { name: "up", value: "C:\\fakepath\\x.txt", type: "file", required: false },
+        { name: "empty", value: "", type: "file", required: false },
+      ]);
     });
   });
 });
