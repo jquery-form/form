@@ -864,7 +864,7 @@ describe("form", function () {
     });
 
     describe("callbacks on the FormData transport", function () {
-      it.fails("should call callbacks with the given context object on an upload", function () {
+      it("should call callbacks with the given context object on an upload", function () {
         const upload = uploadForm();
         const context = { name: "context" };
         let received;
@@ -885,32 +885,29 @@ describe("form", function () {
         assert.strictEqual(received, context);
       });
 
-      it.fails(
-        "should use the same this in beforeSend and success when context is a plain object",
-        function () {
-          const upload = uploadForm();
-          const seen = {};
+      it("should use the same this in beforeSend and success when context is a plain object", function () {
+        const upload = uploadForm();
+        const seen = {};
 
-          captureAjaxOptions(
-            upload.$form,
-            {
-              context: { name: "context" },
-              beforeSend: function () {
-                seen.beforeSend = this;
-              },
-              success: function () {
-                seen.success = this;
-              },
+        captureAjaxOptions(
+          upload.$form,
+          {
+            context: { name: "context" },
+            beforeSend: function () {
+              seen.beforeSend = this;
             },
-            function (settings) {
-              settings.beforeSend.call(settings.context, {}, {});
-              settings.success("ok", "success", {});
-            }
-          );
+            success: function () {
+              seen.success = this;
+            },
+          },
+          function (settings) {
+            settings.beforeSend.call(settings.context, {}, {});
+            settings.success("ok", "success", {});
+          }
+        );
 
-          assert.strictEqual(seen.beforeSend, seen.success);
-        }
-      );
+        assert.strictEqual(seen.beforeSend, seen.success);
+      });
     });
 
     describe("FormData request body", function () {

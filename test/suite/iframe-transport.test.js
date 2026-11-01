@@ -1337,32 +1337,29 @@ describe("form", function () {
             assert.strictEqual(seen.success, seen.settings);
           });
 
-          it.fails(
-            "should call callbacks with the given context object on an iframe upload",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              const context = { name: "caller" };
-              const seen = {};
+          it("should call callbacks with the given context object on an iframe upload", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const context = { name: "caller" };
+            const seen = {};
 
-              await new Promise(function (resolve) {
-                $form.ajaxSubmit({
-                  iframe: true,
-                  dataType: "text",
-                  context: context,
-                  beforeSend: function () {
-                    seen.beforeSend = this;
-                  },
-                  success: function () {
-                    seen.success = this;
-                  },
-                  complete: resolve,
-                });
+            await new Promise(function (resolve) {
+              $form.ajaxSubmit({
+                iframe: true,
+                dataType: "text",
+                context: context,
+                beforeSend: function () {
+                  seen.beforeSend = this;
+                },
+                success: function () {
+                  seen.success = this;
+                },
+                complete: resolve,
               });
+            });
 
-              assert.strictEqual(seen.beforeSend, context);
-              assert.strictEqual(seen.success, context);
-            }
-          );
+            assert.strictEqual(seen.beforeSend, context);
+            assert.strictEqual(seen.success, context);
+          });
 
           it("should not add the clicked button to the caller's data object", function () {
             const $form = createIframeForm("ajax/iframe-text.html");

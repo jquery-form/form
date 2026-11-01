@@ -1194,7 +1194,32 @@ describe("form", function () {
         assert.strictEqual(settings.iframeSrc, "about:blank");
       });
 
-      it.fails("should call callbacks with the given context object", function () {
+      it("should call beforeSend, success and complete with the caller's context object on a request", async function () {
+        const context = { name: "context" };
+        const seen = {};
+        const record = (name) =>
+          function () {
+            seen[name] = this;
+          };
+
+        await new Promise(function (resolve) {
+          $("#form3").ajaxSubmit({
+            context: context,
+            beforeSend: record("beforeSend"),
+            success: record("success"),
+            complete: function () {
+              seen.complete = this;
+              resolve();
+            },
+          });
+        });
+
+        assert.strictEqual(seen.beforeSend, context);
+        assert.strictEqual(seen.success, context);
+        assert.strictEqual(seen.complete, context);
+      });
+
+      it("should call callbacks with the given context object", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const context = { name: "context" };
         let seen;

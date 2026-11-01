@@ -45,6 +45,7 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **`false` or `""` as the url submits to the form action.** `ajaxSubmit(false)`, `ajaxSubmit("")`, `ajaxForm(false)` and a `url` option of `false` or `""` used to throw on a GET form or post to the page URL (or `/false`); they now use the form's `action`, like no url at all.
 - **`error` and `complete` accept arrays of functions, as in `$.ajax`.** Each function runs in order and also receives the form. An array used to throw (`apply is not a function`) and no callback ran. With `target`, every function of a `success` array now runs for each target element; none ran before, and `complete` was skipped.
 - **`success` runs when `target` matches nothing.** It runs once, with the usual `this` (`context`, or jQuery's settings). It used to be skipped silently. With matches, it still runs once per target element with `this` set to that element.
+- **`this` in callbacks is the `context` object itself.** A plain-object `context` used to be deep-copied while the options were merged, so `beforeSend`, `success`, `error` and `complete` ran with a copy (two different copies on uploads). They now run with the caller's object on every transport, as with `$.ajax`. Code that relied on changing the copy now changes the original.
 
 ## Known behavior, not changed
 

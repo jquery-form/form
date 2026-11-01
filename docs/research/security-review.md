@@ -171,7 +171,7 @@ Each item below was confirmed by a probe except where marked.
 - **`#` action plus a field named `action`.** With a GET form, line 144 leaves `url` undefined, and line 221 throws (all versions).
 - **`url` with a hash.** On a GET, the query is appended after the fragment (line 221). jQuery 3 and 4 then keep it inside the fragment, and jQuery 1.7.2 strips it. Either way the form data is lost. (The hash cleanup at line 144 only applies to `action`, because a `url` option overrides it in the `$.extend`.)
 - **`data: {}` on a FormData upload.** It appends a field with an empty name and the value `undefined` (lines 341–352). Also, `deepSerialize` reads `options.traditional`, not the computed default at line 182 (from reading the code).
-- **Context is copied.** The deep `$.extend` copies a plain-object `context`, so `this` in callbacks is a copy, not the object passed in. The existing tests compare by property for this reason. Info only; it changes in Phase 13 if options stop being deep-copied.
+- **Context is copied.** The deep `$.extend` copies a plain-object `context`, so `this` in callbacks is a copy, not the object passed in. The existing tests compare by property for this reason. Info only. Fixed in 4.5.0 (Phase 12): the merged settings keep the caller's `context` object, so `this === context` on every transport.
 
 ### 9. #554 is a false positive
 

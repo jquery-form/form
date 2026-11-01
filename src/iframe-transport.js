@@ -1,6 +1,7 @@
 import { callFormMethod, closestByTag, formMember } from "./form-members.js";
 import { deepSerialize } from "./xhr-transport.js";
 import jQuery from "jquery";
+import { keepContext } from "./options.js";
 import { log } from "./diagnostics.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
@@ -68,7 +69,7 @@ export function createIframeTransport(hasProp, forms) {
       }
     }
 
-    s = $.extend(true, {}, $.ajaxSettings, options);
+    s = keepContext($.extend(true, {}, $.ajaxSettings, options), [$.ajaxSettings, options]);
     s.context = s.context || s;
     id = "jqFormIO" + new Date().getTime();
     var ownerDocument = formMember(form, "ownerDocument");

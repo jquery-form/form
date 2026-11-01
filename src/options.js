@@ -48,3 +48,17 @@ export function submitOptions(options, data, dataType, onSuccess) {
 
   return options.url === false || options.url === "" ? withoutUrl(options) : options;
 }
+
+/**
+ * jQuery treats `context` as a flat option: after a deep merge, the settings get back the
+ * caller's own object from the last source that has one, so `this` in callbacks is that object.
+ */
+export function keepContext(settings, sources) {
+  for (var i = 0; i < sources.length; i++) {
+    if (sources[i].context !== undefined) {
+      settings.context = sources[i].context;
+    }
+  }
+
+  return settings;
+}

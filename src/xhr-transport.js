@@ -1,4 +1,5 @@
 import jQuery from "jquery";
+import { keepContext } from "./options.js";
 
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
 var $ = jQuery;
@@ -52,6 +53,8 @@ export function sendFormData(submission) {
     cache: false,
     type: submission.method || "POST",
   });
+
+  keepContext(s, [$.ajaxSettings, options]);
 
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property

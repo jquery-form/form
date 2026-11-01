@@ -106,6 +106,71 @@ function closestByTag(el, names) {
   return null;
 }
 
+// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
+
+/**
+ * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
+ * the url; anything else is returned as given.
+ */
+function shorthandOptions(options, data, dataType, onSuccess) {
+  if (typeof options !== "string" && options !== false) {
+    return options;
+  }
+
+  var result = { url: options, data: data, dataType: dataType };
+
+  if (typeof onSuccess === "function") {
+    result.success = onSuccess;
+  }
+
+  return result;
+}
+
+// A copy of options without its url, so the form action is used.
+function withoutUrl(options) {
+  var result = {};
+
+  for (var key in options) {
+    if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
+      result[key] = options[key];
+    }
+  }
+
+  return result;
+}
+
+/**
+ * The options ajaxSubmit starts from: a function is the success callback, the shorthand is
+ * expanded, and no options at all is an empty object. A url of false or "" means the form action.
+ */
+function submitOptions(options, data, dataType, onSuccess) {
+  if (typeof options === "function") {
+    return { success: options };
+  }
+
+  options = shorthandOptions(options, data, dataType, onSuccess);
+
+  if (typeof options === "undefined") {
+    return {};
+  }
+
+  return options.url === false || options.url === "" ? withoutUrl(options) : options;
+}
+
+/**
+ * jQuery treats `context` as a flat option: after a deep merge, the settings get back the
+ * caller's own object from the last source that has one, so `this` in callbacks is that object.
+ */
+function keepContext(settings, sources) {
+  for (var i = 0; i < sources.length; i++) {
+    if (sources[i].context !== undefined) {
+      settings.context = sources[i].context;
+    }
+  }
+
+  return settings;
+}
+
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
 var $$1 = jQuery;
 
@@ -159,6 +224,8 @@ function sendFormData(submission) {
     type: submission.method || "POST",
   });
 
+  keepContext(s, [$$1.ajaxSettings, options]);
+
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property
     s.xhr = function () {
@@ -211,57 +278,6 @@ function sendFormData(submission) {
  */
 function sendAjax(submission) {
   return $$1.ajax(submission.options);
-}
-
-// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
-
-/**
- * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
- * the url; anything else is returned as given.
- */
-function shorthandOptions(options, data, dataType, onSuccess) {
-  if (typeof options !== "string" && options !== false) {
-    return options;
-  }
-
-  var result = { url: options, data: data, dataType: dataType };
-
-  if (typeof onSuccess === "function") {
-    result.success = onSuccess;
-  }
-
-  return result;
-}
-
-// A copy of options without its url, so the form action is used.
-function withoutUrl(options) {
-  var result = {};
-
-  for (var key in options) {
-    if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
-      result[key] = options[key];
-    }
-  }
-
-  return result;
-}
-
-/**
- * The options ajaxSubmit starts from: a function is the success callback, the shorthand is
- * expanded, and no options at all is an empty object. A url of false or "" means the form action.
- */
-function submitOptions(options, data, dataType, onSuccess) {
-  if (typeof options === "function") {
-    return { success: options };
-  }
-
-  options = shorthandOptions(options, data, dataType, onSuccess);
-
-  if (typeof options === "undefined") {
-    return {};
-  }
-
-  return options.url === false || options.url === "" ? withoutUrl(options) : options;
 }
 
 // Debug logging, switched on by $.fn.ajaxSubmit.debug. The flag is read on every call, so it can
@@ -345,7 +361,7 @@ function createIframeTransport(hasProp, forms) {
       }
     }
 
-    s = $.extend(true, {}, $.ajaxSettings, options);
+    s = keepContext($.extend(true, {}, $.ajaxSettings, options), [$.ajaxSettings, options]);
     s.context = s.context || s;
     id = "jqFormIO" + new Date().getTime();
     var ownerDocument = formMember(form, "ownerDocument");
@@ -904,7 +920,7 @@ function createSubmission(feature, forms) {
     var isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
     var iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
 
-    return $.extend(
+    var merged = $.extend(
       true,
       {
         url: url,
@@ -914,6 +930,8 @@ function createSubmission(feature, forms) {
       },
       options
     );
+
+    return keepContext(merged, [options]);
   }
 
   // The data option, kept as extraData and encoded, or undefined without one.

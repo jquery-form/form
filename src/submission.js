@@ -1,5 +1,6 @@
 import { assertRealParent } from "./form-members.js";
 import jQuery from "jquery";
+import { keepContext } from "./options.js";
 import { log } from "./diagnostics.js";
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
@@ -31,7 +32,7 @@ export function createSubmission(feature, forms) {
     var isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
     var iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
 
-    return $.extend(
+    var merged = $.extend(
       true,
       {
         url: url,
@@ -41,6 +42,8 @@ export function createSubmission(feature, forms) {
       },
       options
     );
+
+    return keepContext(merged, [options]);
   }
 
   // The data option, kept as extraData and encoded, or undefined without one.
