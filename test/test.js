@@ -307,6 +307,36 @@ describe("form", function () {
       assert.deepEqual(formData, [{ name: "upload", value: "", type: "file" }]);
       assert.deepEqual(elements, [$form[0].elements[0]]);
     });
+
+    it("should collect every control when one is named elements", function () {
+      const $form = $('<form><input name="a" value="1"><input name="elements" value="2"></form>');
+
+      const names = $form.formToArray().map((field) => field.name);
+
+      assert.deepEqual(names, ["a", "elements"]);
+    });
+
+    it("should collect the controls of a fieldset", function () {
+      const $fieldset = $('<fieldset><input name="a" value="1"></fieldset>');
+
+      const formData = $fieldset.formToArray();
+
+      assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
+    });
+
+    it("should read form.elements in browsers without DOM prototype accessors", function () {
+      const $form = $('<form><input name="a" value="1"></form>');
+      const HTMLFormElement = window.HTMLFormElement;
+      window.HTMLFormElement = undefined;
+
+      try {
+        const formData = $form.formToArray();
+
+        assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
+      } finally {
+        window.HTMLFormElement = HTMLFormElement;
+      }
+    });
   });
 
   describe("formSerialize", function () {
@@ -2284,6 +2314,37 @@ describe("form", function () {
         await submitThroughIframe($form, { data: data, dataType: "text" });
 
         assert.deepEqual(submitted, { own: "kept" });
+      });
+
+      // jQuery 1.7.2's selector engine calls setAttribute on the form itself, so it cannot run there.
+      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
+        "should submit and restore a form whose controls shadow its methods",
+        async function () {
+          const $form = createIframeForm("ajax/iframe-text.html");
+          $(
+            '<input name="setAttribute" value="a"><input name="removeAttribute" value="b">'
+          ).appendTo($form);
+
+          const result = await submitThroughIframe($form, { dataType: "text" });
+
+          assert.deepEqual(result.events, ["success", "complete"]);
+          assert.match($form[0].getAttribute("action"), /ajax\/iframe-text\.html$/);
+          assert.strictEqual($form[0].hasAttribute("target"), false);
+        }
+      );
+
+      it("should leave a missing action attribute missing when a control is named action", async function () {
+        const $form = $('<form method="post"><input name="action" value="save"></form>').appendTo(
+          "#main"
+        );
+
+        const result = await submitThroughIframe($form, {
+          url: "ajax/iframe-text.html",
+          dataType: "text",
+        });
+
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.strictEqual($form[0].hasAttribute("action"), false);
       });
 
       it("should submit extraData keys and buttons named hasOwnProperty", async function () {

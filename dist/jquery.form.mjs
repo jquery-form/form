@@ -76,6 +76,22 @@ export { default } from 'jquery';
   // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
   var hasOwn = Object.prototype.hasOwnProperty;
 
+  // A control named like a form member (elements, setAttribute) shadows that member on the form,
+  // so forms are read and changed through members a control cannot shadow.
+  var plainForm = document.createElement("form");
+
+  function formElements(form) {
+    var proto = window.HTMLFormElement && window.HTMLFormElement.prototype;
+    var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "elements");
+
+    try {
+      return descriptor.get.call(form);
+    } catch (e) {
+      // no DOM prototype accessors, or another element with controls such as a fieldset
+      return form.elements;
+    }
+  }
+
   // attr2 uses prop when it can but checks the return type for
   // an expected string. This accounts for the case where a form
   // contains inputs with names like "action" or "method"; in those
@@ -602,6 +618,10 @@ export { default } from 'jquery';
         s.extraData[csrf_param] = csrf_token;
       }
 
+      function setFormAttribute(name, value) {
+        plainForm.setAttribute.call(form, name, value);
+      }
+
       // take a breath so that pending repaints get some cpu time before the upload starts
       function doSubmit() {
         // make sure form attrs are set
@@ -611,20 +631,18 @@ export { default } from 'jquery';
           et = $form.attr("enctype") || $form.attr("encoding") || mp;
 
         // update form attrs in IE friendly way
-        form.setAttribute("target", id);
+        setFormAttribute("target", id);
         if (!method || /post/i.test(method)) {
-          form.setAttribute("method", "POST");
+          setFormAttribute("method", "POST");
         }
         if (a !== s.url) {
-          form.setAttribute("action", s.url);
+          setFormAttribute("action", s.url);
         }
 
         // ie borks in some cases when setting encoding
         if (!s.skipEncodingOverride && (!method || /post/i.test(method))) {
-          $form.attr({
-            encoding: "multipart/form-data",
-            enctype: "multipart/form-data",
-          });
+          setFormAttribute("encoding", mp);
+          setFormAttribute("enctype", mp);
         }
 
         // support timout
@@ -699,18 +717,21 @@ export { default } from 'jquery';
             form.submit();
           } catch (err) {
             // just in case form has element with name/id of 'submit'
-            var submitFn = document.createElement("form").submit;
-
-            submitFn.apply(form);
+            plainForm.submit.call(form);
           }
         } finally {
           // reset attrs and remove "extra" input elements
-          form.setAttribute("action", a);
-          form.setAttribute("enctype", et); // #380
-          if (t) {
-            form.setAttribute("target", t);
+          if (typeof a === "string") {
+            setFormAttribute("action", a);
           } else {
-            $form.removeAttr("target");
+            // a control named action hid a missing action attribute
+            plainForm.removeAttribute.call(form, "action");
+          }
+          setFormAttribute("enctype", et); // #380
+          if (t) {
+            setFormAttribute("target", t);
+          } else {
+            plainForm.removeAttribute.call(form, "target");
           }
           $(extraInputs).remove();
         }
@@ -1079,7 +1100,7 @@ export { default } from 'jquery';
     var els =
       semantic || typeof form.elements === "undefined"
         ? form.getElementsByTagName("*")
-        : form.elements;
+        : formElements(form);
     var els2;
 
     if (els) {
