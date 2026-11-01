@@ -196,11 +196,11 @@ function keepContext(settings, sources) {
 }
 
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
-var $$2 = jQuery;
+var $$3 = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 function deepSerialize(extraData, traditional) {
-  var param = $$2.param(extraData, traditional);
+  var param = $$3.param(extraData, traditional);
   var serialized = param ? param.split("&") : [];
   var len = serialized.length;
   var result = [];
@@ -241,19 +241,19 @@ function sendFormData(submission) {
 
   options.data = null;
 
-  var s = $$2.extend(true, {}, $$2.ajaxSettings, options, {
+  var s = $$3.extend(true, {}, $$3.ajaxSettings, options, {
     contentType: false,
     processData: false,
     cache: false,
     type: submission.method || "POST",
   });
 
-  keepContext(s, [$$2.ajaxSettings, options]);
+  keepContext(s, [$$3.ajaxSettings, options]);
 
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property
     s.xhr = function () {
-      var xhr = $$2.ajaxSettings.xhr();
+      var xhr = $$3.ajaxSettings.xhr();
 
       if (xhr.upload) {
         xhr.upload.addEventListener(
@@ -294,14 +294,173 @@ function sendFormData(submission) {
     }
   };
 
-  return $$2.ajax(s);
+  return $$3.ajax(s);
 }
 
 /**
  * Sends the encoded fields with $.ajax.
  */
 function sendAjax(submission) {
-  return $$2.ajax(submission.options);
+  return $$3.ajax(submission.options);
+}
+
+// The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
+// posting and restored after, and the native submit.
+var $$2 = jQuery;
+
+// The form attributes an iframe upload changes while it posts.
+var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
+
+// Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
+var hasOwn = Object.prototype.hasOwnProperty;
+
+function isGet(method) {
+  return /^get$/i.test(method);
+}
+
+// Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
+// apply to both sides of the comparison.
+function isSameOrigin(url) {
+  var origin = document.createElement("a");
+  var target = document.createElement("a");
+
+  origin.href = window.location.href;
+  target.href = url;
+  // IE fills in the host of a relative URL only once the resolved href is assigned back
+  target.href = target.href; // eslint-disable-line no-self-assign
+
+  return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
+}
+
+/** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
+function addSubmitterFields(s, form) {
+  // add submitting element to data if we know it
+  var sub = form.clk;
+
+  if (sub) {
+    var n = sub.name;
+
+    if (n && !sub.disabled) {
+      s.extraData = s.extraData || {};
+      s.extraData[n] = sub.value;
+      if (sub.type === "image") {
+        s.extraData[n + ".x"] = form.clk_x;
+        s.extraData[n + ".y"] = form.clk_y;
+      }
+    }
+  }
+}
+
+/** Adds the page's CSRF token to s.extraData when the form is posted to the page's origin. */
+function addCsrfField(s, form, method, forms) {
+  // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
+  // only when the form is posted, since a get form would put the token in the url
+  var csrf_token = $$2("meta[name=csrf-token]").attr("content");
+  var csrf_param = $$2("meta[name=csrf-param]").attr("content");
+  var posts =
+    !isGet(method) &&
+    (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
+
+  if (csrf_param && csrf_token && posts && isSameOrigin(s.url)) {
+    s.extraData = s.extraData || {};
+    s.extraData[csrf_param] = csrf_token;
+  }
+}
+
+function setFormAttribute(form, name, value) {
+  callFormMethod(form, "setAttribute", name, value);
+}
+
+/** The raw attributes the upload changes, null when absent, to put back exactly (#380). */
+function saveAttributes(form) {
+  var saved = {};
+
+  $$2.each(uploadAttributes, function (i, name) {
+    saved[name] = callFormMethod(form, "hasAttribute", name)
+      ? callFormMethod(form, "getAttribute", name)
+      : null;
+  });
+
+  return saved;
+}
+
+/** Puts back the attributes saveAttributes recorded, removing those that were absent. */
+function restoreAttributes(form, saved) {
+  $$2.each(uploadAttributes, function (i, name) {
+    if (saved[name] === null) {
+      callFormMethod(form, "removeAttribute", name);
+    } else {
+      setFormAttribute(form, name, saved[name]);
+    }
+  });
+}
+
+/** Points the form at the frame `target` with the upload's url, method and encoding. */
+function setUploadAttributes(form, target, method, s, forms) {
+  var mp = "multipart/form-data";
+
+  // update form attrs in IE friendly way
+  setFormAttribute(form, "target", target);
+  if (!method || /post/i.test(method)) {
+    setFormAttribute(form, "method", "POST");
+  } else if (isGet(method) && !isGet(forms.property(form, "method"))) {
+    // a form posts natively only with GET or POST; other verbs keep the form's own method
+    setFormAttribute(form, "method", "GET");
+  }
+  setFormAttribute(form, "action", s.url);
+
+  // ie borks in some cases when setting encoding
+  if (!s.skipEncodingOverride && (!method || /post/i.test(method))) {
+    setFormAttribute(form, "encoding", mp);
+    setFormAttribute(form, "enctype", mp);
+  }
+}
+
+/** Appends a hidden input per extraData field to the form; each input is pushed onto `added`. */
+function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
+  // Builds the input with DOM properties: a name is never parsed as HTML.
+  function addHiddenInput(name, value) {
+    var input = ownerDocument.createElement("input");
+
+    input.type = "hidden";
+    input.name = name;
+    added.push($$2(input).val(value).appendTo(form)[0]);
+  }
+
+  if (extraData) {
+    for (var n in extraData) {
+      if (hasOwn.call(extraData, n)) {
+        // if using the $.param format that allows for multiple values with the same name
+        if (
+          $$2.isPlainObject(extraData[n]) &&
+          hasOwn.call(extraData[n], "name") &&
+          hasOwn.call(extraData[n], "value")
+        ) {
+          addHiddenInput(extraData[n].name, extraData[n].value);
+        } else {
+          // arrays and objects become one field per value, as $.param sends them (#597)
+          var single = {};
+
+          single[n] = extraData[n];
+          var fields = deepSerialize(single, traditional);
+
+          for (var f = 0; f < fields.length; f++) {
+            addHiddenInput(fields[f][0], fields[f][1]);
+          }
+        }
+      }
+    }
+  }
+}
+
+/** Submits the form natively, even when a control named submit hides the method. */
+function submitForm(form) {
+  try {
+    form.submit();
+  } catch (err) {
+    // just in case form has element with name/id of 'submit'
+    callFormMethod(form, "submit");
+  }
 }
 
 // Debug logging, switched on by $.fn.ajaxSubmit.debug. The flag is read on every call, so it can
@@ -489,30 +648,6 @@ function readResponse(doc, xhr, s, retry) {
 // for file uploads without the File API or when the iframe option asks for it.
 var $ = jQuery;
 
-// The form attributes an iframe upload changes while it posts.
-var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
-
-// Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
-var hasOwn = Object.prototype.hasOwnProperty;
-
-function isGet(method) {
-  return /^get$/i.test(method);
-}
-
-// Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
-// apply to both sides of the comparison.
-function isSameOrigin(url) {
-  var origin = document.createElement("a");
-  var target = document.createElement("a");
-
-  origin.href = window.location.href;
-  target.href = url;
-  // IE fills in the host of a relative URL only once the resolved href is assigned back
-  target.href = target.href; // eslint-disable-line no-self-assign
-
-  return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
-}
-
 /**
  * The iframe send step. `hasProp` is what the entry detected at load; `forms.property` reads a
  * form property as attr2 does.
@@ -533,7 +668,6 @@ function createIframeTransport(hasProp, forms) {
       $io,
       io,
       xhr,
-      sub,
       n,
       timeoutHandle,
       callbackProcessed;
@@ -678,67 +812,18 @@ function createIframeTransport(hasProp, forms) {
       return deferred;
     }
 
-    // add submitting element to data if we know it
-    sub = form.clk;
-    if (sub) {
-      n = sub.name;
-      if (n && !sub.disabled) {
-        s.extraData = s.extraData || {};
-        s.extraData[n] = sub.value;
-        if (sub.type === "image") {
-          s.extraData[n + ".x"] = form.clk_x;
-          s.extraData[n + ".y"] = form.clk_y;
-        }
-      }
-    }
+    addSubmitterFields(s, form);
 
     var CLIENT_TIMEOUT_ABORT = 1;
     var SERVER_ABORT = 2;
 
-    // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
-    // only when the form is posted, since a get form would put the token in the url
-    var csrf_token = $("meta[name=csrf-token]").attr("content");
-    var csrf_param = $("meta[name=csrf-param]").attr("content");
-    var posts =
-      !isGet(method) &&
-      (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
-
-    if (csrf_param && csrf_token && posts && isSameOrigin(s.url)) {
-      s.extraData = s.extraData || {};
-      s.extraData[csrf_param] = csrf_token;
-    }
-
-    function setFormAttribute(name, value) {
-      callFormMethod(form, "setAttribute", name, value);
-    }
+    addCsrfField(s, form, method, forms);
 
     // take a breath so that pending repaints get some cpu time before the upload starts
     function doSubmit() {
-      var mp = "multipart/form-data";
-      // the raw attributes the upload changes, null when absent, to put back exactly (#380)
-      var saved = {};
+      var saved = saveAttributes(form);
 
-      $.each(uploadAttributes, function (i, name) {
-        saved[name] = callFormMethod(form, "hasAttribute", name)
-          ? callFormMethod(form, "getAttribute", name)
-          : null;
-      });
-
-      // update form attrs in IE friendly way
-      setFormAttribute("target", id);
-      if (!method || /post/i.test(method)) {
-        setFormAttribute("method", "POST");
-      } else if (isGet(method) && !isGet(forms.property(form, "method"))) {
-        // a form posts natively only with GET or POST; other verbs keep the form's own method
-        setFormAttribute("method", "GET");
-      }
-      setFormAttribute("action", s.url);
-
-      // ie borks in some cases when setting encoding
-      if (!s.skipEncodingOverride && (!method || /post/i.test(method))) {
-        setFormAttribute("encoding", mp);
-        setFormAttribute("enctype", mp);
-      }
+      setUploadAttributes(form, id, method, s, forms);
 
       // support timout
       if (s.timeout) {
@@ -769,40 +854,8 @@ function createIframeTransport(hasProp, forms) {
       // add "extra" data to form if provided in options
       var extraInputs = [];
 
-      // Builds the input with DOM properties: a name is never parsed as HTML.
-      function addHiddenInput(name, value) {
-        var input = ownerDocument.createElement("input");
-
-        input.type = "hidden";
-        input.name = name;
-        extraInputs.push($(input).val(value).appendTo(form)[0]);
-      }
-
       try {
-        if (s.extraData) {
-          for (var n in s.extraData) {
-            if (hasOwn.call(s.extraData, n)) {
-              // if using the $.param format that allows for multiple values with the same name
-              if (
-                $.isPlainObject(s.extraData[n]) &&
-                hasOwn.call(s.extraData[n], "name") &&
-                hasOwn.call(s.extraData[n], "value")
-              ) {
-                addHiddenInput(s.extraData[n].name, s.extraData[n].value);
-              } else {
-                // arrays and objects become one field per value, as $.param sends them (#597)
-                var single = {};
-
-                single[n] = s.extraData[n];
-                var fields = deepSerialize(single, traditional);
-
-                for (var f = 0; f < fields.length; f++) {
-                  addHiddenInput(fields[f][0], fields[f][1]);
-                }
-              }
-            }
-          }
-        }
+        addExtraInputs(form, ownerDocument, s.extraData, traditional, extraInputs);
 
         if (!s.iframeTarget) {
           // add iframe to doc and submit the form
@@ -828,21 +881,10 @@ function createIframeTransport(hasProp, forms) {
 
         setTimeout(checkState, 15);
 
-        try {
-          form.submit();
-        } catch (err) {
-          // just in case form has element with name/id of 'submit'
-          callFormMethod(form, "submit");
-        }
+        submitForm(form);
       } finally {
         // reset attrs and remove "extra" input elements
-        $.each(uploadAttributes, function (i, name) {
-          if (saved[name] === null) {
-            callFormMethod(form, "removeAttribute", name);
-          } else {
-            setFormAttribute(name, saved[name]);
-          }
-        });
+        restoreAttributes(form, saved);
         $(extraInputs).remove();
       }
     }
