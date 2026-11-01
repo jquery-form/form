@@ -2536,7 +2536,13 @@ function createSubmission(feature, forms, serialization) {
       switch (tag) {
         case "input":
           this.checked = this.defaultChecked;
-        // fall through
+
+          // as the native reset: types whose value is the value attribute keep it
+          if (!/^(?:checkbox|radio|hidden|submit|reset|button|image)$/.test(this.type)) {
+            this.value = this.defaultValue;
+          }
+
+          return true;
 
         case "textarea":
           this.value = this.defaultValue;

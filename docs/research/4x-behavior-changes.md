@@ -90,6 +90,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`delegation: true` warns on jQuery 3 and later.** When the selection has no `.selector` (jQuery 3.0 removed it), each such `ajaxForm` call logs one `console.warn`, even with `debug` off: the binding covers every form on the page, so its options (`data`, `headers`) go with any form's submission. Pass a selector instead. Nothing is logged on jQuery 1.7.2 or without `console.warn`; the binding itself is unchanged.
 
+- **`resetForm` no longer rewrites the value of checkboxes, radios, hidden inputs and buttons (D-12).** Resetting such an input one by one (a container, a `<div>`, or the input itself) wrote its default value into the `value` attribute, so a checkbox without `value` was sent as `c=` instead of `c=on`, and a submit button without `value` lost its default label. These types now keep their value, as in a native form reset.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

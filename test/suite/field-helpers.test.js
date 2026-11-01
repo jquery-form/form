@@ -441,27 +441,21 @@ describe("form", function () {
       assert.strictEqual($inputs.eq(1).val(), "b");
     });
 
-    it.fails(
-      "should keep a checkbox's value on when the checkbox is reset outside a form",
-      function () {
-        const $container = $('<div><input type="checkbox" name="c"></div>');
+    it("should keep a checkbox's value on when the checkbox is reset outside a form", function () {
+      const $container = $('<div><input type="checkbox" name="c"></div>');
 
-        $container.resetForm();
+      $container.resetForm();
 
-        assert.strictEqual($container.find("input").val(), "on");
-      }
-    );
+      assert.strictEqual($container.find("input").val(), "on");
+    });
 
-    it.fails(
-      "should keep a submit input's default label when it is reset in a container",
-      function () {
-        const $container = $('<div><input type="submit"></div>');
+    it("should keep a submit input's default label when it is reset in a container", function () {
+      const $container = $('<div><input type="submit"></div>');
 
-        $container.resetForm();
+      $container.resetForm();
 
-        assert.isFalse($container.find("input")[0].hasAttribute("value"));
-      }
-    );
+      assert.isFalse($container.find("input")[0].hasAttribute("value"));
+    });
 
     it.fails("should not throw when a file input with a value attribute is reset", function () {
       const $file = $('<input type="file" value="x">');
