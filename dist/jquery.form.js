@@ -130,6 +130,113 @@ function closestByTag(el, names) {
   return null;
 }
 
+// The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
+var $ = jQuery;
+
+// utility fn for deep serialization: [name, value] pairs, as $.param encodes them
+function deepSerialize(extraData, traditional) {
+  var param = $.param(extraData, traditional);
+  var serialized = param ? param.split("&") : [];
+  var len = serialized.length;
+  var result = [];
+  var i, part;
+
+  for (i = 0; i < len; i++) {
+    // #252; undo param space replacement
+    serialized[i] = serialized[i].replace(/\+/g, " ");
+    part = serialized[i].split("=");
+    // #278; use array instead of object storage, favoring array serializations
+    result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
+  }
+
+  return result;
+}
+
+/**
+ * Posts the fields and extraData as FormData, for files with the File API.
+ * XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
+ */
+function sendFormData(submission) {
+  var options = submission.options;
+  var a = submission.fields;
+
+  var formdata = new FormData();
+
+  for (var i = 0; i < a.length; i++) {
+    formdata.append(a[i].name, a[i].value);
+  }
+
+  if (options.extraData) {
+    var serializedData = deepSerialize(options.extraData, submission.traditional);
+
+    for (i = 0; i < serializedData.length; i++) {
+      formdata.append(serializedData[i][0], serializedData[i][1]);
+    }
+  }
+
+  options.data = null;
+
+  var s = $.extend(true, {}, $.ajaxSettings, options, {
+    contentType: false,
+    processData: false,
+    cache: false,
+    type: submission.method || "POST",
+  });
+
+  if (options.uploadProgress) {
+    // workaround because jqXHR does not expose upload property
+    s.xhr = function () {
+      var xhr = $.ajaxSettings.xhr();
+
+      if (xhr.upload) {
+        xhr.upload.addEventListener(
+          "progress",
+          function (event) {
+            var percent = 0;
+            var position = event.loaded || event.position; /* event.position is deprecated */
+            var total = event.total;
+
+            if (event.lengthComputable) {
+              percent = Math.ceil((position / total) * 100);
+            }
+
+            options.uploadProgress(event, position, total, percent);
+          },
+          false
+        );
+      }
+
+      return xhr;
+    };
+  }
+
+  s.data = null;
+
+  var beforeSend = s.beforeSend;
+
+  s.beforeSend = function (xhr, o) {
+    // Send FormData() provided by user
+    if (options.formData) {
+      o.data = options.formData;
+    } else {
+      o.data = formdata;
+    }
+
+    if (beforeSend) {
+      beforeSend.call(this, xhr, o);
+    }
+  };
+
+  return $.ajax(s);
+}
+
+/**
+ * Sends the encoded fields with $.ajax.
+ */
+function sendAjax(submission) {
+  return $.ajax(submission.options);
+}
+
 // The arguments ajaxSubmit and ajaxForm accept in place of an options object.
 
 /**
@@ -568,9 +675,9 @@ function createSubmission(feature, forms) {
     var $form = this,
       method = submission.method,
       traditional = submission.traditional,
-      elements = submission.controls,
-      a = submission.fields,
-      transport = steps.chooseTransport(submission),
+      elements = submission.controls;
+      submission.fields;
+      var transport = steps.chooseTransport(submission),
       jqxhr;
 
     options = submission.options;
@@ -586,9 +693,9 @@ function createSubmission(feature, forms) {
         jqxhr = fileUploadIframe();
       }
     } else if (transport === "formdata") {
-      jqxhr = fileUploadXhr(a);
+      jqxhr = sendFormData(submission);
     } else {
-      jqxhr = $.ajax(options);
+      jqxhr = sendAjax(submission);
     }
 
     $form.removeData("jqxhr").data("jqxhr", jqxhr);
@@ -602,97 +709,6 @@ function createSubmission(feature, forms) {
     this.trigger("form-submit-notify", [this, options]);
 
     return this;
-
-    // utility fn for deep serialization
-    function deepSerialize(extraData) {
-      var param = $.param(extraData, traditional);
-      var serialized = param ? param.split("&") : [];
-      var len = serialized.length;
-      var result = [];
-      var i, part;
-
-      for (i = 0; i < len; i++) {
-        // #252; undo param space replacement
-        serialized[i] = serialized[i].replace(/\+/g, " ");
-        part = serialized[i].split("=");
-        // #278; use array instead of object storage, favoring array serializations
-        result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
-      }
-
-      return result;
-    }
-
-    // XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
-    function fileUploadXhr(a) {
-      var formdata = new FormData();
-
-      for (var i = 0; i < a.length; i++) {
-        formdata.append(a[i].name, a[i].value);
-      }
-
-      if (options.extraData) {
-        var serializedData = deepSerialize(options.extraData);
-
-        for (i = 0; i < serializedData.length; i++) {
-          formdata.append(serializedData[i][0], serializedData[i][1]);
-        }
-      }
-
-      options.data = null;
-
-      var s = $.extend(true, {}, $.ajaxSettings, options, {
-        contentType: false,
-        processData: false,
-        cache: false,
-        type: method || "POST",
-      });
-
-      if (options.uploadProgress) {
-        // workaround because jqXHR does not expose upload property
-        s.xhr = function () {
-          var xhr = $.ajaxSettings.xhr();
-
-          if (xhr.upload) {
-            xhr.upload.addEventListener(
-              "progress",
-              function (event) {
-                var percent = 0;
-                var position = event.loaded || event.position; /* event.position is deprecated */
-                var total = event.total;
-
-                if (event.lengthComputable) {
-                  percent = Math.ceil((position / total) * 100);
-                }
-
-                options.uploadProgress(event, position, total, percent);
-              },
-              false
-            );
-          }
-
-          return xhr;
-        };
-      }
-
-      s.data = null;
-
-      var beforeSend = s.beforeSend;
-
-      s.beforeSend = function (xhr, o) {
-        // Send FormData() provided by user
-        if (options.formData) {
-          o.data = options.formData;
-        } else {
-          o.data = formdata;
-        }
-
-        if (beforeSend) {
-          beforeSend.call(this, xhr, o);
-        }
-      };
-
-      return $.ajax(s);
-    }
 
     // private function for handling file uploads (hat tip to YAHOO!)
     function fileUploadIframe(a) {
@@ -998,7 +1014,7 @@ function createSubmission(feature, forms) {
                   var single = {};
 
                   single[n] = s.extraData[n];
-                  var fields = deepSerialize(single);
+                  var fields = deepSerialize(single, traditional);
 
                   for (var f = 0; f < fields.length; f++) {
                     addHiddenInput(fields[f][0], fields[f][1]);
