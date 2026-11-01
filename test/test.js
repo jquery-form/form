@@ -308,6 +308,31 @@ describe("form", function () {
       assert.deepEqual(elements, [$form[0].elements[0]]);
     });
 
+    it("should match form attributes to an id that contains selector syntax", function () {
+      const id = 'owner"],[name=password';
+      const $form = $('<form><input name="inside" value="1"></form>').attr("id", id);
+      $form.appendTo("#main");
+      $('<input name="password" value="secret">').appendTo("#main");
+      $('<input name="outside" value="2">').attr("form", id).appendTo("#main");
+
+      const names = $form.formToArray(true).map((field) => field.name);
+
+      assert.deepEqual(names, ["inside", "outside"]);
+    });
+
+    it("should not parse a form id as HTML", async function () {
+      window.formIdPayload = 0;
+      const $form = $('<form><input name="a" value="1"></form>')
+        .attr("id", 'x"]<img src=x onerror="window.formIdPayload=1">')
+        .appendTo("#main");
+
+      const formData = $form.formToArray(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      assert.deepEqual(formData.length, 1);
+      assert.strictEqual(window.formIdPayload, 0);
+    });
+
     it("should collect every control when one is named elements", function () {
       const $form = $('<form><input name="a" value="1"><input name="elements" value="2"></form>');
 

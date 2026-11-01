@@ -1157,7 +1157,12 @@ export { default } from 'jquery';
     // #386; account for inputs outside the form which use the 'form' attribute
     // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
     if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
+      // hat tip @thet; the id is compared, never built into a selector
+      els2 = $(":input[form]")
+        .filter(function () {
+          return this.getAttribute("form") === formId;
+        })
+        .get();
       if (els2.length) {
         els = els.concat(els2);
       }
