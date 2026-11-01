@@ -14,6 +14,8 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 ### Security
 Please report security issues privately, not in public issues. See [SECURITY](SECURITY.md).
 
+Some options must be trusted input only, and a `target` response is inserted as HTML; see [Trusted options](docs/options.md#trusted-options) and the [`target`](docs/options.md#target) sanitizing recipe. Iframe uploads need HTML-safe responses; see [`iframe`](docs/options.md#iframe).
+
 ## Compatibility
 * Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0.
 * jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.

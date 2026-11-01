@@ -86,6 +86,15 @@ Boolean value. Set to true to remove short delay before posting form when upload
 Default: `false`  
 Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the _File Uploads_ documentation on the [Code Samples](#code-samples) page for more info.
 
+Without `FormData`, a form with a selected file or a multipart `enctype` also uses the iframe. Choosing it automatically is deprecated (a `debug` warning); 5.0 uses the iframe only when `iframe: true` is set.
+
+The response is loaded as a document in the hidden iframe, with the same origin as the page, before the plugin reads it. The server must return a response that is safe to render as HTML:
+
+- Send JSON and text as `text/plain`, or wrap them in a `<textarea>` with the content HTML-escaped (`&lt;`, `&amp;`). The plugin reads the first `<textarea>`; without one, a `json`, `script` or `text` response is read from the first `<pre>`, then from the `<body>` text.
+- The iframe cannot see the HTTP status. Set `status` and `statusText` attributes on the `<textarea>` or the `<body>` to report one; otherwise the request succeeds whatever the server answered.
+- A response is read as XML when `dataType` is `"xml"` or the browser parsed the document as XML (an XML content type).
+- With `dataType: "script"`, the text is evaluated even when it is a server error page, because the iframe cannot tell. Return scripts only from endpoints you control.
+
 ### iframeSrc
 
 Default: `about:blank`  
@@ -139,6 +148,19 @@ Callback function to be invoked after the form has been submitted. If a 'success
 Default: `null`  
 Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
 
+The response is inserted as HTML, as `$.fn.load` does, so the endpoint must return markup you trust. To sanitize it, filter it with [`dataFilter`](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings), which runs before the response reaches the target on both the XHR and the iframe transport:
+
+```javascript
+$("#myForm").ajaxForm({
+  target: "#output",
+  dataFilter: function (html) {
+    return DOMPurify.sanitize(html);
+  },
+});
+```
+
+Sanitizing needs jQuery 3.5 or later: older versions rewrite some markup when it is inserted, after the sanitizer has run.
+
 ### type
 
 Default: value of form's `method` attribute (or 'GET' if none found)  
@@ -159,6 +181,18 @@ Callback function to be invoked with upload progress information (if supported b
 
 Default: value of form's `action` attribute  
 URL to which the form data will be submitted.
+
+## Trusted options
+
+These options are trusted input only: pass values your code controls, never values taken from users, the URL or a response.
+
+- `url`, and the form's `action`
+- `target` and `replaceTarget`
+- `iframeSrc` and `iframeTarget`
+- `closeKeepAlive`
+- `dataType: "script"`, which evaluates the response
+- the keys of `data` and `extraData` (values may come from users)
+- the `includeHidden` selector of `clearForm` and `clearFields`
 
 ## Example
 
