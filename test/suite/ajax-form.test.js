@@ -1,6 +1,23 @@
 import { assert, describe, it } from "vitest";
 import { resetFixture, arrayValue, submitAndSettle } from "./helpers.js";
 
+// Runs `run` with $.fn.ajaxSubmit replaced by a recorder, so a jQuery-triggered click that falls
+// through to the native click submits through the plugin without sending a request.
+async function withAjaxSubmitStub(run) {
+  const ajaxSubmit = $.fn.ajaxSubmit;
+  const calls = [];
+  $.fn.ajaxSubmit = function (options) {
+    calls.push({ form: this[0], options: options });
+    return this;
+  };
+
+  try {
+    return await run(calls);
+  } finally {
+    $.fn.ajaxSubmit = ajaxSubmit;
+  }
+}
+
 describe("form", function () {
   resetFixture();
 
@@ -141,29 +158,33 @@ describe("form", function () {
       }
     });
 
-    it("should capture a submit button when nested content is clicked", function () {
-      const $form = $(
-        '<form><button type="submit" name="choice" value="nested"><span>Send</span></button></form>'
-      ).appendTo("#main");
-      const button = $form.find("button")[0];
+    it("should capture a submit button when nested content is clicked", async function () {
+      await withAjaxSubmitStub(async function () {
+        const $form = $(
+          '<form><button type="submit" name="choice" value="nested"><span>Send</span></button></form>'
+        ).appendTo("#main");
+        const button = $form.find("button")[0];
 
-      $form.ajaxForm();
-      $form.find("span").trigger("click");
+        $form.ajaxForm();
+        $form.find("span").trigger("click");
 
-      assert.strictEqual($form[0].clk, button);
+        assert.strictEqual($form[0].clk, button);
+      });
     });
 
     // #588: a button without a type attribute is a submit button.
-    it("should capture a button without a type attribute", function () {
-      const $form = $(
-        '<form><button name="choice" value="untyped"><span>Send</span></button></form>'
-      ).appendTo("#main");
-      const button = $form.find("button")[0];
+    it("should capture a button without a type attribute", async function () {
+      await withAjaxSubmitStub(async function () {
+        const $form = $(
+          '<form><button name="choice" value="untyped"><span>Send</span></button></form>'
+        ).appendTo("#main");
+        const button = $form.find("button")[0];
 
-      $form.ajaxForm();
-      $form.find("span").trigger("click");
+        $form.ajaxForm();
+        $form.find("span").trigger("click");
 
-      assert.strictEqual($form[0].clk, button);
+        assert.strictEqual($form[0].clk, button);
+      });
     });
 
     it("should ignore clicks outside submit controls", function () {
@@ -216,81 +237,89 @@ describe("form", function () {
       }
     });
 
-    it("should capture image coordinates supplied by the click event", function () {
-      const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
-      const $image = $form.find("input");
-      const event = $.Event("click");
-      event.offsetX = 14;
-      event.offsetY = 27;
+    it("should capture image coordinates supplied by the click event", async function () {
+      await withAjaxSubmitStub(async function () {
+        const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
+        const $image = $form.find("input");
+        const event = $.Event("click");
+        event.offsetX = 14;
+        event.offsetY = 27;
 
-      $form.ajaxForm();
-      $image.trigger(event);
-
-      assert.strictEqual($form[0].clk, $image[0]);
-      assert.strictEqual($form[0].clk_x, 14);
-      assert.strictEqual($form[0].clk_y, 27);
-    });
-
-    it("should derive image coordinates from its document offset", function () {
-      const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
-      const $image = $form.find("input");
-      const offset = $.fn.offset;
-      $.fn.offset = function () {
-        return { left: 10, top: 20 };
-      };
-      const event = $.Event("click");
-      event.pageX = 31;
-      event.pageY = 58;
-
-      try {
         $form.ajaxForm();
         $image.trigger(event);
 
-        assert.strictEqual($form[0].clk_x, 21);
-        assert.strictEqual($form[0].clk_y, 38);
-      } finally {
-        $.fn.offset = offset;
-      }
-    });
-
-    it("should derive image coordinates from element offsets without the offset helper", function () {
-      const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
-      const $image = $form.find("input");
-      const offset = $.fn.offset;
-      $.fn.offset = undefined;
-      Object.defineProperties($image[0], {
-        offsetLeft: { configurable: true, value: 7 },
-        offsetTop: { configurable: true, value: 9 },
+        assert.strictEqual($form[0].clk, $image[0]);
+        assert.strictEqual($form[0].clk_x, 14);
+        assert.strictEqual($form[0].clk_y, 27);
       });
-      const event = $.Event("click");
-      event.pageX = 19;
-      event.pageY = 24;
+    });
 
-      try {
-        $form.ajaxForm();
-        $image.trigger(event);
+    it("should derive image coordinates from its document offset", async function () {
+      await withAjaxSubmitStub(async function () {
+        const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
+        const $image = $form.find("input");
+        const offset = $.fn.offset;
+        $.fn.offset = function () {
+          return { left: 10, top: 20 };
+        };
+        const event = $.Event("click");
+        event.pageX = 31;
+        event.pageY = 58;
 
-        assert.strictEqual($form[0].clk_x, 12);
-        assert.strictEqual($form[0].clk_y, 15);
-      } finally {
-        $.fn.offset = offset;
-      }
+        try {
+          $form.ajaxForm();
+          $image.trigger(event);
+
+          assert.strictEqual($form[0].clk_x, 21);
+          assert.strictEqual($form[0].clk_y, 38);
+        } finally {
+          $.fn.offset = offset;
+        }
+      });
+    });
+
+    it("should derive image coordinates from element offsets without the offset helper", async function () {
+      await withAjaxSubmitStub(async function () {
+        const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
+        const $image = $form.find("input");
+        const offset = $.fn.offset;
+        $.fn.offset = undefined;
+        Object.defineProperties($image[0], {
+          offsetLeft: { configurable: true, value: 7 },
+          offsetTop: { configurable: true, value: 9 },
+        });
+        const event = $.Event("click");
+        event.pageX = 19;
+        event.pageY = 24;
+
+        try {
+          $form.ajaxForm();
+          $image.trigger(event);
+
+          assert.strictEqual($form[0].clk_x, 12);
+          assert.strictEqual($form[0].clk_y, 15);
+        } finally {
+          $.fn.offset = offset;
+        }
+      });
     });
 
     it("should clear captured submit details after the click window", async function () {
-      const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
-      const $image = $form.find("input");
-      const event = $.Event("click");
-      event.offsetX = 4;
-      event.offsetY = 6;
-      $form.ajaxForm();
-      $image.trigger(event);
+      await withAjaxSubmitStub(async function () {
+        const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
+        const $image = $form.find("input");
+        const event = $.Event("click");
+        event.offsetX = 4;
+        event.offsetY = 6;
+        $form.ajaxForm();
+        $image.trigger(event);
 
-      await new Promise((resolve) => setTimeout(resolve, 120));
+        await new Promise((resolve) => setTimeout(resolve, 120));
 
-      assert.strictEqual($form[0].clk, null);
-      assert.strictEqual($form[0].clk_x, null);
-      assert.strictEqual($form[0].clk_y, null);
+        assert.strictEqual($form[0].clk, null);
+        assert.strictEqual($form[0].clk_x, null);
+        assert.strictEqual($form[0].clk_y, null);
+      });
     });
 
     it("should call beforeSubmit and then success when the submit button is clicked", async function () {
