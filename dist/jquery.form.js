@@ -893,6 +893,15 @@ function createIframeTransport(hasProp, forms) {
     }
   }
 
+  // Names the frame's window, when the page may: a cross-origin or sandboxed frame refuses.
+  function nameWindow(frame, name) {
+    try {
+      if (frame.contentWindow) {
+        frame.contentWindow.name = name;
+      }
+    } catch (ignore) {}
+  }
+
   // The frame the form posts into: the iframeTarget, named `id` when it has no name, or a new
   // hidden frame named `id`. Returns the frame and the name the form targets.
   function createFrame(s, id, ownerDocument) {
@@ -903,6 +912,10 @@ function createIframeTransport(hasProp, forms) {
       n = $io.attr("name");
       if (!n) {
         $io.attr("name", id);
+        // a frame already in the page keeps the browsing context name it was inserted with
+        $io.each(function () {
+          nameWindow(this, id);
+        });
       } else {
         id = n;
       }

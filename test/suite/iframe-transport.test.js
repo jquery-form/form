@@ -1475,29 +1475,31 @@ describe("form", function () {
             assert.match($target.attr("name"), /^jqFormIO\d+$/);
           });
 
-          it.fails(
-            "should post into an unnamed iframeTarget frame when it is already in the page",
-            async function () {
-              const $target = $("<iframe></iframe>").appendTo("#main");
-              const $form = createIframeForm("ajax/iframe-text.html");
-              let submittedTarget;
-              let frameName;
-              const deferred = startStubbedUpload(
-                $form,
-                { iframeTarget: $target },
-                function (form) {
-                  submittedTarget = form.getAttribute("target");
-                  frameName = $target[0].contentWindow.name;
-                }
-              );
+          it("should post into an unnamed iframeTarget frame when it is already in the page", async function () {
+            const $target = $("<iframe></iframe>").appendTo("#main");
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let submittedTarget;
+            let frameName;
+            const deferred = startStubbedUpload($form, { iframeTarget: $target }, function (form) {
+              submittedTarget = form.getAttribute("target");
+              frameName = $target[0].contentWindow.name;
+            });
 
-              deferred.abort();
-              await wait(150);
+            deferred.abort();
+            await wait(150);
 
-              assert.match(submittedTarget, /^jqFormIO\d+$/);
-              assert.strictEqual(frameName, submittedTarget);
-            }
-          );
+            assert.match(submittedTarget, /^jqFormIO\d+$/);
+            assert.strictEqual(frameName, submittedTarget);
+          });
+
+          it("should name an unnamed iframeTarget whose window the page cannot rename", function () {
+            const $target = $('<iframe sandbox=""></iframe>').appendTo("#main");
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            $form.ajaxSubmit({ iframe: true, iframeTarget: $target, beforeSend: () => false });
+
+            assert.match($target.attr("name"), /^jqFormIO\d+$/);
+          });
 
           it("should name every frame when iframeTarget matches several", function () {
             const $targets = $("<iframe></iframe><iframe></iframe>").appendTo("#main");
