@@ -359,7 +359,9 @@ Release day, in one sitting:
 
 Status (local `phase-12` branch): the test split and the characterization sweep are done; the form
 members slice is done (`src/form-members.js`, see `docs/research/4x-behavior-changes.md`); the
-Submission refactor is done (options, submission and transport modules, no behavior change).
+Submission refactor is done (options, submission and transport modules, no behavior change). The
+submission fixes are done (D-09, D-06, D-18, D-02, D-04, D-01 and #541); the JSON body
+(`requestFormat`, #545) waits on open design questions.
 
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
