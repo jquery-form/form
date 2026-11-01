@@ -39,11 +39,11 @@ Ranked by severity, then by who controls the input.
 | 1   | `target` inserts the response as HTML and runs its scripts                | Server response     | All    | Medium   | Phase 11 (opt-in)  |
 | 2   | `delegation: true` takes over every form on the page                      | Page                | ≥ 3.0  | Medium   | Phase 11, Phase 12 |
 | 3   | The iframe transport renders the response as a same-origin document       | Server response     | All    | Medium   | Docs, Phase 12     |
-| 4   | The Rails CSRF token is sent to cross-origin upload URLs                  | Page, developer     | All    | Medium   | Phase 10           |
+| 4   | The Rails CSRF token is sent to cross-origin upload URLs                  | Page, developer     | All    | Medium   | Phase 10 (fixed)   |
 | 5   | The supported jQuery range includes versions with CVEs the plugin reaches | Consumer            | < 3.5  | Medium   | Docs, Phase 12     |
-| 6   | Form fields named like form properties break serialization and uploads    | DOM text            | All    | Low      | Phase 10           |
-| 7   | `hasOwnProperty` is called as a method on `extraData`                     | Developer           | All    | Low      | Phase 10           |
-| 8   | Robustness: crashes and lost data on unusual input                        | DOM text, developer | Varies | Low      | Phase 10           |
+| 6   | Form fields named like form properties break serialization and uploads    | DOM text            | All    | Low      | Phase 10 (fixed)   |
+| 7   | `hasOwnProperty` is called as a method on `extraData`                     | Developer           | All    | Low      | Phase 10 (fixed)   |
+| 8   | Robustness: crashes and lost data on unusual input                        | DOM text, developer | Varies | Low      | Phase 10 (fixed)   |
 | 9   | #554 "code injection" is a false positive                                 | —                   | —      | Info     | Close #554         |
 | 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 12           |
 | 11  | Options that are URLs or selectors must be trusted                        | Developer           | All    | Info     | Docs               |
@@ -116,6 +116,8 @@ HTML lets a control's `name` shadow the form's own properties and methods. Confi
 `submit` and `reset` are already guarded (lines 705–712 and 1485–1489). Form builders that let users name fields make this reachable.
 
 Fix: call `HTMLFormElement.prototype` methods and read `elements` through them, and keep the click state in `$.data` instead of on the form.
+
+Phase 10 fixed `elements` and the iframe transport's attribute writes. The `clk` expandos stay on the form in 4.x, because consumers and the suite read and set them; 5.x replaces them with `SubmitEvent.submitter`.
 
 ### 7. `hasOwnProperty` on `extraData`
 
