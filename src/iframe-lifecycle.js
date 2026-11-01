@@ -133,6 +133,25 @@ export function createLifecycle(s, frame) {
     return !xhr.aborted;
   }
 
+  // Resolves the upload; returns {error} when the success callback threw.
+  function succeed(data) {
+    var failure;
+
+    try {
+      s.success.call(s.context, data, "success", xhr);
+    } catch (err) {
+      failure = { error: err };
+    }
+
+    deferred.resolve(xhr.responseText, "success", xhr);
+
+    if (g) {
+      $.event.trigger("ajaxSuccess", [xhr, s, data]);
+    }
+
+    return failure;
+  }
+
   // Settles the upload with the response reader's {status, data, errMsg}.
   function settle(result) {
     var status = result.status,
@@ -154,24 +173,26 @@ export function createLifecycle(s, frame) {
 
     // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
     if (status === "success") {
-      s.success.call(s.context, result.data, "success", xhr);
+      var failure = succeed(result.data);
 
-      deferred.resolve(xhr.responseText, "success", xhr);
+      complete(status);
+      if (failure) {
+        // the upload is settled; the success callback's exception still reaches the console
+        throw failure.error;
+      }
 
-      if (g) {
-        $.event.trigger("ajaxSuccess", [xhr, s, result.data]);
-      }
-    } else {
-      if (typeof errMsg === "undefined") {
-        errMsg = xhr.statusText;
-      }
-      if (s.error) {
-        s.error.call(s.context, xhr, status, errMsg);
-      }
-      deferred.reject(xhr, "error", errMsg);
-      if (g) {
-        $.event.trigger("ajaxError", [xhr, s, errMsg]);
-      }
+      return;
+    }
+
+    if (typeof errMsg === "undefined") {
+      errMsg = xhr.statusText;
+    }
+    if (s.error) {
+      s.error.call(s.context, xhr, status, errMsg);
+    }
+    deferred.reject(xhr, "error", errMsg);
+    if (g) {
+      $.event.trigger("ajaxError", [xhr, s, errMsg]);
     }
 
     complete(status);
@@ -184,6 +205,10 @@ export function createLifecycle(s, frame) {
     done: done,
     abort: abort,
     settle: settle,
+    // Settles an upload that failed with an exception (ignored once aborted).
+    fail: function (err) {
+      settle({ status: "error", errMsg: err });
+    },
     // Runs `onTimeout` after s.timeout, when set.
     startTimer: function (onTimeout) {
       if (s.timeout) {

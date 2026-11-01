@@ -1512,29 +1512,26 @@ describe("form", function () {
             assert.strictEqual($targets[1].name, $targets[0].name);
           });
 
-          it.fails(
-            "should settle the upload and end the global events when iframeTarget matches nothing",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              const events = [];
-              recordGlobalEvents(events);
-              $.active = 0;
+          it("should settle the upload and end the global events when iframeTarget matches nothing", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+            $.active = 0;
 
-              try {
-                $form.ajaxSubmit({
-                  iframe: true,
-                  forceSync: true,
-                  iframeTarget: "#missing-frame",
-                  error: function () {},
-                });
-              } catch {
-                // the current behavior throws here
-              }
-
-              assert.strictEqual($.active, 0);
-              assert.include(events, "ajaxStop");
+            try {
+              $form.ajaxSubmit({
+                iframe: true,
+                forceSync: true,
+                iframeTarget: "#missing-frame",
+                error: function () {},
+              });
+            } catch {
+              // the current behavior throws here
             }
-          );
+
+            assert.strictEqual($.active, 0);
+            assert.include(events, "ajaxStop");
+          });
 
           describe("when the frame is not in the document", function () {
             const message = "jquery.form: the upload frame is not in the document";
@@ -2276,7 +2273,7 @@ describe("form", function () {
             assert.deepEqual(result.error.slice(1, 3), ["aborted", "server abort"]);
           });
 
-          it.fails("should settle the upload when the subject is not a form", function () {
+          it("should settle the upload when the subject is not a form", function () {
             const $div = $('<div><input name="upload" value="yes"></div>').appendTo("#main");
             const events = [];
             recordGlobalEvents(events);
@@ -2296,6 +2293,25 @@ describe("form", function () {
 
             assert.strictEqual($.active, 0);
             assert.include(events, "ajaxStop");
+          });
+
+          it("should report the exception to error and the rejection when posting throws", function () {
+            const $div = $('<div><input name="upload" value="yes"></div>').appendTo("#main");
+            let errorArgs;
+            let rejection;
+
+            $div.ajaxSubmit({
+              iframe: true,
+              forceSync: true,
+              url: "ajax/iframe-text.html",
+              type: "POST",
+              error: (...args) => (errorArgs = args),
+            });
+            $div.data("jqxhr").fail((...args) => (rejection = args));
+
+            assert.strictEqual(errorArgs[1], "error");
+            assert.instanceOf(errorArgs[2], Error);
+            assert.deepEqual(rejection.slice(1), ["error", errorArgs[2]]);
           });
 
           it("should not leave upload attributes on a non-form element", function () {
@@ -2635,33 +2651,30 @@ describe("form", function () {
             }
           );
 
-          it.fails(
-            "should settle the upload and end the global events when success throws",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              const events = [];
-              recordGlobalEvents(events);
-              $.active = 0;
+          it("should settle the upload and end the global events when success throws", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+            $.active = 0;
 
-              const outcome = await withWindowErrors(async function (errors) {
-                await new Promise(function (resolve) {
-                  $form.ajaxSubmit({
-                    iframe: true,
-                    dataType: "text",
-                    success: function () {
-                      setTimeout(resolve, 20);
-                      throw new Error("success failed");
-                    },
-                  });
+            const outcome = await withWindowErrors(async function (errors) {
+              await new Promise(function (resolve) {
+                $form.ajaxSubmit({
+                  iframe: true,
+                  dataType: "text",
+                  success: function () {
+                    setTimeout(resolve, 20);
+                    throw new Error("success failed");
+                  },
                 });
-                return { errors: errors.length, state: $form.data("jqxhr").state() };
               });
+              return { errors: errors.length, state: $form.data("jqxhr").state() };
+            });
 
-              assert.deepEqual(outcome, { errors: 1, state: "resolved" });
-              assert.strictEqual($.active, 0);
-              assert.include(events, "ajaxStop");
-            }
-          );
+            assert.deepEqual(outcome, { errors: 1, state: "resolved" });
+            assert.strictEqual($.active, 0);
+            assert.include(events, "ajaxStop");
+          });
 
           it("should reject with the xhr and timeout and report timeout to ajaxError", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");

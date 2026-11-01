@@ -239,10 +239,20 @@ export function createIframeTransport(hasProp, forms) {
       }
     }
 
+    // An exception while posting settles the upload with "error" and the exception.
+    function post() {
+      try {
+        doSubmit();
+      } catch (err) {
+        log("upload failed: ", err);
+        life.fail(err);
+      }
+    }
+
     if (s.forceSync) {
-      doSubmit();
+      post();
     } else {
-      setTimeout(doSubmit, 10); // this lets dom updates render
+      setTimeout(post, 10); // this lets dom updates render
     }
 
     return life.deferred;
