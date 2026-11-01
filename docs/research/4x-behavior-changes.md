@@ -62,6 +62,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **An unnamed `iframeTarget` already in the page receives the upload.** The plugin named the frame only through its `name` attribute, which Chromium does not apply to a frame already inserted: the form was posted to a new window and the upload never settled. The frame's window is now named too, when the page may rename it.
 
+- **A control inside a form whose `form` attribute names that same form is sent once.** With `semantic: true` such a control was collected twice, as a descendant and again as an outside control.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

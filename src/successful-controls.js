@@ -85,12 +85,12 @@ export function valueOf(el) {
 export function createSuccessfulControls(feature) {
   var $ = jQuery;
 
-  // #386; inputs outside the form that name it in their form attribute
-  function outsideControls(formId) {
+  // #386; inputs that name the form in their form attribute, other than the candidates found
+  function outsideControls(formId, els) {
     // hat tip @thet; the id is compared, never built into a selector
     return $(":input[form]")
       .filter(function () {
-        return this.getAttribute("form") === formId;
+        return this.getAttribute("form") === formId && $.inArray(this, els) < 0;
       })
       .get();
   }
@@ -114,7 +114,7 @@ export function createSuccessfulControls(feature) {
 
     // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
     if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      els = els.concat(outsideControls(formId));
+      els = els.concat(outsideControls(formId, els));
     }
 
     return els;

@@ -504,18 +504,15 @@ describe("form", function () {
         ]);
       });
 
-      it.fails(
-        "should collect a descendant once when its form attribute names its own form",
-        function () {
-          const $form = $(
-            '<form id="ser-own"><input name="a" value="1" form="ser-own"></form>'
-          ).appendTo("#main");
+      it("should collect a descendant once when its form attribute names its own form", function () {
+        const $form = $(
+          '<form id="ser-own"><input name="a" value="1" form="ser-own"></form>'
+        ).appendTo("#main");
 
-          const names = $form.formToArray(true).map((field) => field.name);
+        const names = $form.formToArray(true).map((field) => field.name);
 
-          assert.deepEqual(names, ["a"]);
-        }
-      );
+        assert.deepEqual(names, ["a"]);
+      });
 
       it.fails("should skip named fieldset, output and object elements", function () {
         const $form = $(
