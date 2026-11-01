@@ -534,7 +534,10 @@
           id = n;
         }
       } else {
-        $io = $('<iframe name="' + id + '" src="' + s.iframeSrc + '" />', ownerDocument);
+        io = ownerDocument.createElement("iframe");
+        io.setAttribute("name", id);
+        io.setAttribute("src", s.iframeSrc);
+        $io = $(io);
         $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
       }
       io = $io[0];
@@ -758,6 +761,15 @@
         // add "extra" data to form if provided in options
         var extraInputs = [];
 
+        // Builds the input with DOM properties: a name is never parsed as HTML.
+        function addHiddenInput(name, value) {
+          var input = ownerDocument.createElement("input");
+
+          input.type = "hidden";
+          input.name = name;
+          extraInputs.push($(input).val(value).appendTo(form)[0]);
+        }
+
         try {
           if (s.extraData) {
             for (var n in s.extraData) {
@@ -768,17 +780,17 @@
                   hasOwn.call(s.extraData[n], "name") &&
                   hasOwn.call(s.extraData[n], "value")
                 ) {
-                  extraInputs.push(
-                    $('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument)
-                      .val(s.extraData[n].value)
-                      .appendTo(form)[0]
-                  );
+                  addHiddenInput(s.extraData[n].name, s.extraData[n].value);
                 } else {
-                  extraInputs.push(
-                    $('<input type="hidden" name="' + n + '">', ownerDocument)
-                      .val(s.extraData[n])
-                      .appendTo(form)[0]
-                  );
+                  // arrays and objects become one field per value, as $.param sends them (#597)
+                  var single = {};
+
+                  single[n] = s.extraData[n];
+                  var fields = deepSerialize(single);
+
+                  for (var f = 0; f < fields.length; f++) {
+                    addHiddenInput(fields[f][0], fields[f][1]);
+                  }
                 }
               }
             }

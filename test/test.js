@@ -2372,8 +2372,8 @@ describe("form", function () {
         assert.strictEqual(result.success[0].trim(), "iframe response");
       });
 
-      // #597: each extraData value goes into one hidden input, so an array is joined with commas.
-      it.fails("should submit array extraData values as separate fields", async function () {
+      // #597: arrays and objects are sent as $.param sends them.
+      it("should submit array extraData values as separate fields", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const submitted = [];
         inspectNativeSubmit($form, function (form) {
@@ -2390,6 +2390,110 @@ describe("form", function () {
           ["tags[]", "a"],
           ["tags[]", "b"],
         ]);
+      });
+
+      it("should submit nested extraData objects as bracketed fields", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const submitted = [];
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted.push([this.name, this.value]);
+            });
+        });
+
+        await submitThroughIframe($form, {
+          data: { meta: { owner: "Ada", tags: ["x"] }, plain: "a+b c" },
+          dataType: "text",
+        });
+
+        assert.deepEqual(submitted, [
+          ["meta[owner]", "Ada"],
+          ["meta[tags][]", "x"],
+          ["plain", "a+b c"],
+        ]);
+      });
+
+      // Starts an iframe upload whose native submit only records the generated hidden inputs and
+      // iframe, then aborts it.
+      async function submitAndAbort($form, options) {
+        const seen = {};
+        $form[0].submit = function () {
+          seen.hidden = $(this)
+            .find('input[type="hidden"]')
+            .map(function () {
+              return [[this.name, this.value]];
+            })
+            .get();
+          const target = this.getAttribute("target");
+          seen.iframeSrc = $("iframe")
+            .filter((i, frame) => frame.name === target)
+            .attr("src");
+        };
+
+        $form.ajaxSubmit($.extend({ iframe: true, forceSync: true, error: () => {} }, options));
+        $form.data("jqxhr").abort();
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        return seen;
+      }
+
+      const payload = '"><img src=x onerror="window.iframePayload=1">';
+
+      [
+        ["an extraData name", { extraData: { field: { name: payload, value: "v" } } }],
+        ["an extraData key", { extraData: { [payload]: "v" } }],
+      ].forEach(function ([label, options]) {
+        it("should submit " + label + " as text, not HTML", async function () {
+          window.iframePayload = 0;
+          const $form = createIframeForm("ajax/iframe-text.html");
+
+          const seen = await submitAndAbort($form, options);
+
+          assert.deepEqual(seen.hidden, [[payload, "v"]]);
+          assert.strictEqual(window.iframePayload, 0);
+        });
+      });
+
+      it("should submit a clicked button's name as text, not HTML", async function () {
+        window.iframePayload = 0;
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const $button = $('<button type="submit" value="v">').attr("name", payload).appendTo($form);
+        $form[0].clk = $button[0];
+
+        const seen = await submitAndAbort($form, {});
+
+        assert.deepEqual(seen.hidden, [[payload, "v"]]);
+        assert.strictEqual(window.iframePayload, 0);
+      });
+
+      it("should submit the CSRF parameter name as text, not HTML", async function () {
+        window.iframePayload = 0;
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const $metas = $('<meta name="csrf-token" content="t"><meta name="csrf-param">');
+        $metas.last().attr("content", payload);
+        $metas.appendTo(document.head);
+
+        try {
+          const seen = await submitAndAbort($form, {});
+
+          assert.deepEqual(seen.hidden, [[payload, "t"]]);
+          assert.strictEqual(window.iframePayload, 0);
+        } finally {
+          $metas.remove();
+        }
+      });
+
+      it("should set the iframe source as an attribute, not HTML", async function () {
+        window.iframePayload = 0;
+        const iframeSrc = 'about:blank"></iframe><img src=x onerror="window.iframePayload=1">';
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const seen = await submitAndAbort($form, { iframeSrc: iframeSrc });
+
+        assert.strictEqual(seen.iframeSrc, iframeSrc);
+        assert.strictEqual(window.iframePayload, 0);
       });
 
       it("should submit only own extraData properties", async function () {
