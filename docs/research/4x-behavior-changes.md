@@ -56,6 +56,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`abort()` before the delayed iframe post cancels it.** Without `forceSync`, the form is posted about 10 ms after `ajaxSubmit` returns. An `abort()` in that window reported `aborted` and still posted the form; the form is no longer posted.
 
+- **Iframe uploads that start in the same millisecond use different frames.** The generated frame name (`jqFormIO` and digits) now ends with a per-page counter. Two uploads started in the same millisecond shared one name: only the second was posted, the first reported its response, and the second never completed.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

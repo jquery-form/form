@@ -852,6 +852,8 @@ var $ = jQuery;
 function createIframeTransport(hasProp, forms) {
   var CLIENT_TIMEOUT_ABORT = 1;
   var SERVER_ABORT = 2;
+  // tells apart the frames of uploads that start in the same millisecond
+  var frameCount = 0;
 
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
@@ -946,7 +948,7 @@ function createIframeTransport(hasProp, forms) {
     s.context = s.context || s;
     var ownerDocument = formMember(form, "ownerDocument");
     var $body = $(closestByTag(form, ["body"]));
-    var frame = createFrame(s, "jqFormIO" + new Date().getTime(), ownerDocument);
+    var frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
     var $io = frame.$io,
       io = $io[0];
     var life = createLifecycle(s, frameHooks(s, $io));

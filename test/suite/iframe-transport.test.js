@@ -1444,26 +1444,23 @@ describe("form", function () {
             assert.deepEqual(posted.style, ["absolute", "-1000px", "-1000px"]);
           });
 
-          it.fails(
-            "should name the frames apart when two uploads start in the same millisecond",
-            function () {
-              const $first = createIframeForm("ajax/iframe-text.html");
-              const $second = createIframeForm("ajax/iframe-text.html");
-              const targets = [];
-              const recordTarget = (form) => targets.push(form.getAttribute("target"));
-              const getTime = Date.prototype.getTime;
-              Date.prototype.getTime = () => 42;
+          it("should name the frames apart when two uploads start in the same millisecond", function () {
+            const $first = createIframeForm("ajax/iframe-text.html");
+            const $second = createIframeForm("ajax/iframe-text.html");
+            const targets = [];
+            const recordTarget = (form) => targets.push(form.getAttribute("target"));
+            const getTime = Date.prototype.getTime;
+            Date.prototype.getTime = () => 42;
 
-              try {
-                startStubbedUpload($first, {}, recordTarget);
-                startStubbedUpload($second, {}, recordTarget);
-              } finally {
-                Date.prototype.getTime = getTime;
-              }
-
-              assert.notStrictEqual(targets[0], targets[1]);
+            try {
+              startStubbedUpload($first, {}, recordTarget);
+              startStubbedUpload($second, {}, recordTarget);
+            } finally {
+              Date.prototype.getTime = getTime;
             }
-          );
+
+            assert.notStrictEqual(targets[0], targets[1]);
+          });
 
           // Chromium keeps the frame's browsing context name from insertion, so a real post into
           // a frame named this late would open a new window; the post is stubbed here.
