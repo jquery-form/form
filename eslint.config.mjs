@@ -75,7 +75,6 @@ const sourceRules = {
   "sort-imports": "error",
   yoda: "error",
   "no-unused-vars": ["error", { vars: "local", args: "none", caughtErrors: "none" }],
-  "no-prototype-builtins": "warn",
 };
 
 export default [
