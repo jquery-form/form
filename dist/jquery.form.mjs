@@ -919,7 +919,8 @@ function sendFormData(submission) {
           "progress",
           function (event) {
             var percent = 0;
-            var position = event.loaded || event.position; /* event.position is deprecated */
+            // event.position is the deprecated name, read only when loaded is missing
+            var position = event.loaded !== undefined ? event.loaded : event.position;
             var total = event.total;
 
             if (event.lengthComputable) {

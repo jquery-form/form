@@ -409,7 +409,7 @@ describe("form", function () {
 
               progressListener({ lengthComputable: true, loaded: 25, total: 40 });
               progressListener({ lengthComputable: false, loaded: 7, total: 0 });
-              progressListener({ lengthComputable: true, loaded: 0, position: 3, total: 4 });
+              progressListener({ lengthComputable: true, position: 3, total: 4 });
 
               assert.deepEqual(
                 progress.map(function (entry) {
@@ -1264,22 +1264,19 @@ describe("form", function () {
         assert.strictEqual(calls, 1);
       });
 
-      it.fails(
-        "should report position 0 and percent 0 when the first progress event has loaded 0",
-        async function () {
-          const upload = uploadForm();
-          let reported;
-          const listener = await progressListener(upload.$form, {
-            uploadProgress: function (_event, position, total, percent) {
-              reported = [position, total, percent];
-            },
-          });
+      it("should report position 0 and percent 0 when the first progress event has loaded 0", async function () {
+        const upload = uploadForm();
+        let reported;
+        const listener = await progressListener(upload.$form, {
+          uploadProgress: function (_event, position, total, percent) {
+            reported = [position, total, percent];
+          },
+        });
 
-          listener({ lengthComputable: true, loaded: 0, total: 10 });
+        listener({ lengthComputable: true, loaded: 0, total: 10 });
 
-          assert.deepEqual(reported, [0, 10, 0]);
-        }
-      );
+        assert.deepEqual(reported, [0, 10, 0]);
+      });
     });
 
     describe("beforeSend and the jqXHR on uploads", function () {

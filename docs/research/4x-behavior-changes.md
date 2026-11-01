@@ -102,6 +102,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`uploadProgress` keeps a custom `xhr` factory (D-15).** With `uploadProgress`, an `xhr` option (or `$.ajaxSetup({xhr})`) was replaced by jQuery's default factory and never called. The plugin now wraps the factory in use and adds its progress listener to the object it returns.
 
+- **`uploadProgress` reports position 0 and 0 percent for the first event (D-15).** An event with `loaded: 0` reported the deprecated `position` property instead (`undefined`, so the percent was `NaN`). `position` is now read only when the event has no `loaded`.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
