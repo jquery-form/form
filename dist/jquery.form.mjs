@@ -2514,7 +2514,10 @@ function createSubmission(feature, forms, serialization) {
           this.checked = this.defaultChecked;
 
           // as the native reset: types whose value is the value attribute keep it
-          if (!/^(?:checkbox|radio|hidden|submit|reset|button|image)$/.test(this.type)) {
+          if (this.type === "file") {
+            // a file input cannot take its value attribute; the native reset empties it
+            this.value = "";
+          } else if (!/^(?:checkbox|radio|hidden|submit|reset|button|image)$/.test(this.type)) {
             this.value = this.defaultValue;
           }
 

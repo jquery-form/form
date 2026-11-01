@@ -457,12 +457,21 @@ describe("form", function () {
       assert.isFalse($container.find("input")[0].hasAttribute("value"));
     });
 
-    it.fails("should not throw when a file input with a value attribute is reset", function () {
+    it("should not throw when a file input with a value attribute is reset", function () {
       const $file = $('<input type="file" value="x">');
 
       const reset = () => $file.resetForm();
 
       assert.doesNotThrow(reset);
+    });
+
+    it("should empty a selected file input when it is reset", function () {
+      const $file = $('<input type="file">');
+      selectFiles($file[0], ["a.txt"]);
+
+      $file.resetForm();
+
+      assert.strictEqual($file[0].files.length, 0);
     });
 
     it("should leave a hidden input's scripted value when it is reset", function () {
