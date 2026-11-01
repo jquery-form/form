@@ -3159,8 +3159,8 @@ describe("form", function () {
       assert.strictEqual($form[0].clk, button);
     });
 
-    // #588: the click handler matches [type=submit], which a button without a type attribute lacks.
-    it.fails("should capture a button without a type attribute", function () {
+    // #588: a button without a type attribute is a submit button.
+    it("should capture a button without a type attribute", function () {
       const $form = $(
         '<form><button name="choice" value="untyped"><span>Send</span></button></form>'
       ).appendTo("#main");
@@ -3179,6 +3179,25 @@ describe("form", function () {
       $form.find("span").trigger("click");
 
       assert.strictEqual($form[0].clk, undefined);
+    });
+
+    [
+      ["a text input", '<input name="q">'],
+      ["an element with a submit type attribute", '<span type="submit">Send</span>'],
+      [
+        "a submit button that belongs to no form",
+        '<button type="submit" form="no-such-form">Send</button>',
+      ],
+    ].forEach(function ([label, html]) {
+      it("should ignore clicks on " + label, function () {
+        const $form = $("<form></form>").append(html).appendTo("#main");
+        $form.ajaxForm();
+
+        const click = () => $form.children().trigger("click");
+
+        assert.doesNotThrow(click);
+        assert.strictEqual($form[0].clk, undefined);
+      });
     });
 
     // jQuery 3.7 removed the selection selector needed to scope delegated handlers.

@@ -1051,20 +1051,21 @@ import jQuery from "jquery";
 
   function captureSubmittingElement(e) {
     /* jshint validthis:true */
-    var target = e.target;
-    var $el = $(target);
+    // the clicked control, or the button around the clicked content (ex: a span within a button)
+    var $el = $(e.target).closest("button,input");
+    var target = $el[0];
 
-    if (!$el.is("[type=submit],[type=image]")) {
-      // is this a child element of the submit el?  (ex: a span within a button)
-      var t = $el.closest("[type=submit]");
-
-      if (t.length === 0) {
-        return;
-      }
-      target = t[0];
+    // the type property, unlike the attribute, is "submit" for a button without a type (#588)
+    if (!target || (target.type !== "submit" && target.type !== "image")) {
+      return;
     }
 
     var form = target.form;
+
+    if (!form) {
+      // a submit control that belongs to no form
+      return;
+    }
 
     form.clk = target;
 
