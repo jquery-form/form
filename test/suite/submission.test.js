@@ -85,6 +85,29 @@ describe("form", function () {
         );
       });
 
+      it("should throw a clear error before any event when jQuery has no $.ajax", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        const events = [];
+        $form.on("form-pre-serialize", (event) => events.push(event.type));
+        const ajax = $.ajax;
+
+        let error;
+        try {
+          $.ajax = undefined;
+          $form.ajaxSubmit();
+        } catch (thrown) {
+          error = thrown;
+        } finally {
+          $.ajax = ajax;
+        }
+
+        assert.strictEqual(
+          error.message,
+          "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+        );
+        assert.deepEqual(events, []);
+      });
+
       it("should accept the url, data, dataType and success shorthand arguments", async function () {
         const extraData = { source: "shorthand" };
         let ajaxOptions;

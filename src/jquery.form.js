@@ -148,6 +148,13 @@ import { log } from "./diagnostics.js";
       return this;
     }
 
+    // #541: jQuery's slim build has no $.ajax
+    if (!$.ajax) {
+      throw new Error(
+        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+      );
+    }
+
     var submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
 
     if (!submission) {
