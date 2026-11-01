@@ -72,6 +72,8 @@ import jQuery from "jquery";
   feature.formdata = typeof window.FormData !== "undefined";
 
   var hasProp = !!$.fn.prop;
+  // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
+  var hasOwn = Object.prototype.hasOwnProperty;
 
   // attr2 uses prop when it can but checks the return type for
   // an expected string. This accounts for the case where a form
@@ -656,12 +658,12 @@ import jQuery from "jquery";
         try {
           if (s.extraData) {
             for (var n in s.extraData) {
-              if (s.extraData.hasOwnProperty(n)) {
+              if (hasOwn.call(s.extraData, n)) {
                 // if using the $.param format that allows for multiple values with the same name
                 if (
                   $.isPlainObject(s.extraData[n]) &&
-                  s.extraData[n].hasOwnProperty("name") &&
-                  s.extraData[n].hasOwnProperty("value")
+                  hasOwn.call(s.extraData[n], "name") &&
+                  hasOwn.call(s.extraData[n], "value")
                 ) {
                   extraInputs.push(
                     $('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument)

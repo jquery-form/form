@@ -2286,6 +2286,28 @@ describe("form", function () {
         assert.deepEqual(submitted, { own: "kept" });
       });
 
+      it("should submit extraData keys and buttons named hasOwnProperty", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const button = $('<button type="submit" name="hasOwnProperty" value="go">').appendTo($form);
+        $form[0].clk = button[0];
+        const submitted = {};
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        const result = await submitThroughIframe($form, {
+          data: { pair: { name: "field", value: "kept", hasOwnProperty: "shadowed" } },
+          dataType: "text",
+        });
+
+        assert.deepEqual(submitted, { field: "kept", hasOwnProperty: "go" });
+        assert.deepEqual(result.events, ["success", "complete"]);
+      });
+
       it("should succeed without global events", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const events = [];
