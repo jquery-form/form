@@ -1877,25 +1877,27 @@ describe("form", function () {
             assert.strictEqual($.active, 0);
           });
 
-          it.fails(
-            "should not call beforeSend when an ajaxSend handler aborts the upload",
-            function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
-              let called = false;
-              $(document).on("ajaxSend.ifrlog", (event, xhr) => xhr.abort());
+          it("should call beforeSend but not post the form when an ajaxSend handler aborts", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let called = false;
+            let posted = false;
+            $form[0].submit = function () {
+              posted = true;
+            };
+            $(document).on("ajaxSend.ifrlog", (event, xhr) => xhr.abort());
 
-              $form.ajaxSubmit({
-                iframe: true,
-                forceSync: true,
-                error: function () {},
-                beforeSend: function () {
-                  called = true;
-                },
-              });
+            $form.ajaxSubmit({
+              iframe: true,
+              forceSync: true,
+              error: function () {},
+              beforeSend: function () {
+                called = true;
+              },
+            });
 
-              assert.strictEqual(called, false);
-            }
-          );
+            assert.strictEqual(called, true);
+            assert.strictEqual(posted, false);
+          });
         });
 
         describe("submitter and CSRF", function () {
