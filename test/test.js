@@ -1845,6 +1845,31 @@ describe("form", function () {
       });
     });
 
+    describe("target with a parsed response", function () {
+      [
+        ["a JSON array", ['<img src=x onerror="window.targetPayload=1">']],
+        ["a JSON object", { html: '<img src=x onerror="window.targetPayload=1">' }],
+      ].forEach(function ([label, data]) {
+        it("should not insert " + label + " but still call success", async function () {
+          window.targetPayload = 0;
+          const $target = $('<div id="parsed-target">kept</div>').appendTo("#main");
+          const $form = $('<form action="ajax/json.json"></form>').appendTo("#main");
+          const successes = [];
+
+          captureAjaxOptions(
+            $form,
+            { target: $target, success: (response) => successes.push(response) },
+            (settings) => settings.success(data, "success", {})
+          );
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          assert.strictEqual($target.html(), "kept");
+          assert.deepEqual(successes, [data]);
+          assert.strictEqual(window.targetPayload, 0);
+        });
+      });
+    });
+
     describe("callbacks", function () {
       it("should call beforeSubmit with the field array and the form", async function () {
         const opts = {};

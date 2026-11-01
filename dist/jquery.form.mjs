@@ -280,13 +280,20 @@ export { default } from 'jquery';
 
       callbacks.push(function (data, textStatus, jqXHR) {
         var successArguments = arguments,
-          fn = options.replaceTarget ? "replaceWith" : "html";
+          fn = options.replaceTarget ? "replaceWith" : "html",
+          $target = $(options.target);
 
-        $(options.target)
-          [fn](data)
-          .each(function () {
-            oldSuccess.apply(this, successArguments);
-          });
+        // Only a string response is inserted. jQuery has already parsed a JSON or XML response,
+        // and inserting it would parse each of its strings as HTML.
+        if (typeof data === "string") {
+          $target[fn](data);
+        } else {
+          log("target: the response was parsed by jQuery, so it is not inserted");
+        }
+
+        $target.each(function () {
+          oldSuccess.apply(this, successArguments);
+        });
       });
     } else if (options.success) {
       if (Array.isArray(options.success)) {
