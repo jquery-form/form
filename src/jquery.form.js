@@ -19,6 +19,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
+import { callFormMethod, formMember } from "./form-members.js";
 import jQuery from "jquery";
 
 (function ($) {
@@ -75,10 +76,6 @@ import jQuery from "jquery";
   // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
   var hasOwn = Object.prototype.hasOwnProperty;
 
-  // A control named like a form member (elements, setAttribute) shadows that member on the form,
-  // so forms are read and changed through members a control cannot shadow.
-  var plainForm = document.createElement("form");
-
   // Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
   // apply to both sides of the comparison.
   function isSameOrigin(url) {
@@ -96,18 +93,6 @@ import jQuery from "jquery";
   // Nodes such as the document and text nodes have no tag name (#600).
   function tagName(el) {
     return typeof el.tagName === "string" ? el.tagName.toLowerCase() : "";
-  }
-
-  function formElements(form) {
-    var proto = window.HTMLFormElement && window.HTMLFormElement.prototype;
-    var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "elements");
-
-    try {
-      return descriptor.get.call(form);
-    } catch (e) {
-      // no DOM prototype accessors, or another element with controls such as a fieldset
-      return form.elements;
-    }
   }
 
   // attr2 uses prop when it can but checks the return type for
@@ -690,7 +675,7 @@ import jQuery from "jquery";
       }
 
       function setFormAttribute(name, value) {
-        plainForm.setAttribute.call(form, name, value);
+        callFormMethod(form, "setAttribute", name, value);
       }
 
       // take a breath so that pending repaints get some cpu time before the upload starts
@@ -797,7 +782,7 @@ import jQuery from "jquery";
             form.submit();
           } catch (err) {
             // just in case form has element with name/id of 'submit'
-            plainForm.submit.call(form);
+            callFormMethod(form, "submit");
           }
         } finally {
           // reset attrs and remove "extra" input elements
@@ -805,13 +790,13 @@ import jQuery from "jquery";
             setFormAttribute("action", a);
           } else {
             // a control named action hid a missing action attribute
-            plainForm.removeAttribute.call(form, "action");
+            callFormMethod(form, "removeAttribute", "action");
           }
           setFormAttribute("enctype", et); // #380
           if (t) {
             setFormAttribute("target", t);
           } else {
-            plainForm.removeAttribute.call(form, "target");
+            callFormMethod(form, "removeAttribute", "target");
           }
           $(extraInputs).remove();
         }
@@ -1155,7 +1140,7 @@ import jQuery from "jquery";
     var els =
       semantic || typeof form.elements === "undefined"
         ? form.getElementsByTagName("*")
-        : formElements(form);
+        : formMember(form, "elements");
     var els2;
 
     if (els) {

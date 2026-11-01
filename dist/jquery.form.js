@@ -47,6 +47,56 @@
 
 }(function (jQuery) {
 	'use strict';
+// Form members: the properties and methods the plugin reads or calls on a form. A control named
+// like a member (elements, setAttribute) shadows that member on the form itself, so members are
+// read through the DOM prototypes, which a control cannot shadow.
+
+// The prototype chain of a form, nearest first. Looked up on every call: old browsers have no
+// DOM prototypes, and tests remove them.
+var owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
+
+// A form no control can shadow, for methods when the DOM has no prototypes to read them from.
+var plainForm = document.createElement("form");
+
+function findDescriptor(name) {
+  for (var i = 0; i < owners.length; i++) {
+    var owner = window[owners[i]];
+    var descriptor = owner && Object.getOwnPropertyDescriptor(owner.prototype, name);
+
+    if (descriptor) {
+      return descriptor;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Reads a member of a form through its prototype getter.
+ * Falls back to the plain property without DOM prototypes, or on an element the getter does not
+ * accept (such as a fieldset for `elements`).
+ */
+function formMember(form, name) {
+  var descriptor = findDescriptor(name);
+
+  try {
+    return descriptor.get.call(form);
+  } catch (e) {
+    return form[name];
+  }
+}
+
+/**
+ * Calls a method of a form through its prototype, or through an unshadowed form without DOM
+ * prototypes.
+ */
+function callFormMethod(form, name) {
+  var descriptor = findDescriptor(name);
+  var method = descriptor ? descriptor.value : plainForm[name];
+
+  return method.apply(form, Array.prototype.slice.call(arguments, 2));
+}
+
 (function ($) {
 
   /*
@@ -100,10 +150,6 @@
   // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
   var hasOwn = Object.prototype.hasOwnProperty;
 
-  // A control named like a form member (elements, setAttribute) shadows that member on the form,
-  // so forms are read and changed through members a control cannot shadow.
-  var plainForm = document.createElement("form");
-
   // Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
   // apply to both sides of the comparison.
   function isSameOrigin(url) {
@@ -121,18 +167,6 @@
   // Nodes such as the document and text nodes have no tag name (#600).
   function tagName(el) {
     return typeof el.tagName === "string" ? el.tagName.toLowerCase() : "";
-  }
-
-  function formElements(form) {
-    var proto = window.HTMLFormElement && window.HTMLFormElement.prototype;
-    var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "elements");
-
-    try {
-      return descriptor.get.call(form);
-    } catch (e) {
-      // no DOM prototype accessors, or another element with controls such as a fieldset
-      return form.elements;
-    }
   }
 
   // attr2 uses prop when it can but checks the return type for
@@ -715,7 +749,7 @@
       }
 
       function setFormAttribute(name, value) {
-        plainForm.setAttribute.call(form, name, value);
+        callFormMethod(form, "setAttribute", name, value);
       }
 
       // take a breath so that pending repaints get some cpu time before the upload starts
@@ -822,7 +856,7 @@
             form.submit();
           } catch (err) {
             // just in case form has element with name/id of 'submit'
-            plainForm.submit.call(form);
+            callFormMethod(form, "submit");
           }
         } finally {
           // reset attrs and remove "extra" input elements
@@ -830,13 +864,13 @@
             setFormAttribute("action", a);
           } else {
             // a control named action hid a missing action attribute
-            plainForm.removeAttribute.call(form, "action");
+            callFormMethod(form, "removeAttribute", "action");
           }
           setFormAttribute("enctype", et); // #380
           if (t) {
             setFormAttribute("target", t);
           } else {
-            plainForm.removeAttribute.call(form, "target");
+            callFormMethod(form, "removeAttribute", "target");
           }
           $(extraInputs).remove();
         }
@@ -1180,7 +1214,7 @@
     var els =
       semantic || typeof form.elements === "undefined"
         ? form.getElementsByTagName("*")
-        : formElements(form);
+        : formMember(form, "elements");
     var els2;
 
     if (els) {
