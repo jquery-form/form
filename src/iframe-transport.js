@@ -1,4 +1,5 @@
 import { callFormMethod, closestByTag, formMember } from "./form-members.js";
+import { getDoc, readResponse } from "./iframe-response.js";
 import { deepSerialize } from "./xhr-transport.js";
 import jQuery from "jquery";
 import { keepContext } from "./options.js";
@@ -214,43 +215,6 @@ export function createIframeTransport(hasProp, forms) {
     var CLIENT_TIMEOUT_ABORT = 1;
     var SERVER_ABORT = 2;
 
-    function getDoc(frame) {
-      /* it looks like contentWindow or contentDocument do not
-       * carry the protocol property in ie8, when running under ssl
-       * frame.document is the only valid response document, since
-       * the protocol is know but not on the other two objects. strange?
-       * "Same origin policy" http://en.wikipedia.org/wiki/Same_origin_policy
-       */
-
-      var doc = null;
-
-      // IE8 cascading access check
-      try {
-        if (frame.contentWindow) {
-          doc = frame.contentWindow.document;
-        }
-      } catch (err) {
-        // IE8 access denied under ssl & missing protocol
-        log("cannot get iframe.contentWindow document: " + err);
-      }
-
-      if (doc) {
-        // successful getting content
-        return doc;
-      }
-
-      try {
-        // simply checking may throw in ie8 under ssl or mismatched protocol
-        doc = frame.contentDocument ? frame.contentDocument : frame.document;
-      } catch (err) {
-        // last attempt
-        log("cannot get iframe.contentDocument: " + err);
-        doc = frame.document;
-      }
-
-      return doc;
-    }
-
     // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
     // only when the form is posted, since a get form would put the token in the url
     var csrf_token = $("meta[name=csrf-token]").attr("content");
@@ -409,8 +373,7 @@ export function createIframeTransport(hasProp, forms) {
       setTimeout(doSubmit, 10); // this lets dom updates render
     }
 
-    var data,
-      doc,
+    var doc,
       domCheckCount = 50;
 
     function cb(e) {
@@ -445,83 +408,24 @@ export function createIframeTransport(hasProp, forms) {
         io.removeEventListener("load", cb, false);
       }
 
-      var status = "success",
-        errMsg;
+      var result = readResponse(doc, xhr, s, function () {
+        if (--domCheckCount) {
+          log("requeing onLoad callback, DOM not available");
+          setTimeout(cb, 250);
 
-      try {
-        var isXml = s.dataType === "xml" || doc.XMLDocument || $.isXMLDoc(doc);
-
-        log("isXml=" + isXml);
-
-        if (!isXml && window.opera && (doc.body === null || !doc.body.innerHTML)) {
-          if (--domCheckCount) {
-            // in some browsers (Opera) the iframe DOM is not always traversable when
-            // the onload callback fires, so we loop a bit to accommodate
-            log("requeing onLoad callback, DOM not available");
-            setTimeout(cb, 250);
-
-            return;
-          }
-          // let this fall through because server response could be an empty document
-          // log('Could not access iframe DOM after mutiple tries.');
-          // throw 'DOMException: not available';
+          return true;
         }
 
-        // log('response detected');
-        var docRoot = doc.body ? doc.body : doc.documentElement;
+        return false;
+      });
 
-        xhr.responseText = docRoot ? docRoot.innerHTML : null;
-        xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
-        if (isXml) {
-          s.dataType = "xml";
-        }
-        xhr.getResponseHeader = function (header) {
-          var headers = { "content-type": s.dataType };
-
-          return headers[header.toLowerCase()];
-        };
-        // support for XHR 'status' & 'statusText' emulation :
-        if (docRoot) {
-          xhr.status = Number(docRoot.getAttribute("status")) || xhr.status;
-          xhr.statusText = docRoot.getAttribute("statusText") || xhr.statusText;
-        }
-
-        var dt = (s.dataType || "").toLowerCase();
-        var scr = /(json|script|text)/.test(dt);
-
-        if (scr || s.textarea) {
-          // see if user embedded response in textarea
-          var ta = doc.getElementsByTagName("textarea")[0];
-
-          if (ta) {
-            xhr.responseText = ta.value;
-            // support for XHR 'status' & 'statusText' emulation :
-            xhr.status = Number(ta.getAttribute("status")) || xhr.status;
-            xhr.statusText = ta.getAttribute("statusText") || xhr.statusText;
-          } else if (scr) {
-            // account for browsers injecting pre around json response
-            var pre = doc.getElementsByTagName("pre")[0];
-            var b = doc.getElementsByTagName("body")[0];
-
-            if (pre) {
-              xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
-            } else if (b) {
-              xhr.responseText = b.textContent ? b.textContent : b.innerText;
-            }
-          }
-        }
-
-        try {
-          data = httpData(xhr, dt, s); // eslint-disable-line no-use-before-define
-        } catch (err) {
-          status = "parsererror";
-          xhr.error = errMsg = err || status;
-        }
-      } catch (err) {
-        log("error caught: ", err);
-        status = "error";
-        xhr.error = errMsg = err;
+      if (!result) {
+        return;
       }
+
+      var status = result.status,
+        data = result.data,
+        errMsg = result.errMsg;
 
       if (xhr.aborted) {
         // abort() completed the upload while its response was processed
@@ -561,32 +465,6 @@ export function createIframeTransport(hasProp, forms) {
 
       complete(status);
     }
-
-    var httpData = function (xhr, type, s) {
-      // mostly lifted from jq1.4.4
-
-      var ct = xhr.getResponseHeader("content-type") || "",
-        xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0,
-        data = xml ? xhr.responseXML : xhr.responseText;
-
-      if (xml && data.documentElement.nodeName === "parsererror") {
-        if ($.error) {
-          $.error("parsererror");
-        }
-      }
-      if (s && s.dataFilter) {
-        data = s.dataFilter(data, type);
-      }
-      if (typeof data === "string") {
-        if ((type === "json" || !type) && ct.indexOf("json") >= 0) {
-          data = JSON.parse(data);
-        } else if (type === "script") {
-          $.globalEval(data);
-        }
-      }
-
-      return data;
-    };
 
     return deferred;
   }
