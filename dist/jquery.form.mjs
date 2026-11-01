@@ -1065,6 +1065,11 @@ function createSubmission(feature, forms) {
           log("target: the response was parsed by jQuery, so it is not inserted");
         }
 
+        if (!$target.length) {
+          // nothing to fill: success still runs once, with the normal context
+          callEach(successes, this, successArguments);
+        }
+
         $target.each(function () {
           callEach(successes, this, successArguments);
         });

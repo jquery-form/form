@@ -1964,7 +1964,7 @@ describe("form", function () {
         assert.strictEqual(self.url, notified.url);
       });
 
-      it.fails("should call success when the target matches no elements", function () {
+      it("should call success when the target matches no elements", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         let calls = 0;
 
@@ -1973,6 +1973,26 @@ describe("form", function () {
         );
 
         assert.strictEqual(calls, 1);
+      });
+
+      it("should call success once with jQuery's settings as this when the target matches nothing", async function () {
+        const $form = $("#form3");
+        const calls = [];
+
+        await new Promise(function (resolve) {
+          $form.ajaxSubmit({
+            target: "#no-such-target",
+            success: function (data) {
+              calls.push([this, data]);
+            },
+            complete: () => resolve(),
+          });
+        });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(typeof calls[0][0].url, "string");
+        assert.strictEqual(calls[0][0].nodeType, undefined);
+        assert.strictEqual(typeof calls[0][1], "string");
       });
 
       it("should call every success callback when target is set and success is an array", function () {
