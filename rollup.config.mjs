@@ -33,7 +33,7 @@ const umdHeader = `(function (factory) {
 
 const moduleLines =
   /^import jQuery from ['"]jquery['"];\nexport \{ default \} from ['"]jquery['"];\n\n/;
-const preamble = /^\/\*![\s\S]*?\*\/\n\/\* global ActiveXObject \*\/\n\n?/m;
+const preamble = /^\/\*![\s\S]*?\*\/\n\n?/m;
 const bodyStart = "(function ($) {\n";
 
 // Rollup places the license preamble after the imports; lift it back to the top of the file.

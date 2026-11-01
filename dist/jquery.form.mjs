@@ -19,11 +19,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-/* global ActiveXObject */
 
 import jQuery from 'jquery';
 export { default } from 'jquery';
-
 
 (function ($) {
 
@@ -111,7 +109,6 @@ export { default } from 'jquery';
       return this;
     }
 
-    /* eslint consistent-this: ["error", "$form"] */
     var method,
       action,
       url,

@@ -19,7 +19,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-/* global ActiveXObject */
 
 (function (factory) {
 	if (typeof define === 'function' && define.amd) {
@@ -47,7 +46,6 @@
 	}
 
 }(function (jQuery) {
-
 (function ($) {
 	'use strict';
 
@@ -135,7 +133,6 @@
       return this;
     }
 
-    /* eslint consistent-this: ["error", "$form"] */
     var method,
       action,
       url,
