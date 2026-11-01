@@ -96,6 +96,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **`resetForm` selects the last default option of a single select (D-12).** With two `selected` options in a single select, `resetForm` on the select or a container picked the first; the native reset and the page's initial parse pick the last.
 
+- **`clearForm` and `clearFields` clear `datetime-local` inputs (D-13).** They kept their value, while `date` and `time` were cleared. The obsolete `datetime` type stays in the list until 5.0.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

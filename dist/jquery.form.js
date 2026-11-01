@@ -2485,7 +2485,7 @@ function createSubmission(feature, forms, serialization) {
 
   $.fn.clearFields = function (includeHidden) {
     var re =
-      /^(?:color|date|datetime|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
+      /^(?:color|date|datetime|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 
     return this.each(function () {
       var t = this.type,

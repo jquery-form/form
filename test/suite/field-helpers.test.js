@@ -925,7 +925,7 @@ describe("form", function () {
       assert.strictEqual($color.val(), "#000000");
     });
 
-    it.fails("should clear a datetime-local input", function () {
+    it("should clear a datetime-local input", function () {
       const $input = $('<input type="datetime-local" value="2024-01-02T10:00">');
 
       $input.clearFields();
