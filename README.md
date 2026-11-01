@@ -175,6 +175,9 @@ The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').
 ### replaceTarget
 Optionally used along with the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
 
+### requestFormat
+Set to `"json"` to send the fields (repeated names as arrays) merged with object `data` as a JSON body, with `contentType: "application/json; charset=UTF-8"`. Throws with a GET method, string `data`, files or the iframe transport. Based on the idea in PR #557 by zhangciwu.
+
 ### resetForm
 Boolean flag indicating whether the form should be reset if the submit is successful
 

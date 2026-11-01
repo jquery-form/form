@@ -965,6 +965,12 @@ function createSubmission(feature, forms) {
     var optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
 
     if (typeof optionsData === "string") {
+      if (options.requestFormat === "json") {
+        throw new Error(
+          'jquery.form: requestFormat "json" needs object data; a string data option is a query string'
+        );
+      }
+
       // a query string: sent as-is when urlencoded, as its own fields otherwise
       options.extraData = queryPairs(optionsData);
 
@@ -974,6 +980,52 @@ function createSubmission(feature, forms) {
     options.extraData = optionsData;
 
     return $.param(optionsData, traditional);
+  }
+
+  // Sets a key as an own data property, so a name like __proto__ is an ordinary key.
+  function defineKey(object, key, value) {
+    Object.defineProperty(object, key, {
+      value: value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+  }
+
+  /**
+   * requestFormat "json" (#545): the fields as an object (a repeated name gives an array), merged
+   * with object data, sent as a JSON body. Based on the idea in PR #557 by zhangciwu.
+   */
+  function jsonBody(options, fields) {
+    if (/^get$/i.test(options.type)) {
+      throw new Error('jquery.form: requestFormat "json" needs a method with a body, such as POST');
+    }
+
+    var body = {};
+    var own = Object.prototype.hasOwnProperty;
+
+    for (var i = 0; i < fields.length; i++) {
+      var name = fields[i].name;
+
+      if (!own.call(body, name)) {
+        defineKey(body, name, fields[i].value);
+      } else if (Array.isArray(body[name])) {
+        body[name].push(fields[i].value);
+      } else {
+        defineKey(body, name, [body[name], fields[i].value]);
+      }
+    }
+
+    var extra = options.extraData;
+
+    for (var key in extra) {
+      if (own.call(extra, key)) {
+        defineKey(body, key, extra[key]);
+      }
+    }
+
+    options.data = JSON.stringify(body);
+    options.contentType = "application/json; charset=UTF-8";
   }
 
   // The fields of a query string, as the { name, value } list $.param takes.
@@ -1086,7 +1138,12 @@ function createSubmission(feature, forms) {
     }
 
     method = resolveMethod(options, defaultType);
-    encode(options, $.param(fields, traditional), qx);
+
+    if (options.requestFormat === "json") {
+      jsonBody(options, fields);
+    } else {
+      encode(options, $.param(fields, traditional), qx);
+    }
 
     return {
       form: form,
@@ -1200,13 +1257,21 @@ function createSubmission(feature, forms) {
 
     var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
 
+    var transport = (hasFileInputs || multipart) && fileAPI ? "formdata" : "ajax";
+
     // options.iframe allows user to force iframe mode
     // 06-NOV-09: now defaulting to iframe mode if file input is detected
     if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
-      return "iframe";
+      transport = "iframe";
     }
 
-    return (hasFileInputs || multipart) && fileAPI ? "formdata" : "ajax";
+    if (transport !== "ajax" && options.requestFormat === "json") {
+      throw new Error(
+        'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
+      );
+    }
+
+    return transport;
   }
 
   return { prepare: prepare, deliver: deliver, chooseTransport: chooseTransport };

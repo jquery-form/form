@@ -97,6 +97,11 @@ The method is read after `beforeSubmit` and the `form-submit-validate` event, so
 Default: `false`  
 Optionally used along with the the [`target`](#target) option. Set to `true` if the target should be replaced or `false` if only the target _contents_ should be replaced. **(version added: 2.43)**
 
+### requestFormat
+
+Default: `null`  
+Set to `"json"` to send the form as a JSON body instead of a urlencoded one (#545). The fields become an object, a name used more than once becomes an array of its values, and an object [`data`](#data) option is merged over them. The request is sent with `contentType: "application/json; charset=UTF-8"`, replacing any `contentType` you pass. It needs a method with a body: a `GET` method (including a form without a `method` attribute) throws an error, as do a string `data` option, a selected file, a multipart form and the [`iframe`](#iframe) option. **(version added: 4.5.0)** Based on the idea in PR #557 by zhangciwu (changwei).
+
 ### resetForm
 
 Default: `null`  

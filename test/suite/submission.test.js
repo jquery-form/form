@@ -1781,6 +1781,95 @@ describe("form", function () {
       });
     });
 
+    describe("requestFormat json", function () {
+      const post = (markup) =>
+        makeForm('<form method="post" action="ajax/text.html">' + markup + "</form>");
+
+      it("should send the fields as a JSON body with repeated names as arrays", function () {
+        const $form = post(
+          '<input name="a" value="1"><input name="t" value="x"><input name="t" value="y"><input name="t" value="z">'
+        );
+
+        const settings = submitWith($form, [{ requestFormat: "json", contentType: "text/plain" }]);
+
+        assert.deepEqual(JSON.parse(settings.data), { a: "1", t: ["x", "y", "z"] });
+        assert.strictEqual(settings.contentType, "application/json; charset=UTF-8");
+        assert.strictEqual(settings.url, absolute("ajax/text.html"));
+      });
+
+      it("should merge object data over the fields and keep __proto__ as a plain key", function () {
+        const $form = post('<input name="a" value="1"><input name="__proto__" value="p">');
+
+        const settings = submitWith($form, [
+          { requestFormat: "json", data: { a: "2", nested: { n: [1, 2] } } },
+        ]);
+
+        const body = JSON.parse(settings.data);
+        assert.strictEqual(Object.getPrototypeOf({}).polluted, undefined);
+        assert.deepEqual(Object.keys(body), ["a", "__proto__", "nested"]);
+        assert.strictEqual(body.a, "2");
+        assert.deepEqual(body.nested, { n: [1, 2] });
+      });
+
+      it("should merge only the own keys of the object a data function returns", function () {
+        const $form = post('<input name="a" value="1">');
+        const data = Object.create({ inherited: "x" });
+        data.own = "y";
+
+        const settings = submitWith($form, [{ requestFormat: "json", data: () => data }]);
+
+        assert.deepEqual(JSON.parse(settings.data), { a: "1", own: "y" });
+      });
+
+      it("should send the form through $.ajax as a JSON request", async function () {
+        const $form = $("#form3");
+        let sent;
+
+        await withAjaxStub(
+          function (options) {
+            sent = options;
+            return {};
+          },
+          async function () {
+            $form.ajaxSubmit({ requestFormat: "json" });
+            await Promise.resolve();
+          }
+        );
+
+        assert.strictEqual(typeof JSON.parse(sent.data), "object");
+        assert.strictEqual(sent.contentType, "application/json; charset=UTF-8");
+      });
+
+      [
+        [
+          "a GET method",
+          '<form action="ajax/text.html"><input name="a"></form>',
+          {},
+          'jquery.form: requestFormat "json" needs a method with a body, such as POST',
+        ],
+        [
+          "string data",
+          '<form method="post" action="ajax/text.html"></form>',
+          { data: "x=1" },
+          'jquery.form: requestFormat "json" needs object data; a string data option is a query string',
+        ],
+        [
+          "the iframe transport",
+          '<form method="post" action="ajax/text.html"></form>',
+          { iframe: true },
+          'jquery.form: requestFormat "json" cannot send files or use the iframe transport',
+        ],
+      ].forEach(function ([label, markup, options, message]) {
+        it("should throw a clear error with " + label, function () {
+          const $form = makeForm(markup);
+
+          const run = () => submitWith($form, [$.extend({ requestFormat: "json" }, options)]);
+
+          assert.throws(run, Error, message);
+        });
+      });
+    });
+
     describe("request url and body", function () {
       it("should encode spaces in the request body per jQuery version", function () {
         const $form = makeForm(

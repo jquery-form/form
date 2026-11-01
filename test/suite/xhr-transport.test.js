@@ -1105,6 +1105,20 @@ describe("form", function () {
       });
     });
 
+    describe("requestFormat json with files", function () {
+      it("should throw a clear error when a file is selected", function () {
+        const upload = uploadForm();
+
+        const run = () => upload.$form.ajaxSubmit({ requestFormat: "json" });
+
+        assert.throws(
+          run,
+          Error,
+          'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
+        );
+      });
+    });
+
     describe("FormData request settings", function () {
       it("should override contentType, processData and cache options for an upload", function () {
         const upload = uploadForm();
