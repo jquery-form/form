@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach } from "vitest";
+import { afterEach, beforeAll, beforeEach } from "vitest";
 
 // helper method
 export var arrayCount = function (arr, key) {
@@ -170,4 +170,36 @@ export function submitTransport($form, options) {
   }
 
   return result;
+}
+
+// Restores $.active and removes generated upload frames after each test, since some iframe exit
+// paths never settle and would leak into the next test.
+export function restoreAjaxState() {
+  let active;
+
+  beforeEach(function () {
+    active = $.active;
+  });
+
+  afterEach(function () {
+    $.active = active;
+    $("iframe[name^=jqFormIO]").remove();
+  });
+}
+
+// Runs `run` while recording uncaught window errors instead of failing the run with them. Resolves
+// with what `run` returned; the errors array is passed to `run` so it can assert on them.
+export async function withWindowErrors(run) {
+  const errors = [];
+  const record = function (event) {
+    event.preventDefault();
+    errors.push(event.error);
+  };
+  window.addEventListener("error", record);
+
+  try {
+    return await run(errors);
+  } finally {
+    window.removeEventListener("error", record);
+  }
 }
