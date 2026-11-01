@@ -108,6 +108,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **With `closeKeepAlive`, an iframe upload posts controls disabled in `beforeSubmit` (D-19).** The plugin re-enables the serialized controls before posting, but with `closeKeepAlive` it did so only after the keep-alive request, when the list was already cleared: such a control was neither posted nor re-enabled. It is now re-enabled before the keep-alive request, as without `closeKeepAlive`. `closeKeepAlive` is otherwise unchanged.
 
+- **Deprecation warnings under `debug`.** With `$.fn.ajaxSubmit.debug = true`, the plugin logs one `console.warn` per page for each feature 5.0 removes: `clearInputs` (use `clearFields`), `$.fn.attr2` (use `.prop()` or `.attr()`), `ajaxForm` queued until the DOM is ready on an empty selection (call it inside `$(fn)` or use `delegation: "<selector>"`), the iframe transport chosen automatically without `FormData` (set `iframe: true`), and jQuery before 3.5 (5.0 needs 3.5 or later). Nothing is logged with `debug` off. `clearInputs` is now a separate function that calls `clearFields`. `enable` and `selected` are kept.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.

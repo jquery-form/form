@@ -366,7 +366,11 @@ lifecycle modules behind the iframe adapter; D-08, D-07, D-16, D-22, D-21, D-33)
 controls slice is done (`src/successful-controls.js` behind formToArray and `$.fieldValue`; SER-18,
 SER-24, D-34, D-03, D-28, the disabled fieldset and form owner spec alignment, D-26). The submitter
 slice is done (`src/submitter.js`; controls named `clk`, `SubmitEvent.submitter`, file names in
-GET uploads).
+GET uploads). The ajaxForm binding slice is done (`src/ajax-form.js`, `delegation: "<selector>"`,
+`ajaxFormUnbind(selector)`, the `delegation: true` warning). The deprecation warnings, the
+`target` sanitizing, trusted-options and iframe-response docs, and the remaining fixes (D-12, D-13,
+D-15, D-19, D-25, the FormData `beforeSend` veto) are done; IFR-122/123 stay `it.fails` for 5.0.
+Phase 12 is done locally and waits for the 4.4.0 release before it ships as 4.5.0.
 
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
@@ -402,7 +406,7 @@ Release the result as a 4.x minor, the same way as Phase 11 but without the advi
   - the IE8 `getDoc` fallbacks
   - the option-value and file-clone shims
 - The iframe transport runs only with `iframe: true`, and FormData detection is removed. Delegation requires a selector.
-- Remove the deprecated API: `clearInputs`, `$.fn.attr2`, and whatever the `enable`/`selected` audit decides.
+- Remove the deprecated API: `clearInputs` and `$.fn.attr2`. `enable` and `selected` are kept.
 - Move to ES2015+ syntax and revisit Prettier `trailingComma`.
 - Decide whether `formToArray` and the other serializers keep calling an overridable `$.fieldValue`, or use the internal successful-controls module (5.0).
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
