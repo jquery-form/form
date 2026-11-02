@@ -143,7 +143,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, webkit]
+        browser: [chromium, webkit, firefox]
         jquery: ["1.7.2", "3.7.1", "4.0.0"]
         include:
           - { jquery: "1.7.2", file: ".jquery/jquery-1.7.2.js" }
@@ -181,3 +181,4 @@ jobs:
         run: npx vitest run --project suite-${{ matrix.browser }}
         env:
           JQUERY_FILE: ${{ matrix.file }}
+          JQUERY_FORM_FIREFOX: ${{ matrix.browser == 'firefox' && '1' || '' }}
