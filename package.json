@@ -52,8 +52,8 @@
     "test:e2e:docker": "scripts/test-docker.sh --e2e",
     "test:firefox": "scripts/test-docker.sh --project suite-firefox"
   },
-  "dependencies": {
-    "jquery": ">=1.7.2"
+  "peerDependencies": {
+    "jquery": ">=3.5.0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

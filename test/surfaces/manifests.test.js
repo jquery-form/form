@@ -5,7 +5,6 @@ const read = (file) => JSON.parse(readFileSync(new URL(`../../${file}`, import.m
 const pkg = read("package.json");
 const bower = read("bower.json");
 const composer = read("composer.json");
-const registry = read("form.jquery.json");
 
 const distFiles = ["dist/jquery.form.js", "dist/jquery.form.mjs", "dist/jquery.form.min.js"];
 const license = "(LGPL-2.1-or-later OR MIT)";
@@ -18,8 +17,6 @@ describe("when the package manifests are read", () => {
       pkg.jsdelivr,
       pkg.unpkg,
       bower.main,
-      registry.main,
-      registry.browser,
       ...composer.extra.component.scripts,
     ];
 
@@ -48,8 +45,7 @@ describe("when the package manifests are read", () => {
     expect(pkg.files).toContain("LICENSE-MIT");
   });
 
-  it("should agree on the version with the registry manifest and every dist banner", () => {
-    expect(registry.version).toBe(pkg.version);
+  it("should agree on the version with every dist banner", () => {
     for (const file of distFiles) {
       const banner = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8").slice(0, 400);
       expect(banner).toContain(`version: ${pkg.version}`);
@@ -60,15 +56,22 @@ describe("when the package manifests are read", () => {
     expect(pkg.license).toBe(license);
     expect(bower.license).toBe(license);
     expect(composer.license).toBe(license);
-    expect(registry.licenses.map((entry) => entry.type)).toEqual(["LGPL-2.1-or-later", "MIT"]);
+  });
+
+  it("should declare jQuery 3.5.0 or later as a peer dependency only", () => {
+    expect(pkg.peerDependencies).toEqual({ jquery: ">=3.5.0" });
+    expect(pkg).not.toHaveProperty("dependencies");
   });
 
   it("should agree on the jQuery dependency range", () => {
-    const range = pkg.dependencies.jquery;
+    const range = pkg.peerDependencies.jquery;
 
     expect(bower.dependencies.jquery).toBe(range);
-    expect(registry.dependencies.jquery).toBe(range);
     expect(composer.require["components/jquery"]).toBe(range);
+  });
+
+  it("should leave out the old plugins.jquery.com manifest", () => {
+    expect(existsSync(new URL("../../form.jquery.json", import.meta.url))).toBe(false);
   });
 });
 
