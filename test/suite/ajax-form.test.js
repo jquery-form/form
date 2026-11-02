@@ -607,24 +607,6 @@ describe("form", function () {
         assert.strictEqual(options.delegation, undefined);
       });
 
-      [1].forEach(function (value) {
-        it(
-          "should rewrite a delegation value of " + JSON.stringify(value) + " to true",
-          function () {
-            const $form = $('<form class="selected-ajax-form"></form>').appendTo("#main");
-            const options = { delegation: value };
-
-            try {
-              $form.ajaxForm(options);
-
-              assert.strictEqual(options.delegation, true);
-            } finally {
-              $(document).off(".form-plugin");
-            }
-          }
-        );
-      });
-
       it("should keep a delegation selector in the options object", function () {
         const options = { delegation: ".selected-ajax-form" };
 
@@ -637,15 +619,39 @@ describe("form", function () {
         }
       });
 
-      it("should throw a clear error without binding when delegation is an empty string", function () {
-        const $form = $("<form></form>").appendTo("#main");
+      [
+        ["an empty string", ""],
+        ["true", true],
+        ["1", 1],
+        ["an object", { selector: "form" }],
+      ].forEach(function ([label, value]) {
+        it(
+          "should throw before binding or beforeFormUnbind when delegation is " + label,
+          function () {
+            const $form = $("<form></form>").appendTo("#main");
+            let unbinds = 0;
+            const options = { delegation: value, beforeFormUnbind: () => unbinds++ };
 
-        const bind = () => $form.ajaxForm({ delegation: "" });
+            const bind = () => $form.ajaxForm(options);
 
-        assert.throws(bind, /delegation/);
-        assert.strictEqual($._data($form[0], "events"), undefined);
-        const events = $._data(document, "events");
-        assert.strictEqual(events && events.submit, undefined);
+            assert.throws(
+              bind,
+              Error,
+              'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"'
+            );
+            assert.strictEqual(unbinds, 0);
+            assert.strictEqual(options.delegation, value);
+            assert.strictEqual($._data($form[0], "events"), undefined);
+            const events = $._data(document, "events");
+            assert.strictEqual(events && events.submit, undefined);
+          }
+        );
+      });
+
+      it("should throw on an empty selection when delegation is true", function () {
+        const bind = () => $(".missing-ajax-form").ajaxForm({ delegation: true });
+
+        assert.throws(bind, /delegation needs a selector in 5\.0/);
       });
 
       [false, 0, null].forEach(function (value) {
@@ -736,165 +742,6 @@ describe("form", function () {
         });
 
         assert.strictEqual(calls, 0);
-      });
-
-      it("should bind delegated handlers on the document when delegation is true", function () {
-        try {
-          $(".missing-ajax-form").ajaxForm({ delegation: true });
-
-          const events = $._data(document, "events");
-          assert.strictEqual(events.submit.length, 1);
-          assert.strictEqual(events.click.length, 1);
-        } finally {
-          $(document).off(".form-plugin");
-        }
-      });
-    });
-
-    describe("with delegation", function () {
-      describe("on a selection without selector metadata", function () {
-        let warn;
-        let warnings;
-
-        beforeEach(function () {
-          warn = console.warn;
-          warnings = [];
-          console.warn = function (message) {
-            warnings.push(message);
-          };
-        });
-
-        afterEach(function () {
-          console.warn = warn;
-          $(document).off(".form-plugin");
-        });
-
-        it("should warn once per call that every form on the page is bound, with debug off", function () {
-          const $form = $("<form></form>").appendTo("#main");
-
-          $form.ajaxForm({ delegation: true });
-
-          assert.strictEqual($.fn.ajaxSubmit.debug, false);
-          assert.strictEqual(warnings.length, 1);
-          assert.strictEqual(
-            warnings.every((message) => /every form on the page/.test(message)),
-            true
-          );
-        });
-
-        it("should name a selector to pass instead in the warning", function () {
-          const $form = $("<form></form>").appendTo("#main");
-
-          $form.ajaxForm({ delegation: true });
-
-          assert.strictEqual(
-            warnings.filter((message) => message.includes('delegation: "form.ajax"')).length,
-            1
-          );
-        });
-
-        it("should not warn when delegation is a selector", function () {
-          $().ajaxForm({ delegation: ".scoped-ajax-form" });
-
-          assert.strictEqual(warnings.length, 0);
-        });
-
-        it("should not warn when the selection keeps old jQuery selector metadata", function () {
-          const $form = $("<form></form>").appendTo("#main");
-          $form.selector = "form";
-
-          $form.ajaxForm({ delegation: true });
-
-          assert.strictEqual(warnings.length, 0);
-        });
-
-        it("should bind without warning when there is no console", function () {
-          const $form = $("<form></form>").appendTo("#main");
-          const console = window.console;
-          window.console = undefined;
-
-          try {
-            $form.ajaxForm({ delegation: true });
-          } finally {
-            window.console = console;
-          }
-
-          assert.strictEqual($._data(document, "events").submit.length, 1);
-        });
-
-        it("should bind without warning when the console has no warn", function () {
-          const $form = $("<form></form>").appendTo("#main");
-          console.warn = undefined;
-
-          $form.ajaxForm({ delegation: true });
-
-          assert.strictEqual($._data(document, "events").submit.length, 1);
-        });
-      });
-
-      it("should return the selection", function () {
-        const $form = $("<form></form>").appendTo("#main");
-
-        try {
-          const result = $form.ajaxForm({ delegation: true });
-
-          assert.strictEqual(result, $form);
-        } finally {
-          $(document).off(".form-plugin");
-        }
-      });
-
-      it("should not call beforeFormUnbind", function () {
-        const $form = $("<form></form>").appendTo("#main");
-        let calls = 0;
-
-        try {
-          $form.ajaxForm({
-            delegation: true,
-            beforeFormUnbind: function () {
-              calls++;
-            },
-          });
-
-          assert.strictEqual(calls, 0);
-        } finally {
-          $(document).off(".form-plugin");
-        }
-      });
-
-      it("should submit once when a form has both direct and delegated bindings", async function () {
-        const $form = $("<form></form>").appendTo("#main");
-
-        try {
-          const calls = await withAjaxSubmitStub(async function (calls) {
-            $form.ajaxForm();
-            $form.ajaxForm({ delegation: true });
-            $form.trigger("submit");
-            return calls;
-          });
-
-          assert.strictEqual(calls.length, 1);
-        } finally {
-          $(document).off(".form-plugin");
-        }
-      });
-
-      it("should capture a submit button outside the form that names it", async function () {
-        const $form = $('<form id="delegated-owner"></form>').appendTo("#main");
-        const $button = $('<button type="submit" form="delegated-owner">Send</button>').appendTo(
-          "#main"
-        );
-
-        try {
-          await withAjaxSubmitStub(async function () {
-            $("#delegated-owner").ajaxForm({ delegation: true });
-            $button.trigger("click");
-          });
-
-          assert.strictEqual($form[0].clk, $button[0]);
-        } finally {
-          $(document).off(".form-plugin");
-        }
       });
     });
 
@@ -1845,19 +1692,6 @@ describe("form", function () {
         assert.throws(capture, /control named "parentNode"/);
       }, 2000);
 
-      it("should capture the button around the clicked content through the real tree when delegating", function () {
-        const form = formHidingParentNode('<button type="submit"><span>Go</span></button>');
-        const click = $.Event("click", { target: form.querySelector("span") });
-
-        try {
-          $(form).ajaxForm({ delegation: true });
-          $(document).triggerHandler(click);
-
-          assert.strictEqual(form.clk, form.querySelector("button"));
-        } finally {
-          $(document).off(".form-plugin");
-        }
-      }, 2000);
       it("should capture the button around the clicked content when delegating to a selector", function () {
         const form = formHidingParentNode('<button type="submit"><span>Go</span></button>');
         form.className = "scoped-ajax-form";
@@ -1944,7 +1778,7 @@ describe("form", function () {
 
         it("should remove every delegated binding when called without arguments", function () {
           $().ajaxForm({ delegation: ".first-ajax-form" });
-          $(".missing-ajax-form").ajaxForm({ delegation: true });
+          $(".missing-ajax-form").ajaxForm({ delegation: ".second-ajax-form" });
 
           $().ajaxFormUnbind();
 

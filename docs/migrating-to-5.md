@@ -6,15 +6,16 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 
 ## Summary
 
-| Change                                                                                                                                              | Who is affected                                                                      | 4.x warning                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery | "jQuery before 3.5", under debug                            |
-| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                  | None                                                        |
-| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                              | "attr2 is deprecated", under debug                          |
-| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist               | "queuing ajaxForm", under debug                             |
-| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier | None                                                        |
-| [`clearInputs` is removed](#clearinputs-is-removed)                                                                                                 | Code that calls `clearInputs`                                                        | "clearInputs is deprecated", under debug                    |
-| [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                            | "closeKeepAlive works around a Safari 3/4 bug", under debug |
+| Change                                                                                                                                              | Who is affected                                                                        | 4.x warning                                                                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery   | "jQuery before 3.5", under debug                                             |
+| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                    | None                                                                         |
+| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                                | "attr2 is deprecated", under debug                                           |
+| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist                 | "queuing ajaxForm", under debug                                              |
+| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier   | None                                                                         |
+| [`clearInputs` is removed](#clearinputs-is-removed)                                                                                                 | Code that calls `clearInputs`                                                          | "clearInputs is deprecated", under debug                                     |
+| [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                              | "closeKeepAlive works around a Safari 3/4 bug", under debug                  |
+| [`delegation: true` throws](#delegation-true-throws)                                                                                                | Code that passes `delegation: true` (or another non-string truthy value) to `ajaxForm` | "delegation: true binds every form on the page", always (even without debug) |
 
 Entries are added as each 5.0 change lands.
 
@@ -178,6 +179,26 @@ After (5.0):
 
 ```javascript
 $("#myForm").ajaxSubmit({ iframe: true });
+```
+
+### `delegation: true` throws
+
+**What changed.** `ajaxForm({ delegation: true })` throws `Error: jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"`, before it binds anything and before `beforeFormUnbind` runs. The same error is thrown for any other value that is truthy and not a string (such as `1` or an object), and for an empty string, which 4.x rejected with `jquery.form: delegation needs a selector, or true`. A non-empty string is the selector, as in 4.x. `false`, `undefined`, `null` and `0` mean no delegation. `ajaxFormUnbind()` and `ajaxFormUnbind(selector)` work as in 4.x, and with a selector the selection `ajaxForm` is called on is still ignored.
+
+**Why.** `delegation: true` delegated from the document with the selection's `.selector` property, which jQuery 3 removed. On jQuery 3 and later it therefore handled the submit of every form on the page, not only the forms you selected.
+
+**Are you affected?** Search your code for `delegation: true`. The latest 4.x logs `delegation: true binds every form on the page on jQuery 3 and later` with `console.warn` on every such `ajaxForm` call, even without debug.
+
+Before (4.x):
+
+```javascript
+$("form.ajax").ajaxForm({ delegation: true });
+```
+
+After (5.0), pass the selector. Any selection works, since the selector decides which forms are handled:
+
+```javascript
+$(document).ajaxForm({ delegation: "form.ajax" });
 ```
 
 ## What your server receives

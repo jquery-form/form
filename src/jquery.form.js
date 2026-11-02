@@ -66,8 +66,8 @@ import { submitOptions } from "./options.js";
 		You can also use ajaxForm with delegation, so the
 		form does not have to exist when you invoke ajaxForm:
 
-		$('#myForm').ajaxForm({
-			delegation: true,
+		$(document).ajaxForm({
+			delegation: '#myForm',
 			target: '#output'
 		});
 

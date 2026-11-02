@@ -40,33 +40,6 @@ function bindNothing($sel) {
   return $sel;
 }
 
-// delegation: true on jQuery 3 and later, where the selection has no selector: always warned,
-// debug or not, once per ajaxForm call.
-function warnUnscoped() {
-  var console = window.console || {};
-
-  if (typeof console.warn === "function") {
-    console.warn(
-      "[jquery.form] delegation: true binds every form on the page on jQuery 3 and later; " +
-        'pass a selector instead, e.g. delegation: "form.ajax"'
-    );
-  }
-}
-
-function bindDelegated($sel, options) {
-  if ($sel.selector === undefined) {
-    warnUnscoped();
-  }
-
-  jQuery(document)
-    .off("submit.form-plugin", $sel.selector, doAjaxSubmit)
-    .off("click.form-plugin", $sel.selector, captureSubmittingElement)
-    .on("submit.form-plugin", $sel.selector, options, doAjaxSubmit)
-    .on("click.form-plugin", $sel.selector, options, captureSubmittingElement);
-
-  return $sel;
-}
-
 // The element itself or its nearest ancestor that matches the selector. Element.closest never
 // reads a parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
 function closestMatch(el, selector) {
@@ -93,10 +66,6 @@ function unbindSelector(selector) {
 
 // delegation: "<selector>": one handler pair on the document, scoped to the selector.
 function bindSelector($sel, selector, options) {
-  if (!selector) {
-    throw new Error("jquery.form: delegation needs a selector, or true");
-  }
-
   var handlers = {
     submit: function (e) {
       if (closestMatch(e.target, selector)) {
@@ -130,19 +99,24 @@ export function ajaxForm(options, data, dataType, onSuccess) {
   requireJQuery35(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
-  if (typeof options.delegation === "string") {
-    return bindSelector(this, options.delegation, options);
+  var delegation = options.delegation;
+
+  if (typeof delegation === "string" && delegation) {
+    return bindSelector(this, delegation, options);
   }
 
-  // a truthy value other than a selector is written back as true
-  options.delegation = options.delegation && true;
+  // delegation: true scoped to the selection's selector, which jQuery 3 removed; 5.0 needs one
+  if (delegation || delegation === "") {
+    throw new Error(
+      'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"'
+    );
+  }
 
-  if (!options.delegation && this.length === 0) {
+  // written back as in 4.x, so options that cannot take a property (true, a frozen object) throw
+  options.delegation = delegation;
+
+  if (this.length === 0) {
     return bindNothing(this);
-  }
-
-  if (options.delegation) {
-    return bindDelegated(this, options);
   }
 
   if (options.beforeFormUnbind) {
