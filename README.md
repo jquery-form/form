@@ -74,7 +74,7 @@ $(function () {
 A form with a selected file, or a `multipart/form-data` enctype, is sent with [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) over [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest), and the `uploadProgress` option reports progress as the upload proceeds. With `iframe: true`, the form is posted through a hidden iframe instead, which needs the server to return HTML-safe responses; see [`iframe`](https://jquery-form.github.io/form/options/#iframe).
 
 ## Compatibility
-* Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0, on Chromium, Firefox and WebKit.
+* Requires jQuery 3.5 or later. `main` is tested against jQuery 3.5.0, 3.7.1 and 4.0.0, on Chromium, Firefox and WebKit.
 * jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
 * With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones; use `delegation: "<selector>"` instead. ([issue #353](https://github.com/jquery-form/form/issues/353))
 * **Not** compatible with the jQuery slim builds, which leave out AJAX.
