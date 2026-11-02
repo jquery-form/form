@@ -8,18 +8,18 @@ import jQuery from "jquery";
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
 
 // Line breaks, sent as CRLF
-var rLineBreak = /\r\n|\r|\n/g;
-var rCR = /\r/g;
+const rLineBreak = /\r\n|\r|\n/g;
+const rCR = /\r/g;
 
 // Listed form elements that are never submitted.
-var rUnsubmittable = /^(?:fieldset|object|output)$/;
+const rUnsubmittable = /^(?:fieldset|object|output)$/;
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
  */
 export function isSuccessful(el, submitter) {
-  var t = el.type;
+  const t = el.type;
 
   if (!el.name || isDisabled(el) || t === "reset" || t === "button") {
     return false;
@@ -38,22 +38,22 @@ export function isSuccessful(el, submitter) {
 
 // The value of a select: the selected option's value for one, a list for several.
 function selectValue(el) {
-  var index = el.selectedIndex;
+  const index = el.selectedIndex;
 
   if (index < 0) {
     return null;
   }
 
-  var a = [],
+  const a = [],
     ops = el.options;
-  var one = el.type === "select-one";
-  var max = one ? index + 1 : ops.length;
+  const one = el.type === "select-one";
+  const max = one ? index + 1 : ops.length;
 
-  for (var i = one ? index : 0; i < max; i++) {
-    var op = ops[i];
+  for (let i = one ? index : 0; i < max; i++) {
+    const op = ops[i];
 
     if (op.selected && !isDisabled(op)) {
-      var v = op.value;
+      const v = op.value;
 
       if (one) {
         return v;
@@ -76,8 +76,8 @@ export function valueOf(el) {
     return selectValue(el);
   }
 
-  var v = jQuery(el).val();
-  var raw = el.value;
+  let v = jQuery(el).val();
+  const raw = el.value;
 
   // jQuery before 4.0 drops carriage returns from .val(); read them from the value itself
   if (typeof raw === "string" && raw.replace(rCR, "") === v) {
@@ -92,7 +92,7 @@ export function valueOf(el) {
  * missing and the control is not sent.
  */
 export function fieldValue(el, successful) {
-  var required = typeof successful === "undefined" || successful;
+  const required = typeof successful === "undefined" || successful;
 
   if (required && !isSuccessful(el, submitterElement(el.form))) {
     return null;
@@ -116,7 +116,7 @@ export function deprecateFieldValueOverride() {
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
 // A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
-var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
 
 export function wellFormed(value) {
   return typeof value === "string"
@@ -129,7 +129,7 @@ export function wellFormed(value) {
 // Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
 function setKey(object, key, value) {
   Object.defineProperty(object, key, {
-    value: value,
+    value,
     enumerable: true,
     writable: true,
     configurable: true,
@@ -142,24 +142,24 @@ function setKey(object, key, value) {
  * included; they are copied only when something changes.
  */
 export function wellFormedData(data) {
-  var isArray = Array.isArray(data);
+  const isArray = Array.isArray(data);
 
   if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
     return wellFormed(data);
   }
 
-  var copy = isArray ? [] : {};
-  var changed = false;
+  const copy = isArray ? [] : {};
+  let changed = false;
 
   if (isArray) {
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       copy[i] = wellFormedData(data[i]);
       changed = changed || copy[i] !== data[i];
     }
   } else {
-    for (var key in data) {
-      var name = wellFormed(key);
-      var value = wellFormedData(data[key]);
+    for (const key in data) {
+      const name = wellFormed(key);
+      const value = wellFormedData(data[key]);
 
       changed = changed || name !== key || value !== data[key];
       setKey(copy, name, value);
@@ -177,12 +177,12 @@ export function urlencode(fields, traditional) {
 
 export function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    var value =
+    let value =
       field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
-    var name = wellFormed(field.name);
+    const name = wellFormed(field.name);
     value = wellFormed(value);
 
-    return name === field.name && value === field.value ? field : { name: name, value: value };
+    return name === field.name && value === field.value ? field : { name, value };
   });
 }
 
@@ -190,7 +190,7 @@ export function urlencodedFields(fields) {
  * The serialization steps.
  */
 export function createSuccessfulControls() {
-  var $ = jQuery;
+  const $ = jQuery;
 
   // #386; inputs that name the form in their form attribute, other than the candidates found.
   // A form only gets the ones it owns.
@@ -219,8 +219,8 @@ export function createSuccessfulControls() {
    * semantic mode, then the outside controls it owns that name it.
    */
   function controlsOf(form, semantic) {
-    var formId = formAttribute(form, "id");
-    var els = formMember(form, "elements");
+    const formId = formAttribute(form, "id");
+    let els = formMember(form, "elements");
 
     if (semantic || typeof els === "undefined") {
       // the document is not an element; it has its own getElementsByTagName
@@ -232,7 +232,7 @@ export function createSuccessfulControls() {
     els = $.makeArray(els);
 
     // the subject may also be a fieldset, the document or another container
-    var owner = tagName(form) === "form" ? form : null;
+    const owner = tagName(form) === "form" ? form : null;
 
     if (semantic && owner) {
       els = ownedBy(els, owner);
@@ -248,18 +248,18 @@ export function createSuccessfulControls() {
 
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
-    var n = el.name;
+    const n = el.name;
     // read at call time, so a page that replaces $.fieldValue changes what is sent
-    var v = $.fieldValue(el, true);
+    const v = $.fieldValue(el, true);
 
     if (v && v.constructor === Array) {
       return $.map(v, function (value) {
-        return { name: n, value: value };
+        return { name: n, value };
       });
     }
 
     if (el.type === "file") {
-      var files = el.files;
+      const files = el.files;
 
       // #180: an empty field when no file is selected
       return files.length
@@ -278,8 +278,8 @@ export function createSuccessfulControls() {
 
   // The clicked image's value and coordinates.
   function imageFields(sub, input, type) {
-    var n = input.name;
-    var value = { name: n, value: $(input).val() };
+    const n = input.name;
+    const value = { name: n, value: $(input).val() };
 
     if (type) {
       value.type = type;
@@ -294,7 +294,7 @@ export function createSuccessfulControls() {
       return;
     }
 
-    var sub = semantic && el.type === "image" && submitterOf(form);
+    const sub = semantic && el.type === "image" && submitterOf(form);
 
     if (sub) {
       // handle image inputs on the fly when semantic == true
@@ -305,7 +305,7 @@ export function createSuccessfulControls() {
       return;
     }
 
-    var own = fieldsOf(el);
+    const own = fieldsOf(el);
 
     if (own) {
       collected.controls.push(el);
@@ -315,8 +315,8 @@ export function createSuccessfulControls() {
 
   // input type=='image' are not found in elements array! handle it here
   function addClickedImage(collected, form) {
-    var sub = submitterOf(form);
-    var input = sub && $(sub.el)[0];
+    const sub = submitterOf(form);
+    const input = sub && $(sub.el)[0];
 
     if (input && input.name && !isDisabled(input) && input.type === "image") {
       collected.fields.push.apply(collected.fields, imageFields(sub, input));
@@ -327,7 +327,7 @@ export function createSuccessfulControls() {
    * The fields of a form, as formToArray returns them, and the controls they came from.
    */
   function collect(form, semantic, filtering) {
-    var collected = { fields: [], controls: [] };
+    const collected = { fields: [], controls: [] };
 
     if (!form) {
       return collected;
@@ -335,13 +335,13 @@ export function createSuccessfulControls() {
 
     deprecateFieldValueOverride();
 
-    var els = controlsOf(form, semantic);
+    let els = controlsOf(form, semantic);
 
     if (typeof filtering === "function") {
       els = $.map(els, filtering);
     }
 
-    for (var i = 0; i < els.length; i++) {
+    for (let i = 0; i < els.length; i++) {
       addCandidate(collected, form, els[i], semantic);
     }
 
@@ -353,8 +353,8 @@ export function createSuccessfulControls() {
   }
 
   return {
-    controlsOf: controlsOf,
-    fieldsOf: fieldsOf,
-    collect: collect,
+    controlsOf,
+    fieldsOf,
+    collect,
   };
 }

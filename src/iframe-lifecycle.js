@@ -3,29 +3,29 @@ import { log } from "./diagnostics.js";
 
 // The iframe upload's lifecycle: the mock xhr and the Deferred, the global ajax events, the
 // beforeSend veto, the timeout, abort and settling.
-var $ = jQuery;
+const $ = jQuery;
 
 /**
  * Creates the lifecycle of one upload with the merged settings `s`. `frame.stop()` stops the
  * frame's load and `frame.release()` removes or resets the frame after the upload.
  */
 export function createLifecycle(s, frame) {
-  var g,
-    timeoutHandle,
-    callbackProcessed,
-    deferred = $.Deferred();
+  let g;
+  let timeoutHandle;
+  let callbackProcessed;
+  const deferred = $.Deferred();
 
-  var xhr = {
+  const xhr = {
     // mock object
     aborted: 0,
     responseText: null,
     responseXML: null,
     status: 0,
     statusText: "n/a",
-    getAllResponseHeaders: function () {},
-    getResponseHeader: function () {},
-    setRequestHeader: function () {},
-    abort: function (status) {
+    getAllResponseHeaders() {},
+    getResponseHeader() {},
+    setRequestHeader() {},
+    abort(status) {
       abort(status, [xhr, "aborted", status]);
     },
   };
@@ -42,7 +42,7 @@ export function createLifecycle(s, frame) {
   // Completes an aborted upload once and rejects the Deferred with `rejection`.
   // `textStatus` replaces the default "timeout"/"aborted" text status.
   function abort(status, rejection, textStatus) {
-    var e = textStatus || (status === "timeout" ? "timeout" : "aborted");
+    const e = textStatus || (status === "timeout" ? "timeout" : "aborted");
 
     if (done()) {
       return;
@@ -135,7 +135,7 @@ export function createLifecycle(s, frame) {
 
   // Resolves the upload; returns {error} when the success callback threw.
   function succeed(data) {
-    var failure;
+    let failure;
 
     try {
       s.success.call(s.context, data, "success", xhr);
@@ -154,7 +154,7 @@ export function createLifecycle(s, frame) {
 
   // Settles the upload with the response reader's {status, data, errMsg}.
   function settle(result) {
-    var status = result.status,
+    let status = result.status,
       errMsg = result.errMsg;
 
     if (xhr.aborted) {
@@ -177,7 +177,7 @@ export function createLifecycle(s, frame) {
 
     // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
     if (status === "success") {
-      var failure = succeed(result.data);
+      const failure = succeed(result.data);
 
       complete(status);
       if (failure) {
@@ -203,23 +203,23 @@ export function createLifecycle(s, frame) {
   }
 
   return {
-    xhr: xhr,
-    deferred: deferred,
-    start: start,
-    done: done,
-    abort: abort,
-    settle: settle,
+    xhr,
+    deferred,
+    start,
+    done,
+    abort,
+    settle,
     // Settles an upload that failed with an exception (ignored once aborted).
-    fail: function (err) {
+    fail(err) {
       settle({ status: "error", errMsg: err });
     },
     // Runs `onTimeout` after s.timeout, when set.
-    startTimer: function (onTimeout) {
+    startTimer(onTimeout) {
       if (s.timeout) {
         timeoutHandle = setTimeout(onTimeout, s.timeout);
       }
     },
-    stopTimer: function () {
+    stopTimer() {
       clearTimeout(timeoutHandle);
       timeoutHandle = undefined;
     },

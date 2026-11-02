@@ -57,13 +57,13 @@
 // read through the DOM prototypes, which a control cannot shadow.
 
 // The prototype chain of a form, nearest first, looked up on every call.
-var owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
+const owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
 
 // The descriptor on the nearest prototype that has the member, or undefined.
 function findDescriptor(name) {
-  var descriptor;
+  let descriptor;
 
-  for (var i = 0; i < owners.length && !descriptor; i++) {
+  for (let i = 0; i < owners.length && !descriptor; i++) {
     descriptor = Object.getOwnPropertyDescriptor(window[owners[i]].prototype, name);
   }
 
@@ -75,7 +75,7 @@ function findDescriptor(name) {
  * element the getter does not accept (such as a fieldset for `elements`).
  */
 function formMember(form, name) {
-  var descriptor = findDescriptor(name);
+  const descriptor = findDescriptor(name);
 
   try {
     return descriptor.get.call(form);
@@ -93,7 +93,7 @@ function callFormMethod(form, name) {
 
 // Nodes such as the document and text nodes have no tag name (#600).
 function tagName(el) {
-  var name = formMember(el, "tagName");
+  const name = formMember(el, "tagName");
 
   return typeof name === "string" ? name.toLowerCase() : "";
 }
@@ -123,7 +123,7 @@ function assertRealParent(el) {
 
 // The element itself or its nearest ancestor with one of the tag names, through the real tree.
 function closestByTag(el, names) {
-  for (var node = el; node; node = formMember(node, "parentNode")) {
+  for (let node = el; node; node = formMember(node, "parentNode")) {
     if (names.indexOf(tagName(node)) >= 0) {
       return node;
     }
@@ -136,7 +136,7 @@ function closestByTag(el, names) {
 // a private store and cleared shortly after the click. The form's clk, clk_x and clk_y properties
 // are still written for pages that read them, and read when the store has none.
 
-var storeKey = "jqFormSubmitter";
+const storeKey = "jqFormSubmitter";
 
 // Writes a property on the form; a control with that name makes it read-only.
 function setExpando(form, name, value) {
@@ -149,15 +149,15 @@ function setExpando(form, name, value) {
 
 // A property the page set on the form, never a control of the form with that name.
 function expando(form, name) {
-  var value = form[name];
-  var els = formMember(form, "elements");
+  const value = form[name];
+  const els = formMember(form, "elements");
 
   return els && value && els.namedItem(name) === value ? undefined : value;
 }
 
 // Records a submitter for a form until the click window ends.
 function record(form, el, x, y) {
-  jQuery.data(form, storeKey, { el: el, x: x, y: y });
+  jQuery.data(form, storeKey, { el, x, y });
   setExpando(form, "clk", el);
 
   if (el.type === "image") {
@@ -180,7 +180,7 @@ function imagePoint(e, target) {
     return [e.offsetX, e.offsetY];
   }
 
-  var offset = jQuery(target).offset();
+  const offset = jQuery(target).offset();
 
   return [e.pageX - offset.left, e.pageY - offset.top];
 }
@@ -190,21 +190,21 @@ function imagePoint(e, target) {
  */
 function captureSubmitter(e) {
   // the clicked control, or the button around the clicked content (ex: a span within a button)
-  var target = closestByTag(e.target, ["button", "input"]);
+  const target = closestByTag(e.target, ["button", "input"]);
 
   // the type property, unlike the attribute, is "submit" for a button without a type (#588)
   if (!target || (target.type !== "submit" && target.type !== "image")) {
     return;
   }
 
-  var form = target.form;
+  const form = target.form;
 
   if (!form) {
     // a submit control that belongs to no form
     return;
   }
 
-  var point = target.type === "image" ? imagePoint(e, target) : [];
+  const point = target.type === "image" ? imagePoint(e, target) : [];
 
   record(form, target, point[0], point[1]);
 }
@@ -214,7 +214,7 @@ function captureSubmitter(e) {
  * An image submitter gets the point 0,0, as native submission sends it without a click.
  */
 function captureEventSubmitter(e, form) {
-  var el = e.originalEvent && e.originalEvent.submitter;
+  const el = e.originalEvent && e.originalEvent.submitter;
 
   if (el && !submitterOf(form)) {
     record(form, el, 0, 0);
@@ -229,24 +229,24 @@ function submitterOf(form) {
     return null;
   }
 
-  var stored = jQuery.data(form, storeKey);
+  const stored = jQuery.data(form, storeKey);
 
   if (stored) {
     return stored;
   }
 
-  var el = expando(form, "clk");
+  const el = expando(form, "clk");
 
-  return el ? { el: el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
+  return el ? { el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
 }
 
 /**
  * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
  */
 function submitterFields(form) {
-  var fields = {};
-  var sub = submitterOf(form);
-  var el = sub && sub.el;
+  const fields = {};
+  const sub = submitterOf(form);
+  const el = sub && sub.el;
 
   // a disabled button is not sent, also when a disabled fieldset disables it
   if (el && el.name && !isDisabled(el)) {
@@ -264,7 +264,7 @@ function submitterFields(form) {
  * The form's submitter element, or null.
  */
 function submitterElement(form) {
-  var sub = submitterOf(form);
+  const sub = submitterOf(form);
 
   return sub ? sub.el : null;
 }
@@ -276,12 +276,12 @@ function log() {
     return;
   }
 
-  var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
+  const msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
 
   window.console.log(msg);
 }
 
-var warned = {};
+let warned = {};
 
 /**
  * A deprecation warning: console.warn, only while debug is on, once per id per page. The message
@@ -298,8 +298,8 @@ function deprecate(id, message) {
 
 // True for a jQuery version string older than 3.5.
 function beforeJQuery35(version) {
-  var parts = String(version).split(".");
-  var major = Number(parts[0]);
+  const parts = String(version).split(".");
+  const major = Number(parts[0]);
 
   return major < 3 || (major === 3 && Number(parts[1]) < 5);
 }
@@ -325,7 +325,7 @@ function shorthandOptions(options, data, dataType, onSuccess) {
     return options;
   }
 
-  var result = { url: options, data: data, dataType: dataType };
+  const result = { url: options, data, dataType };
 
   if (typeof onSuccess === "function") {
     result.success = onSuccess;
@@ -336,9 +336,9 @@ function shorthandOptions(options, data, dataType, onSuccess) {
 
 // A copy of options without its url, so the form action is used.
 function withoutUrl(options) {
-  var result = {};
+  const result = {};
 
-  for (var key in options) {
+  for (const key in options) {
     if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
       result[key] = options[key];
     }
@@ -370,7 +370,7 @@ function submitOptions(options, data, dataType, onSuccess) {
  * caller's own object from the last source that has one, so `this` in callbacks is that object.
  */
 function keepContext(settings, sources) {
-  for (var i = 0; i < sources.length; i++) {
+  for (let i = 0; i < sources.length; i++) {
     if (sources[i].context !== undefined) {
       settings.context = sources[i].context;
     }
@@ -407,7 +407,7 @@ function submitWith(e, options) {
     // if event has been canceled, don't proceed
     e.preventDefault();
     // the form is found through the real tree: a control named nodeType misleads jQuery's closest
-    var form = closestByTag(e.target, ["form"]);
+    const form = closestByTag(e.target, ["form"]);
 
     // a button outside the form (form attribute), or requestSubmit(button), sends no click here
     captureEventSubmitter(e, form);
@@ -445,10 +445,10 @@ function closestMatch(el, selector) {
 }
 
 // The document handlers bound for each delegation selector, keyed by "s" + selector.
-var delegated = {};
+let delegated = {};
 
 function unbindSelector(selector) {
-  var handlers = delegated["s" + selector];
+  const handlers = delegated["s" + selector];
 
   if (handlers) {
     jQuery(document)
@@ -460,13 +460,13 @@ function unbindSelector(selector) {
 
 // delegation: "<selector>": one handler pair on the document, scoped to the selector.
 function bindSelector($sel, selector, options) {
-  var handlers = {
-    submit: function (e) {
+  const handlers = {
+    submit(e) {
       if (closestMatch(e.target, selector)) {
         submitWith(e, options);
       }
     },
-    click: function (e) {
+    click(e) {
       if (closestMatch(e.target, selector)) {
         captureSubmitter(e);
       }
@@ -483,7 +483,7 @@ function bindSelector($sel, selector, options) {
 }
 
 // Passed by ajaxForm's own rebind: unbind the selection only, never the document handlers.
-var selectionOnly = {};
+const selectionOnly = {};
 
 /**
  * ajaxForm() binds the selected forms so a submit is sent with ajaxSubmit, with the clicked
@@ -493,7 +493,7 @@ function ajaxForm(options, data, dataType, onSuccess) {
   requireJQuery35(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
-  var delegation = options.delegation;
+  const delegation = options.delegation;
 
   if (typeof delegation === "string" && delegation) {
     return bindSelector(this, delegation, options);
@@ -550,7 +550,7 @@ function formAttribute(form, name) {
     return jQuery(form).attr(name);
   }
 
-  var value = callFormMethod(form, "getAttribute", name);
+  const value = callFormMethod(form, "getAttribute", name);
 
   return value === null ? undefined : value;
 }
@@ -559,18 +559,18 @@ function formAttribute(form, name) {
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
 
 // Line breaks, sent as CRLF
-var rLineBreak = /\r\n|\r|\n/g;
-var rCR = /\r/g;
+const rLineBreak = /\r\n|\r|\n/g;
+const rCR = /\r/g;
 
 // Listed form elements that are never submitted.
-var rUnsubmittable = /^(?:fieldset|object|output)$/;
+const rUnsubmittable = /^(?:fieldset|object|output)$/;
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
  */
 function isSuccessful(el, submitter) {
-  var t = el.type;
+  const t = el.type;
 
   if (!el.name || isDisabled(el) || t === "reset" || t === "button") {
     return false;
@@ -589,22 +589,22 @@ function isSuccessful(el, submitter) {
 
 // The value of a select: the selected option's value for one, a list for several.
 function selectValue(el) {
-  var index = el.selectedIndex;
+  const index = el.selectedIndex;
 
   if (index < 0) {
     return null;
   }
 
-  var a = [],
+  const a = [],
     ops = el.options;
-  var one = el.type === "select-one";
-  var max = one ? index + 1 : ops.length;
+  const one = el.type === "select-one";
+  const max = one ? index + 1 : ops.length;
 
-  for (var i = one ? index : 0; i < max; i++) {
-    var op = ops[i];
+  for (let i = one ? index : 0; i < max; i++) {
+    const op = ops[i];
 
     if (op.selected && !isDisabled(op)) {
-      var v = op.value;
+      const v = op.value;
 
       if (one) {
         return v;
@@ -627,8 +627,8 @@ function valueOf(el) {
     return selectValue(el);
   }
 
-  var v = jQuery(el).val();
-  var raw = el.value;
+  let v = jQuery(el).val();
+  const raw = el.value;
 
   // jQuery before 4.0 drops carriage returns from .val(); read them from the value itself
   if (typeof raw === "string" && raw.replace(rCR, "") === v) {
@@ -643,7 +643,7 @@ function valueOf(el) {
  * missing and the control is not sent.
  */
 function fieldValue(el, successful) {
-  var required = typeof successful === "undefined" || successful;
+  const required = typeof successful === "undefined" || successful;
 
   if (required && !isSuccessful(el, submitterElement(el.form))) {
     return null;
@@ -667,7 +667,7 @@ function deprecateFieldValueOverride() {
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
 // A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
-var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
 
 function wellFormed(value) {
   return typeof value === "string"
@@ -680,7 +680,7 @@ function wellFormed(value) {
 // Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
 function setKey(object, key, value) {
   Object.defineProperty(object, key, {
-    value: value,
+    value,
     enumerable: true,
     writable: true,
     configurable: true,
@@ -693,24 +693,24 @@ function setKey(object, key, value) {
  * included; they are copied only when something changes.
  */
 function wellFormedData(data) {
-  var isArray = Array.isArray(data);
+  const isArray = Array.isArray(data);
 
   if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
     return wellFormed(data);
   }
 
-  var copy = isArray ? [] : {};
-  var changed = false;
+  const copy = isArray ? [] : {};
+  let changed = false;
 
   if (isArray) {
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       copy[i] = wellFormedData(data[i]);
       changed = changed || copy[i] !== data[i];
     }
   } else {
-    for (var key in data) {
-      var name = wellFormed(key);
-      var value = wellFormedData(data[key]);
+    for (const key in data) {
+      const name = wellFormed(key);
+      const value = wellFormedData(data[key]);
 
       changed = changed || name !== key || value !== data[key];
       setKey(copy, name, value);
@@ -728,12 +728,12 @@ function urlencode(fields, traditional) {
 
 function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    var value =
+    let value =
       field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
-    var name = wellFormed(field.name);
+    const name = wellFormed(field.name);
     value = wellFormed(value);
 
-    return name === field.name && value === field.value ? field : { name: name, value: value };
+    return name === field.name && value === field.value ? field : { name, value };
   });
 }
 
@@ -741,7 +741,7 @@ function urlencodedFields(fields) {
  * The serialization steps.
  */
 function createSuccessfulControls() {
-  var $ = jQuery;
+  const $ = jQuery;
 
   // #386; inputs that name the form in their form attribute, other than the candidates found.
   // A form only gets the ones it owns.
@@ -770,8 +770,8 @@ function createSuccessfulControls() {
    * semantic mode, then the outside controls it owns that name it.
    */
   function controlsOf(form, semantic) {
-    var formId = formAttribute(form, "id");
-    var els = formMember(form, "elements");
+    const formId = formAttribute(form, "id");
+    let els = formMember(form, "elements");
 
     if (semantic || typeof els === "undefined") {
       // the document is not an element; it has its own getElementsByTagName
@@ -783,7 +783,7 @@ function createSuccessfulControls() {
     els = $.makeArray(els);
 
     // the subject may also be a fieldset, the document or another container
-    var owner = tagName(form) === "form" ? form : null;
+    const owner = tagName(form) === "form" ? form : null;
 
     if (semantic && owner) {
       els = ownedBy(els, owner);
@@ -799,18 +799,18 @@ function createSuccessfulControls() {
 
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
-    var n = el.name;
+    const n = el.name;
     // read at call time, so a page that replaces $.fieldValue changes what is sent
-    var v = $.fieldValue(el, true);
+    const v = $.fieldValue(el, true);
 
     if (v && v.constructor === Array) {
       return $.map(v, function (value) {
-        return { name: n, value: value };
+        return { name: n, value };
       });
     }
 
     if (el.type === "file") {
-      var files = el.files;
+      const files = el.files;
 
       // #180: an empty field when no file is selected
       return files.length
@@ -829,8 +829,8 @@ function createSuccessfulControls() {
 
   // The clicked image's value and coordinates.
   function imageFields(sub, input, type) {
-    var n = input.name;
-    var value = { name: n, value: $(input).val() };
+    const n = input.name;
+    const value = { name: n, value: $(input).val() };
 
     if (type) {
       value.type = type;
@@ -845,7 +845,7 @@ function createSuccessfulControls() {
       return;
     }
 
-    var sub = semantic && el.type === "image" && submitterOf(form);
+    const sub = semantic && el.type === "image" && submitterOf(form);
 
     if (sub) {
       // handle image inputs on the fly when semantic == true
@@ -856,7 +856,7 @@ function createSuccessfulControls() {
       return;
     }
 
-    var own = fieldsOf(el);
+    const own = fieldsOf(el);
 
     if (own) {
       collected.controls.push(el);
@@ -866,8 +866,8 @@ function createSuccessfulControls() {
 
   // input type=='image' are not found in elements array! handle it here
   function addClickedImage(collected, form) {
-    var sub = submitterOf(form);
-    var input = sub && $(sub.el)[0];
+    const sub = submitterOf(form);
+    const input = sub && $(sub.el)[0];
 
     if (input && input.name && !isDisabled(input) && input.type === "image") {
       collected.fields.push.apply(collected.fields, imageFields(sub, input));
@@ -878,7 +878,7 @@ function createSuccessfulControls() {
    * The fields of a form, as formToArray returns them, and the controls they came from.
    */
   function collect(form, semantic, filtering) {
-    var collected = { fields: [], controls: [] };
+    const collected = { fields: [], controls: [] };
 
     if (!form) {
       return collected;
@@ -886,13 +886,13 @@ function createSuccessfulControls() {
 
     deprecateFieldValueOverride();
 
-    var els = controlsOf(form, semantic);
+    let els = controlsOf(form, semantic);
 
     if (typeof filtering === "function") {
       els = $.map(els, filtering);
     }
 
-    for (var i = 0; i < els.length; i++) {
+    for (let i = 0; i < els.length; i++) {
       addCandidate(collected, form, els[i], semantic);
     }
 
@@ -904,22 +904,22 @@ function createSuccessfulControls() {
   }
 
   return {
-    controlsOf: controlsOf,
-    fieldsOf: fieldsOf,
-    collect: collect,
+    controlsOf,
+    fieldsOf,
+    collect,
   };
 }
 
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
-var $$4 = jQuery;
+const $$4 = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 function deepSerialize(extraData, traditional) {
-  var param = $$4.param(wellFormedData(extraData), traditional);
-  var serialized = param ? param.split("&") : [];
-  var len = serialized.length;
-  var result = [];
-  var i, part;
+  const param = $$4.param(wellFormedData(extraData), traditional);
+  const serialized = param ? param.split("&") : [];
+  const len = serialized.length;
+  const result = [];
+  let i, part;
 
   for (i = 0; i < len; i++) {
     part = serialized[i].split("=");
@@ -935,26 +935,26 @@ function deepSerialize(extraData, traditional) {
  * XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
  */
 function sendFormData(submission) {
-  var options = submission.options;
-  var a = submission.fields;
+  const options = submission.options;
+  const a = submission.fields;
 
-  var formdata = new FormData();
+  const formdata = new FormData();
 
-  for (var i = 0; i < a.length; i++) {
+  for (let i = 0; i < a.length; i++) {
     formdata.append(a[i].name, a[i].value);
   }
 
   if (options.extraData) {
-    var serializedData = deepSerialize(options.extraData, submission.traditional);
+    const serializedData = deepSerialize(options.extraData, submission.traditional);
 
-    for (i = 0; i < serializedData.length; i++) {
+    for (let i = 0; i < serializedData.length; i++) {
       formdata.append(serializedData[i][0], serializedData[i][1]);
     }
   }
 
   options.data = null;
 
-  var s = $$4.extend(true, {}, $$4.ajaxSettings, options, {
+  const s = $$4.extend(true, {}, $$4.ajaxSettings, options, {
     contentType: false,
     processData: false,
     cache: false,
@@ -966,18 +966,18 @@ function sendFormData(submission) {
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property: wraps the xhr factory, the
     // caller's or jQuery's
-    var createXhr = s.xhr;
+    const createXhr = s.xhr;
 
     s.xhr = function () {
-      var xhr = createXhr.call(this);
+      const xhr = createXhr.call(this);
 
       if (xhr.upload) {
         xhr.upload.addEventListener(
           "progress",
           function (event) {
-            var percent = 0;
-            var position = event.loaded;
-            var total = event.total;
+            let percent = 0;
+            const position = event.loaded;
+            const total = event.total;
 
             if (event.lengthComputable) {
               percent = Math.ceil((position / total) * 100);
@@ -995,7 +995,7 @@ function sendFormData(submission) {
 
   s.data = null;
 
-  var beforeSend = s.beforeSend;
+  const beforeSend = s.beforeSend;
 
   s.beforeSend = function (xhr, o) {
     // Send FormData() provided by user
@@ -1021,13 +1021,13 @@ function sendAjax(submission) {
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
 // posting and restored after, and the native submit.
-var $$3 = jQuery;
+const $$3 = jQuery;
 
 // The form attributes an iframe upload changes while it posts.
-var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
+const uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
 
 // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
-var hasOwn = Object.prototype.hasOwnProperty;
+const hasOwn = Object.prototype.hasOwnProperty;
 
 function isGet(method) {
   return /^get$/i.test(method);
@@ -1035,8 +1035,8 @@ function isGet(method) {
 
 // Resolves both URLs through anchors, as jQuery does for crossDomain.
 function isSameOrigin(url) {
-  var origin = document.createElement("a");
-  var target = document.createElement("a");
+  const origin = document.createElement("a");
+  const target = document.createElement("a");
 
   origin.href = window.location.href;
   target.href = url;
@@ -1047,9 +1047,9 @@ function isSameOrigin(url) {
 /** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
 function addSubmitterFields(s, form) {
   // add submitting element to data if we know it
-  var fields = submitterFields(form);
+  const fields = submitterFields(form);
 
-  for (var n in fields) {
+  for (const n in fields) {
     s.extraData = s.extraData || {};
     s.extraData[wellFormed(n)] = wellFormed(fields[n]);
   }
@@ -1059,9 +1059,9 @@ function addSubmitterFields(s, form) {
 function addCsrfField(s, form, method, forms) {
   // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
   // only when the form is posted, since a get form would put the token in the url
-  var csrf_token = $$3("meta[name=csrf-token]").attr("content");
-  var csrf_param = $$3("meta[name=csrf-param]").attr("content");
-  var posts =
+  const csrf_token = $$3("meta[name=csrf-token]").attr("content");
+  const csrf_param = $$3("meta[name=csrf-param]").attr("content");
+  const posts =
     !isGet(method) &&
     (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
 
@@ -1077,7 +1077,7 @@ function setFormAttribute(form, name, value) {
 
 /** The raw attributes the upload changes, null when absent, to put back exactly (#380). */
 function saveAttributes(form) {
-  var saved = {};
+  const saved = {};
 
   $$3.each(uploadAttributes, function (i, name) {
     saved[name] = callFormMethod(form, "hasAttribute", name)
@@ -1101,7 +1101,7 @@ function restoreAttributes(form, saved) {
 
 /** Points the form at the frame `target` with the upload's url, method and encoding. */
 function setUploadAttributes(form, target, method, s, forms) {
-  var mp = "multipart/form-data";
+  const mp = "multipart/form-data";
 
   // update form attrs in IE friendly way
   setFormAttribute(form, "target", target);
@@ -1124,7 +1124,7 @@ function setUploadAttributes(form, target, method, s, forms) {
 function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
   // Builds the input with DOM properties: a name is never parsed as HTML.
   function addHiddenInput(name, value) {
-    var input = ownerDocument.createElement("input");
+    const input = ownerDocument.createElement("input");
 
     input.type = "hidden";
     input.name = name;
@@ -1132,7 +1132,7 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
   }
 
   if (extraData) {
-    for (var n in extraData) {
+    for (const n in extraData) {
       if (hasOwn.call(extraData, n)) {
         // if using the $.param format that allows for multiple values with the same name
         if (
@@ -1143,12 +1143,12 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
           addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
-          var single = {};
+          const single = {};
 
           single[n] = extraData[n];
-          var fields = deepSerialize(single, traditional);
+          const fields = deepSerialize(single, traditional);
 
-          for (var f = 0; f < fields.length; f++) {
+          for (let f = 0; f < fields.length; f++) {
             addHiddenInput(fields[f][0], fields[f][1]);
           }
         }
@@ -1169,7 +1169,7 @@ function submitForm(form) {
 
 // The iframe response reader: turns the frame's document into the mock xhr's text, XML, status
 // and dataType, then parses it as $.ajax would (dataFilter, JSON, script).
-var $$2 = jQuery;
+const $$2 = jQuery;
 
 /** The frame's document, or null when the same-origin policy denies access to it. */
 function getDoc(frame) {
@@ -1180,9 +1180,9 @@ function getDoc(frame) {
 function httpData(xhr, type, s) {
   // mostly lifted from jq1.4.4
 
-  var ct = xhr.getResponseHeader("content-type") || "",
-    xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0,
-    data = xml ? xhr.responseXML : xhr.responseText;
+  const ct = xhr.getResponseHeader("content-type") || "";
+  const xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0;
+  let data = xml ? xhr.responseXML : xhr.responseText;
 
   if (xml && data.documentElement.nodeName === "parsererror") {
     $$2.error("parsererror");
@@ -1210,7 +1210,7 @@ function readStatus(xhr, el) {
 
 // Fills the mock xhr from the document itself.
 function readDocument(doc, xhr, s, isXml) {
-  var docRoot = doc.body ? doc.body : doc.documentElement;
+  const docRoot = doc.body ? doc.body : doc.documentElement;
 
   xhr.responseText = docRoot ? docRoot.innerHTML : null;
   xhr.responseXML = doc;
@@ -1219,7 +1219,7 @@ function readDocument(doc, xhr, s, isXml) {
   }
   xhr.getResponseHeader = function (header) {
     // the dataType in lowercase, as $.ajax reads it
-    var headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
+    const headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
 
     return headers[header.toLowerCase()];
   };
@@ -1230,21 +1230,21 @@ function readDocument(doc, xhr, s, isXml) {
 
 // A response embedded in a textarea, or text wrapped in pre or body, replaces responseText.
 function readEmbedded(doc, xhr, dt, s) {
-  var scr = /(json|script|text)/.test(dt);
+  const scr = /(json|script|text)/.test(dt);
 
   if (!scr && !s.textarea) {
     return;
   }
   // see if user embedded response in textarea
-  var ta = doc.getElementsByTagName("textarea")[0];
+  const ta = doc.getElementsByTagName("textarea")[0];
 
   if (ta) {
     xhr.responseText = ta.value;
     readStatus(xhr, ta);
   } else if (scr) {
     // account for browsers injecting pre around json response
-    var pre = doc.getElementsByTagName("pre")[0];
-    var b = doc.getElementsByTagName("body")[0];
+    const pre = doc.getElementsByTagName("pre")[0];
+    const b = doc.getElementsByTagName("body")[0];
 
     if (pre) {
       xhr.responseText = pre.textContent;
@@ -1258,17 +1258,17 @@ function readEmbedded(doc, xhr, dt, s) {
  * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}.
  */
 function readResponse(doc, xhr, s) {
-  var status = "success",
+  let status = "success",
     data,
     errMsg;
 
   try {
-    var isXml = /^xml$/i.test(s.dataType) || $$2.isXMLDoc(doc);
+    const isXml = /^xml$/i.test(s.dataType) || $$2.isXMLDoc(doc);
 
     log("isXml=" + isXml);
     readDocument(doc, xhr, s, isXml);
 
-    var dt = (s.dataType || "").toLowerCase();
+    const dt = (s.dataType || "").toLowerCase();
 
     readEmbedded(doc, xhr, dt, s);
 
@@ -1284,34 +1284,34 @@ function readResponse(doc, xhr, s) {
     xhr.error = errMsg = err;
   }
 
-  return { status: status, data: data, errMsg: errMsg };
+  return { status, data, errMsg };
 }
 
 // The iframe upload's lifecycle: the mock xhr and the Deferred, the global ajax events, the
 // beforeSend veto, the timeout, abort and settling.
-var $$1 = jQuery;
+const $$1 = jQuery;
 
 /**
  * Creates the lifecycle of one upload with the merged settings `s`. `frame.stop()` stops the
  * frame's load and `frame.release()` removes or resets the frame after the upload.
  */
 function createLifecycle(s, frame) {
-  var g,
-    timeoutHandle,
-    callbackProcessed,
-    deferred = $$1.Deferred();
+  let g;
+  let timeoutHandle;
+  let callbackProcessed;
+  const deferred = $$1.Deferred();
 
-  var xhr = {
+  const xhr = {
     // mock object
     aborted: 0,
     responseText: null,
     responseXML: null,
     status: 0,
     statusText: "n/a",
-    getAllResponseHeaders: function () {},
-    getResponseHeader: function () {},
-    setRequestHeader: function () {},
-    abort: function (status) {
+    getAllResponseHeaders() {},
+    getResponseHeader() {},
+    setRequestHeader() {},
+    abort(status) {
       abort(status, [xhr, "aborted", status]);
     },
   };
@@ -1328,7 +1328,7 @@ function createLifecycle(s, frame) {
   // Completes an aborted upload once and rejects the Deferred with `rejection`.
   // `textStatus` replaces the default "timeout"/"aborted" text status.
   function abort(status, rejection, textStatus) {
-    var e = textStatus || (status === "timeout" ? "timeout" : "aborted");
+    const e = textStatus || (status === "timeout" ? "timeout" : "aborted");
 
     if (done()) {
       return;
@@ -1421,7 +1421,7 @@ function createLifecycle(s, frame) {
 
   // Resolves the upload; returns {error} when the success callback threw.
   function succeed(data) {
-    var failure;
+    let failure;
 
     try {
       s.success.call(s.context, data, "success", xhr);
@@ -1440,7 +1440,7 @@ function createLifecycle(s, frame) {
 
   // Settles the upload with the response reader's {status, data, errMsg}.
   function settle(result) {
-    var status = result.status,
+    let status = result.status,
       errMsg = result.errMsg;
 
     if (xhr.aborted) {
@@ -1463,7 +1463,7 @@ function createLifecycle(s, frame) {
 
     // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
     if (status === "success") {
-      var failure = succeed(result.data);
+      const failure = succeed(result.data);
 
       complete(status);
       if (failure) {
@@ -1489,23 +1489,23 @@ function createLifecycle(s, frame) {
   }
 
   return {
-    xhr: xhr,
-    deferred: deferred,
-    start: start,
-    done: done,
-    abort: abort,
-    settle: settle,
+    xhr,
+    deferred,
+    start,
+    done,
+    abort,
+    settle,
     // Settles an upload that failed with an exception (ignored once aborted).
-    fail: function (err) {
+    fail(err) {
       settle({ status: "error", errMsg: err });
     },
     // Runs `onTimeout` after s.timeout, when set.
-    startTimer: function (onTimeout) {
+    startTimer(onTimeout) {
       if (s.timeout) {
         timeoutHandle = setTimeout(onTimeout, s.timeout);
       }
     },
-    stopTimer: function () {
+    stopTimer() {
       clearTimeout(timeoutHandle);
       timeoutHandle = undefined;
     },
@@ -1514,21 +1514,21 @@ function createLifecycle(s, frame) {
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // when the iframe option asks for it.
-var $ = jQuery;
+const $ = jQuery;
 
 /**
  * The iframe send step. `forms.property` reads a form property, or the attribute when a control
  * shadows it.
  */
 function createIframeTransport(forms) {
-  var CLIENT_TIMEOUT_ABORT = 1;
-  var SERVER_ABORT = 2;
+  const CLIENT_TIMEOUT_ABORT = 1;
+  const SERVER_ABORT = 2;
   // tells apart the frames of uploads that start in the same millisecond
-  var frameCount = 0;
+  let frameCount = 0;
 
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
-    for (var i = 0; i < elements.length; i++) {
+    for (let i = 0; i < elements.length; i++) {
       $(elements[i]).prop("disabled", false);
     }
   }
@@ -1545,7 +1545,7 @@ function createIframeTransport(forms) {
   // The frame the form posts into: the iframeTarget, named `id` when it has no name, or a new
   // hidden frame named `id`. Returns the frame and the name the form targets.
   function createFrame(s, id, ownerDocument) {
-    var $io, n;
+    let $io, n;
 
     if (s.iframeTarget) {
       $io = selectorOption(s.iframeTarget, ownerDocument);
@@ -1560,7 +1560,7 @@ function createIframeTransport(forms) {
         id = n;
       }
     } else {
-      var io = ownerDocument.createElement("iframe");
+      const io = ownerDocument.createElement("iframe");
 
       io.setAttribute("name", id);
       io.setAttribute("src", s.iframeSrc);
@@ -1568,16 +1568,16 @@ function createIframeTransport(forms) {
       $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
     }
 
-    return { $io: $io, id: id };
+    return { $io, id };
   }
 
   // The frame hooks the lifecycle calls: stop a load in progress, and release after the upload.
   function frameHooks(s, $io) {
     return {
-      stop: function () {
+      stop() {
         $io.attr("src", s.iframeSrc); // abort op in progress
       },
-      release: function () {
+      release() {
         if (!s.iframeTarget) {
           $io.remove();
         } else {
@@ -1590,23 +1590,23 @@ function createIframeTransport(forms) {
 
   // private function for handling file uploads (hat tip to YAHOO!)
   function fileUploadIframe(submission) {
-    var form = submission.form,
+    const form = submission.form,
       method = submission.method;
 
     enableControls(submission.controls);
 
-    var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
+    const s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
       submission.options,
     ]);
 
     s.context = s.context || s;
-    var ownerDocument = formMember(form, "ownerDocument");
-    var $body = $(closestByTag(form, ["body"]));
-    var frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
-    var $io = frame.$io,
+    const ownerDocument = formMember(form, "ownerDocument");
+    const $body = $(closestByTag(form, ["body"]));
+    const frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
+    const $io = frame.$io,
       io = $io[0];
-    var life = createLifecycle(s, frameHooks(s, $io));
+    const life = createLifecycle(s, frameHooks(s, $io));
 
     if (!life.start()) {
       return life.deferred;
@@ -1628,7 +1628,7 @@ function createIframeTransport(forms) {
 
     // take a breath so that pending repaints get some cpu time before the upload starts
     function doSubmit() {
-      var saved = saveAttributes(form);
+      const saved = saveAttributes(form);
 
       setUploadAttributes(form, frame.id, method, s, forms);
 
@@ -1638,7 +1638,7 @@ function createIframeTransport(forms) {
       });
 
       // add "extra" data to form if provided in options
-      var extraInputs = [];
+      const extraInputs = [];
 
       try {
         addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
@@ -1649,10 +1649,10 @@ function createIframeTransport(forms) {
         }
 
         // A connected form posting into a frame outside the document opens a new window.
-        var root = ownerDocument.documentElement;
+        const root = ownerDocument.documentElement;
 
         if (io && $.contains(root, form) && !$.contains(root, io)) {
-          var notInDocument = "jquery.form: the upload frame is not in the document";
+          const notInDocument = "jquery.form: the upload frame is not in the document";
 
           life.abort(notInDocument, [life.xhr, "error", notInDocument], "error");
 
@@ -1674,7 +1674,7 @@ function createIframeTransport(forms) {
         return;
       }
 
-      var doc = getDoc(io);
+      const doc = getDoc(io);
 
       if (!doc) {
         log("cannot access response document");
@@ -1736,7 +1736,7 @@ function createIframeTransport(forms) {
  * property), and `serialization` collects the form's fields and controls.
  */
 function createSubmission(forms, serialization) {
-  var $ = jQuery;
+  const $ = jQuery;
 
   function refuse(message) {
     log(message);
@@ -1746,16 +1746,16 @@ function createSubmission(forms, serialization) {
 
   // The options merged over the form's action, the method, and the ajax defaults.
   function withDefaults(form, options, method) {
-    var action = options.url || forms.property(form, "action");
-    var url = typeof action === "string" ? action.trim() : "";
+    const action = options.url || forms.property(form, "action");
+    let url = typeof action === "string" ? action.trim() : "";
 
     // clean url (don't include hash value); an action that is only a fragment means this page
     url = url.split("#")[0] || window.location.href.split("#")[0];
 
-    var merged = $.extend(
+    const merged = $.extend(
       true,
       {
-        url: url,
+        url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
         iframeSrc: "about:blank",
@@ -1772,7 +1772,7 @@ function createSubmission(forms, serialization) {
    * its own default.
    */
   function resolveMethod(options, defaultType) {
-    var resolved = options.method || options.type;
+    const resolved = options.method || options.type;
 
     options.type = resolved;
 
@@ -1785,7 +1785,7 @@ function createSubmission(forms, serialization) {
       return undefined;
     }
 
-    var optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
+    const optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
 
     if (typeof optionsData === "string") {
       if (options.requestFormat === "json") {
@@ -1808,7 +1808,7 @@ function createSubmission(forms, serialization) {
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.
   function defineKey(object, key, value) {
     Object.defineProperty(object, key, {
-      value: value,
+      value,
       enumerable: true,
       writable: true,
       configurable: true,
@@ -1824,11 +1824,11 @@ function createSubmission(forms, serialization) {
       throw new Error('jquery.form: requestFormat "json" needs a method with a body, such as POST');
     }
 
-    var body = {};
-    var own = Object.prototype.hasOwnProperty;
+    const body = {};
+    const own = Object.prototype.hasOwnProperty;
 
-    for (var i = 0; i < fields.length; i++) {
-      var name = fields[i].name;
+    for (let i = 0; i < fields.length; i++) {
+      const name = fields[i].name;
 
       if (!own.call(body, name)) {
         defineKey(body, name, fields[i].value);
@@ -1839,9 +1839,9 @@ function createSubmission(forms, serialization) {
       }
     }
 
-    var extra = options.extraData;
+    const extra = options.extraData;
 
-    for (var key in extra) {
+    for (const key in extra) {
       if (own.call(extra, key)) {
         defineKey(body, key, extra[key]);
       }
@@ -1853,14 +1853,14 @@ function createSubmission(forms, serialization) {
 
   // The fields of a query string, as the { name, value } list $.param takes.
   function queryPairs(query) {
-    var pairs = [];
-    var parts = query.split("&");
+    const pairs = [];
+    const parts = query.split("&");
 
-    for (var i = 0; i < parts.length; i++) {
+    for (let i = 0; i < parts.length; i++) {
       if (parts[i]) {
-        var at = parts[i].indexOf("=");
-        var name = at < 0 ? parts[i] : parts[i].slice(0, at);
-        var value = at < 0 ? "" : parts[i].slice(at + 1);
+        const at = parts[i].indexOf("=");
+        const name = at < 0 ? parts[i] : parts[i].slice(0, at);
+        const value = at < 0 ? "" : parts[i].slice(at + 1);
 
         pairs.push({ name: decodeQuery(name), value: decodeQuery(value) });
       }
@@ -1881,8 +1881,8 @@ function createSubmission(forms, serialization) {
 
     if (options.type.toUpperCase() === "GET") {
       // the query goes before any fragment in the url option
-      var hashAt = options.url.indexOf("#");
-      var base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
+      const hashAt = options.url.indexOf("#");
+      const base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
 
       options.url =
         base + (base.indexOf("?") >= 0 ? "&" : "?") + q + options.url.slice(base.length);
@@ -1903,7 +1903,7 @@ function createSubmission(forms, serialization) {
 
   // Calls each callback in order with the same this and arguments.
   function callEach(callbacks, context, args) {
-    for (var i = 0; i < callbacks.length; i++) {
+    for (let i = 0; i < callbacks.length; i++) {
       callbacks[i].apply(context, args);
     }
   }
@@ -1917,17 +1917,17 @@ function createSubmission(forms, serialization) {
       assertRealParent(this);
     });
 
-    var form = $set[0];
-    var method = options.method || options.type || forms.property(form, "method");
+    const form = $set[0];
+    let method = options.method || options.type || forms.property(form, "method");
 
     options = withDefaults(form, options, method);
 
     // the ajax default type, when neither the caller nor the form gave a method
-    var defaultType = method ? undefined : options.type;
+    const defaultType = method ? undefined : options.type;
 
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
-    var veto = {};
+    const veto = {};
 
     $set.trigger("form-pre-serialize", [$set, options, veto]);
     if (veto.veto) {
@@ -1939,16 +1939,16 @@ function createSubmission(forms, serialization) {
       return refuse("ajaxSubmit: submit aborted via beforeSerialize callback");
     }
 
-    var traditional = options.traditional;
+    let traditional = options.traditional;
 
     if (typeof traditional === "undefined") {
       traditional = $.ajaxSettings.traditional;
     }
 
-    var collected = serialization.collect($set[0], options.semantic, options.filtering);
-    var fields = collected.fields;
-    var controls = collected.controls;
-    var qx = extraQuery(fields, options, traditional);
+    const collected = serialization.collect($set[0], options.semantic, options.filtering);
+    const fields = collected.fields;
+    const controls = collected.controls;
+    const qx = extraQuery(fields, options, traditional);
 
     // give pre-submit callback an opportunity to abort the submit
     if (options.beforeSubmit && options.beforeSubmit(fields, $set, options) === false) {
@@ -1970,13 +1970,13 @@ function createSubmission(forms, serialization) {
     }
 
     return {
-      form: form,
+      form,
       $form: $set,
-      fields: fields,
-      controls: controls,
-      options: options,
-      method: method,
-      traditional: traditional,
+      fields,
+      controls,
+      options,
+      method,
+      traditional,
     };
   }
 
@@ -1986,9 +1986,9 @@ function createSubmission(forms, serialization) {
    * clearForm and target steps before the success callbacks.
    */
   function deliver(submission) {
-    var $set = submission.$form;
-    var options = submission.options;
-    var callbacks = [];
+    const $set = submission.$form;
+    const options = submission.options;
+    const callbacks = [];
 
     if (options.resetForm) {
       callbacks.push(function () {
@@ -2004,10 +2004,10 @@ function createSubmission(forms, serialization) {
 
     // perform a load on the target only if dataType is not provided
     if (!options.dataType && options.target) {
-      var successes = callbackList(options.success);
+      const successes = callbackList(options.success);
 
       callbacks.push(function (data, textStatus, jqXHR) {
-        var successArguments = arguments,
+        const successArguments = arguments,
           fn = options.replaceTarget ? "replaceWith" : "html",
           $target = selectorOption(options.target);
 
@@ -2034,15 +2034,15 @@ function createSubmission(forms, serialization) {
 
     options.success = function (data, status, xhr) {
       // jQuery 1.4+ passes xhr as 3rd arg
-      var context = options.context || this; // jQuery 1.4+ supports scope context
+      const context = options.context || this; // jQuery 1.4+ supports scope context
 
-      for (var i = 0, max = callbacks.length; i < max; i++) {
+      for (let i = 0, max = callbacks.length; i < max; i++) {
         callbacks[i].apply(context, [data, status, xhr || $set, $set]);
       }
     };
 
     if (options.error) {
-      var errors = callbackList(options.error);
+      const errors = callbackList(options.error);
 
       options.error = function (xhr, status, error) {
         callEach(errors, options.context || this, [xhr, status, error, $set]);
@@ -2050,7 +2050,7 @@ function createSubmission(forms, serialization) {
     }
 
     if (options.complete) {
-      var completes = callbackList(options.complete);
+      const completes = callbackList(options.complete);
 
       options.complete = function (xhr, status) {
         callEach(completes, options.context || this, [xhr, status, $set]);
@@ -2063,23 +2063,23 @@ function createSubmission(forms, serialization) {
    * for files or a multipart form, "ajax" otherwise.
    */
   function chooseTransport(submission) {
-    var $set = submission.$form;
-    var options = submission.options;
+    const $set = submission.$form;
+    const options = submission.options;
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
     // and the file inputs outside the form that belong to it through their form attribute
-    var fileInputs = $("input[type=file]:enabled", $set)
+    const fileInputs = $("input[type=file]:enabled", $set)
       .add($(submission.controls).filter("input[type=file]"))
       .filter(function () {
         return $(this).val() !== "";
       });
-    var hasFileInputs = fileInputs.length > 0;
+    const hasFileInputs = fileInputs.length > 0;
     // compared as the browser does: ASCII case-insensitive, without surrounding whitespace
-    var mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
-    var multipart =
+    const mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
+    const multipart =
       mp.test(forms.attribute($set[0], "enctype")) || mp.test(forms.attribute($set[0], "encoding"));
-    var transport = hasFileInputs || multipart ? "formdata" : "ajax";
+    let transport = hasFileInputs || multipart ? "formdata" : "ajax";
 
     // a truthy iframe option asks for the iframe transport
     if (options.iframe) {
@@ -2095,7 +2095,7 @@ function createSubmission(forms, serialization) {
     return transport;
   }
 
-  return { prepare: prepare, deliver: deliver, chooseTransport: chooseTransport };
+  return { prepare, deliver, chooseTransport };
 }
 
 (function ($) {
@@ -2140,15 +2140,15 @@ function createSubmission(forms, serialization) {
   // A form property when it is a string, otherwise the attribute. The property is read plainly on
   // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
-    var value = form[name];
+    const value = form[name];
 
     return typeof value === "string" ? value : formAttribute(form, name);
   }
 
-  var forms = { attribute: formAttribute, property: formProperty };
-  var serialization = createSuccessfulControls();
-  var steps = createSubmission(forms, serialization);
-  var transports = {
+  const forms = { attribute: formAttribute, property: formProperty };
+  const serialization = createSuccessfulControls();
+  const steps = createSubmission(forms, serialization);
+  const transports = {
     iframe: createIframeTransport(forms),
     formdata: sendFormData,
     ajax: sendAjax,
@@ -2180,7 +2180,7 @@ function createSubmission(forms, serialization) {
       );
     }
 
-    var submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
+    const submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
 
     if (!submission) {
       return this;
@@ -2188,12 +2188,12 @@ function createSubmission(forms, serialization) {
 
     steps.deliver(submission);
 
-    var jqxhr = transports[steps.chooseTransport(submission)](submission);
+    const jqxhr = transports[steps.chooseTransport(submission)](submission);
 
     this.removeData("jqxhr").data("jqxhr", jqxhr);
 
     // clear element array
-    for (var k = 0; k < submission.controls.length; k++) {
+    for (let k = 0; k < submission.controls.length; k++) {
       submission.controls[k] = null;
     }
 
@@ -2218,7 +2218,7 @@ function createSubmission(forms, serialization) {
    * ajaxSubmit() and ajaxForm() methods.
    */
   $.fn.formToArray = function (semantic, elements, filtering) {
-    var collected = serialization.collect(this[0], semantic, filtering);
+    const collected = serialization.collect(this[0], semantic, filtering);
 
     if (elements) {
       elements.push.apply(elements, collected.controls);
@@ -2241,22 +2241,22 @@ function createSubmission(forms, serialization) {
    * This method will return a string in the format: name1=value1&amp;name2=value2
    */
   $.fn.fieldSerialize = function (successful) {
-    var a = [];
+    const a = [];
 
     deprecateFieldValueOverride();
 
     this.each(function () {
-      var n = this.name;
+      const n = this.name;
 
       // a form is not a field, though it may have a name
       if (!n || tagName(this) === "form") {
         return;
       }
 
-      var v = $.fieldValue(this, successful);
+      const v = $.fieldValue(this, successful);
 
       if (v && v.constructor === Array) {
-        for (var i = 0, max = v.length; i < max; i++) {
+        for (let i = 0, max = v.length; i < max; i++) {
           a.push({ name: n, value: v[i] });
         }
       } else if (v !== null && typeof v !== "undefined") {
@@ -2307,9 +2307,11 @@ function createSubmission(forms, serialization) {
    *	array will be empty, otherwise it will contain one or more values.
    */
   $.fn.fieldValue = function (successful) {
-    for (var val = [], i = 0, max = this.length; i < max; i++) {
-      var el = this[i];
-      var v = $.fieldValue(el, successful);
+    const val = [];
+
+    for (let i = 0, max = this.length; i < max; i++) {
+      const el = this[i];
+      const v = $.fieldValue(el, successful);
 
       if (v === null || typeof v === "undefined" || (v.constructor === Array && !v.length)) {
         continue;
@@ -2348,11 +2350,11 @@ function createSubmission(forms, serialization) {
    * Clears the selected form elements.
    */
   $.fn.clearFields = function (includeHidden) {
-    var re =
+    const re =
       /^(?:color|date|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 
     return this.each(function () {
-      var t = this.type,
+      const t = this.type,
         tag = tagName(this);
 
       if (re.test(t) || tag === "textarea") {
@@ -2390,8 +2392,8 @@ function createSubmission(forms, serialization) {
    */
   $.fn.resetForm = function () {
     return this.each(function () {
-      var el = $(this);
-      var tag = tagName(this);
+      const el = $(this);
+      const tag = tagName(this);
 
       switch (tag) {
         case "input":
@@ -2413,8 +2415,8 @@ function createSubmission(forms, serialization) {
           return true;
 
         case "option":
-        case "optgroup":
-          var select = el.parents("select");
+        case "optgroup": {
+          const select = el.parents("select");
 
           if (select.length && select[0].multiple) {
             if (tag === "option") {
@@ -2427,6 +2429,7 @@ function createSubmission(forms, serialization) {
           }
 
           return true;
+        }
 
         case "select":
           // in order, as the native reset: of several default options, a single select keeps the last
@@ -2436,14 +2439,15 @@ function createSubmission(forms, serialization) {
 
           return true;
 
-        case "label":
+        case "label": {
           // The control whose id the for attribute names, and the controls inside the label. The
           // filter keeps a for that names an ancestor from resetting the label again.
-          var forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
+          const forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
 
           el.find("input,select,textarea").add(forEl).filter("input,select,textarea").resetForm();
 
           return true;
+        }
 
         case "form":
           // through the prototype: a control named reset shadows the method
@@ -2482,12 +2486,12 @@ function createSubmission(forms, serialization) {
     }
 
     return this.each(function () {
-      var t = this.type;
+      const t = this.type;
 
       if (t === "checkbox" || t === "radio") {
         this.checked = select;
       } else if (tagName(this) === "option") {
-        var $sel = $(this).parent("select");
+        const $sel = $(this).parent("select");
 
         if (select && $sel[0] && $sel[0].type === "select-one") {
           // deselect all other options

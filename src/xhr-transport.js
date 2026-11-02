@@ -3,15 +3,15 @@ import { keepContext } from "./options.js";
 import { wellFormedData } from "./successful-controls.js";
 
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
-var $ = jQuery;
+const $ = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 export function deepSerialize(extraData, traditional) {
-  var param = $.param(wellFormedData(extraData), traditional);
-  var serialized = param ? param.split("&") : [];
-  var len = serialized.length;
-  var result = [];
-  var i, part;
+  const param = $.param(wellFormedData(extraData), traditional);
+  const serialized = param ? param.split("&") : [];
+  const len = serialized.length;
+  const result = [];
+  let i, part;
 
   for (i = 0; i < len; i++) {
     part = serialized[i].split("=");
@@ -27,26 +27,26 @@ export function deepSerialize(extraData, traditional) {
  * XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
  */
 export function sendFormData(submission) {
-  var options = submission.options;
-  var a = submission.fields;
+  const options = submission.options;
+  const a = submission.fields;
 
-  var formdata = new FormData();
+  const formdata = new FormData();
 
-  for (var i = 0; i < a.length; i++) {
+  for (let i = 0; i < a.length; i++) {
     formdata.append(a[i].name, a[i].value);
   }
 
   if (options.extraData) {
-    var serializedData = deepSerialize(options.extraData, submission.traditional);
+    const serializedData = deepSerialize(options.extraData, submission.traditional);
 
-    for (i = 0; i < serializedData.length; i++) {
+    for (let i = 0; i < serializedData.length; i++) {
       formdata.append(serializedData[i][0], serializedData[i][1]);
     }
   }
 
   options.data = null;
 
-  var s = $.extend(true, {}, $.ajaxSettings, options, {
+  const s = $.extend(true, {}, $.ajaxSettings, options, {
     contentType: false,
     processData: false,
     cache: false,
@@ -58,18 +58,18 @@ export function sendFormData(submission) {
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property: wraps the xhr factory, the
     // caller's or jQuery's
-    var createXhr = s.xhr;
+    const createXhr = s.xhr;
 
     s.xhr = function () {
-      var xhr = createXhr.call(this);
+      const xhr = createXhr.call(this);
 
       if (xhr.upload) {
         xhr.upload.addEventListener(
           "progress",
           function (event) {
-            var percent = 0;
-            var position = event.loaded;
-            var total = event.total;
+            let percent = 0;
+            const position = event.loaded;
+            const total = event.total;
 
             if (event.lengthComputable) {
               percent = Math.ceil((position / total) * 100);
@@ -87,7 +87,7 @@ export function sendFormData(submission) {
 
   s.data = null;
 
-  var beforeSend = s.beforeSend;
+  const beforeSend = s.beforeSend;
 
   s.beforeSend = function (xhr, o) {
     // Send FormData() provided by user

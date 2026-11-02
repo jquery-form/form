@@ -3,7 +3,7 @@ import { log } from "./diagnostics.js";
 
 // The iframe response reader: turns the frame's document into the mock xhr's text, XML, status
 // and dataType, then parses it as $.ajax would (dataFilter, JSON, script).
-var $ = jQuery;
+const $ = jQuery;
 
 /** The frame's document, or null when the same-origin policy denies access to it. */
 export function getDoc(frame) {
@@ -14,9 +14,9 @@ export function getDoc(frame) {
 export function httpData(xhr, type, s) {
   // mostly lifted from jq1.4.4
 
-  var ct = xhr.getResponseHeader("content-type") || "",
-    xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0,
-    data = xml ? xhr.responseXML : xhr.responseText;
+  const ct = xhr.getResponseHeader("content-type") || "";
+  const xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0;
+  let data = xml ? xhr.responseXML : xhr.responseText;
 
   if (xml && data.documentElement.nodeName === "parsererror") {
     $.error("parsererror");
@@ -44,7 +44,7 @@ function readStatus(xhr, el) {
 
 // Fills the mock xhr from the document itself.
 function readDocument(doc, xhr, s, isXml) {
-  var docRoot = doc.body ? doc.body : doc.documentElement;
+  const docRoot = doc.body ? doc.body : doc.documentElement;
 
   xhr.responseText = docRoot ? docRoot.innerHTML : null;
   xhr.responseXML = doc;
@@ -53,7 +53,7 @@ function readDocument(doc, xhr, s, isXml) {
   }
   xhr.getResponseHeader = function (header) {
     // the dataType in lowercase, as $.ajax reads it
-    var headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
+    const headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
 
     return headers[header.toLowerCase()];
   };
@@ -64,21 +64,21 @@ function readDocument(doc, xhr, s, isXml) {
 
 // A response embedded in a textarea, or text wrapped in pre or body, replaces responseText.
 function readEmbedded(doc, xhr, dt, s) {
-  var scr = /(json|script|text)/.test(dt);
+  const scr = /(json|script|text)/.test(dt);
 
   if (!scr && !s.textarea) {
     return;
   }
   // see if user embedded response in textarea
-  var ta = doc.getElementsByTagName("textarea")[0];
+  const ta = doc.getElementsByTagName("textarea")[0];
 
   if (ta) {
     xhr.responseText = ta.value;
     readStatus(xhr, ta);
   } else if (scr) {
     // account for browsers injecting pre around json response
-    var pre = doc.getElementsByTagName("pre")[0];
-    var b = doc.getElementsByTagName("body")[0];
+    const pre = doc.getElementsByTagName("pre")[0];
+    const b = doc.getElementsByTagName("body")[0];
 
     if (pre) {
       xhr.responseText = pre.textContent;
@@ -92,17 +92,17 @@ function readEmbedded(doc, xhr, dt, s) {
  * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}.
  */
 export function readResponse(doc, xhr, s) {
-  var status = "success",
+  let status = "success",
     data,
     errMsg;
 
   try {
-    var isXml = /^xml$/i.test(s.dataType) || $.isXMLDoc(doc);
+    const isXml = /^xml$/i.test(s.dataType) || $.isXMLDoc(doc);
 
     log("isXml=" + isXml);
     readDocument(doc, xhr, s, isXml);
 
-    var dt = (s.dataType || "").toLowerCase();
+    const dt = (s.dataType || "").toLowerCase();
 
     readEmbedded(doc, xhr, dt, s);
 
@@ -118,5 +118,5 @@ export function readResponse(doc, xhr, s) {
     xhr.error = errMsg = err;
   }
 
-  return { status: status, data: data, errMsg: errMsg };
+  return { status, data, errMsg };
 }

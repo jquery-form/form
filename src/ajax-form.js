@@ -13,7 +13,7 @@ function submitWith(e, options) {
     // if event has been canceled, don't proceed
     e.preventDefault();
     // the form is found through the real tree: a control named nodeType misleads jQuery's closest
-    var form = closestByTag(e.target, ["form"]);
+    const form = closestByTag(e.target, ["form"]);
 
     // a button outside the form (form attribute), or requestSubmit(button), sends no click here
     captureEventSubmitter(e, form);
@@ -51,10 +51,10 @@ function closestMatch(el, selector) {
 }
 
 // The document handlers bound for each delegation selector, keyed by "s" + selector.
-var delegated = {};
+let delegated = {};
 
 function unbindSelector(selector) {
-  var handlers = delegated["s" + selector];
+  const handlers = delegated["s" + selector];
 
   if (handlers) {
     jQuery(document)
@@ -66,13 +66,13 @@ function unbindSelector(selector) {
 
 // delegation: "<selector>": one handler pair on the document, scoped to the selector.
 function bindSelector($sel, selector, options) {
-  var handlers = {
-    submit: function (e) {
+  const handlers = {
+    submit(e) {
       if (closestMatch(e.target, selector)) {
         submitWith(e, options);
       }
     },
-    click: function (e) {
+    click(e) {
       if (closestMatch(e.target, selector)) {
         captureSubmitter(e);
       }
@@ -89,7 +89,7 @@ function bindSelector($sel, selector, options) {
 }
 
 // Passed by ajaxForm's own rebind: unbind the selection only, never the document handlers.
-var selectionOnly = {};
+const selectionOnly = {};
 
 /**
  * ajaxForm() binds the selected forms so a submit is sent with ajaxSubmit, with the clicked
@@ -99,7 +99,7 @@ export function ajaxForm(options, data, dataType, onSuccess) {
   requireJQuery35(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
-  var delegation = options.delegation;
+  const delegation = options.delegation;
 
   if (typeof delegation === "string" && delegation) {
     return bindSelector(this, delegation, options);

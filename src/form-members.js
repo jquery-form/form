@@ -3,13 +3,13 @@
 // read through the DOM prototypes, which a control cannot shadow.
 
 // The prototype chain of a form, nearest first, looked up on every call.
-var owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
+const owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
 
 // The descriptor on the nearest prototype that has the member, or undefined.
 function findDescriptor(name) {
-  var descriptor;
+  let descriptor;
 
-  for (var i = 0; i < owners.length && !descriptor; i++) {
+  for (let i = 0; i < owners.length && !descriptor; i++) {
     descriptor = Object.getOwnPropertyDescriptor(window[owners[i]].prototype, name);
   }
 
@@ -21,7 +21,7 @@ function findDescriptor(name) {
  * element the getter does not accept (such as a fieldset for `elements`).
  */
 export function formMember(form, name) {
-  var descriptor = findDescriptor(name);
+  const descriptor = findDescriptor(name);
 
   try {
     return descriptor.get.call(form);
@@ -39,7 +39,7 @@ export function callFormMethod(form, name) {
 
 // Nodes such as the document and text nodes have no tag name (#600).
 export function tagName(el) {
-  var name = formMember(el, "tagName");
+  const name = formMember(el, "tagName");
 
   return typeof name === "string" ? name.toLowerCase() : "";
 }
@@ -69,7 +69,7 @@ export function assertRealParent(el) {
 
 // The element itself or its nearest ancestor with one of the tag names, through the real tree.
 export function closestByTag(el, names) {
-  for (var node = el; node; node = formMember(node, "parentNode")) {
+  for (let node = el; node; node = formMember(node, "parentNode")) {
     if (names.indexOf(tagName(node)) >= 0) {
       return node;
     }

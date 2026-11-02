@@ -12,7 +12,7 @@ export function shorthandOptions(options, data, dataType, onSuccess) {
     return options;
   }
 
-  var result = { url: options, data: data, dataType: dataType };
+  const result = { url: options, data, dataType };
 
   if (typeof onSuccess === "function") {
     result.success = onSuccess;
@@ -23,9 +23,9 @@ export function shorthandOptions(options, data, dataType, onSuccess) {
 
 // A copy of options without its url, so the form action is used.
 function withoutUrl(options) {
-  var result = {};
+  const result = {};
 
-  for (var key in options) {
+  for (const key in options) {
     if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
       result[key] = options[key];
     }
@@ -57,7 +57,7 @@ export function submitOptions(options, data, dataType, onSuccess) {
  * caller's own object from the last source that has one, so `this` in callbacks is that object.
  */
 export function keepContext(settings, sources) {
-  for (var i = 0; i < sources.length; i++) {
+  for (let i = 0; i < sources.length; i++) {
     if (sources[i].context !== undefined) {
       settings.context = sources[i].context;
     }

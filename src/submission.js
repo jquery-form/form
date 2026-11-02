@@ -13,7 +13,7 @@ import { log } from "./diagnostics.js";
  * property), and `serialization` collects the form's fields and controls.
  */
 export function createSubmission(forms, serialization) {
-  var $ = jQuery;
+  const $ = jQuery;
 
   function refuse(message) {
     log(message);
@@ -23,16 +23,16 @@ export function createSubmission(forms, serialization) {
 
   // The options merged over the form's action, the method, and the ajax defaults.
   function withDefaults(form, options, method) {
-    var action = options.url || forms.property(form, "action");
-    var url = typeof action === "string" ? action.trim() : "";
+    const action = options.url || forms.property(form, "action");
+    let url = typeof action === "string" ? action.trim() : "";
 
     // clean url (don't include hash value); an action that is only a fragment means this page
     url = url.split("#")[0] || window.location.href.split("#")[0];
 
-    var merged = $.extend(
+    const merged = $.extend(
       true,
       {
-        url: url,
+        url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
         iframeSrc: "about:blank",
@@ -49,7 +49,7 @@ export function createSubmission(forms, serialization) {
    * its own default.
    */
   function resolveMethod(options, defaultType) {
-    var resolved = options.method || options.type;
+    const resolved = options.method || options.type;
 
     options.type = resolved;
 
@@ -62,7 +62,7 @@ export function createSubmission(forms, serialization) {
       return undefined;
     }
 
-    var optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
+    const optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
 
     if (typeof optionsData === "string") {
       if (options.requestFormat === "json") {
@@ -85,7 +85,7 @@ export function createSubmission(forms, serialization) {
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.
   function defineKey(object, key, value) {
     Object.defineProperty(object, key, {
-      value: value,
+      value,
       enumerable: true,
       writable: true,
       configurable: true,
@@ -101,11 +101,11 @@ export function createSubmission(forms, serialization) {
       throw new Error('jquery.form: requestFormat "json" needs a method with a body, such as POST');
     }
 
-    var body = {};
-    var own = Object.prototype.hasOwnProperty;
+    const body = {};
+    const own = Object.prototype.hasOwnProperty;
 
-    for (var i = 0; i < fields.length; i++) {
-      var name = fields[i].name;
+    for (let i = 0; i < fields.length; i++) {
+      const name = fields[i].name;
 
       if (!own.call(body, name)) {
         defineKey(body, name, fields[i].value);
@@ -116,9 +116,9 @@ export function createSubmission(forms, serialization) {
       }
     }
 
-    var extra = options.extraData;
+    const extra = options.extraData;
 
-    for (var key in extra) {
+    for (const key in extra) {
       if (own.call(extra, key)) {
         defineKey(body, key, extra[key]);
       }
@@ -130,14 +130,14 @@ export function createSubmission(forms, serialization) {
 
   // The fields of a query string, as the { name, value } list $.param takes.
   function queryPairs(query) {
-    var pairs = [];
-    var parts = query.split("&");
+    const pairs = [];
+    const parts = query.split("&");
 
-    for (var i = 0; i < parts.length; i++) {
+    for (let i = 0; i < parts.length; i++) {
       if (parts[i]) {
-        var at = parts[i].indexOf("=");
-        var name = at < 0 ? parts[i] : parts[i].slice(0, at);
-        var value = at < 0 ? "" : parts[i].slice(at + 1);
+        const at = parts[i].indexOf("=");
+        const name = at < 0 ? parts[i] : parts[i].slice(0, at);
+        const value = at < 0 ? "" : parts[i].slice(at + 1);
 
         pairs.push({ name: decodeQuery(name), value: decodeQuery(value) });
       }
@@ -158,8 +158,8 @@ export function createSubmission(forms, serialization) {
 
     if (options.type.toUpperCase() === "GET") {
       // the query goes before any fragment in the url option
-      var hashAt = options.url.indexOf("#");
-      var base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
+      const hashAt = options.url.indexOf("#");
+      const base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
 
       options.url =
         base + (base.indexOf("?") >= 0 ? "&" : "?") + q + options.url.slice(base.length);
@@ -180,7 +180,7 @@ export function createSubmission(forms, serialization) {
 
   // Calls each callback in order with the same this and arguments.
   function callEach(callbacks, context, args) {
-    for (var i = 0; i < callbacks.length; i++) {
+    for (let i = 0; i < callbacks.length; i++) {
       callbacks[i].apply(context, args);
     }
   }
@@ -194,17 +194,17 @@ export function createSubmission(forms, serialization) {
       assertRealParent(this);
     });
 
-    var form = $set[0];
-    var method = options.method || options.type || forms.property(form, "method");
+    const form = $set[0];
+    let method = options.method || options.type || forms.property(form, "method");
 
     options = withDefaults(form, options, method);
 
     // the ajax default type, when neither the caller nor the form gave a method
-    var defaultType = method ? undefined : options.type;
+    const defaultType = method ? undefined : options.type;
 
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
-    var veto = {};
+    const veto = {};
 
     $set.trigger("form-pre-serialize", [$set, options, veto]);
     if (veto.veto) {
@@ -216,16 +216,16 @@ export function createSubmission(forms, serialization) {
       return refuse("ajaxSubmit: submit aborted via beforeSerialize callback");
     }
 
-    var traditional = options.traditional;
+    let traditional = options.traditional;
 
     if (typeof traditional === "undefined") {
       traditional = $.ajaxSettings.traditional;
     }
 
-    var collected = serialization.collect($set[0], options.semantic, options.filtering);
-    var fields = collected.fields;
-    var controls = collected.controls;
-    var qx = extraQuery(fields, options, traditional);
+    const collected = serialization.collect($set[0], options.semantic, options.filtering);
+    const fields = collected.fields;
+    const controls = collected.controls;
+    const qx = extraQuery(fields, options, traditional);
 
     // give pre-submit callback an opportunity to abort the submit
     if (options.beforeSubmit && options.beforeSubmit(fields, $set, options) === false) {
@@ -247,13 +247,13 @@ export function createSubmission(forms, serialization) {
     }
 
     return {
-      form: form,
+      form,
       $form: $set,
-      fields: fields,
-      controls: controls,
-      options: options,
-      method: method,
-      traditional: traditional,
+      fields,
+      controls,
+      options,
+      method,
+      traditional,
     };
   }
 
@@ -263,9 +263,9 @@ export function createSubmission(forms, serialization) {
    * clearForm and target steps before the success callbacks.
    */
   function deliver(submission) {
-    var $set = submission.$form;
-    var options = submission.options;
-    var callbacks = [];
+    const $set = submission.$form;
+    const options = submission.options;
+    const callbacks = [];
 
     if (options.resetForm) {
       callbacks.push(function () {
@@ -281,10 +281,10 @@ export function createSubmission(forms, serialization) {
 
     // perform a load on the target only if dataType is not provided
     if (!options.dataType && options.target) {
-      var successes = callbackList(options.success);
+      const successes = callbackList(options.success);
 
       callbacks.push(function (data, textStatus, jqXHR) {
-        var successArguments = arguments,
+        const successArguments = arguments,
           fn = options.replaceTarget ? "replaceWith" : "html",
           $target = selectorOption(options.target);
 
@@ -311,15 +311,15 @@ export function createSubmission(forms, serialization) {
 
     options.success = function (data, status, xhr) {
       // jQuery 1.4+ passes xhr as 3rd arg
-      var context = options.context || this; // jQuery 1.4+ supports scope context
+      const context = options.context || this; // jQuery 1.4+ supports scope context
 
-      for (var i = 0, max = callbacks.length; i < max; i++) {
+      for (let i = 0, max = callbacks.length; i < max; i++) {
         callbacks[i].apply(context, [data, status, xhr || $set, $set]);
       }
     };
 
     if (options.error) {
-      var errors = callbackList(options.error);
+      const errors = callbackList(options.error);
 
       options.error = function (xhr, status, error) {
         callEach(errors, options.context || this, [xhr, status, error, $set]);
@@ -327,7 +327,7 @@ export function createSubmission(forms, serialization) {
     }
 
     if (options.complete) {
-      var completes = callbackList(options.complete);
+      const completes = callbackList(options.complete);
 
       options.complete = function (xhr, status) {
         callEach(completes, options.context || this, [xhr, status, $set]);
@@ -340,23 +340,23 @@ export function createSubmission(forms, serialization) {
    * for files or a multipart form, "ajax" otherwise.
    */
   function chooseTransport(submission) {
-    var $set = submission.$form;
-    var options = submission.options;
+    const $set = submission.$form;
+    const options = submission.options;
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
     // and the file inputs outside the form that belong to it through their form attribute
-    var fileInputs = $("input[type=file]:enabled", $set)
+    const fileInputs = $("input[type=file]:enabled", $set)
       .add($(submission.controls).filter("input[type=file]"))
       .filter(function () {
         return $(this).val() !== "";
       });
-    var hasFileInputs = fileInputs.length > 0;
+    const hasFileInputs = fileInputs.length > 0;
     // compared as the browser does: ASCII case-insensitive, without surrounding whitespace
-    var mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
-    var multipart =
+    const mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
+    const multipart =
       mp.test(forms.attribute($set[0], "enctype")) || mp.test(forms.attribute($set[0], "encoding"));
-    var transport = hasFileInputs || multipart ? "formdata" : "ajax";
+    let transport = hasFileInputs || multipart ? "formdata" : "ajax";
 
     // a truthy iframe option asks for the iframe transport
     if (options.iframe) {
@@ -372,5 +372,5 @@ export function createSubmission(forms, serialization) {
     return transport;
   }
 
-  return { prepare: prepare, deliver: deliver, chooseTransport: chooseTransport };
+  return { prepare, deliver, chooseTransport };
 }

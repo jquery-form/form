@@ -16,21 +16,21 @@ import { log } from "./diagnostics.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // when the iframe option asks for it.
-var $ = jQuery;
+const $ = jQuery;
 
 /**
  * The iframe send step. `forms.property` reads a form property, or the attribute when a control
  * shadows it.
  */
 export function createIframeTransport(forms) {
-  var CLIENT_TIMEOUT_ABORT = 1;
-  var SERVER_ABORT = 2;
+  const CLIENT_TIMEOUT_ABORT = 1;
+  const SERVER_ABORT = 2;
   // tells apart the frames of uploads that start in the same millisecond
-  var frameCount = 0;
+  let frameCount = 0;
 
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
-    for (var i = 0; i < elements.length; i++) {
+    for (let i = 0; i < elements.length; i++) {
       $(elements[i]).prop("disabled", false);
     }
   }
@@ -47,7 +47,7 @@ export function createIframeTransport(forms) {
   // The frame the form posts into: the iframeTarget, named `id` when it has no name, or a new
   // hidden frame named `id`. Returns the frame and the name the form targets.
   function createFrame(s, id, ownerDocument) {
-    var $io, n;
+    let $io, n;
 
     if (s.iframeTarget) {
       $io = selectorOption(s.iframeTarget, ownerDocument);
@@ -62,7 +62,7 @@ export function createIframeTransport(forms) {
         id = n;
       }
     } else {
-      var io = ownerDocument.createElement("iframe");
+      const io = ownerDocument.createElement("iframe");
 
       io.setAttribute("name", id);
       io.setAttribute("src", s.iframeSrc);
@@ -70,16 +70,16 @@ export function createIframeTransport(forms) {
       $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
     }
 
-    return { $io: $io, id: id };
+    return { $io, id };
   }
 
   // The frame hooks the lifecycle calls: stop a load in progress, and release after the upload.
   function frameHooks(s, $io) {
     return {
-      stop: function () {
+      stop() {
         $io.attr("src", s.iframeSrc); // abort op in progress
       },
-      release: function () {
+      release() {
         if (!s.iframeTarget) {
           $io.remove();
         } else {
@@ -92,23 +92,23 @@ export function createIframeTransport(forms) {
 
   // private function for handling file uploads (hat tip to YAHOO!)
   function fileUploadIframe(submission) {
-    var form = submission.form,
+    const form = submission.form,
       method = submission.method;
 
     enableControls(submission.controls);
 
-    var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
+    const s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
       submission.options,
     ]);
 
     s.context = s.context || s;
-    var ownerDocument = formMember(form, "ownerDocument");
-    var $body = $(closestByTag(form, ["body"]));
-    var frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
-    var $io = frame.$io,
+    const ownerDocument = formMember(form, "ownerDocument");
+    const $body = $(closestByTag(form, ["body"]));
+    const frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
+    const $io = frame.$io,
       io = $io[0];
-    var life = createLifecycle(s, frameHooks(s, $io));
+    const life = createLifecycle(s, frameHooks(s, $io));
 
     if (!life.start()) {
       return life.deferred;
@@ -130,7 +130,7 @@ export function createIframeTransport(forms) {
 
     // take a breath so that pending repaints get some cpu time before the upload starts
     function doSubmit() {
-      var saved = saveAttributes(form);
+      const saved = saveAttributes(form);
 
       setUploadAttributes(form, frame.id, method, s, forms);
 
@@ -140,7 +140,7 @@ export function createIframeTransport(forms) {
       });
 
       // add "extra" data to form if provided in options
-      var extraInputs = [];
+      const extraInputs = [];
 
       try {
         addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
@@ -151,10 +151,10 @@ export function createIframeTransport(forms) {
         }
 
         // A connected form posting into a frame outside the document opens a new window.
-        var root = ownerDocument.documentElement;
+        const root = ownerDocument.documentElement;
 
         if (io && $.contains(root, form) && !$.contains(root, io)) {
-          var notInDocument = "jquery.form: the upload frame is not in the document";
+          const notInDocument = "jquery.form: the upload frame is not in the document";
 
           life.abort(notInDocument, [life.xhr, "error", notInDocument], "error");
 
@@ -176,7 +176,7 @@ export function createIframeTransport(forms) {
         return;
       }
 
-      var doc = getDoc(io);
+      const doc = getDoc(io);
 
       if (!doc) {
         log("cannot access response document");

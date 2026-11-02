@@ -78,15 +78,15 @@ import { submitOptions } from "./options.js";
   // A form property when it is a string, otherwise the attribute. The property is read plainly on
   // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
-    var value = form[name];
+    const value = form[name];
 
     return typeof value === "string" ? value : formAttribute(form, name);
   }
 
-  var forms = { attribute: formAttribute, property: formProperty };
-  var serialization = createSuccessfulControls();
-  var steps = createSubmission(forms, serialization);
-  var transports = {
+  const forms = { attribute: formAttribute, property: formProperty };
+  const serialization = createSuccessfulControls();
+  const steps = createSubmission(forms, serialization);
+  const transports = {
     iframe: createIframeTransport(forms),
     formdata: sendFormData,
     ajax: sendAjax,
@@ -118,7 +118,7 @@ import { submitOptions } from "./options.js";
       );
     }
 
-    var submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
+    const submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
 
     if (!submission) {
       return this;
@@ -126,12 +126,12 @@ import { submitOptions } from "./options.js";
 
     steps.deliver(submission);
 
-    var jqxhr = transports[steps.chooseTransport(submission)](submission);
+    const jqxhr = transports[steps.chooseTransport(submission)](submission);
 
     this.removeData("jqxhr").data("jqxhr", jqxhr);
 
     // clear element array
-    for (var k = 0; k < submission.controls.length; k++) {
+    for (let k = 0; k < submission.controls.length; k++) {
       submission.controls[k] = null;
     }
 
@@ -156,7 +156,7 @@ import { submitOptions } from "./options.js";
    * ajaxSubmit() and ajaxForm() methods.
    */
   $.fn.formToArray = function (semantic, elements, filtering) {
-    var collected = serialization.collect(this[0], semantic, filtering);
+    const collected = serialization.collect(this[0], semantic, filtering);
 
     if (elements) {
       elements.push.apply(elements, collected.controls);
@@ -179,22 +179,22 @@ import { submitOptions } from "./options.js";
    * This method will return a string in the format: name1=value1&amp;name2=value2
    */
   $.fn.fieldSerialize = function (successful) {
-    var a = [];
+    const a = [];
 
     deprecateFieldValueOverride();
 
     this.each(function () {
-      var n = this.name;
+      const n = this.name;
 
       // a form is not a field, though it may have a name
       if (!n || tagName(this) === "form") {
         return;
       }
 
-      var v = $.fieldValue(this, successful);
+      const v = $.fieldValue(this, successful);
 
       if (v && v.constructor === Array) {
-        for (var i = 0, max = v.length; i < max; i++) {
+        for (let i = 0, max = v.length; i < max; i++) {
           a.push({ name: n, value: v[i] });
         }
       } else if (v !== null && typeof v !== "undefined") {
@@ -245,9 +245,11 @@ import { submitOptions } from "./options.js";
    *	array will be empty, otherwise it will contain one or more values.
    */
   $.fn.fieldValue = function (successful) {
-    for (var val = [], i = 0, max = this.length; i < max; i++) {
-      var el = this[i];
-      var v = $.fieldValue(el, successful);
+    const val = [];
+
+    for (let i = 0, max = this.length; i < max; i++) {
+      const el = this[i];
+      const v = $.fieldValue(el, successful);
 
       if (v === null || typeof v === "undefined" || (v.constructor === Array && !v.length)) {
         continue;
@@ -286,11 +288,11 @@ import { submitOptions } from "./options.js";
    * Clears the selected form elements.
    */
   $.fn.clearFields = function (includeHidden) {
-    var re =
+    const re =
       /^(?:color|date|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 
     return this.each(function () {
-      var t = this.type,
+      const t = this.type,
         tag = tagName(this);
 
       if (re.test(t) || tag === "textarea") {
@@ -328,8 +330,8 @@ import { submitOptions } from "./options.js";
    */
   $.fn.resetForm = function () {
     return this.each(function () {
-      var el = $(this);
-      var tag = tagName(this);
+      const el = $(this);
+      const tag = tagName(this);
 
       switch (tag) {
         case "input":
@@ -351,8 +353,8 @@ import { submitOptions } from "./options.js";
           return true;
 
         case "option":
-        case "optgroup":
-          var select = el.parents("select");
+        case "optgroup": {
+          const select = el.parents("select");
 
           if (select.length && select[0].multiple) {
             if (tag === "option") {
@@ -365,6 +367,7 @@ import { submitOptions } from "./options.js";
           }
 
           return true;
+        }
 
         case "select":
           // in order, as the native reset: of several default options, a single select keeps the last
@@ -374,14 +377,15 @@ import { submitOptions } from "./options.js";
 
           return true;
 
-        case "label":
+        case "label": {
           // The control whose id the for attribute names, and the controls inside the label. The
           // filter keeps a for that names an ancestor from resetting the label again.
-          var forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
+          const forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
 
           el.find("input,select,textarea").add(forEl).filter("input,select,textarea").resetForm();
 
           return true;
+        }
 
         case "form":
           // through the prototype: a control named reset shadows the method
@@ -420,12 +424,12 @@ import { submitOptions } from "./options.js";
     }
 
     return this.each(function () {
-      var t = this.type;
+      const t = this.type;
 
       if (t === "checkbox" || t === "radio") {
         this.checked = select;
       } else if (tagName(this) === "option") {
-        var $sel = $(this).parent("select");
+        const $sel = $(this).parent("select");
 
         if (select && $sel[0] && $sel[0].type === "select-one") {
           // deselect all other options

@@ -7,12 +7,12 @@ export function log() {
     return;
   }
 
-  var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
+  const msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
 
   window.console.log(msg);
 }
 
-var warned = {};
+let warned = {};
 
 /**
  * A deprecation warning: console.warn, only while debug is on, once per id per page. The message
@@ -34,8 +34,8 @@ export function resetDeprecations() {
 
 // True for a jQuery version string older than 3.5.
 export function beforeJQuery35(version) {
-  var parts = String(version).split(".");
-  var major = Number(parts[0]);
+  const parts = String(version).split(".");
+  const major = Number(parts[0]);
 
   return major < 3 || (major === 3 && Number(parts[1]) < 5);
 }
