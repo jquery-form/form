@@ -1,5 +1,5 @@
 import { assert, describe, it } from "vitest";
-import { beforeJQuery35, deprecate, deprecateOldJQuery } from "../../src/diagnostics.js";
+import { beforeJQuery35, deprecate, deprecateOldJQuery, log } from "../../src/diagnostics.js";
 import { recordDeprecations, resetFixture } from "./helpers.js";
 
 describe("form", function () {
@@ -52,6 +52,22 @@ describe("form", function () {
       const run = () => logWithDebug({ console: undefined, opera: {} });
 
       assert.doesNotThrow(run);
+    });
+
+    it("should prefix the message and join its parts without a separator", function () {
+      const logged = [];
+      const consoleLog = console.log;
+      console.log = (text) => logged.push(text);
+      $.fn.ajaxSubmit.debug = true;
+
+      try {
+        log("state = ", "complete", 1);
+      } finally {
+        $.fn.ajaxSubmit.debug = false;
+        console.log = consoleLog;
+      }
+
+      assert.deepEqual(logged, ["[jquery.form] state = complete1"]);
     });
 
     it("should stay silent when debug is disabled", function () {
@@ -180,6 +196,47 @@ describe("form", function () {
       });
 
       assert.deepEqual(warnings, []);
+    });
+
+    it("should prefix a deprecation warning with the plugin name", function () {
+      const warnings = recordDeprecations(true, () => deprecate("test-prefix", "a message"));
+
+      assert.deepEqual(warnings, ["[jquery.form] a message (removed in 5.0)"]);
+    });
+
+    describe("on a page whose jQuery is older than 3.5", function () {
+      function withJQueryVersion(version, run) {
+        const actual = $.fn.jquery;
+        $.fn.jquery = version;
+
+        try {
+          return run();
+        } finally {
+          $.fn.jquery = actual;
+        }
+      }
+
+      it("should warn on the first ajaxSubmit under debug", function () {
+        const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
+
+        const warnings = withJQueryVersion("3.4.1", () =>
+          recordDeprecations(true, () => $form.ajaxSubmit({ beforeSubmit: () => false }))
+        );
+
+        assert.strictEqual(warnings.length, 1);
+        assert.include(warnings[0], "jQuery 3.4.1");
+      });
+
+      it("should warn on the first ajaxForm under debug", function () {
+        const $form = $("<form></form>").appendTo("#main");
+
+        const warnings = withJQueryVersion("3.4.1", () =>
+          recordDeprecations(true, () => $form.ajaxForm())
+        );
+
+        assert.strictEqual(warnings.length, 1);
+        assert.include(warnings[0], "jQuery 3.4.1");
+      });
     });
   });
 });

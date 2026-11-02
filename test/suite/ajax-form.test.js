@@ -123,6 +123,14 @@ describe("form", function () {
       }
     });
 
+    it("should not queue an empty selection once the DOM is ready", function () {
+      const $empty = $(".missing-ready-form");
+
+      const warnings = recordDeprecations(true, () => $empty.ajaxForm());
+
+      assert.isFalse(warnings.some((text) => text.includes("queuing")));
+    });
+
     it("should return an empty selection without binding handlers", function () {
       const $missing = $(".missing-ajax-form");
 
@@ -477,6 +485,23 @@ describe("form", function () {
         assert.strictEqual($form[0].clk_x, null);
         assert.strictEqual($form[0].clk_y, null);
       });
+    });
+
+    it("should not send a button clicked before the click window ended", async function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post"><button name="b" value="clicked">Send</button></form>'
+      ).appendTo("#main");
+      $form.on("submit", false);
+      $form.ajaxForm();
+      $form.find("button").trigger("click");
+      await new Promise((resolve) => setTimeout(resolve, 120));
+
+      const requests = await withAjaxCapture(async function (requests) {
+        $form.ajaxSubmit();
+        return requests;
+      });
+
+      assert.strictEqual(requests[0].data, "");
     });
 
     it("should call beforeSubmit and then success when the submit button is clicked", async function () {
@@ -902,6 +927,18 @@ describe("form", function () {
           );
         });
 
+        it("should name a selector to pass instead in the warning", function () {
+          const $form = $("<form></form>").appendTo("#main");
+
+          $form.ajaxForm({ delegation: true });
+
+          const expected = $form.selector === undefined ? 1 : 0;
+          assert.strictEqual(
+            warnings.filter((message) => message.includes('delegation: "form.ajax"')).length,
+            expected
+          );
+        });
+
         it("should not warn when delegation is a selector", function () {
           $().ajaxForm({ delegation: ".scoped-ajax-form" });
 
@@ -1177,6 +1214,21 @@ describe("form", function () {
           calls.map((call) => call.options),
           [first, second]
         );
+      });
+
+      it("should keep other selectors bound when a selector is named like an object member", async function () {
+        const $form = $('<form class="scoped-ajax-form"></form>').appendTo("#main");
+
+        const calls = await withAjaxSubmitStub(async function (calls) {
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+          $().ajaxForm({ delegation: "constructor" });
+          $form.trigger("submit");
+          $().ajaxFormUnbind("constructor");
+          $().ajaxFormUnbind(".scoped-ajax-form");
+          return calls;
+        });
+
+        assert.strictEqual(calls.length, 1);
       });
 
       describe("without Element.prototype.closest", function () {
@@ -2060,6 +2112,18 @@ describe("form", function () {
       describe("with delegated bindings", function () {
         afterEach(function () {
           $(document).off(".form-plugin");
+        });
+
+        it("should leave the page's own document handlers in place", function () {
+          let clicks = 0;
+          $(document).on("click.page-handler", () => clicks++);
+          $().ajaxForm({ delegation: ".scoped-ajax-form" });
+
+          $().ajaxFormUnbind();
+          $(document).trigger("click");
+          $(document).off("click.page-handler");
+
+          assert.strictEqual(clicks, 1);
         });
 
         it("should keep a delegation selector working when another form is bound directly", async function () {
