@@ -117,6 +117,7 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **A lone surrogate is sent as U+FFFD.** `formSerialize`, `fieldSerialize`, a urlencoded `ajaxSubmit` body and the clicked button of an iframe upload threw `URIError` when a name or value held an unpaired UTF-16 surrogate. Each one is now replaced with U+FFFD, as a native form submission and `FormData` do.
 - **Bundlers get the module build; CDNs keep the minified one.** The `browser` field in `package.json` pointed at `dist/jquery.form.min.js`, and bundlers that read it first (webpack, Vite, Browserify) bundled the minified classic build. It is removed: webpack and Vite now use `module` (`dist/jquery.form.mjs`) and Browserify uses `main` (`dist/jquery.form.js`). New `jsdelivr` and `unpkg` fields keep a bare CDN URL serving `dist/jquery.form.min.js`.
 - **The package includes `LICENSE-MIT`.** The package is dual-licensed (LGPL-2.1+ or MIT), but only `LICENSE` was published.
+- **The CommonJS factory uses the window it is given.** `require("jquery-form")(root, $)` read the global `window` and `document`, so it threw in Node unless a DOM was global (as in jest-environment-jsdom). The classic build now takes `window`, `document`, `navigator`, `Element` and `FormData` from `root`, falling back to the global window. jQuery 4 itself still needs a global window when required without one.
 
 ## Known behavior, not changed
 

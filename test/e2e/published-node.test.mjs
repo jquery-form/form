@@ -138,8 +138,6 @@ describe("when the packed package is installed", () => {
 const GLOBALS = `globalThis.window = dom.window; globalThis.document = dom.window.document;`;
 // Runs the jQuery build under test inside the jsdom window.
 const EVAL_JQUERY = `dom.window.eval(require("node:fs").readFileSync(${JSON.stringify(jqueryFile)}, "utf8"));`;
-// What the plugin throws when it reads a global the root it was given does not replace.
-const MISSING_GLOBAL = /^(window|document) is not defined$/;
 // Reports what a case threw instead of its smoke result.
 const settle = (code) => `try { ${code} } catch (error) { report({ thrown: error.message }); }`;
 
@@ -173,7 +171,7 @@ describe("when the packed package is required from CommonJS", () => {
     assert.deepEqual(result, expected(jqueryVersion, "jQuery"));
   });
 
-  it(`should fail on the jQuery ${jqueryVersion} it is given when no window is global`, async () => {
+  it(`should work on the jQuery ${jqueryVersion} and window it is given when no window is global`, async () => {
     // Arrange
     const code = `${EVAL_JQUERY}
       const $ = dom.window.jQuery;
@@ -182,9 +180,8 @@ describe("when the packed package is required from CommonJS", () => {
     // Act
     const result = await run(fixture, settle(`${code} report(await smoke($, value));`));
 
-    // Assert: known failure, the plugin reads the global window or document (which one depends
-    // on the version) instead of the root it is given.
-    assert.match(result.thrown, MISSING_GLOBAL);
+    // Assert
+    assert.deepEqual(result, expected(jqueryVersion, "jQuery"));
   });
 
   for (const version of FIXTURE_VERSIONS) {
@@ -202,7 +199,7 @@ describe("when the packed package is required from CommonJS", () => {
       assert.deepEqual(result, expected(version, "jQuery"));
     });
 
-    it(`should fail to build the installed jQuery ${version} on a window that is not global`, async () => {
+    it(`should build the installed jQuery ${version} on a window that is not global, where jQuery allows it`, async () => {
       // Arrange
       const code = `const $ = require("jquery-form")(dom.window);`;
 
@@ -212,13 +209,13 @@ describe("when the packed package is required from CommonJS", () => {
         settle(`${code} report(await smoke($, $));`)
       );
 
-      // Assert: known failures. jQuery 3 builds on the root, then the plugin reads the global
-      // document; jQuery 4 throws when required without a global window instead of returning a
-      // factory, so require('jquery')(root) never runs.
-      assert.match(
-        result.thrown,
-        version === "3.7.1" ? MISSING_GLOBAL : /^jQuery requires a window with a document$/
-      );
+      // Assert: jQuery 4 throws when required without a global window instead of returning a
+      // factory, so require('jquery')(root) never runs (a jQuery limit, not the plugin's).
+      if (version === "3.7.1") {
+        assert.deepEqual(result, expected(version, "jQuery"));
+      } else {
+        assert.match(result.thrown, /^jQuery requires a window with a document$/);
+      }
     });
   }
 });

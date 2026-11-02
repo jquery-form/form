@@ -23,7 +23,9 @@
 (function (factory) {
 	if (typeof define === 'function' && define.amd) {
 		// AMD. Register as an anonymous module.
-		define(['jquery'], factory);
+		define(['jquery'], function (jQuery) {
+			factory(jQuery, window);
+		});
 	} else if (typeof module === 'object' && module.exports) {
 		// Node/CommonJS
 		module.exports = function( root, jQuery ) {
@@ -37,16 +39,19 @@
 					jQuery = require('jquery')(root);
 				}
 			}
-			factory(jQuery);
+			factory(jQuery, root || (typeof window !== 'undefined' ? window : undefined));
 			return jQuery;
 		};
 	} else {
 		// Browser globals
-		factory(jQuery);
+		factory(jQuery, window);
 	}
 
-}(function (jQuery) {
+}(function (jQuery, root) {
 	'use strict';
+	var window = root;
+	var document = window.document, navigator = window.navigator;
+	var Element = window.Element, FormData = window.FormData;
 // Form members: the properties and methods the plugin reads or calls on a form. A control named
 // like a member (elements, setAttribute) shadows that member on the form itself, so members are
 // read through the DOM prototypes, which a control cannot shadow.
