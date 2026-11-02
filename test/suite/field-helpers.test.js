@@ -31,14 +31,6 @@ describe("form", function () {
   resetFixture();
 
   describe("plugin installation", function () {
-    it("should clear fields through clearInputs as clearFields does", function () {
-      const $input = $('<input type="text" value="x">');
-
-      const result = $input.clearInputs();
-
-      assert.strictEqual(result.val(), "");
-    });
-
     it("should turn debug logging off when the plugin loads", function () {
       const debug = $.fn.ajaxSubmit.debug;
 

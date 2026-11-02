@@ -27,7 +27,7 @@ import {
   fieldValue,
   urlencode,
 } from "./successful-controls.js";
-import { deprecate, log, requireJQuery35 } from "./diagnostics.js";
+import { log, requireJQuery35 } from "./diagnostics.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
 import { createIframeTransport } from "./iframe-transport.js";
 import { createSubmission } from "./submission.js";
@@ -293,15 +293,9 @@ import { submitOptions } from "./options.js";
   /**
    * Clears the selected form elements.
    */
-  $.fn.clearInputs = function (includeHidden) {
-    deprecate("clearInputs", "clearInputs is deprecated, use clearFields");
-
-    return this.clearFields(includeHidden);
-  };
-
   $.fn.clearFields = function (includeHidden) {
     var re =
-      /^(?:color|date|datetime|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
+      /^(?:color|date|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 
     return this.each(function () {
       var t = this.type,

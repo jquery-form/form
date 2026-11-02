@@ -1590,6 +1590,8 @@ function createIframeTransport(forms) {
     var form = submission.form,
       method = submission.method;
 
+    enableControls(submission.controls);
+
     var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
       submission.options,
@@ -1719,26 +1721,7 @@ function createIframeTransport(forms) {
     return life.deferred;
   }
 
-  return function sendIframe(submission) {
-    var jqxhr;
-
-    // now, while the controls are still listed: ajaxSubmit clears the list when it returns,
-    // before a closeKeepAlive request completes
-    enableControls(submission.controls);
-
-    // hack to fix Safari hang (thanks to Tim Molendijk for this)
-    // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-    if (submission.options.closeKeepAlive) {
-      deprecate("closeKeepAlive", "closeKeepAlive works around a Safari 3/4 bug and is deprecated");
-      $.get(submission.options.closeKeepAlive, function () {
-        jqxhr = fileUploadIframe(submission);
-      });
-    } else {
-      jqxhr = fileUploadIframe(submission);
-    }
-
-    return jqxhr;
-  };
+  return fileUploadIframe;
 }
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
@@ -2384,15 +2367,9 @@ function createSubmission(feature, forms, serialization) {
   /**
    * Clears the selected form elements.
    */
-  $.fn.clearInputs = function (includeHidden) {
-    deprecate("clearInputs", "clearInputs is deprecated, use clearFields");
-
-    return this.clearFields(includeHidden);
-  };
-
   $.fn.clearFields = function (includeHidden) {
     var re =
-      /^(?:color|date|datetime|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
+      /^(?:color|date|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
 
     return this.each(function () {
       var t = this.type,

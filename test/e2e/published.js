@@ -51,7 +51,6 @@
         "fieldValue",
         "clearForm",
         "clearFields",
-        "clearInputs",
         "resetForm",
         "enable",
         "selected",

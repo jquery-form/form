@@ -72,35 +72,6 @@ describe("form", function () {
   });
 
   describe("deprecations", function () {
-    it("should warn once, naming clearFields, when clearInputs is called twice under debug", function () {
-      const $input = $('<input type="text" value="x">');
-
-      const warnings = recordDeprecations(true, function () {
-        $input.clearInputs();
-        $input.clearInputs();
-      });
-
-      assert.strictEqual(warnings.length, 1);
-      assert.include(warnings[0], "clearFields");
-      assert.include(warnings[0], "removed in 5.0");
-    });
-
-    it("should stay silent when clearInputs is called with debug off", function () {
-      const $input = $('<input type="text" value="x">');
-
-      const warnings = recordDeprecations(false, () => $input.clearInputs());
-
-      assert.deepEqual(warnings, []);
-    });
-
-    it("should not warn when clearForm clears its fields", function () {
-      const $form = $('<form><input type="text" value="x"></form>');
-
-      const warnings = recordDeprecations(true, () => $form.clearForm());
-
-      assert.isFalse(warnings.some((text) => text.includes("clearInputs")));
-    });
-
     it("should tell versions before 3.5 from later ones", function () {
       const versions = ["1.7.2", "2.2.4", "3.4.1", "3.5.0", "3.7.1", "3.10.0", "4.0.0"];
 

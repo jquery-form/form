@@ -6,13 +6,15 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 
 ## Summary
 
-| Change                                                                                                                                              | Who is affected                                                                      | 4.x warning                        |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------- |
-| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery | "jQuery before 3.5", under debug   |
-| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                  | None                               |
-| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                              | "attr2 is deprecated", under debug |
-| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist               | "queuing ajaxForm", under debug    |
-| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier | None                               |
+| Change                                                                                                                                              | Who is affected                                                                      | 4.x warning                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery | "jQuery before 3.5", under debug                            |
+| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                  | None                                                        |
+| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                              | "attr2 is deprecated", under debug                          |
+| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist               | "queuing ajaxForm", under debug                             |
+| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier | None                                                        |
+| [`clearInputs` is removed](#clearinputs-is-removed)                                                                                                 | Code that calls `clearInputs`                                                        | "clearInputs is deprecated", under debug                    |
+| [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                            | "closeKeepAlive works around a Safari 3/4 bug", under debug |
 
 Entries are added as each 5.0 change lands.
 
@@ -136,6 +138,46 @@ After (5.0), the frame's `src` is `about:blank` unless you pass `iframeSrc`:
 
 ```javascript
 $("#myForm").ajaxSubmit({ iframe: true, iframeSrc: "javascript:false" }); // only if you need it
+```
+
+### `clearInputs` is removed
+
+**What changed.** `$.fn.clearInputs` is gone. In 4.x it warned under debug and then called `clearFields` with the same argument.
+
+**Why.** It was an old name for `clearFields`, kept for compatibility.
+
+**Are you affected?** Search your code for `clearInputs`. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs `clearInputs is deprecated, use clearFields` the first time it is called.
+
+Before (4.x):
+
+```javascript
+$("#myForm :input").clearInputs();
+```
+
+After (5.0):
+
+```javascript
+$("#myForm :input").clearFields();
+```
+
+### `closeKeepAlive` is ignored
+
+**What changed.** The `closeKeepAlive` option is ignored, like any option `$.ajax` does not know. In 4.x, an iframe upload with `closeKeepAlive` first sent a GET request to that URL and started the upload only when it succeeded; if it failed, the upload never started and no callback ran. 5.0 starts the upload at once and sends no extra request, and `ajaxSubmit` stores the upload's jqXHR-like object in the form's `jqxhr` data, as it does without the option.
+
+**Why.** It worked around a Safari 3 and 4 bug, where an upload could hang on a kept-alive connection.
+
+**Are you affected?** Search your code for `closeKeepAlive`. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs `closeKeepAlive works around a Safari 3/4 bug and is deprecated` the first time an upload uses it. Leave the option out. If your server needed that GET request for something else, send it yourself.
+
+Before (4.x):
+
+```javascript
+$("#myForm").ajaxSubmit({ iframe: true, closeKeepAlive: "/ping" });
+```
+
+After (5.0):
+
+```javascript
+$("#myForm").ajaxSubmit({ iframe: true });
 ```
 
 ## What your server receives

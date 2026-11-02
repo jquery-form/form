@@ -8,11 +8,11 @@ import {
   submitForm,
 } from "./iframe-post.js";
 import { closestByTag, formMember } from "./form-members.js";
-import { deprecate, log } from "./diagnostics.js";
 import { getDoc, readResponse } from "./iframe-response.js";
 import { keepContext, selectorOption } from "./options.js";
 import { createLifecycle } from "./iframe-lifecycle.js";
 import jQuery from "jquery";
+import { log } from "./diagnostics.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // for file uploads without the File API or when the iframe option asks for it.
@@ -94,6 +94,8 @@ export function createIframeTransport(forms) {
   function fileUploadIframe(submission) {
     var form = submission.form,
       method = submission.method;
+
+    enableControls(submission.controls);
 
     var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
@@ -224,24 +226,5 @@ export function createIframeTransport(forms) {
     return life.deferred;
   }
 
-  return function sendIframe(submission) {
-    var jqxhr;
-
-    // now, while the controls are still listed: ajaxSubmit clears the list when it returns,
-    // before a closeKeepAlive request completes
-    enableControls(submission.controls);
-
-    // hack to fix Safari hang (thanks to Tim Molendijk for this)
-    // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-    if (submission.options.closeKeepAlive) {
-      deprecate("closeKeepAlive", "closeKeepAlive works around a Safari 3/4 bug and is deprecated");
-      $.get(submission.options.closeKeepAlive, function () {
-        jqxhr = fileUploadIframe(submission);
-      });
-    } else {
-      jqxhr = fileUploadIframe(submission);
-    }
-
-    return jqxhr;
-  };
+  return fileUploadIframe;
 }

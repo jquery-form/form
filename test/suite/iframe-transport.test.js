@@ -1,7 +1,6 @@
 import { afterEach, assert, describe, it, vi } from "vitest";
 import {
   countHtmlParsed,
-  recordDeprecations,
   resetFixture,
   restoreAjaxState,
   selectFiles,
@@ -291,36 +290,6 @@ describe("form", function () {
         await submitThroughIframe($form, { dataType: "text" });
 
         assert.strictEqual($form.attr("target"), "original-target");
-      });
-
-      it("should wait for closeKeepAlive before creating the iframe request", async function () {
-        const originalGet = $.get;
-        const $form = createIframeForm("ajax/iframe-text.html");
-        let release;
-        let resolveCompletion;
-        const completed = new Promise((resolve) => {
-          resolveCompletion = resolve;
-        });
-        $.get = function (_url, callback) {
-          release = callback;
-        };
-
-        try {
-          $form.ajaxSubmit({
-            iframe: true,
-            closeKeepAlive: "/close",
-            dataType: "text",
-            complete: resolveCompletion,
-          });
-          const beforeRelease = $form.data("jqxhr");
-
-          release();
-          await completed;
-
-          assert.strictEqual(beforeRelease, undefined);
-        } finally {
-          $.get = originalGet;
-        }
       });
 
       it("should insert what dataFilter returns into the target on an upload", async function () {
@@ -3161,165 +3130,28 @@ describe("form", function () {
         });
 
         describe("closeKeepAlive", function () {
-          // A delayed upload cannot be aborted, so let its server-abort check run before
-          // afterEach removes its frame.
-          afterEach(function () {
-            return wait(30);
-          });
-
-          // Replaces $.get so the keep-alive request finishes only when the test releases it.
-          function holdKeepAlive(run) {
+          it("should start the upload at once without a keep-alive request", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let gets = 0;
+            let posted = false;
             const get = $.get;
-            let release;
-            $.get = function (url, callback) {
-              release = callback;
-            };
+            $.get = () => gets++;
 
+            let deferred;
             try {
-              return run(() => release());
+              deferred = startStubbedUpload(
+                $form,
+                { closeKeepAlive: "ajax/text.html" },
+                () => (posted = true)
+              );
             } finally {
               $.get = get;
             }
-          }
 
-          function keepAliveWarnings(debug) {
-            const $form = createIframeForm("ajax/iframe-text.html");
-
-            const warnings = recordDeprecations(debug, function () {
-              holdKeepAlive(function () {
-                startStubbedUpload($form, { closeKeepAlive: "ajax/text.html" });
-                startStubbedUpload($form, { closeKeepAlive: "ajax/text.html" });
-              });
-            });
-
-            return warnings.filter((text) => text.includes("closeKeepAlive"));
-          }
-
-          it("should warn once that closeKeepAlive is deprecated under debug", function () {
-            const warnings = keepAliveWarnings(true);
-
-            assert.strictEqual(warnings.length, 1);
-            assert.include(warnings[0], "Safari");
-            assert.include(warnings[0], "removed in 5.0");
-          });
-
-          it("should stay silent about closeKeepAlive with debug off", function () {
-            const warnings = keepAliveWarnings(false);
-
-            assert.deepEqual(warnings, []);
-          });
-
-          it("should leave the stored jqxhr undefined after the delayed upload starts", function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            let started = false;
-
-            holdKeepAlive(function (release) {
-              startStubbedUpload(
-                $form,
-                { closeKeepAlive: "ajax/text.html" },
-                () => (started = true)
-              );
-              release();
-            });
-
-            assert.strictEqual(started, true);
-            assert.strictEqual($form.data("jqxhr"), undefined);
-          });
-
-          it("should notify before the delayed upload starts", function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            const log = [];
-            recordGlobalEvents(log);
-            $form.on("form-submit-notify", () => log.push("notify"));
-            $.active = 0;
-
-            holdKeepAlive(function (release) {
-              startStubbedUpload($form, {
-                closeKeepAlive: "ajax/text.html",
-                beforeSend: () => log.push("beforeSend"),
-              });
-              log.push("released");
-              release();
-            });
-
-            assert.deepEqual(log, ["notify", "released", "ajaxStart", "beforeSend", "ajaxSend"]);
-          });
-
-          it("should wrap the upload's start in the keep-alive request's global events", async function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            const log = [];
-            recordGlobalEvents(log);
-            $form.on("form-submit-notify", () => log.push("notify"));
-            $.active = 0;
-
-            await new Promise(function (resolve) {
-              $form.ajaxSubmit({
-                iframe: true,
-                dataType: "text",
-                closeKeepAlive: "ajax/text.html",
-                beforeSend: () => log.push("beforeSend"),
-                complete: function () {
-                  log.push("complete");
-                  resolve();
-                },
-              });
-            });
-
-            assert.deepEqual(log, [
-              "ajaxStart",
-              "ajaxSend",
-              "notify",
-              "beforeSend",
-              "ajaxSend",
-              "ajaxSuccess",
-              "ajaxComplete",
-              "ajaxSuccess",
-              "complete",
-              "ajaxComplete",
-              "ajaxStop",
-            ]);
-          });
-
-          it("should never call back when the keep-alive request fails", async function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            const calls = [];
-
-            await new Promise(function (resolve) {
-              $(document).on("ajaxComplete.ifrlog", () => setTimeout(resolve, 30));
-              $form.ajaxSubmit({
-                iframe: true,
-                closeKeepAlive: "ajax/missing-keep-alive.html",
-                success: () => calls.push("success"),
-                error: () => calls.push("error"),
-                complete: () => calls.push("complete"),
-              });
-            });
-
-            assert.deepEqual(calls, []);
-            assert.strictEqual($form.data("jqxhr"), undefined);
-          });
-
-          it("should post a control disabled in beforeSubmit when closeKeepAlive delays the upload", function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            let disabledDuringPost;
-
-            holdKeepAlive(function (release) {
-              startStubbedUpload(
-                $form,
-                {
-                  closeKeepAlive: "ajax/text.html",
-                  beforeSubmit: function (a, $submitted) {
-                    $submitted.find("[name=upload]").prop("disabled", true);
-                  },
-                },
-                function (form) {
-                  disabledDuringPost = $(form).find("[name=upload]").prop("disabled");
-                }
-              );
-              release();
-            });
-
-            assert.strictEqual(disabledDuringPost, false);
+            assert.strictEqual(gets, 0);
+            assert.strictEqual(posted, true);
+            assert.strictEqual($form.data("jqxhr"), deferred);
+            assert.strictEqual(typeof deferred.abort, "function");
           });
 
           it("should ignore closeKeepAlive on the FormData transport", function () {
