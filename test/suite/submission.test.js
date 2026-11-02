@@ -12,6 +12,8 @@ import {
   selectFiles,
   formHidingParentNode,
   buildForm,
+  recordDeprecations,
+  submitTransport,
 } from "./helpers.js";
 
 function makeForm(html) {
@@ -540,6 +542,17 @@ describe("form", function () {
     });
 
     describe("callbacks", function () {
+      it("should leave the fields as they are after success without resetForm", function () {
+        const $form = makeForm(
+          '<form method="post" action="ajax/text.html"><input name="a" value="default"></form>'
+        );
+        $form.find("input").val("changed");
+
+        submitWith($form, [{}], (settings) => settings.success("ok", "success", {}));
+
+        assert.strictEqual($form.find("input").val(), "changed");
+      });
+
       it("should call beforeSubmit with the field array and the form", async function () {
         const opts = {};
 
@@ -957,6 +970,15 @@ describe("form", function () {
     });
 
     describe("method and type", function () {
+      it("should upload a container's files with the type option GET", function () {
+        const $div = makeForm('<div><input type="file" name="f"></div>');
+        selectFiles($div.find("input")[0], ["a.txt"]);
+
+        const settings = submitWith($div, [{ type: "GET", url: "ajax/text.html" }]);
+
+        assert.strictEqual(settings.type, "GET");
+      });
+
       it("should use options.method as the type on the $.ajax path", function () {
         const $form = makeForm(
           '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
@@ -1186,6 +1208,35 @@ describe("form", function () {
             assert.strictEqual(options.url, url);
           }
         );
+      });
+
+      it("should keep the other options when the url option is false", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+
+        const settings = submitWith($form, [{ url: false, type: "put", data: { x: "1" } }]);
+
+        assert.strictEqual(settings.type, "put");
+        assert.strictEqual(settings.data, "x=1");
+      });
+
+      it("should put the query before the fragment of a url option that is only a fragment", function () {
+        const $form = makeForm(
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+        );
+
+        const settings = submitWith($form, [{ url: "#top" }]);
+
+        assert.strictEqual(settings.url, "?a=1#top");
+      });
+
+      it("should join the query with & to a url option that is only a query", function () {
+        const $form = makeForm(
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+        );
+
+        const settings = submitWith($form, [{ url: "?x=1" }]);
+
+        assert.strictEqual(settings.url, "?x=1&a=1");
       });
     });
 
@@ -1803,6 +1854,21 @@ describe("form", function () {
 
         assert.strictEqual(settings.url, absolute("ajax/text.html") + "?a=1&x=1");
       });
+
+      it("should send a query-string part that starts with = as a field without a name", function () {
+        const $form = makeForm(
+          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
+        );
+        selectFiles($form.find("input")[0], ["a.txt"]);
+
+        const settings = submitWith($form, [{ data: "=x&b" }]);
+        const entries = Array.from(uploadBody(settings).entries()).filter(([name]) => name !== "f");
+
+        assert.deepEqual(entries, [
+          ["", "x"],
+          ["b", ""],
+        ]);
+      });
     });
 
     describe("requestFormat json", function () {
@@ -2375,7 +2441,48 @@ describe("form", function () {
       });
     });
 
+    describe("transport and settings", function () {
+      ["multipart/form-data-x", "x-multipart/form-data"].forEach(function (enctype) {
+        it("should send a form with the enctype " + enctype + " as a plain request", function () {
+          const $form = makeForm(
+            '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          ).attr("enctype", enctype);
+
+          const result = submitTransport($form, {});
+
+          assert.strictEqual(result.transport, "plain");
+        });
+      });
+
+      it("should use the $.ajaxSetup context for an upload without its own", async function () {
+        const $form = makeForm(
+          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
+        );
+        selectFiles($form.find("input")[0], ["a.txt"]);
+        const context = { name: "setup" };
+
+        const settings = await withAjaxSettings({ context: context }, () =>
+          submitWith($form, [{}])
+        );
+
+        assert.strictEqual(settings.context, context);
+      });
+    });
+
     describe("debug logging", function () {
+      it("should not warn about the iframe transport for a plain request", function () {
+        const $form = makeForm(
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+        );
+
+        const warnings = recordDeprecations(true, () => submitWith($form, [{}]));
+
+        assert.deepEqual(
+          warnings.filter((text) => text.includes("iframe")),
+          []
+        );
+      });
+
       function countLogs(run) {
         const log = console.log;
         let count = 0;
