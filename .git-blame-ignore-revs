@@ -1,2 +1,4 @@
 # Adopt Prettier; format src, tests, and docs
 e7e606cec1faed0fe19e76a8e5275fd4e5176e23
+# Switch to the default trailing commas (Prettier "all")
+23603f3022e36c8edc5abd6f9aab58cc09a87231
