@@ -182,3 +182,42 @@ jobs:
         env:
           JQUERY_FILE: ${{ matrix.file }}
           JQUERY_FORM_FIREFOX: ${{ matrix.browser == 'firefox' && '1' || '' }}
+
+  # End-to-end tests: the built plugin posting to a real server (npm run test:e2e).
+  e2e:
+    name: e2e on jQuery ${{ matrix.jquery }} on ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit, firefox]
+        jquery: ["1.7.2", "3.7.1", "4.0.0"]
+        include:
+          - { jquery: "1.7.2", file: ".jquery/jquery-1.7.2.js" }
+          - { jquery: "3.7.1", file: "node_modules/jquery/dist/jquery.js" }
+          - { jquery: "4.0.0", file: "node_modules/jquery4/dist/jquery.js" }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Get Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Fetch jQuery 1.7.2
+        if: matrix.jquery == '1.7.2'
+        run: scripts/fetch-jquery.sh 1.7.2
+      - name: Run the end-to-end tests on jQuery ${{ matrix.jquery }}
+        run: npm run test:e2e -- --project ${{ matrix.browser }}
+        env:
+          JQUERY_FILE: ${{ matrix.file }}
+          JQUERY_FORM_FIREFOX: ${{ matrix.browser == 'firefox' && '1' || '' }}
