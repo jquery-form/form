@@ -102,3 +102,20 @@ Chainable: Yes.
 ```javascript
 $("#myFormId .specialFields").clearFields();
 ```
+
+### Deprecations
+
+Features that 5.0 removes still work on 4.x. With debug output on (`$.fn.ajaxSubmit.debug = true`), the plugin logs a `console.warn` the first time each one is used, once per page, naming the replacement. Nothing is logged with debug off.
+
+| Deprecated                                                                                     | Use instead                                                       |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `clearInputs`                                                                                  | `clearFields`                                                     |
+| `$.fn.attr2`                                                                                   | `.prop()` or `.attr()`                                            |
+| `ajaxForm` on an empty selection before the DOM is ready (queued until ready, old jQuery only) | call `ajaxForm` inside `$(fn)`, or use `delegation: "<selector>"` |
+| the iframe transport chosen automatically because the browser has no `FormData`                | set `iframe: true`                                                |
+| jQuery before 3.5 (warned on the first `ajaxSubmit` or `ajaxForm`)                             | jQuery 3.5 or later                                               |
+| the `closeKeepAlive` option (a Safari 3/4 workaround)                                          | nothing; leave it out                                             |
+
+`clearInputs` is now its own function that warns and then calls `clearFields`, so `$.fn.clearInputs !== $.fn.clearFields`.
+
+One warning does not need debug output: `delegation: true` on jQuery 3 and later binds every form on the page, because those versions have no `.selector` to scope it, so it warns on every `ajaxForm` call that uses it. Pass a selector instead, such as `delegation: "form.ajax"`.

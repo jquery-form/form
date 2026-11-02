@@ -378,7 +378,8 @@ slice is done (`src/submitter.js`; controls named `clk`, `SubmitEvent.submitter`
 GET uploads). The ajaxForm binding slice is done (`src/ajax-form.js`, `delegation: "<selector>"`,
 `ajaxFormUnbind(selector)`, the `delegation: true` warning). The deprecation warnings, the
 `target` sanitizing, trusted-options and iframe-response docs, and the remaining fixes (D-12, D-13,
-D-15, D-19, D-25, the FormData `beforeSend` veto) are done; IFR-122/123 stay `it.fails` for 5.0.
+D-15, D-19, D-25, the FormData `beforeSend` veto) are done; IFR-122/123 were left `it.fails` and
+are fixed in Phase 13.
 Phase 12 shipped as 4.5.0 on 2026-11-10 (PR #642), three days into the 4.4.0 soak with no new
 issues. CodeQL alert 10 (the `target` lookup, moved by the module split) was dismissed as "won't
 fix"; 4.6.0 removes the lookup. The custom CodeQL canary flagged every reopened W1–W4 sink.
@@ -426,6 +427,19 @@ local branch as Phase 12.
   entry in `docs/research/4x-behavior-changes.md`; otherwise it is reported as a bug or an
   undocumented change.
 
+Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
+
+- Lone surrogates become U+FFFD instead of throwing `URIError`: in form fields (`formSerialize`,
+  `fieldSerialize`, urlencoded bodies, the iframe submitter), and in `data` and `extraData` keys and
+  values on every transport.
+- Spaces encode as `+` on every jQuery version.
+- An iframe response that cannot be parsed rejects with `parsererror`, and an error status that
+  also fails to parse reports its `statusText` (IFR-122/123, the last `it.fails`).
+- The iframe upload leaves out a clicked button disabled by its fieldset.
+- Packaging: no `browser` field (bundlers get the module build; `jsdelivr` and `unpkg` name the
+  minified build), `LICENSE-MIT` published, and the CommonJS factory uses the window it is given.
+- Docs: a Deprecations section in `docs/api.md` listing each warning and its replacement.
+
 Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
 ## Phase 14: 5.0 (breaking)
@@ -449,9 +463,8 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
   - An empty file input goes through the FormData upload as an empty text field. A native submit
     sends an empty file part (filename "", `application/octet-stream`), so servers see a form field
     instead of an empty upload (PHP `$_POST` instead of `$_FILES`).
-  - The iframe upload sends a disabled clicked button (disabled itself or by a disabled fieldset)
-    when it comes through `requestSubmit(button)` or `form.clk`. The XHR transports and a native
-    submit skip it. It also adds the button's fields after the form's own.
+  - The iframe upload adds the clicked button's fields after the form's own, where a native
+    submit sends them in tree order.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x
