@@ -63,7 +63,7 @@ content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (sou
 status: completed
 - id: hardening-4x
 content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracle against native FormData, end-to-end tests with a real server, published-file tests, a one-off mutation-testing report), then the 4.6.0 release"
-status: pending
+status: in_progress
 - id: breaking-5
 content: "Phase 14: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
 status: pending
@@ -409,8 +409,13 @@ looked like a bug.
 ## Phase 13: 4.x test hardening (no breaking change)
 
 The Phase 12 sweep found about 70 bugs that 100% coverage had not caught. This phase adds kinds of
-tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the same
-local branch as Phase 12.
+tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the local
+`phase-13` branch, which starts after the 4.5.0 cut on `phase-12`.
+
+Status: done locally, waiting for the 4.4.0 and 4.5.0 releases before it ships as 4.6.0. All five
+kinds of tests are in place and pass on Chromium, WebKit and Firefox with jQuery 1.7.2, 3.7.1 and
+4.0.0; no `it.fails` remain. The mutation score went from 91.67% to 94.34%. The new CI jobs have not
+run yet, because the branch is not pushed.
 
 - Run the suite on Firefox and WebKit as well as Chromium (Vitest browser instances), locally and in
   CI.
