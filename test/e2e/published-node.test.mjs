@@ -121,6 +121,17 @@ describe("when the packed package is installed", () => {
       []
     );
   });
+
+  it("should ship both license files of the dual license", () => {
+    // Arrange
+    const files = ["LICENSE", "LICENSE-MIT"];
+
+    // Act
+    const missing = files.filter((file) => !existsSync(resolve(installed, file)));
+
+    // Assert
+    assert.deepEqual(missing, []);
+  });
 });
 
 // Makes the jsdom window global, as a test environment such as jest-environment-jsdom does.

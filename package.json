@@ -26,7 +26,8 @@
   "unpkg": "dist/jquery.form.min.js",
   "files": [
     "dist",
-    "src"
+    "src",
+    "LICENSE-MIT"
   ],
   "repository": {
     "type": "git",

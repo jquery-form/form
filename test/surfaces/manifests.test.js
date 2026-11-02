@@ -44,6 +44,10 @@ describe("when the package manifests are read", () => {
     expect(pkg.files).toContain("dist");
   });
 
+  it("should publish both licenses of the dual license", () => {
+    expect(pkg.files).toContain("LICENSE-MIT");
+  });
+
   it("should agree on the version with the registry manifest and every dist banner", () => {
     expect(registry.version).toBe(pkg.version);
     for (const file of distFiles) {
