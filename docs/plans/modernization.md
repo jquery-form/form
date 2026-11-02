@@ -617,7 +617,7 @@ Work runs on the local branch `phase-14`, in the worktree `form-phase-14`. The b
 Platform (P1-P5):
 
 - jQuery moves from `dependencies` to `peerDependencies: { "jquery": ">=3.5.0" }`, with no upper bound. `bower.json` and `composer.json` get the same range.
-- The jQuery matrix is 3.5.0 (the floor, vendored in `.jquery/`), 3.7.1 and 4.0.0. 1.7.2 leaves.
+- The jQuery matrix is 3.5.0 (the floor, the devDependency alias `jquery35` = `npm:jquery@3.5.0`, like `jquery4`), 3.7.1 and 4.0.0. 1.7.2 leaves.
 - On jQuery < 3.5, `ajaxSubmit` and `ajaxForm` throw `jquery.form 5 needs jQuery 3.5 or later; this is <version>` before any event. Nothing throws at load (X2).
 - The browser floor follows jQuery 4: current Chrome, Edge, Firefox (and ESR) and Safari. Syntax is ES2020 (Chrome/Edge 80+, Firefox 78+, Safari 14+), enforced by `ecmaVersion: 2020` in the ESLint `src` block and a lint pass over `dist/`. `SubmitEvent.submitter` stays feature-detected.
 - No transpile: `dist` is the source as written, wrapped. Prettier drops `trailingComma: "es5"` for the default `"all"`. The format sweep is its own `style:` commit, added to `.git-blame-ignore-revs`, and `docs/agents/coding-standards.md` loses "revisit for v5".
