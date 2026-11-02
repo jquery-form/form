@@ -12,7 +12,7 @@ Human PR/process stays in `CONTRIBUTING.md`.
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Runtime / CI | **Node 26**; **GitHub Actions** runs `npm test`. Travis and CircleCI are obsolete.                                                              |
 | Lint         | **ESLint** (flat config) — correctness and quality                                                                                              |
-| Format       | **Prettier** near-defaults (2-space indent, double quotes, semicolons) with `printWidth: 100` and `trailingComma: "es5"`. No `.editorconfig`.   |
+| Format       | **Prettier** near-defaults (2-space indent, double quotes, semicolons) with `printWidth: 100`; trailing commas on. No `.editorconfig`.          |
 | Verify       | **`npm test`** — the one command agents run. Runner is whatever the repo ships; do not assume Mocha, Vitest, or Playwright by name.             |
 | Publish      | **Dual surface**: modern module entry **and** classic browser/`$.fn` (UMD or equivalent) so existing script-tag and AMD consumers keep working. |
 | Bundler      | Chosen by the modernization plan; must support the dual surface above.                                                                          |
@@ -21,7 +21,7 @@ Human PR/process stays in `CONTRIBUTING.md`.
 ### Prettier overrides
 
 - `printWidth: 100`: 2-space indent and nested jQuery callbacks make 80 wrap too often; 100 is close to the existing code.
-- `trailingComma: "es5"`: the v4 classic build ships source as written for old browsers, so no trailing commas in call arguments. Revisit for v5.
+- Trailing commas: Prettier's default `"all"` applies. 5.0 ships ES2020 source as written, so trailing commas in call arguments are fine.
 
 ## Commits
 
