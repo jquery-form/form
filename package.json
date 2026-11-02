@@ -44,7 +44,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "metrics": "node scripts/code-metrics.mjs",
-    "test": "npm run lint && npm run format:check && npm run build && vitest run --coverage --project !suite-webkit && vitest run --project suite-webkit"
+    "test": "npm run lint && npm run format:check && npm run build && vitest run --coverage --project !suite-webkit && vitest run --project suite-webkit",
+    "test:firefox": "scripts/test-firefox.sh"
   },
   "dependencies": {
     "jquery": ">=1.7.2"
