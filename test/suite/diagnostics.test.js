@@ -204,6 +204,146 @@ describe("form", function () {
       assert.deepEqual(warnings, ["[jquery.form] a message (removed in 5.0)"]);
     });
 
+    describe("when a page replaces $.fieldValue", function () {
+      function withReplacedFieldValue(run) {
+        const saved = $.fieldValue;
+        $.fieldValue = () => "over";
+
+        try {
+          return run();
+        } finally {
+          $.fieldValue = saved;
+        }
+      }
+
+      function aboutFieldValue(warnings) {
+        return warnings.filter((text) => text.includes("$.fieldValue"));
+      }
+
+      it("should warn once, naming valHooks, when formToArray serializes under debug, and still use the replacement", function () {
+        const $form = $('<form><input name="a" value="1"><input name="b" value="2"></form>');
+        let fields;
+
+        const warnings = recordDeprecations(true, function () {
+          withReplacedFieldValue(function () {
+            fields = $form.formToArray();
+          });
+        });
+
+        assert.deepEqual(warnings, [
+          "[jquery.form] replacing $.fieldValue to change what is serialized is deprecated, " +
+            "use jQuery valHooks (removed in 5.0)",
+        ]);
+        assert.deepEqual(
+          fields.map((field) => field.value),
+          ["over", "over"]
+        );
+      });
+
+      it("should stay silent when formToArray serializes with debug off", function () {
+        const $form = $('<form><input name="a" value="1"></form>');
+
+        const warnings = recordDeprecations(false, function () {
+          withReplacedFieldValue(() => $form.formToArray());
+        });
+
+        assert.deepEqual(warnings, []);
+      });
+
+      it("should not warn while $.fieldValue is the plugin's own", function () {
+        const $form = $('<form action="ajax/text.html"><input name="a" value="1"></form>');
+        $form.appendTo("#main");
+
+        const warnings = recordDeprecations(true, function () {
+          $form.formToArray();
+          $form.formSerialize();
+          $form.find("input").fieldSerialize();
+          $form.ajaxSubmit({ beforeSubmit: () => false });
+        });
+
+        assert.deepEqual(aboutFieldValue(warnings), []);
+      });
+
+      it("should warn only once per page across repeated serializations", function () {
+        const $form = $('<form action="ajax/text.html"><input name="a" value="1"></form>');
+        $form.appendTo("#main");
+
+        const warnings = recordDeprecations(true, function () {
+          withReplacedFieldValue(function () {
+            $form.formToArray();
+            $form.formToArray();
+            $form.formSerialize();
+            $form.find("input").fieldSerialize();
+            $form.ajaxSubmit({ beforeSubmit: () => false });
+          });
+        });
+
+        assert.strictEqual(aboutFieldValue(warnings).length, 1);
+      });
+
+      it("should warn when formSerialize serializes under debug", function () {
+        const $form = $('<form><input name="a" value="1"></form>');
+        let serialized;
+
+        const warnings = recordDeprecations(true, function () {
+          withReplacedFieldValue(function () {
+            serialized = $form.formSerialize();
+          });
+        });
+
+        assert.strictEqual(aboutFieldValue(warnings).length, 1);
+        assert.strictEqual(serialized, "a=over");
+      });
+
+      it("should warn when fieldSerialize serializes under debug", function () {
+        const $input = $('<input name="a" value="1">');
+        let serialized;
+
+        const warnings = recordDeprecations(true, function () {
+          withReplacedFieldValue(function () {
+            serialized = $input.fieldSerialize();
+          });
+        });
+
+        assert.strictEqual(aboutFieldValue(warnings).length, 1);
+        assert.strictEqual(serialized, "a=over");
+      });
+
+      it("should warn when ajaxSubmit serializes under debug", function () {
+        const $form = $('<form action="ajax/text.html"><input name="a" value="1"></form>');
+        $form.appendTo("#main");
+        let fields;
+
+        const warnings = recordDeprecations(true, function () {
+          withReplacedFieldValue(function () {
+            $form.ajaxSubmit({
+              beforeSubmit: function (sent) {
+                fields = sent;
+                return false;
+              },
+            });
+          });
+        });
+
+        assert.strictEqual(aboutFieldValue(warnings).length, 1);
+        assert.strictEqual(fields[0].value, "over");
+      });
+
+      it("should not warn when fieldValue reads through the replacement", function () {
+        const $input = $('<input name="a" value="1">');
+        let values;
+
+        const warnings = recordDeprecations(true, function () {
+          withReplacedFieldValue(function () {
+            values = $input.fieldValue();
+          });
+        });
+
+        assert.deepEqual(warnings, []);
+        assert.deepEqual(values, ["over"]);
+      });
+    });
+
     describe("on a page whose jQuery is older than 3.5", function () {
       function withJQueryVersion(version, run) {
         const actual = $.fn.jquery;

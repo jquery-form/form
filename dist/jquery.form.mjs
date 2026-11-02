@@ -671,6 +671,31 @@ function valueOf(el) {
 }
 
 /**
+ * The plugin's own $.fieldValue: the value of a control, or null when `successful` is true or
+ * missing and the control is not sent.
+ */
+function fieldValue(el, successful) {
+  var required = typeof successful === "undefined" || successful;
+
+  if (required && !isSuccessful(el, submitterElement(el.form))) {
+    return null;
+  }
+
+  return valueOf(el);
+}
+
+// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
+// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
+function deprecateFieldValueOverride() {
+  if (jQuery.fieldValue !== fieldValue) {
+    deprecate(
+      "fieldValue-override",
+      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
+    );
+  }
+}
+
+/**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
 // A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
@@ -890,6 +915,8 @@ function createSuccessfulControls(feature) {
     if (!form) {
       return collected;
     }
+
+    deprecateFieldValueOverride();
 
     var els = controlsOf(form, semantic);
 
@@ -2418,6 +2445,8 @@ function createSubmission(feature, forms, serialization) {
   $.fn.fieldSerialize = function (successful) {
     var a = [];
 
+    deprecateFieldValueOverride();
+
     this.each(function () {
       var n = this.name;
 
@@ -2501,15 +2530,7 @@ function createSubmission(feature, forms, serialization) {
   /**
    * Returns the value of the field element.
    */
-  $.fieldValue = function (el, successful) {
-    var required = typeof successful === "undefined" || successful;
-
-    if (required && !isSuccessful(el, submitterElement(el.form))) {
-      return null;
-    }
-
-    return valueOf(el);
-  };
+  $.fieldValue = fieldValue;
 
   /**
    * Clears the form data. Takes the following actions on the form's input fields:

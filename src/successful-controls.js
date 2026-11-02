@@ -1,7 +1,8 @@
 import { callFormMethod, formMember, isDisabled, isElement, tagName } from "./form-members.js";
+import { submitterElement, submitterOf } from "./submitter.js";
+import { deprecate } from "./diagnostics.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
-import { submitterOf } from "./submitter.js";
 
 // Successful controls: which controls of a form are sent, and as which name/value fields
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
@@ -92,6 +93,31 @@ export function valueOf(el) {
   }
 
   return v.replace(rLineBreak, "\r\n");
+}
+
+/**
+ * The plugin's own $.fieldValue: the value of a control, or null when `successful` is true or
+ * missing and the control is not sent.
+ */
+export function fieldValue(el, successful) {
+  var required = typeof successful === "undefined" || successful;
+
+  if (required && !isSuccessful(el, submitterElement(el.form))) {
+    return null;
+  }
+
+  return valueOf(el);
+}
+
+// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
+// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
+export function deprecateFieldValueOverride() {
+  if (jQuery.fieldValue !== fieldValue) {
+    deprecate(
+      "fieldValue-override",
+      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
+    );
+  }
 }
 
 /**
@@ -314,6 +340,8 @@ export function createSuccessfulControls(feature) {
     if (!form) {
       return collected;
     }
+
+    deprecateFieldValueOverride();
 
     var els = controlsOf(form, semantic);
 

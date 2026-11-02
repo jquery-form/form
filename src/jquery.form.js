@@ -23,9 +23,9 @@ import { ajaxForm, ajaxFormUnbind } from "./ajax-form.js";
 import { callFormMethod, tagName } from "./form-members.js";
 import {
   createSuccessfulControls,
-  isSuccessful,
+  deprecateFieldValueOverride,
+  fieldValue,
   urlencode,
-  valueOf,
 } from "./successful-controls.js";
 import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
@@ -34,7 +34,6 @@ import { createSubmission } from "./submission.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 import { submitOptions } from "./options.js";
-import { submitterElement } from "./submitter.js";
 
 (function ($) {
   "use strict";
@@ -212,6 +211,8 @@ import { submitterElement } from "./submitter.js";
   $.fn.fieldSerialize = function (successful) {
     var a = [];
 
+    deprecateFieldValueOverride();
+
     this.each(function () {
       var n = this.name;
 
@@ -295,15 +296,7 @@ import { submitterElement } from "./submitter.js";
   /**
    * Returns the value of the field element.
    */
-  $.fieldValue = function (el, successful) {
-    var required = typeof successful === "undefined" || successful;
-
-    if (required && !isSuccessful(el, submitterElement(el.form))) {
-      return null;
-    }
-
-    return valueOf(el);
-  };
+  $.fieldValue = fieldValue;
 
   /**
    * Clears the form data. Takes the following actions on the form's input fields:
