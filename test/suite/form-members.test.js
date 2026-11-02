@@ -1,5 +1,6 @@
 import { assert, describe, it } from "vitest";
 import { callFormMethod, formMember } from "../../src/form-members.js";
+import { formAttribute } from "../../src/form-attributes.js";
 
 describe("form members", function () {
   describe("formMember", function () {
@@ -73,6 +74,16 @@ describe("form members", function () {
       }
 
       assert.strictEqual(valid, false);
+    });
+  });
+
+  describe("formAttribute", function () {
+    it("should return undefined for an absent attribute, as jQuery's attr does", function () {
+      const form = $('<form><input name="id"></form>')[0];
+
+      const value = formAttribute(form, "id");
+
+      assert.strictEqual(value, undefined);
     });
   });
 });

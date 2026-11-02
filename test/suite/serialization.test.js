@@ -273,6 +273,27 @@ describe("form", function () {
         assert.strictEqual(calls, 0);
       });
 
+      it("should keep the controls of a nested form when a container is serialized semantically", function () {
+        const $div = $(
+          '<div><input name="loose" value="1"><form><input name="inner" value="2"></form></div>'
+        ).appendTo("#main");
+
+        const names = $div.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["loose", "inner"]);
+      });
+
+      it("should not add controls that name another form when a container with an id is serialized semantically", function () {
+        const $div = $('<div id="semantic-container"><input name="a" value="1"></div>').appendTo(
+          "#main"
+        );
+        $('<input name="elsewhere" value="2" form="another-form">').appendTo("#main");
+
+        const names = $div.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
       it("should serialize only the first form when the selection holds several forms", function () {
         const $forms = $(
           '<form><input name="first" value="1"></form><form><input name="second" value="2"></form>'
@@ -1222,6 +1243,26 @@ describe("form", function () {
         ];
 
         assert.deepEqual(results, ["over", "a=over", ["over"]]);
+      } finally {
+        $.fieldValue = saved;
+      }
+    });
+
+    it("should skip a control for which an overriding $.fieldValue returns undefined", function () {
+      const $form = $('<form><input name="a" value="1"></form>');
+      const saved = $.fieldValue;
+      $.fieldValue = function () {
+        return undefined;
+      };
+
+      try {
+        const results = [
+          $form.formToArray(),
+          $form.find("input").fieldSerialize(),
+          $form.find("input").fieldValue(),
+        ];
+
+        assert.deepEqual(results, [[], "", []]);
       } finally {
         $.fieldValue = saved;
       }
