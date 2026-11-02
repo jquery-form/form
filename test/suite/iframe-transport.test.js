@@ -1929,6 +1929,21 @@ describe("form", function () {
             assert.deepEqual(fields, [["choice", "picked"]]);
           });
 
+          it("should post a clicked button's lone surrogate as U+FFFD", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const button = $('<button type="submit">').appendTo($form)[0];
+            button.name = "n\uDBFF";
+            button.value = "\uDC00x";
+            $form[0].clk = button;
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["n�", "�x"]]);
+          });
+
           it("should not post a disabled clicked button", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $(

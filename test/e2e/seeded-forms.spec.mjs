@@ -20,13 +20,7 @@ const MODES = [
 
 // Known failures: the plugin fails where the native submit posts. Each has an ID and a matcher;
 // the test then pins the failure, so a fix makes it fail until the entry is removed.
-const KNOWN_FAILURES = [
-  {
-    id: "IFRAME-USV-THROW",
-    description: "an iframe upload whose submitter has a lone surrogate fails with URIError",
-    matches: (result, mode) => !!mode.options.iframe && /URIError/.test(result.error || ""),
-  },
-];
+const KNOWN_FAILURES = [];
 
 test.describe("seeded forms posted end to end", () => {
   test.beforeEach(async ({ page }) => {

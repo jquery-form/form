@@ -114,7 +114,7 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 ## Phase 13
 
-- **A lone surrogate is sent as U+FFFD.** `formSerialize`, `fieldSerialize` and a urlencoded `ajaxSubmit` body threw `URIError` when a name or value held an unpaired UTF-16 surrogate. Each one is now replaced with U+FFFD, as a native form submission and `FormData` do.
+- **A lone surrogate is sent as U+FFFD.** `formSerialize`, `fieldSerialize`, a urlencoded `ajaxSubmit` body and the clicked button of an iframe upload threw `URIError` when a name or value held an unpaired UTF-16 surrogate. Each one is now replaced with U+FFFD, as a native form submission and `FormData` do.
 
 ## Known behavior, not changed
 

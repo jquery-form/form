@@ -1036,7 +1036,7 @@ function addSubmitterFields(s, form) {
 
   for (var n in fields) {
     s.extraData = s.extraData || {};
-    s.extraData[n] = fields[n];
+    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
   }
 }
 
