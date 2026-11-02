@@ -52,7 +52,7 @@ const page = `<!doctype html>
 // points its package.json names (main, browser for the minified build, module).
 async function publishedPage(loader, min) {
   const manifest = JSON.parse(await readFile(resolve(packageDir, "package.json"), "utf8"));
-  const classic = "/pkg/" + (min ? manifest.browser : manifest.main);
+  const classic = "/pkg/" + (min ? manifest.jsdelivr : manifest.main);
   const hasModule = existsSync(jqueryModule);
   const loaders = {
     script: `<script src="/jquery.js"></script>

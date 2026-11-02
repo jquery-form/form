@@ -15,7 +15,8 @@ describe("when the package manifests are read", () => {
     const entries = [
       pkg.main,
       pkg.module,
-      pkg.browser,
+      pkg.jsdelivr,
+      pkg.unpkg,
       bower.main,
       registry.main,
       registry.browser,
@@ -31,7 +32,12 @@ describe("when the package manifests are read", () => {
   it("should keep the classic build as main and the module build as module", () => {
     expect(pkg.main).toBe("dist/jquery.form.js");
     expect(pkg.module).toBe("dist/jquery.form.mjs");
-    expect(pkg.browser).toBe("dist/jquery.form.min.js");
+  });
+
+  it("should leave bundlers on module and main and serve the minified build from CDNs", () => {
+    expect(pkg).not.toHaveProperty("browser");
+    expect(pkg.jsdelivr).toBe("dist/jquery.form.min.js");
+    expect(pkg.unpkg).toBe("dist/jquery.form.min.js");
   });
 
   it("should publish the entry points through the files list", () => {

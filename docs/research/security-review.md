@@ -244,7 +244,7 @@ The ADR-0001 dual surface (a module entry plus the classic script-tag, AMD and C
 }
 ```
 
-- **`main`, `module` and `browser` stay** for tools that predate `exports`.
+- **`main` and `module` stay** for tools that predate `exports`, and `jsdelivr`/`unpkg` keep naming the minified build for CDNs. 4.6.0 dropped `browser`.
 - **Script tags and AMD are unaffected**, because they load files by path (CDNs, `bower.json`, `composer.json`). `test/surfaces/manifests.test.js` gains checks that every 4.x deep path still resolves through `exports`.
 - **Dual-package hazard.** An app that both `import`s and `require`s the plugin loads it twice. The module registers on import; the CommonJS factory registers when it is called with a jQuery. If both get the same jQuery, the only cost is registering twice. If they get different jQuery copies, each copy gets its own plugin. Document it rather than work around it; the peer dependency (finding 5) makes a single jQuery the normal case.
 

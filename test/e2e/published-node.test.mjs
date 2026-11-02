@@ -113,7 +113,7 @@ describe("when the packed package is installed", () => {
     const manifest = JSON.parse(readFileSync(resolve(installed, "package.json"), "utf8"));
 
     // Act
-    const entries = [manifest.main, manifest.module, manifest.browser];
+    const entries = [manifest.main, manifest.module, manifest.jsdelivr, manifest.unpkg];
 
     // Assert
     assert.deepEqual(
