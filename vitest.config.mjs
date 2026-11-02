@@ -80,11 +80,14 @@ const jqueryAsModule = {
   },
 };
 
-const browser = () => ({
+// The suite runs on Chromium and WebKit, as instances named suite-chromium and suite-webkit.
+// Firefox is not listed: Playwright's Firefox build does not start on the maintainer's macOS.
+// V8 coverage only exists in Chromium, so npm test runs suite-webkit in a second run.
+const browser = (names, project) => ({
   enabled: true,
   headless: true,
   provider: playwright(),
-  instances: [{ browser: "chromium" }],
+  instances: names.map((name) => ({ browser: name, name: project && `${project}-${name}` })),
 });
 
 export default defineConfig({
@@ -110,7 +113,7 @@ export default defineConfig({
           globals: true,
           include: ["test/suite/**/*.test.js"],
           setupFiles: ["test/setup.js"],
-          browser: browser(),
+          browser: browser(["chromium", "webkit"], "suite"),
         },
       },
       {
@@ -118,7 +121,7 @@ export default defineConfig({
         test: {
           name: "surfaces",
           include: ["test/surfaces/browser.test.js"],
-          browser: browser(),
+          browser: browser(["chromium"]),
         },
       },
       {

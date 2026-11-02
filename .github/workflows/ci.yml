@@ -66,15 +66,15 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - name: Install Chromium
+      - name: Install Chromium and WebKit
         if: env.CODE == 'true'
         run: |
           start=$(date +%s)
-          trap 'printf "%s\t%s\n" "Install Chromium" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
-          npx playwright install chromium
+          trap 'printf "%s\t%s\n" "Install Chromium and WebKit" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npx playwright install --with-deps chromium webkit
       - name: Check the test script matches the CI steps
         run: |
-          expected="npm run lint && npm run format:check && npm run build && vitest run --coverage"
+          expected="npm run lint && npm run format:check && npm run build && vitest run --coverage --project !suite-webkit && vitest run --project suite-webkit"
           actual=$(node -p "require('./package.json').scripts.test")
           if [ "$actual" != "$expected" ]; then
             echo "package.json test script has drifted from the CI steps."
@@ -103,7 +103,13 @@ jobs:
         run: |
           start=$(date +%s)
           trap 'printf "%s\t%s\n" "vitest run --coverage" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
-          npx vitest run --coverage --reporter=default --reporter=json --outputFile.json=vitest-report.json
+          npx vitest run --coverage --project !suite-webkit --reporter=default --reporter=json --outputFile.json=vitest-report.json
+      - name: vitest run --project suite-webkit
+        if: env.CODE == 'true'
+        run: |
+          start=$(date +%s)
+          trap 'printf "%s\t%s\n" "vitest run --project suite-webkit" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
+          npx vitest run --project suite-webkit
       - name: Check committed dist matches the build
         if: env.CODE == 'true'
         run: |
