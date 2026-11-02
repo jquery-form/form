@@ -73,6 +73,12 @@ jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/)
 
 Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
 
+### End-to-end tests
+
+`npm run test:e2e` runs [Playwright Test](https://playwright.dev/) against the built `dist/jquery.form.js` (run `npm run build` first) on Chromium and WebKit. A small Node server (`test/e2e/server.mjs`) serves the fixture page and records every request the plugin sends, through each transport (urlencoded and FormData XHR, the iframe upload). Each test submits the same form natively and through the plugin, and the two requests must match after parsing, apart from the known differences listed in `test/shared/oracle-forms.js` and `test/e2e/harness.js`. `npm test` does not run them.
+
+Set `JQUERY_FILE` to test another jQuery build, as for the suite. `npm run test:e2e:docker` runs them in Docker on all three browsers, including Firefox.
+
 ### Running tests in Docker
 
 Playwright's Firefox build does not start on some macOS versions, and `npm test` covers only Chromium and WebKit. To run the suite on Firefox (or on all three browsers under Linux), use Docker. The scripts use the Playwright image that matches the `playwright` version in `package.json` and leave your local `node_modules` untouched:
@@ -82,7 +88,7 @@ npm run test:firefox   # the suite on Firefox
 npm run test:docker    # the suite on Chromium, WebKit and Firefox
 ```
 
-`scripts/test-docker.sh` passes any arguments on to `vitest run`. To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=.jquery/jquery-1.7.2.js npm run test:firefox` (fetch it first with `scripts/fetch-jquery.sh 1.7.2`).
+`scripts/test-docker.sh` passes any arguments on to `vitest run` (or to `playwright test` after `--e2e`). To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=.jquery/jquery-1.7.2.js npm run test:firefox` (fetch it first with `scripts/fetch-jquery.sh 1.7.2`).
 
 Node and `node_modules` are cached in Docker volumes (`jquery-form-node`, and `jquery-form-node-modules-<hash>` for each `package-lock.json`). To clear them:
 
