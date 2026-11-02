@@ -1773,6 +1773,7 @@ function createIframeTransport(hasProp, forms) {
     // hack to fix Safari hang (thanks to Tim Molendijk for this)
     // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
     if (submission.options.closeKeepAlive) {
+      deprecate("closeKeepAlive", "closeKeepAlive works around a Safari 3/4 bug and is deprecated");
       $.get(submission.options.closeKeepAlive, function () {
         jqxhr = fileUploadIframe(submission);
       });

@@ -1,5 +1,6 @@
 import { afterEach, assert, describe, it, vi } from "vitest";
 import {
+  recordDeprecations,
   resetFixture,
   restoreAjaxState,
   selectFiles,
@@ -2931,6 +2932,33 @@ describe("form", function () {
               $.get = get;
             }
           }
+
+          function keepAliveWarnings(debug) {
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            const warnings = recordDeprecations(debug, function () {
+              holdKeepAlive(function () {
+                startStubbedUpload($form, { closeKeepAlive: "ajax/text.html" });
+                startStubbedUpload($form, { closeKeepAlive: "ajax/text.html" });
+              });
+            });
+
+            return warnings.filter((text) => text.includes("closeKeepAlive"));
+          }
+
+          it("should warn once that closeKeepAlive is deprecated under debug", function () {
+            const warnings = keepAliveWarnings(true);
+
+            assert.strictEqual(warnings.length, 1);
+            assert.include(warnings[0], "Safari");
+            assert.include(warnings[0], "removed in 5.0");
+          });
+
+          it("should stay silent about closeKeepAlive with debug off", function () {
+            const warnings = keepAliveWarnings(false);
+
+            assert.deepEqual(warnings, []);
+          });
 
           it("should leave the stored jqxhr undefined after the delayed upload starts", function () {
             const $form = createIframeForm("ajax/iframe-text.html");

@@ -189,7 +189,7 @@ These options are trusted input only: pass values your code controls, never valu
 - `url`, and the form's `action`
 - `target` and `replaceTarget`
 - `iframeSrc` and `iframeTarget`
-- `closeKeepAlive`
+- `closeKeepAlive`, which is deprecated: it works around a Safari 3/4 bug, warns under `debug` and is removed in 5.0
 - `dataType: "script"`, which evaluates the response
 - the keys of `data` and `extraData` (values may come from users)
 - the `includeHidden` selector of `clearForm` and `clearFields`

@@ -8,11 +8,11 @@ import {
   submitForm,
 } from "./iframe-post.js";
 import { closestByTag, formMember } from "./form-members.js";
+import { deprecate, log } from "./diagnostics.js";
 import { getDoc, readResponse } from "./iframe-response.js";
 import { createLifecycle } from "./iframe-lifecycle.js";
 import jQuery from "jquery";
 import { keepContext } from "./options.js";
-import { log } from "./diagnostics.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // for file uploads without the File API or when the iframe option asks for it.
@@ -286,6 +286,7 @@ export function createIframeTransport(hasProp, forms) {
     // hack to fix Safari hang (thanks to Tim Molendijk for this)
     // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
     if (submission.options.closeKeepAlive) {
+      deprecate("closeKeepAlive", "closeKeepAlive works around a Safari 3/4 bug and is deprecated");
       $.get(submission.options.closeKeepAlive, function () {
         jqxhr = fileUploadIframe(submission);
       });

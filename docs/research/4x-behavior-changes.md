@@ -66,6 +66,8 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Named `fieldset`, `output` and `object` elements are no longer sent.** `formToArray` (and so `ajaxSubmit` and `formSerialize`) sent them as fields, `output` with its text; native submission never includes them.
 
+- **`closeKeepAlive` is deprecated.** It works around a Safari 3/4 bug; an iframe upload that uses it warns once under `debug`. It is removed in 5.0.
+
 - **A clicked image button is sent when it is the form's only control.** With `semantic` off, `formToArray` returned no fields when the form had no other listed control, so the image's name, value and coordinates were dropped.
 
 - **Selected files are sent by name, never as `[object File]`, and outside file inputs are uploaded (D-03).** `formSerialize` now gives a selected file's name, as native urlencoded submission does. A file input outside the form that belongs to it through `form="id"` now makes `ajaxSubmit` choose the FormData upload; it used to be ignored and the file was sent as `[object File]`.
