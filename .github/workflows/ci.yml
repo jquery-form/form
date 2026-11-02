@@ -136,13 +136,15 @@ jobs:
   # Branch protection requires each matrix check by name, so a docs-only PR skips the steps, not the
   # job: a job skipped by `if` reports one unexpanded "jQuery ${{ matrix.jquery }}" check instead.
   jquery:
-    name: jQuery ${{ matrix.jquery }}
+    name: jQuery ${{ matrix.jquery }} on ${{ matrix.browser }}
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
+        browser: [chromium, webkit]
+        jquery: ["1.7.2", "3.7.1", "4.0.0"]
         include:
           - { jquery: "1.7.2", file: ".jquery/jquery-1.7.2.js" }
           - { jquery: "3.7.1", file: "node_modules/jquery/dist/jquery.js" }
@@ -168,14 +170,14 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - run: npx playwright install chromium
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
         if: env.CODE == 'true'
       - name: Fetch jQuery 1.7.2
         if: env.CODE == 'true' && matrix.jquery == '1.7.2'
         run: scripts/fetch-jquery.sh 1.7.2
       - name: Run the suite on jQuery ${{ matrix.jquery }}
         if: env.CODE == 'true'
-        run: npx vitest run --project suite
+        run: npx vitest run --project suite-${{ matrix.browser }}
         env:
           JQUERY_FILE: ${{ matrix.file }}
