@@ -97,6 +97,10 @@ export default [
     },
   },
   {
+    files: ["test/shared/**/*.js"],
+    languageOptions: { sourceType: "module", globals: globals.browser },
+  },
+  {
     files: ["test/setup.js", "test/surfaces/browser.test.js"],
     languageOptions: { globals: globals.browser },
   },
