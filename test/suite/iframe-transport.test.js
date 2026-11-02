@@ -1844,6 +1844,41 @@ describe("form", function () {
             assert.strictEqual($("iframe").length, frames);
           });
 
+          it("should pass the xhr, the settings and canceled to ajaxError when beforeSend vetoes", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let seen;
+            $(document).on("ajaxError.ifrlog", function (event, xhr, settings, reason) {
+              seen = [typeof xhr.abort, settings.iframe, reason];
+            });
+
+            $form.ajaxSubmit({ iframe: true, beforeSend: () => false });
+
+            assert.deepEqual(seen, ["function", true, "canceled"]);
+          });
+
+          it("should fire no global events when beforeSend vetoes with global false", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+
+            $form.ajaxSubmit({ iframe: true, global: false, beforeSend: () => false });
+
+            assert.deepEqual(events, []);
+          });
+
+          it("should ignore an abort after beforeSend vetoed", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            let errors = 0;
+            $form.ajaxSubmit({ iframe: true, beforeSend: () => false, error: () => errors++ });
+            recordGlobalEvents(events);
+
+            $form.data("jqxhr").abort();
+
+            assert.strictEqual(errors, 0);
+            assert.deepEqual(events, []);
+          });
+
           it("should end the global events without ajaxSend when beforeSend vetoes", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const events = [];
@@ -1996,6 +2031,34 @@ describe("form", function () {
 
               assert.deepEqual(fields, []);
             });
+          });
+
+          it("should post the CSRF token when the type option is POST on a form without a method", function () {
+            const $form = $(
+              '<form action="ajax/iframe-text.html"><input name="upload"></form>'
+            ).appendTo("#main");
+            addCsrfMetas("secret");
+            let fields;
+
+            startStubbedUpload($form, { type: "POST" }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["authenticity_token", "secret"]]);
+          });
+
+          it("should not post the CSRF token when the type option is PUT on a form without a method", function () {
+            const $form = $(
+              '<form action="ajax/iframe-text.html"><input name="upload"></form>'
+            ).appendTo("#main");
+            addCsrfMetas("secret");
+            let fields;
+
+            startStubbedUpload($form, { type: "PUT" }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
           });
 
           it("should post the CSRF param twice when the form already has that field", function () {
@@ -2553,6 +2616,68 @@ describe("form", function () {
 
             assert.strictEqual(result.success[1], "success");
             assert.strictEqual(result.success[2].status, 304);
+          });
+
+          it("should treat an emulated 300 as an error", async function () {
+            const result = await submitWithBodyAttributes({ status: "300" }, { dataType: "text" });
+
+            assert.strictEqual(result.error[1], "error");
+          });
+
+          it("should resolve the Deferred with the response text, success and the xhr", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            const result = await submitThroughIframe($form, { dataType: "text" });
+            const resolved = await new Promise((resolve) =>
+              result.xhr.done((...args) => resolve(args))
+            );
+
+            assert.deepEqual([resolved[0].trim(), resolved[1]], ["iframe response", "success"]);
+            assert.strictEqual(resolved[2], result.success[2]);
+          });
+
+          it("should pass the xhr and the settings to ajaxComplete", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let seen;
+            $(document).on("ajaxComplete.ifrlog", function (event, xhr, settings) {
+              seen = [xhr.responseText.trim(), settings.iframe];
+            });
+
+            await submitThroughIframe($form, { dataType: "text" });
+
+            assert.deepEqual(seen, ["iframe response", true]);
+          });
+
+          it("should fire no ajaxError for an error status with global false", async function () {
+            const $form = createIframeForm("ajax/iframe-error.html");
+            const events = [];
+            recordGlobalEvents(events);
+
+            const result = await submitThroughIframe($form, { dataType: "text", global: false });
+
+            assert.strictEqual(result.error[1], "error");
+            assert.deepEqual(events, []);
+          });
+
+          it("should rethrow the error the success callback threw", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const thrown = new Error("success failed");
+
+            const errors = await withWindowErrors(async function (errors) {
+              await new Promise(function (resolve) {
+                $form.ajaxSubmit({
+                  iframe: true,
+                  dataType: "text",
+                  success: function () {
+                    setTimeout(resolve, 20);
+                    throw thrown;
+                  },
+                });
+              });
+              return errors.slice();
+            });
+
+            assert.deepEqual(errors, [thrown]);
           });
 
           it("should treat an emulated 1xx status as an error", async function () {
