@@ -1,7 +1,7 @@
 /*!
  * jQuery Form Plugin
  * version: 4.6.0
- * Requires jQuery v1.7.2 or later
+ * Requires jQuery v3.5 or later
  * Project repository: https://github.com/jquery-form/form
 
  * Copyright 2017 Kevin Morris
@@ -326,13 +326,13 @@ function beforeJQuery35(version) {
   return major < 3 || (major === 3 && Number(parts[1]) < 5);
 }
 
-// 5.0 needs jQuery 3.5 or later: warned on the first ajaxSubmit or ajaxForm, given jQuery's version.
-function deprecateOldJQuery(version) {
+/**
+ * 5.0 needs jQuery 3.5 or later: ajaxSubmit and ajaxForm throw on an older version before any
+ * event or callback. Nothing checks at load, so the plugin can still be installed on the page.
+ */
+function requireJQuery35(version) {
   if (beforeJQuery35(version)) {
-    deprecate(
-      "jquery",
-      "support for jQuery " + version + " is deprecated, 5.0 needs jQuery 3.5 or later"
-    );
+    throw new Error("jquery.form 5 needs jQuery 3.5 or later; this is " + version);
   }
 }
 
@@ -568,7 +568,7 @@ var selectionOnly = {};
  * submit button (and image coordinates) included. The options work as for ajaxSubmit.
  */
 function ajaxForm(options, data, dataType, onSuccess) {
-  deprecateOldJQuery(jQuery.fn.jquery);
+  requireJQuery35(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
   if (typeof options.delegation === "string") {
@@ -2414,7 +2414,7 @@ function createSubmission(feature, forms, serialization) {
    * @param	{function}		onSuccess	ajax success callback function
    */
   $.fn.ajaxSubmit = function (options, data, dataType, onSuccess) {
-    deprecateOldJQuery($.fn.jquery);
+    requireJQuery35($.fn.jquery);
 
     // fast fail if nothing selected (http://dev.jquery.com/ticket/2752)
     if (!this.length) {

@@ -17,11 +17,25 @@ Entries are added as each 5.0 change lands.
 
 ### jQuery 3.5 or later is required, as a peer dependency
 
-**What changed.** jquery-form 5 supports jQuery 3.5.0 and later, and is tested against 3.5.0, 3.7.1 and 4.0.0. 4.x accepted jQuery 1.7.2 and later. In `package.json`, jQuery moves from `dependencies` to `peerDependencies` (`"jquery": ">=3.5.0"`, with no upper bound), so your project provides jQuery instead of jquery-form installing its own copy. `bower.json` and `composer.json` (`components/jquery`) ask for the same range.
+**What changed.** jquery-form 5 supports jQuery 3.5.0 and later, and is tested against 3.5.0, 3.7.1 and 4.0.0. 4.x accepted jQuery 1.7.2 and later. In `package.json`, jQuery moves from `dependencies` to `peerDependencies` (`"jquery": ">=3.5.0"`, with no upper bound), so your project provides jQuery instead of jquery-form installing its own copy. `bower.json` and `composer.json` (`components/jquery`) ask for the same range. On an older jQuery, `ajaxSubmit` and `ajaxForm` throw `Error: jquery.form 5 needs jQuery 3.5 or later; this is <version>` before any event, callback or request; 4.x ran on it. Loading the plugin does not throw, so a page that never calls them keeps working.
 
 **Why.** jQuery before 3.5 has public security issues in how it inserts HTML (CVE-2020-11022 and CVE-2020-11023), which the `target` option relies on, and the jQuery team no longer supports it. A peer dependency keeps one copy of jQuery on the page: the one your app uses.
 
 **Are you affected?** Check `jQuery.fn.jquery` on your pages. If it is older than 3.5, you are. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs a `console.warn` naming your jQuery version the first time `ajaxSubmit` or `ajaxForm` runs on such a page. Also check whether your `package.json` lists `jquery` itself: if it does not, and you got jQuery only because jquery-form depended on it, add it. npm 7 and later install a missing peer dependency, but some other package managers only warn about it.
+
+Before (4.x), on jQuery 3.4.1:
+
+```javascript
+$("#myForm").ajaxSubmit(); // sends the form
+```
+
+After (5.0), on jQuery 3.4.1:
+
+```javascript
+$("#myForm").ajaxSubmit(); // Error: jquery.form 5 needs jQuery 3.5 or later; this is 3.4.1
+```
+
+Upgrade jQuery to 3.5 or later to fix it. If your installs got jQuery through jquery-form, list it yourself.
 
 Before (4.x):
 

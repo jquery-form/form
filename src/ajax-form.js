@@ -1,6 +1,6 @@
 import { assertRealParent, closestByTag, formMember, isElement } from "./form-members.js";
 import { captureEventSubmitter, captureSubmitter } from "./submitter.js";
-import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
+import { deprecate, log, requireJQuery35 } from "./diagnostics.js";
 import jQuery from "jquery";
 import { shorthandOptions } from "./options.js";
 
@@ -152,7 +152,7 @@ var selectionOnly = {};
  * submit button (and image coordinates) included. The options work as for ajaxSubmit.
  */
 export function ajaxForm(options, data, dataType, onSuccess) {
-  deprecateOldJQuery(jQuery.fn.jquery);
+  requireJQuery35(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
   if (typeof options.delegation === "string") {

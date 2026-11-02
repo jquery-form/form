@@ -47,12 +47,12 @@ export function beforeJQuery35(version) {
   return major < 3 || (major === 3 && Number(parts[1]) < 5);
 }
 
-// 5.0 needs jQuery 3.5 or later: warned on the first ajaxSubmit or ajaxForm, given jQuery's version.
-export function deprecateOldJQuery(version) {
+/**
+ * 5.0 needs jQuery 3.5 or later: ajaxSubmit and ajaxForm throw on an older version before any
+ * event or callback. Nothing checks at load, so the plugin can still be installed on the page.
+ */
+export function requireJQuery35(version) {
   if (beforeJQuery35(version)) {
-    deprecate(
-      "jquery",
-      "support for jQuery " + version + " is deprecated, 5.0 needs jQuery 3.5 or later"
-    );
+    throw new Error("jquery.form 5 needs jQuery 3.5 or later; this is " + version);
   }
 }

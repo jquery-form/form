@@ -1,7 +1,7 @@
 /*!
  * jQuery Form Plugin
  * version: 4.6.0
- * Requires jQuery v1.7.2 or later
+ * Requires jQuery v3.5 or later
  * Project repository: https://github.com/jquery-form/form
 
  * Copyright 2017 Kevin Morris
@@ -27,7 +27,7 @@ import {
   fieldValue,
   urlencode,
 } from "./successful-controls.js";
-import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
+import { deprecate, log, requireJQuery35 } from "./diagnostics.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
 import { createIframeTransport } from "./iframe-transport.js";
 import { createSubmission } from "./submission.js";
@@ -132,7 +132,7 @@ import { submitOptions } from "./options.js";
    * @param	{function}		onSuccess	ajax success callback function
    */
   $.fn.ajaxSubmit = function (options, data, dataType, onSuccess) {
-    deprecateOldJQuery($.fn.jquery);
+    requireJQuery35($.fn.jquery);
 
     // fast fail if nothing selected (http://dev.jquery.com/ticket/2752)
     if (!this.length) {
