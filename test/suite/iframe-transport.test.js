@@ -664,7 +664,8 @@ describe("form", function () {
 
       it("should set the iframe source as an attribute, not HTML", async function () {
         window.iframePayload = 0;
-        const iframeSrc = 'about:blank"></iframe><img src=x onerror="window.iframePayload=1">';
+        // WebKit's browser process crashes on any other about: URL, so the payload sits in a fragment.
+        const iframeSrc = 'about:blank#"></iframe><img src=x onerror="window.iframePayload=1">';
         const $form = createIframeForm("ajax/iframe-text.html");
 
         const seen = await submitAndAbort($form, { iframeSrc: iframeSrc });
