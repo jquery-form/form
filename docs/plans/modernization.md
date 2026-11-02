@@ -362,7 +362,8 @@ Release day, in one sitting:
 6. Publish the GitHub release notes from `4x-behavior-changes.md`.
 7. Comment on and close #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org
    #3607794. Credit Rudloff for W1 and W2.
-8. Delete the local fix branch and the probe copies.
+8. Delete the local fix branch. Keep the probe copies until the modernization project ends: they
+   keep checking the W1–W4 fixes through the 5.0 refactors.
 
 ## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
@@ -470,6 +471,15 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
     instead of an empty upload (PHP `$_POST` instead of `$_FILES`).
   - The iframe upload adds the clicked button's fields after the form's own, where a native
     submit sends them in tree order.
+- Found by the Phase 13 serialization oracle (spec gaps against `new FormData(form)`), left as they
+  are in 4.x:
+  - `dirname` fields (`name=ltr`) are never sent.
+  - A hidden `_charset_` input sends its own value instead of the encoding (`UTF-8`).
+  - A clicked `<input type=submit>` without a `value` sends `""` instead of the browser's default
+    label ("Submit", or "Submit Query" in Firefox).
+  - A clicked image sends its `name=value` before `name.x`/`name.y`; native sends only the
+    coordinates.
+  - An unnamed clicked image sends nothing; native sends `x` and `y`.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x
