@@ -445,6 +445,13 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
   keep-alive workaround). `enable` and `selected` are kept.
 - Move to ES2015+ syntax and revisit Prettier `trailingComma`.
 - Decide whether `formToArray` and the other serializers keep calling an overridable `$.fieldValue`, or use the internal successful-controls module (5.0).
+- Found by the Phase 13 end-to-end tests, left as they are in 4.x:
+  - An empty file input goes through the FormData upload as an empty text field. A native submit
+    sends an empty file part (filename "", `application/octet-stream`), so servers see a form field
+    instead of an empty upload (PHP `$_POST` instead of `$_FILES`).
+  - The iframe upload sends a disabled clicked button (disabled itself or by a disabled fieldset)
+    when it comes through `requestSubmit(button)` or `form.clk`. The XHR transports and a native
+    submit skip it. It also adds the button's fields after the form's own.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x
