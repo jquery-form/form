@@ -81,7 +81,7 @@ describe("when the dist files are read", () => {
     const builds = ["dist/jquery.form.js", "dist/jquery.form.mjs"];
 
     const sources = builds.map((file) =>
-      readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+      readFileSync(new URL(`../../${file}`, import.meta.url), "utf8"),
     );
 
     for (const source of sources) {

@@ -72,7 +72,7 @@
     xhr: function (action) {
       var form = fixture(
         '<form method="post"><input name="text" value="plain ü" />' +
-          '<select name="pick"><option>a</option><option selected>b</option></select></form>'
+          '<select name="pick"><option>a</option><option selected>b</option></select></form>',
       );
       form.setAttribute("action", action);
       return settle(function (callbacks) {
@@ -85,7 +85,7 @@
       var form = fixture(
         '<form method="post" enctype="multipart/form-data"><input name="text" value="plain" />' +
           '<input type="file" name="upload" />' +
-          '<button type="submit" name="go" value="clicked">Go</button></form>'
+          '<button type="submit" name="go" value="clicked">Go</button></form>',
       );
       form.setAttribute("action", action);
       var transfer = new DataTransfer();

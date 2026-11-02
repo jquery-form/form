@@ -52,7 +52,7 @@ async function arrange(page, id, attributes, options) {
       Object.assign({ action: `/r/${id}/ok`, method: "post" }, attributes),
       settings.submitter,
       settings.file,
-    ]
+    ],
   );
   if (settings.file) {
     await page.evaluate(
@@ -60,7 +60,7 @@ async function arrange(page, id, attributes, options) {
         window.e2e.setFiles("#fixture input[type=file]", [
           { name: "bytes ü.bin", type: "application/octet-stream", bytes: bytes },
         ]),
-      BYTES
+      BYTES,
     );
   }
 }
@@ -107,7 +107,7 @@ test.describe("requests the plugin sends", () => {
           page,
           id,
           { enctype: transport.enctype },
-          { file: transport.file, submitter: null }
+          { file: transport.file, submitter: null },
         );
 
         const native = await nativeSubmit(page, request, id);
@@ -159,7 +159,7 @@ test.describe("requests the plugin sends", () => {
 
         expect(files(plugin.fields)).toEqual(files(native.fields));
         expect(plugin.fields.filter((f) => f.kind === "file")[0].type).toBe(
-          "application/octet-stream"
+          "application/octet-stream",
         );
         expect(Buffer.from(files(plugin.fields)[0][2], "base64")).toEqual(Buffer.from(BYTES));
       });
@@ -175,10 +175,10 @@ test.describe("requests the plugin sends", () => {
       const plugin = await pluginSubmit(page, request, id, {});
 
       expect(Buffer.from(plugin.base64, "base64").toString("latin1")).toBe(
-        Buffer.from(native.base64, "base64").toString("latin1")
+        Buffer.from(native.base64, "base64").toString("latin1"),
       );
       expect(plugin.headers["content-type"]).toBe(
-        "application/x-www-form-urlencoded; charset=UTF-8"
+        "application/x-www-form-urlencoded; charset=UTF-8",
       );
     });
 
@@ -239,14 +239,14 @@ test.describe("requests the plugin sends", () => {
         await arrange(page, id, { enctype: transport.enctype }, { file: transport.file });
         const native = await nativeSubmit(page, request, id);
         await page.evaluate(() =>
-          document.querySelector("#fixture form").setAttribute("method", "get")
+          document.querySelector("#fixture form").setAttribute("method", "get"),
         );
 
         const plugin = await pluginSubmit(
           page,
           request,
           id,
-          Object.assign({ method: "POST" }, transport.options)
+          Object.assign({ method: "POST" }, transport.options),
         );
 
         expect(plugin.method).toBe("POST");
@@ -263,14 +263,14 @@ test.describe("requests the plugin sends", () => {
         await page.evaluate(
           (i) =>
             document.querySelector("#fixture form").setAttribute("action", `/r/${i}-unused/ok`),
-          id
+          id,
         );
 
         const plugin = await pluginSubmit(
           page,
           request,
           id,
-          Object.assign({ url: `/r/${id}/ok` }, transport.options)
+          Object.assign({ url: `/r/${id}/ok` }, transport.options),
         );
 
         expect(plugin.url.split("?")[0]).toBe(native.url);

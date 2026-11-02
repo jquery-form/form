@@ -62,7 +62,7 @@ export function isElement(node) {
 export function assertRealParent(el) {
   if (el.parentNode !== formMember(el, "parentNode")) {
     throw new Error(
-      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control'
+      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control',
     );
   }
 }

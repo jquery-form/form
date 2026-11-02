@@ -107,7 +107,7 @@ export function deprecateFieldValueOverride() {
   if (jQuery.fieldValue !== fieldValue) {
     deprecate(
       "fieldValue-override",
-      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
+      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks",
     );
   }
 }

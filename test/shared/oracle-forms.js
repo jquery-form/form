@@ -258,7 +258,7 @@ export function generateForm(seed, container) {
   // The submitter: one of the form's submit buttons, when it has any.
   const submitters = Array.prototype.filter.call(
     document.querySelectorAll("input, button"),
-    (el) => el.form === form && (el.type === "submit" || el.type === "image")
+    (el) => el.form === form && (el.type === "submit" || el.type === "image"),
   );
   const submitter = submitters.length && rand.chance(0.85) ? rand.pick(submitters) : null;
 
@@ -291,7 +291,7 @@ export function toWellFormed(text) {
     /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
     function (match, lead) {
       return typeof lead === "string" ? lead + "\uFFFD" : "\uFFFD";
-    }
+    },
   );
 }
 
@@ -346,7 +346,7 @@ export const KNOWN_DIFFERENCES = [
       return {
         plugin: pair.plugin,
         native: pair.native.map((e) =>
-          e[0] === sub.name && /^Submit( Query)?$/.test(e[2]) ? [e[0], e[1], ""] : e
+          e[0] === sub.name && /^Submit( Query)?$/.test(e[2]) ? [e[0], e[1], ""] : e,
         ),
       };
     },
@@ -361,7 +361,7 @@ export const KNOWN_DIFFERENCES = [
       const n = ctx.submitter.name;
       return {
         plugin: pair.plugin.filter(
-          (e, i) => !(e[0] === n && pair.plugin[i + 1] && pair.plugin[i + 1][0] === n + ".x")
+          (e, i) => !(e[0] === n && pair.plugin[i + 1] && pair.plugin[i + 1][0] === n + ".x"),
         ),
         native: pair.native,
       };
@@ -404,7 +404,7 @@ export const KNOWN_DIFFERENCES = [
       }
       const outsideLast = (list) => {
         const outside = list.filter(
-          (e) => ctx.outsideNames.indexOf(e[0].replace(/\.[xy]$/, "")) >= 0
+          (e) => ctx.outsideNames.indexOf(e[0].replace(/\.[xy]$/, "")) >= 0,
         );
         return list.filter((e) => outside.indexOf(e) < 0).concat(outside);
       };

@@ -77,7 +77,7 @@ export function sendFormData(submission) {
 
             options.uploadProgress(event, position, total, percent);
           },
-          false
+          false,
         );
       }
 

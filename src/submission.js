@@ -37,7 +37,7 @@ export function createSubmission(forms, serialization) {
         type: method || $.ajaxSettings.type,
         iframeSrc: "about:blank",
       },
-      options
+      options,
     );
 
     return keepContext(merged, [options]);
@@ -67,7 +67,7 @@ export function createSubmission(forms, serialization) {
     if (typeof optionsData === "string") {
       if (options.requestFormat === "json") {
         throw new Error(
-          'jquery.form: requestFormat "json" needs object data; a string data option is a query string'
+          'jquery.form: requestFormat "json" needs object data; a string data option is a query string',
         );
       }
 
@@ -365,7 +365,7 @@ export function createSubmission(forms, serialization) {
 
     if (transport !== "ajax" && options.requestFormat === "json") {
       throw new Error(
-        'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
+        'jquery.form: requestFormat "json" cannot send files or use the iframe transport',
       );
     }
 

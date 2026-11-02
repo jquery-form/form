@@ -16,7 +16,7 @@ const root = resolve(import.meta.dirname, "../..");
 const packDir = resolve(root, process.env.JQUERY_FORM_PACK_DIR || ".pack");
 const jqueryFile = resolve(root, process.env.JQUERY_FILE || "node_modules/jquery/dist/jquery.js");
 const jqueryVersion = readFileSync(jqueryFile, "utf8").match(
-  /jQuery JavaScript Library v([\w.-]+)/
+  /jQuery JavaScript Library v([\w.-]+)/,
 )[1];
 const FIXTURE_VERSIONS = ["3.5.0", "3.7.1", "4.0.0"];
 
@@ -88,7 +88,7 @@ async function run(cwd, code, type = "commonjs") {
       encoding: "utf8",
       timeout: 20000,
       env: { ...process.env, JSDOM_PATH: require.resolve("jsdom"), ORIGIN: origin },
-    }
+    },
   );
   return JSON.parse(stdout.trim().split("\n").pop());
 }
@@ -117,7 +117,7 @@ describe("when the packed package is installed", () => {
     // Assert
     assert.deepEqual(
       entries.filter((entry) => !existsSync(resolve(installed, entry))),
-      []
+      [],
     );
   });
 
@@ -150,7 +150,7 @@ describe("when the packed package is required from CommonJS", () => {
     // Act
     const result = await run(
       fixture,
-      `${code} report({ type: typeof factory, length: factory.length });`
+      `${code} report({ type: typeof factory, length: factory.length });`,
     );
 
     // Assert
@@ -191,7 +191,7 @@ describe("when the packed package is required from CommonJS", () => {
       // Act
       const result = await run(
         resolve(packDir, `jquery-${version}`),
-        `${code} report(await smoke($, $));`
+        `${code} report(await smoke($, $));`,
       );
 
       // Assert
@@ -205,7 +205,7 @@ describe("when the packed package is required from CommonJS", () => {
       // Act
       const result = await run(
         resolve(packDir, `jquery-${version}`),
-        settle(`${code} report(await smoke($, $));`)
+        settle(`${code} report(await smoke($, $));`),
       );
 
       // Assert: jQuery 4 throws when required without a global window instead of returning a
@@ -231,7 +231,7 @@ describe("when the packed package is imported as an ES module", () => {
       const result = await run(
         resolve(packDir, `jquery-${version}`),
         `${code} const value = factory(dom.window); report(await smoke($, value));`,
-        "module"
+        "module",
       );
 
       // Assert
@@ -248,7 +248,7 @@ describe("when the packed package is imported as an ES module", () => {
       const result = await run(
         resolve(packDir, `jquery-${version}`),
         `${code} report(await smoke($, value));`,
-        "module"
+        "module",
       );
 
       // Assert

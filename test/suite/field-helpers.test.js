@@ -71,7 +71,7 @@ describe("form", function () {
     it("should reset the control a label targets and its nested fields", function () {
       const $target = $('<input id="label-target" value="default">').appendTo("#main");
       const $label = $('<label for="label-target"><input value="nested"></label>').appendTo(
-        "#main"
+        "#main",
       );
       $target.val("changed");
       $label.find("input").val("changed");
@@ -92,7 +92,7 @@ describe("form", function () {
 
       assert.deepEqual(
         [$label.find("input").val(), $div.find("input").val(), $last.val()],
-        ["in label", "in div", "last"]
+        ["in label", "in div", "last"],
       );
     });
 
@@ -127,7 +127,7 @@ describe("form", function () {
 
     it("should ignore a for attribute that names no element", function () {
       const $label = $('<label for="no-such-control"><input value="nested"></label>').appendTo(
-        "#main"
+        "#main",
       );
       $label.find("input").val("changed");
 
@@ -138,7 +138,7 @@ describe("form", function () {
 
     it("should not reset a label again when its for attribute names an ancestor", function () {
       const $outer = $('<div id="label-owner"><label for="label-owner">L</label></div>').appendTo(
-        "#main"
+        "#main",
       );
 
       const reset = () => $outer.find("label").resetForm();
@@ -157,7 +157,7 @@ describe("form", function () {
 
     it("should reset the parent single select when one of its options is reset", function () {
       const $select = $(
-        "<select><option>a</option><option selected>b</option><option>c</option></select>"
+        "<select><option>a</option><option selected>b</option><option>c</option></select>",
       ).appendTo("#main");
       $select.val("c");
 
@@ -232,7 +232,7 @@ describe("form", function () {
 
     it("should restore individual inputs and textareas to their defaults", function () {
       const $fields = $(
-        '<div><input type="checkbox" checked><input value="original"><textarea>original</textarea></div>'
+        '<div><input type="checkbox" checked><input value="original"><textarea>original</textarea></div>',
       ).find(":input");
       $fields.eq(0).prop("checked", false);
       $fields.eq(1).val("changed");
@@ -247,7 +247,7 @@ describe("form", function () {
 
     it("should restore a multiple select when resetting an optgroup", function () {
       const $select = $(
-        "<select multiple><optgroup><option selected>one</option><option>two</option></optgroup></select>"
+        "<select multiple><optgroup><option selected>one</option><option>two</option></optgroup></select>",
       );
       const $options = $select.find("option");
       $options.eq(0).prop("selected", false);
@@ -261,13 +261,13 @@ describe("form", function () {
             return this.selected;
           })
           .get(),
-        [true, false]
+        [true, false],
       );
     });
 
     it("should reset form controls found inside a container", function () {
       const $container = $(
-        '<div><input value="original"><select><option selected>one</option><option>two</option></select></div>'
+        '<div><input value="original"><select><option selected>one</option><option>two</option></select></div>',
       );
       $container.find("input").val("changed");
       $container.find("select").val("two");
@@ -301,7 +301,7 @@ describe("form", function () {
 
     it("should restore checked and value when an input is reset directly", function () {
       const $inputs = $(
-        '<div><input type="checkbox" value="a" checked><input type="radio" value="b"></div>'
+        '<div><input type="checkbox" value="a" checked><input type="radio" value="b"></div>',
       ).find("input");
       $inputs.eq(0).prop("checked", false);
       $inputs.eq(1).prop("checked", true);
@@ -358,7 +358,7 @@ describe("form", function () {
 
     it("should restore only that option when an option of a multiple select is reset", function () {
       const $options = $(
-        "<select multiple><option selected>a</option><option>b</option></select>"
+        "<select multiple><option selected>a</option><option>b</option></select>",
       ).find("option");
       $options.eq(0).prop("selected", false);
       $options.eq(1).prop("selected", true);
@@ -370,7 +370,7 @@ describe("form", function () {
 
     it("should reset the parent single select when an optgroup is reset", function () {
       const $select = $(
-        "<select><optgroup><option>a</option><option selected>b</option></optgroup><option>c</option></select>"
+        "<select><optgroup><option>a</option><option selected>b</option></optgroup><option>c</option></select>",
       );
       $select.val("c");
 
@@ -390,7 +390,7 @@ describe("form", function () {
 
     it("should select the last default option when a single select with two default options is reset", function () {
       const $select = $(
-        "<select><option selected>a</option><option selected>b</option><option>c</option></select>"
+        "<select><option selected>a</option><option selected>b</option><option>c</option></select>",
       );
       $select.val("c");
 
@@ -413,7 +413,7 @@ describe("form", function () {
 
     it("should restore every option when a multiple select is reset directly", function () {
       const $select = $(
-        "<select multiple><option selected>a</option><option>b</option><option selected>c</option></select>"
+        "<select multiple><option selected>a</option><option>b</option><option selected>c</option></select>",
       );
       const $options = $select.find("option");
       $options.prop("selected", false);
@@ -447,7 +447,7 @@ describe("form", function () {
     it("should reset a control outside the container when a label inside names it", function () {
       const $outside = $('<input id="outside-label-target" value="default">').appendTo("#main");
       const $container = $('<div><label for="outside-label-target"></label></div>').appendTo(
-        "#main"
+        "#main",
       );
       $outside.val("changed");
 
@@ -458,7 +458,7 @@ describe("form", function () {
 
     it("should reset a control associated by the form attribute when its form is reset", function () {
       $('<form id="native-owner"></form><input form="native-owner" value="default">').appendTo(
-        "#main"
+        "#main",
       );
       const $outside = $("#main input[form=native-owner]").val("changed");
 
@@ -469,7 +469,7 @@ describe("form", function () {
 
     it("should reset the form when two controls named reset shadow the method", function () {
       const $form = $(
-        '<form><input name="reset" value="a"><input name="reset" value="b"></form>'
+        '<form><input name="reset" value="a"><input name="reset" value="b"></form>',
       ).appendTo("#main");
       $form.find("input").eq(0).val("changed");
 
@@ -481,7 +481,7 @@ describe("form", function () {
 
     it("should reset natively when a control named tagName shadows the form's tag name", function () {
       $(
-        '<form id="tag-owner"><input name="tagName"></form><input form="tag-owner" value="default">'
+        '<form id="tag-owner"><input name="tagName"></form><input form="tag-owner" value="default">',
       ).appendTo("#main");
       const $form = $("#tag-owner");
       const $outside = $("#main input[form=tag-owner]").val("changed");
@@ -526,7 +526,7 @@ describe("form", function () {
 
     it("should not fire change or input events when resetting fields individually", function () {
       const $container = $(
-        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option><option>b</option></select><textarea>t</textarea></div>'
+        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option><option>b</option></select><textarea>t</textarea></div>',
       ).appendTo("#main");
       $container.find("input").eq(0).val("changed");
       $container.find("input").eq(1).prop("checked", false);
@@ -541,7 +541,7 @@ describe("form", function () {
 
     it("should reset disabled and readonly fields", function () {
       const $fields = $('<div><input disabled value="a"><input readonly value="b"></div>').find(
-        "input"
+        "input",
       );
       $fields.val("changed");
 
@@ -609,7 +609,7 @@ describe("form", function () {
 
     it("should clear hidden inputs only when explicitly included", function () {
       const $fields = $(
-        '<div><input type="hidden" value="plain"><input type="hidden" class="special" value="special"></div>'
+        '<div><input type="hidden" value="plain"><input type="hidden" class="special" value="special"></div>',
       ).find("input");
 
       $fields.clearFields(".special:hidden");
@@ -655,7 +655,7 @@ describe("form", function () {
 
     it("should clear fields inside a non-form container", function () {
       const $container = $(
-        '<div><input value="text"><textarea>text</textarea><input type="checkbox" checked></div>'
+        '<div><input value="text"><textarea>text</textarea><input type="checkbox" checked></div>',
       );
 
       $container.clearForm();
@@ -668,7 +668,7 @@ describe("form", function () {
     it("should clear hidden inputs when clearForm is passed true or a selector", function () {
       const $all = $('<form><input type="hidden" value="a"></form>');
       const $some = $(
-        '<form><input type="hidden" class="special" value="b"><input type="hidden" value="c"></form>'
+        '<form><input type="hidden" class="special" value="b"><input type="hidden" value="c"></form>',
       );
 
       $all.clearForm(true);
@@ -689,7 +689,7 @@ describe("form", function () {
 
     it("should leave a control associated by the form attribute unchanged when its form is cleared", function () {
       $('<form id="clear-owner"></form><input form="clear-owner" value="outside">').appendTo(
-        "#main"
+        "#main",
       );
 
       $("#clear-owner").clearForm();
@@ -718,7 +718,7 @@ describe("form", function () {
 
     it("should pass includeHidden to clearForm when ajaxSubmit clears the form", async function () {
       const $form = $(
-        '<form action="ajax/text.html"><input type="hidden" value="h"></form>'
+        '<form action="ajax/text.html"><input type="hidden" value="h"></form>',
       ).appendTo("#main");
 
       await withAjaxStub(
@@ -729,7 +729,7 @@ describe("form", function () {
         async function () {
           $form.ajaxSubmit({ clearForm: true, includeHidden: true });
           await Promise.resolve();
-        }
+        },
       );
 
       assert.strictEqual($form.find("input").val(), "");
@@ -793,7 +793,7 @@ describe("form", function () {
 
     it("should deselect every option when a multiple select is cleared", function () {
       const $select = $(
-        "<select multiple><option selected>a</option><option selected>b</option></select>"
+        "<select multiple><option selected>a</option><option selected>b</option></select>",
       );
 
       $select.clearFields();
@@ -839,7 +839,7 @@ describe("form", function () {
           $fields.clearFields(includeHidden);
 
           assert.deepEqual(fieldValues($fields), ["h", "b", "r", "i", "s", "bb"]);
-        }
+        },
       );
     });
 
@@ -894,7 +894,7 @@ describe("form", function () {
 
     it("should not fire change or input events when clearing", function () {
       const $container = $(
-        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option></select><textarea>t</textarea></div>'
+        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option></select><textarea>t</textarea></div>',
       ).appendTo("#main");
 
       const events = recordFieldEvents($container[0], () => $container.clearForm());
@@ -905,7 +905,7 @@ describe("form", function () {
 
     it("should clear disabled and readonly fields", function () {
       const $fields = $('<div><input disabled value="a"><input readonly value="b"></div>').find(
-        "input"
+        "input",
       );
 
       $fields.clearFields();
@@ -964,7 +964,7 @@ describe("form", function () {
             return this.checked;
           })
           .get(),
-        [false, false]
+        [false, false],
       );
     });
 
@@ -981,7 +981,7 @@ describe("form", function () {
 
     it("should independently select options in a multiple select", function () {
       const $options = $(
-        "<select multiple><option selected>one</option><option>two</option></select>"
+        "<select multiple><option selected>one</option><option>two</option></select>",
       ).find("option");
 
       $options.eq(1).selected();
@@ -992,7 +992,7 @@ describe("form", function () {
             return this.selected;
           })
           .get(),
-        [true, true]
+        [true, true],
       );
     });
 
@@ -1009,7 +1009,7 @@ describe("form", function () {
 
     it("should toggle the disabled attribute on controls and only set an expando on a div", function () {
       const $controls = $(
-        "<div><input><fieldset></fieldset><select><optgroup><option></option></optgroup></select></div>"
+        "<div><input><fieldset></fieldset><select><optgroup><option></option></optgroup></select></div>",
       ).find("input,fieldset,optgroup,option");
       const $div = $("<div></div>");
 
@@ -1058,7 +1058,7 @@ describe("form", function () {
 
     it("should leave the last radio of a group checked when several are selected", function () {
       const $radios = $(
-        '<div><input type="radio" name="fld-group"><input type="radio" name="fld-group"></div>'
+        '<div><input type="radio" name="fld-group"><input type="radio" name="fld-group"></div>',
       )
         .appendTo("#main")
         .find("input");
@@ -1071,13 +1071,13 @@ describe("form", function () {
             return this.checked;
           })
           .get(),
-        [false, true]
+        [false, true],
       );
     });
 
     it("should leave only the chosen option selected when it is inside an optgroup of a single select", function () {
       const $options = $(
-        "<select><optgroup><option selected>a</option><option>b</option></optgroup></select>"
+        "<select><optgroup><option selected>a</option><option>b</option></optgroup></select>",
       ).find("option");
 
       $options.eq(1).selected();
@@ -1087,7 +1087,7 @@ describe("form", function () {
 
     it("should fall back to the first option when the selected option of a dropdown is deselected", function () {
       const $options = $("<select><option>a</option><option selected>b</option></select>").find(
-        "option"
+        "option",
       );
 
       $options.eq(1).selected(false);
@@ -1108,7 +1108,7 @@ describe("form", function () {
 
     it("should not fire change events when selecting", function () {
       const $container = $(
-        '<div><input type="checkbox"><select><option>a</option><option>b</option></select></div>'
+        '<div><input type="checkbox"><select><option>a</option><option>b</option></select></div>',
       ).appendTo("#main");
 
       const events = recordFieldEvents($container[0], function () {

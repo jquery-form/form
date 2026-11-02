@@ -114,7 +114,7 @@ import { submitOptions } from "./options.js";
     // #541: jQuery's slim build has no $.ajax
     if (!$.ajax) {
       throw new Error(
-        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax",
       );
     }
 

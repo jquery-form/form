@@ -17,7 +17,7 @@ export async function requests(request, id, count) {
         list = await (await request.get(`/requests?id=${encodeURIComponent(id)}`)).json();
         return list.length;
       },
-      { timeout: 10000 }
+      { timeout: 10000 },
     )
     .toBeGreaterThanOrEqual(count);
   return list;
@@ -70,7 +70,7 @@ export async function expectSameFields(page, native, plugin, context) {
   };
   const pair = await page.evaluate(
     ([p, n, t]) => window.e2e.normalize(p, n, t),
-    [entries(sent(plugin)), entries(sent(native)), transport]
+    [entries(sent(plugin)), entries(sent(native)), transport],
   );
   const normalized = `normalized plugin: ${JSON.stringify(pair.plugin)}\nnormalized native: ${JSON.stringify(pair.native)}`;
   expect(pair.plugin, `unlisted difference\n${context}\n${normalized}`).toEqual(pair.native);

@@ -65,7 +65,7 @@ function showResponse(responseText, statusText, xhr, $form) {
       statusText +
       "\n\nresponseText: \n" +
       responseText +
-      "\n\nThe output div should have already been updated with the responseText."
+      "\n\nThe output div should have already been updated with the responseText.",
   );
 }
 ```
@@ -200,7 +200,7 @@ function showResponse(responseText, statusText, xhr, $form) {
       statusText +
       "\n\nresponseText: \n" +
       responseText +
-      "\n\nThe output div should have already been updated with the responseText."
+      "\n\nThe output div should have already been updated with the responseText.",
   );
 }
 ```

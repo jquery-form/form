@@ -187,7 +187,7 @@ window.e2e = {
               resolve(result);
             });
           },
-        })
+        }),
       );
     });
   },

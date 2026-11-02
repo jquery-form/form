@@ -32,7 +32,7 @@ async function withAjaxCapture(run) {
     },
     function () {
       return run(requests);
-    }
+    },
   );
 
   return requests;
@@ -200,7 +200,7 @@ describe("form", function () {
     it("should capture a submit button when nested content is clicked", async function () {
       await withAjaxSubmitStub(async function () {
         const $form = $(
-          '<form><button type="submit" name="choice" value="nested"><span>Send</span></button></form>'
+          '<form><button type="submit" name="choice" value="nested"><span>Send</span></button></form>',
         ).appendTo("#main");
         const button = $form.find("button")[0];
 
@@ -215,7 +215,7 @@ describe("form", function () {
     it("should capture a button without a type attribute", async function () {
       await withAjaxSubmitStub(async function () {
         const $form = $(
-          '<form><button name="choice" value="untyped"><span>Send</span></button></form>'
+          '<form><button name="choice" value="untyped"><span>Send</span></button></form>',
         ).appendTo("#main");
         const button = $form.find("button")[0];
 
@@ -338,7 +338,7 @@ describe("form", function () {
     // A submit that follows the click later, such as after async validation, still sends it.
     it("should keep the clicked button for the 100 ms click window, then clear it", function () {
       const $form = $('<form><button name="b" value="clicked">Send</button></form>').appendTo(
-        "#main"
+        "#main",
       );
       const button = $form.find("button")[0];
       $form.on("submit", false);
@@ -363,7 +363,7 @@ describe("form", function () {
 
     it("should not send a button clicked before the click window ended", async function () {
       const $form = $(
-        '<form action="ajax/text.html" method="post"><button name="b" value="clicked">Send</button></form>'
+        '<form action="ajax/text.html" method="post"><button name="b" value="clicked">Send</button></form>',
       ).appendTo("#main");
       $form.on("submit", false);
       $form.ajaxForm();
@@ -405,7 +405,7 @@ describe("form", function () {
       assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
       assert.ok(
         arrayValue(seen.beforeSubmit.data, "form4inputName") !== undefined,
-        "submit button"
+        "submit button",
       );
     });
 
@@ -522,7 +522,7 @@ describe("form", function () {
 
         assert.strictEqual(
           Object.prototype.hasOwnProperty.call(calls[0].options, "success"),
-          false
+          false,
         );
       });
 
@@ -572,7 +572,7 @@ describe("form", function () {
               received.push(data);
             });
             $form.trigger("submit");
-          }
+          },
         );
 
         assert.deepEqual(received, ["response"]);
@@ -637,14 +637,14 @@ describe("form", function () {
             assert.throws(
               bind,
               Error,
-              'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"'
+              'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"',
             );
             assert.strictEqual(unbinds, 0);
             assert.strictEqual(options.delegation, value);
             assert.strictEqual($._data($form[0], "events"), undefined);
             const events = $._data(document, "events");
             assert.strictEqual(events && events.submit, undefined);
-          }
+          },
         );
       });
 
@@ -784,7 +784,7 @@ describe("form", function () {
 
         assert.deepEqual(
           calls.map((call) => call.form),
-          [$matching[0]]
+          [$matching[0]],
         );
         assert.strictEqual($._data($selected[0], "events").submit.length, 1);
       });
@@ -853,7 +853,7 @@ describe("form", function () {
 
       it("should capture the clicked submit button of a matching form", async function () {
         const $form = $(
-          '<form class="scoped-ajax-form"><button type="submit">Send</button></form>'
+          '<form class="scoped-ajax-form"><button type="submit">Send</button></form>',
         ).appendTo("#main");
         const button = $form.find("button")[0];
 
@@ -910,7 +910,7 @@ describe("form", function () {
 
         assert.deepEqual(
           calls.map((call) => call.options),
-          [first, second]
+          [first, second],
         );
       });
 
@@ -1039,7 +1039,7 @@ describe("form", function () {
 
       it("should submit the descendant form when ajaxForm is bound on a container", async function () {
         const $container = $(
-          '<div><form><button type="submit" name="choice" value="inner">Send</button></form></div>'
+          '<div><form><button type="submit" name="choice" value="inner">Send</button></form></div>',
         ).appendTo("#main");
         const $form = $container.find("form");
 
@@ -1069,7 +1069,7 @@ describe("form", function () {
 
       it("should not change the form or start a request when binding", function () {
         const $form = $('<form action="ajax/text.html"><input name="q" value="1"></form>').appendTo(
-          "#main"
+          "#main",
         );
         const html = $form[0].outerHTML;
         const active = $.active;
@@ -1081,7 +1081,7 @@ describe("form", function () {
         assert.strictEqual($.active, active);
         assert.deepEqual(
           Object.keys($form[0]).filter((key) => key.indexOf("jQuery") !== 0),
-          ownKeys
+          ownKeys,
         );
       });
 
@@ -1223,7 +1223,7 @@ describe("form", function () {
 
       it("should not capture a submitter or call native submit when submit is triggered", async function () {
         const $form = $('<form><button type="submit" name="choice">Send</button></form>').appendTo(
-          "#main"
+          "#main",
         );
         let nativeSubmits = 0;
         $form[0].submit = function () {
@@ -1253,7 +1253,7 @@ describe("form", function () {
             $form.ajaxForm();
             $form.trigger("submit");
             await Promise.resolve();
-          }
+          },
         );
 
         assert.strictEqual($form.data("jqxhr"), jqXHR);
@@ -1271,7 +1271,7 @@ describe("form", function () {
             const $form = $(
               '<form method="' +
                 method +
-                '" action="ajax/text.html"><input name="q" value="1"></form>'
+                '" action="ajax/text.html"><input name="q" value="1"></form>',
             ).appendTo("#main");
             $form.ajaxForm(url);
 
@@ -1280,7 +1280,7 @@ describe("form", function () {
             });
 
             assert.match(String(requests[0].url), /ajax\/text\.html/);
-          }
+          },
         );
       });
 
@@ -1317,7 +1317,7 @@ describe("form", function () {
 
       it("should not submit when requestSubmit finds the form invalid", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="q" required></form>'
+          '<form method="post" action="ajax/text.html"><input name="q" required></form>',
         ).appendTo("#main");
         $form.ajaxForm();
 
@@ -1332,7 +1332,7 @@ describe("form", function () {
 
       it("should include the submitter passed to requestSubmit", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><button name="choice" value="passed">Send</button></form>'
+          '<form method="post" action="ajax/text.html"><button name="choice" value="passed">Send</button></form>',
         ).appendTo("#main");
         $form.ajaxForm();
 
@@ -1351,7 +1351,7 @@ describe("form", function () {
 
       it("should send the point 0,0 for an image passed to requestSubmit", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>',
         ).appendTo("#main");
         $form.ajaxForm();
 
@@ -1370,7 +1370,7 @@ describe("form", function () {
 
       it("should prefer a captured click over the submitter passed to requestSubmit", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><button name="choice" value="clicked">A</button><button name="choice" value="passed">B</button></form>'
+          '<form method="post" action="ajax/text.html"><button name="choice" value="clicked">A</button><button name="choice" value="passed">B</button></form>',
         ).appendTo("#main");
         $form
           .find("button")
@@ -1392,7 +1392,7 @@ describe("form", function () {
 
       it("should include the default button when the form is submitted with Enter", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="q" value="1"><button name="choice" value="default">Send</button></form>'
+          '<form method="post" action="ajax/text.html"><input name="q" value="1"><button name="choice" value="default">Send</button></form>',
         ).appendTo("#visible-fixture");
         $form.ajaxForm();
 
@@ -1410,7 +1410,7 @@ describe("form", function () {
 
       it("should include no submitter when a form without a button is submitted with Enter", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="q" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="q" value="1"></form>',
         ).appendTo("#visible-fixture");
         $form.ajaxForm();
 
@@ -1428,10 +1428,10 @@ describe("form", function () {
 
       it("should include a submit button associated by the form attribute from outside the form", async function () {
         const $form = $(
-          '<form id="outside-owner" method="post" action="ajax/text.html"><input name="q" value="1"></form>'
+          '<form id="outside-owner" method="post" action="ajax/text.html"><input name="q" value="1"></form>',
         ).appendTo("#main");
         const $button = $(
-          '<button type="submit" form="outside-owner" name="choice" value="outside">Send</button>'
+          '<button type="submit" form="outside-owner" name="choice" value="outside">Send</button>',
         ).appendTo("#main");
         $form.ajaxForm();
 
@@ -1502,7 +1502,7 @@ describe("form", function () {
 
       it("should set clk on the form named by the button's form attribute when clicked inside another form", async function () {
         const $bound = $(
-          '<form><button type="submit" form="named-owner">Send</button></form>'
+          '<form><button type="submit" form="named-owner">Send</button></form>',
         ).appendTo("#main");
         const $owner = $('<form id="named-owner"></form>').appendTo("#main");
         $owner.on("submit", false);
@@ -1518,7 +1518,7 @@ describe("form", function () {
 
       it("should submit through the plugin when a submit button click is triggered", async function () {
         const $form = $('<form><button type="submit" name="choice">Send</button></form>').appendTo(
-          "#main"
+          "#main",
         );
         const options = {};
 
@@ -1564,7 +1564,7 @@ describe("form", function () {
 
       it("should clear a second click's submitter when the first click's window ends", async function () {
         const $form = $(
-          '<form><button type="submit" name="a">A</button><button type="submit" name="b">B</button></form>'
+          '<form><button type="submit" name="a">A</button><button type="submit" name="b">B</button></form>',
         ).appendTo("#main");
         const clears = [];
         const setTimeoutBefore = window.setTimeout;
@@ -1607,7 +1607,7 @@ describe("form", function () {
 
       it("should capture a disabled submit button when its click is triggered", async function () {
         const $form = $('<form><button type="submit" disabled>Send</button></form>').appendTo(
-          "#main"
+          "#main",
         );
 
         await withAjaxSubmitStub(async function () {
@@ -1620,7 +1620,7 @@ describe("form", function () {
 
       it("should send the clicked button when a control named clk is in the form", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="clk" value="1"><button type="submit" name="choice" value="go">Send</button></form>'
+          '<form method="post" action="ajax/text.html"><input name="clk" value="1"><button type="submit" name="choice" value="go">Send</button></form>',
         ).appendTo("#main");
         $form.ajaxForm();
 
@@ -1633,7 +1633,7 @@ describe("form", function () {
 
       it("should send the clicked image's coordinates when controls named clk_x and clk_y are in the form", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="clk_x" value="1"><input name="clk_y" value="2"><input type="image" name="im" src="data:,"></form>'
+          '<form method="post" action="ajax/text.html"><input name="clk_x" value="1"><input name="clk_y" value="2"><input type="image" name="im" src="data:,"></form>',
         ).appendTo("#visible-fixture");
         $form.ajaxForm();
 
@@ -1646,7 +1646,7 @@ describe("form", function () {
 
       it("should send NaN image coordinates when the click is triggered without coordinates", async function () {
         const $form = $(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input type="image" name="im" src="data:,"></form>',
         ).appendTo("#visible-fixture");
         $form.ajaxForm();
 
@@ -1662,7 +1662,7 @@ describe("form", function () {
 
         it("should post form.clk again when it was not cleared before an iframe upload", async function () {
           const $form = $(
-            '<form method="post" action="ajax/iframe-text.html"><button type="submit" name="choice" value="stale">Send</button></form>'
+            '<form method="post" action="ajax/iframe-text.html"><button type="submit" name="choice" value="stale">Send</button></form>',
           ).appendTo("#main");
           const posted = [];
           $form[0].submit = function () {
@@ -1772,7 +1772,7 @@ describe("form", function () {
 
           assert.deepEqual(
             calls.map((call) => call.form),
-            [$scoped[0]]
+            [$scoped[0]],
           );
         });
 
@@ -1802,7 +1802,7 @@ describe("form", function () {
 
           assert.deepEqual(
             calls.map((call) => call.form),
-            [$second[0]]
+            [$second[0]],
           );
         });
 

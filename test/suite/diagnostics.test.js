@@ -118,7 +118,7 @@ describe("form", function () {
         ]);
         assert.deepEqual(
           fields.map((field) => field.value),
-          ["over", "over"]
+          ["over", "over"],
         );
       });
 
@@ -279,11 +279,11 @@ describe("form", function () {
 
     it("should throw from ajaxSubmit before any event, callback or request", function () {
       const $form = $(
-        '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+        '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
       ).appendTo("#main");
       const calls = [];
       $form.on("form-pre-serialize form-submit-validate form-submit-notify", (event) =>
-        calls.push(event.type)
+        calls.push(event.type),
       );
       const ajax = $.ajax;
       $.ajax = () => calls.push("request");
@@ -317,7 +317,7 @@ describe("form", function () {
       const calls = [];
 
       const error = withJQueryVersion("3.4.1", () =>
-        thrownBy(() => $form.ajaxForm({ beforeFormUnbind: () => calls.push("beforeFormUnbind") }))
+        thrownBy(() => $form.ajaxForm({ beforeFormUnbind: () => calls.push("beforeFormUnbind") })),
       );
 
       assert.strictEqual(error.message, versionError);
@@ -335,7 +335,7 @@ describe("form", function () {
 
       assert.deepEqual(
         errors.map((error) => error.message),
-        [versionError, versionError]
+        [versionError, versionError],
       );
       assert.strictEqual(documentHandlers(), before);
     });

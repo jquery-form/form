@@ -154,7 +154,7 @@ export function submitTransport($form, options) {
           result.transport = "iframe";
           return false;
         },
-      })
+      }),
     );
   } finally {
     $.ajax = ajax;

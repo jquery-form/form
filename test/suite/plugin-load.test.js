@@ -128,7 +128,7 @@ describe("form", function () {
         assert.throws(
           run,
           Error,
-          "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+          "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax",
         );
         assert.deepEqual(events, []);
       });

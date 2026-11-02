@@ -17,7 +17,7 @@ const distDir = resolve(root, process.env.JQUERY_FORM_DIST || "dist");
 const packageDir = resolve(
   root,
   process.env.JQUERY_FORM_PACK_DIR || ".pack",
-  "jquery-3.7.1/node_modules/jquery-form"
+  "jquery-3.7.1/node_modules/jquery-form",
 );
 // jQuery's own module build when it has one (jQuery 4), else a module that exports the global.
 const jqueryModule = resolve(dirname(jqueryFile), "../dist-module/jquery.module.js");
@@ -176,7 +176,7 @@ const server = createServer(async (req, res) => {
         res,
         200,
         "application/json",
-        JSON.stringify(recorded.get(url.searchParams.get("id")) || [])
+        JSON.stringify(recorded.get(url.searchParams.get("id")) || []),
       );
     }
     if (url.pathname === "/" || url.pathname === "/page") {

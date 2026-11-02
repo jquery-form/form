@@ -82,7 +82,9 @@ function ruleValues(messages, ruleId, pattern) {
 function publicMembers(code) {
   const fn = new Set([...code.matchAll(/\$\.fn\.(\w+)\s*=(?!=)/g)].map((m) => m[1]));
   const statics = new Set(
-    [...code.matchAll(/\$\.(?!fn\b)(\w+)\s*=(?!=)/g)].map((m) => m[1]).filter((n) => n !== "active")
+    [...code.matchAll(/\$\.(?!fn\b)(\w+)\s*=(?!=)/g)]
+      .map((m) => m[1])
+      .filter((n) => n !== "active"),
   );
   return { fn: [...fn].sort(), statics: [...statics].sort() };
 }

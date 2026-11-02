@@ -87,7 +87,7 @@ function isElement(node) {
 function assertRealParent(el) {
   if (el.parentNode !== formMember(el, "parentNode")) {
     throw new Error(
-      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control'
+      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control',
     );
   }
 }
@@ -473,7 +473,7 @@ function ajaxForm(options, data, dataType, onSuccess) {
   // delegation: true scoped to the selection's selector, which jQuery 3 removed; 5.0 needs one
   if (delegation || delegation === "") {
     throw new Error(
-      'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"'
+      'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"',
     );
   }
 
@@ -629,7 +629,7 @@ function deprecateFieldValueOverride() {
   if (jQuery.fieldValue !== fieldValue) {
     deprecate(
       "fieldValue-override",
-      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
+      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks",
     );
   }
 }
@@ -956,7 +956,7 @@ function sendFormData(submission) {
 
             options.uploadProgress(event, position, total, percent);
           },
-          false
+          false,
         );
       }
 
@@ -1731,7 +1731,7 @@ function createSubmission(forms, serialization) {
         type: method || $.ajaxSettings.type,
         iframeSrc: "about:blank",
       },
-      options
+      options,
     );
 
     return keepContext(merged, [options]);
@@ -1761,7 +1761,7 @@ function createSubmission(forms, serialization) {
     if (typeof optionsData === "string") {
       if (options.requestFormat === "json") {
         throw new Error(
-          'jquery.form: requestFormat "json" needs object data; a string data option is a query string'
+          'jquery.form: requestFormat "json" needs object data; a string data option is a query string',
         );
       }
 
@@ -2059,7 +2059,7 @@ function createSubmission(forms, serialization) {
 
     if (transport !== "ajax" && options.requestFormat === "json") {
       throw new Error(
-        'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
+        'jquery.form: requestFormat "json" cannot send files or use the iframe transport',
       );
     }
 
@@ -2147,7 +2147,7 @@ function createSubmission(forms, serialization) {
     // #541: jQuery's slim build has no $.ajax
     if (!$.ajax) {
       throw new Error(
-        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax",
       );
     }
 

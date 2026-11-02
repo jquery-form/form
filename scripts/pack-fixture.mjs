@@ -29,7 +29,7 @@ for (const version of jqueryVersions) {
   mkdirSync(fixture);
   writeFileSync(
     resolve(fixture, "package.json"),
-    JSON.stringify({ name: `fixture-jquery-${version}`, private: true }, null, 2) + "\n"
+    JSON.stringify({ name: `fixture-jquery-${version}`, private: true }, null, 2) + "\n",
   );
   npm(
     [
@@ -41,7 +41,7 @@ for (const version of jqueryVersions) {
       tarball,
       `jquery@${version}`,
     ],
-    fixture
+    fixture,
   );
 }
 console.log(`installed ${tarball} into ${packDir}`);

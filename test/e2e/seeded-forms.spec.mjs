@@ -36,7 +36,7 @@ test.describe("seeded forms posted end to end", () => {
         const id = requestId(testInfo);
         const form = await page.evaluate(
           ([s, attributes]) => window.e2e.generate(s, attributes),
-          [seed, { action: `/r/${id}/ok`, method: "post", enctype: mode.enctype }]
+          [seed, { action: `/r/${id}/ok`, method: "post", enctype: mode.enctype }],
         );
 
         const { native, plugin, result } = await submitBoth(page, request, id, mode.options);

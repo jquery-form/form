@@ -108,7 +108,7 @@ export function ajaxForm(options, data, dataType, onSuccess) {
   // delegation: true scoped to the selection's selector, which jQuery 3 removed; 5.0 needs one
   if (delegation || delegation === "") {
     throw new Error(
-      'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"'
+      'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"',
     );
   }
 
