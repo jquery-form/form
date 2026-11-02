@@ -362,6 +362,8 @@ Release day, in one sitting:
 6. Publish the GitHub release notes from `4x-behavior-changes.md`.
 7. Comment on and close #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org
    #3607794. Credit Rudloff for W1 and W2.
+   - Check that CodeQL alerts 1 and 4 closed. Dismiss alert 7 (`iframeTarget`) as "won't fix",
+     linking finding 11 in `security-review.md`: the option is a developer-supplied selector.
 8. Delete the local fix branch. Keep the probe copies until the modernization project ends: they
    keep checking the W1–W4 fixes through the 5.0 refactors.
 
@@ -445,6 +447,9 @@ Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
 - Packaging: no `browser` field (bundlers get the module build; `jsdelivr` and `unpkg` name the
   minified build), `LICENSE-MIT` published, and the CommonJS factory uses the window it is given.
 - Docs: a Deprecations section in `docs/api.md` listing each warning and its replacement.
+- Dev only (not in the published package): an npm `overrides` entry pins `minimatch` to 11.0.4
+  for Dependabot alert 97 (CVE-2026-118764, through eslint, which still requires `minimatch@^10`
+  and has no patched 10.x). Remove the override once eslint allows minimatch 11.
 
 Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
