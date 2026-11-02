@@ -61,8 +61,11 @@ status: pending
 - id: cleanup-4x
 content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
 status: in_progress
+- id: hardening-4x
+content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracle against native FormData, end-to-end tests with a real server, published-file tests, a one-off mutation-testing report), then 4.5.0 with Phase 12"
+status: pending
 - id: breaking-5
-content: "Phase 13: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
+content: "Phase 14: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
 status: pending
 
 ---
@@ -99,12 +102,16 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 13. ~~Coverage to 100% (Phase 9)~~ — done; see Phase 9 below
 14. ~~Security and bug fixes (Phase 10)~~ — done; the W1–W4 fixes merge in Phase 11
 15. 4.4.0 release with the work so far (Phase 11)
-16. 4.x cleanup and rearchitecture (Phase 12), then a 4.x minor release
-17. 5.0 (Phase 13), then the 5.0 release; 5.x features after
+16. 4.x cleanup and rearchitecture (Phase 12)
+17. 4.x test hardening (Phase 13), then the 4.5.0 release with Phases 12 and 13
+18. 5.0 (Phase 14), then the 5.0 release; 5.x features after
 
 Phase 11 was added on 2026-10-31. The cleanup phase splits `src/jquery.form.js` into modules, which
 would move every W1–W4 sink while the fixes are still on a local branch. Releasing first ships the
 fixes sooner and lets the refactor start from the fixed code. The phases after it moved up by one.
+
+Phase 13 (4.x test hardening) was added on 2026-11-01, after the Phase 12 characterization sweep
+showed how much untested behavior the suite had missed. 5.0 moved to Phase 14.
 
 ### Architecture/CI decisions (Phase 3)
 
@@ -145,7 +152,8 @@ Each remaining step gets the cheapest model that fits it: a strong reasoner wher
 | Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes on a local branch until release; a weak fix reopens an XSS.                                                                                                   |
 | 4.4.0 release (Phase 11)                        | Claude Opus 5.5   | Disclosure order and publishing can't be undone; the merge, tag, npm publish and advisories must land in one sitting.                                                        |
 | 4.x cleanup and rearchitecture (Phase 12)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                    |
-| 5.0 (Phase 13)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
+| 4.x test hardening (Phase 13)                   | Claude Opus 5.5   | Test design across browsers, an oracle against native `FormData`, and a real server; findings must be told apart from deliberate Phase 12 changes.                           |
+| 5.0 (Phase 14)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
 
 ## Commit grouping principle
 
@@ -384,16 +392,39 @@ Phase 12 is done locally and waits for the 4.4.0 release before it ships as 4.5.
   - iframe response requirements
   - a clear error on jQuery slim (#541)
 - Decide on the JSON body (#545, PR #557).
-- Deprecation warnings (under `debug`, and in the docs) for everything Phase 13 removes.
+- Deprecation warnings (under `debug`, and in the docs) for everything Phase 14 removes.
 - Phase 10 observations: the iframe `beforeSend` veto never fires `ajaxStop` (fixed by the iframe
   lifecycle slice), and controls named `ownerDocument` or `getElementsByTagName` still shadow
   those form members (fixed by the form members slice).
 - Run the custom CodeQL query on every refactor branch, so moved code can't reopen a W1–W4 sink.
 
-Release the result as a 4.x minor, the same way as Phase 11 but without the advisory steps. Cut
-`release/4.x` when 5.0 lands (ADR-0002).
+Phase 12 ships together with Phase 13 as 4.5.0.
 
-## Phase 13: 5.0 (breaking)
+## Phase 13: 4.x test hardening (no breaking change)
+
+The Phase 12 sweep found about 70 bugs that 100% coverage had not caught. This phase adds kinds of
+tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the same
+local branch as Phase 12.
+
+- Run the suite on Firefox and WebKit as well as Chromium (Vitest browser instances), locally and in
+  CI.
+- Oracle tests for serialization: generate varied forms and compare `formToArray` with the browser's
+  own `new FormData(form)`. Each difference is a pinned 4.x quirk, recorded for 5.0, or a bug.
+- End-to-end tests with Playwright Test and a small Node server that parses multipart and urlencoded
+  bodies, through all three transports: what actually reaches the server.
+- Published-file tests: load the `dist` files the way consumers do (script tag, AMD, ESM, CommonJS)
+  with several jQuery versions and run a smoke set of behaviors through each.
+- A one-off mutation-testing report (Stryker, local only) to find where the suite is weakest, then
+  tests for those gaps.
+- Every new test runs against both the 4.4.0 code and the Phase 12 code. A test that passes on both
+  is a contract 5.0 must keep or break on purpose. A test that passes only on Phase 12 must match an
+  entry in `docs/research/4x-behavior-changes.md`; otherwise it is reported as a bug or an
+  undocumented change.
+
+Release Phases 12 and 13 together as 4.5.0, the same way as Phase 11 but without the advisory steps.
+Cut `release/4.x` when 5.0 lands (ADR-0002).
+
+## Phase 14: 5.0 (breaking)
 
 - jQuery becomes a peer dependency, `>=3.5.0`. Add the `exports` map from `security-review.md`.
 - Remove the jQuery < 3 paths: `attr2`/`hasProp`, the `.selector`/`.context` delegation and DOM-ready queue, and the `$.fn.on` and `$.fn.offset` checks.
@@ -406,7 +437,8 @@ Release the result as a 4.x minor, the same way as Phase 11 but without the advi
   - the IE8 `getDoc` fallbacks
   - the option-value and file-clone shims
 - The iframe transport runs only with `iframe: true`, and FormData detection is removed. Delegation requires a selector.
-- Remove the deprecated API: `clearInputs` and `$.fn.attr2`. `enable` and `selected` are kept.
+- Remove the deprecated API: `clearInputs`, `$.fn.attr2` and `closeKeepAlive` (a Safari 3/4
+  keep-alive workaround). `enable` and `selected` are kept.
 - Move to ES2015+ syntax and revisit Prettier `trailingComma`.
 - Decide whether `formToArray` and the other serializers keep calling an overridable `$.fieldValue`, or use the internal successful-controls module (5.0).
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
