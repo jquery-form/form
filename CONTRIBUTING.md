@@ -77,6 +77,8 @@ Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `di
 
 `npm run test:e2e` runs [Playwright Test](https://playwright.dev/) against the built `dist/jquery.form.js` (run `npm run build` first) on Chromium and WebKit. A small Node server (`test/e2e/server.mjs`) serves the fixture page and records every request the plugin sends, through each transport (urlencoded and FormData XHR, the iframe upload). Each test submits the same form natively and through the plugin, and the two requests must match after parsing, apart from the known differences listed in `test/shared/oracle-forms.js` and `test/e2e/harness.js`. `npm test` does not run them.
 
+It first tests the package as npm would publish it: `scripts/pack-fixture.mjs` runs `npm pack` and installs the tarball into fixture projects under `.pack/` (one per jQuery version, installed from the registry or npm's cache). `test/e2e/published-node.test.mjs` (`node --test`) loads it by name from CommonJS and ES modules in Node, with jsdom as the window, and `test/e2e/published.spec.mjs` loads it in the browser by script tag (plain and minified), RequireJS and an import map, then posts a form over XHR and uploads a file through the iframe. Set `JQUERY_FORM_TARBALL` to test a tarball you packed elsewhere.
+
 Set `JQUERY_FILE` to test another jQuery build, as for the suite. `npm run test:e2e:docker` runs them in Docker on all three browsers, including Firefox.
 
 ### Running tests in Docker
