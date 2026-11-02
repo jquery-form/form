@@ -713,6 +713,49 @@ function wellFormed(value) {
     : value;
 }
 
+// Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
+function setKey(object, key, value) {
+  Object.defineProperty(object, key, {
+    value: value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Data for $.param (the data option or extraData) with lone surrogates in its keys and string
+ * values made well formed. Arrays and objects are walked as $.param walks them, inherited keys
+ * included; they are copied only when something changes.
+ */
+function wellFormedData(data) {
+  var isArray = Array.isArray(data);
+
+  if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
+    return wellFormed(data);
+  }
+
+  var copy = isArray ? [] : {};
+  var changed = false;
+
+  if (isArray) {
+    for (var i = 0; i < data.length; i++) {
+      copy[i] = wellFormedData(data[i]);
+      changed = changed || copy[i] !== data[i];
+    }
+  } else {
+    for (var key in data) {
+      var name = wellFormed(key);
+      var value = wellFormedData(data[key]);
+
+      changed = changed || name !== key || value !== data[key];
+      setKey(copy, name, value);
+    }
+  }
+
+  return changed ? copy : data;
+}
+
 // jQuery 3 dropped $.param's "+" for a space; a native submission still sends "+". Only a space
 // encodes as %20, since a literal % encodes as %25.
 function urlencode(fields, traditional) {
@@ -906,7 +949,7 @@ var $$4 = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 function deepSerialize(extraData, traditional) {
-  var param = $$4.param(extraData, traditional);
+  var param = $$4.param(wellFormedData(extraData), traditional);
   var serialized = param ? param.split("&") : [];
   var len = serialized.length;
   var result = [];
@@ -1137,7 +1180,7 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
           hasOwn.call(extraData[n], "name") &&
           hasOwn.call(extraData[n], "value")
         ) {
-          addHiddenInput(extraData[n].name, extraData[n].value);
+          addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
           var single = {};
@@ -1919,7 +1962,7 @@ function createSubmission(feature, forms, serialization) {
 
     options.extraData = optionsData;
 
-    return $.param(optionsData, traditional);
+    return $.param(wellFormedData(optionsData), traditional);
   }
 
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.

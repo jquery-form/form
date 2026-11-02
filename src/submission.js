@@ -1,8 +1,8 @@
 import { deprecate, log } from "./diagnostics.js";
+import { urlencode, wellFormedData } from "./successful-controls.js";
 import { assertRealParent } from "./form-members.js";
 import jQuery from "jquery";
 import { keepContext } from "./options.js";
-import { urlencode } from "./successful-controls.js";
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
 // { form, $form, fields, controls, options, method, traditional }. `options` is the object the
@@ -84,7 +84,7 @@ export function createSubmission(feature, forms, serialization) {
 
     options.extraData = optionsData;
 
-    return $.param(optionsData, traditional);
+    return $.param(wellFormedData(optionsData), traditional);
   }
 
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.

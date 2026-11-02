@@ -108,6 +108,49 @@ export function wellFormed(value) {
     : value;
 }
 
+// Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
+function setKey(object, key, value) {
+  Object.defineProperty(object, key, {
+    value: value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Data for $.param (the data option or extraData) with lone surrogates in its keys and string
+ * values made well formed. Arrays and objects are walked as $.param walks them, inherited keys
+ * included; they are copied only when something changes.
+ */
+export function wellFormedData(data) {
+  var isArray = Array.isArray(data);
+
+  if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
+    return wellFormed(data);
+  }
+
+  var copy = isArray ? [] : {};
+  var changed = false;
+
+  if (isArray) {
+    for (var i = 0; i < data.length; i++) {
+      copy[i] = wellFormedData(data[i]);
+      changed = changed || copy[i] !== data[i];
+    }
+  } else {
+    for (var key in data) {
+      var name = wellFormed(key);
+      var value = wellFormedData(data[key]);
+
+      changed = changed || name !== key || value !== data[key];
+      setKey(copy, name, value);
+    }
+  }
+
+  return changed ? copy : data;
+}
+
 // jQuery 3 dropped $.param's "+" for a space; a native submission still sends "+". Only a space
 // encodes as %20, since a literal % encodes as %25.
 export function urlencode(fields, traditional) {

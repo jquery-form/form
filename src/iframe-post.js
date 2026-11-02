@@ -128,7 +128,7 @@ export function addExtraInputs(form, ownerDocument, extraData, traditional, adde
           hasOwn.call(extraData[n], "name") &&
           hasOwn.call(extraData[n], "value")
         ) {
-          addHiddenInput(extraData[n].name, extraData[n].value);
+          addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
           var single = {};

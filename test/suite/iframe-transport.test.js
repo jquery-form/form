@@ -2362,6 +2362,44 @@ describe("form", function () {
             ]);
           });
 
+          it("should post lone surrogates in extraData keys and values as U+FFFD", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let fields;
+
+            startStubbedUpload(
+              $form,
+              {
+                extraData: {
+                  "k\uD800": "v\uDC00",
+                  list: ["a\uDBFF"],
+                  nested: { "n\uDC00": "x" },
+                  pair: { name: "p\uD800", value: "q\uDC00" },
+                },
+              },
+              function (form) {
+                fields = hiddenFields(form);
+              }
+            );
+
+            assert.deepEqual(fields, [
+              ["k\uFFFD", "v\uFFFD"],
+              ["list[]", "a\uFFFD"],
+              ["nested[n\uFFFD]", "x"],
+              ["p\uFFFD", "q\uFFFD"],
+            ]);
+          });
+
+          it("should post a lone surrogate in an object data option as U+FFFD", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let fields;
+
+            startStubbedUpload($form, { data: { "k\uD800": ["v\uDC00"] } }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["k\uFFFD[]", "v\uFFFD"]]);
+          });
+
           it("should send a query-string data option as its own fields on an iframe upload", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             let fields;
