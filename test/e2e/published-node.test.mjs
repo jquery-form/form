@@ -18,7 +18,7 @@ const jqueryFile = resolve(root, process.env.JQUERY_FILE || "node_modules/jquery
 const jqueryVersion = readFileSync(jqueryFile, "utf8").match(
   /jQuery JavaScript Library v([\w.-]+)/
 )[1];
-const FIXTURE_VERSIONS = ["3.7.1", "4.0.0"];
+const FIXTURE_VERSIONS = ["3.5.0", "3.7.1", "4.0.0"];
 
 let server;
 let origin;

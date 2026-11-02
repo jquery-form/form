@@ -60,7 +60,8 @@ const rawFiles = serveFiles(
 
 const jqueryEsm = new URL("./test/jquery-esm.js", import.meta.url);
 
-// The matrix points JQUERY_FILE at another classic jQuery build (see scripts/fetch-jquery.sh).
+// The matrix points JQUERY_FILE at another classic jQuery build, such as node_modules/jquery35 or
+// node_modules/jquery4 (npm aliases pinned by the lockfile).
 const jqueryFile = fileURLToPath(
   new URL(
     process.env.JQUERY_FILE || "./node_modules/jquery/dist/jquery.js",

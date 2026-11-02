@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run Vitest in Playwright's Linux image (its Firefox build does not start on macOS 27).
-# Usage: [JQUERY_FILE=.jquery/jquery-1.7.2.js] scripts/test-docker.sh [vitest args...]
+# Usage: [JQUERY_FILE=node_modules/jquery35/dist/jquery.js] scripts/test-docker.sh [vitest args...]
 #        [JQUERY_FILE=...] scripts/test-docker.sh --e2e [playwright test args...]
 # Defaults to the suite on Chromium, WebKit and Firefox; --e2e runs the end-to-end tests
 # (npm run test:e2e, with the packed-package tests) instead, on all three browsers unless

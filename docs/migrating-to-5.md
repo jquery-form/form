@@ -17,7 +17,7 @@ Entries are added as each 5.0 change lands.
 
 ### jQuery 3.5 or later is required, as a peer dependency
 
-**What changed.** jquery-form 5 supports jQuery 3.5.0 and later. 4.x accepted jQuery 1.7.2 and later. In `package.json`, jQuery moves from `dependencies` to `peerDependencies` (`"jquery": ">=3.5.0"`, with no upper bound), so your project provides jQuery instead of jquery-form installing its own copy. `bower.json` and `composer.json` (`components/jquery`) ask for the same range.
+**What changed.** jquery-form 5 supports jQuery 3.5.0 and later, and is tested against 3.5.0, 3.7.1 and 4.0.0. 4.x accepted jQuery 1.7.2 and later. In `package.json`, jQuery moves from `dependencies` to `peerDependencies` (`"jquery": ">=3.5.0"`, with no upper bound), so your project provides jQuery instead of jquery-form installing its own copy. `bower.json` and `composer.json` (`components/jquery`) ask for the same range.
 
 **Why.** jQuery before 3.5 has public security issues in how it inserts HTML (CVE-2020-11022 and CVE-2020-11023), which the `target` option relies on, and the jQuery team no longer supports it. A peer dependency keeps one copy of jQuery on the page: the one your app uses.
 

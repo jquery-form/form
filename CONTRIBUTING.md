@@ -94,7 +94,7 @@ npm run test:firefox   # the suite on Firefox
 npm run test:docker    # the suite on Chromium, WebKit and Firefox
 ```
 
-`scripts/test-docker.sh` passes any arguments on to `vitest run` (or to `playwright test` after `--e2e`). To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=.jquery/jquery-1.7.2.js npm run test:firefox` (fetch it first with `scripts/fetch-jquery.sh 1.7.2`).
+`scripts/test-docker.sh` passes any arguments on to `vitest run` (or to `playwright test` after `--e2e`). To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=node_modules/jquery35/dist/jquery.js npm run test:firefox`. CI runs the suite and the end-to-end tests on jQuery 3.5.0 (the supported floor, `node_modules/jquery35`), 3.7.1 (the default, `node_modules/jquery`) and 4.0.0 (`node_modules/jquery4`); the two extra versions are npm aliases pinned by `package-lock.json`.
 
 Node and `node_modules` are cached in Docker volumes (`jquery-form-node`, and `jquery-form-node-modules-<hash>` for each `package-lock.json`). To clear them:
 
