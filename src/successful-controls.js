@@ -116,6 +116,12 @@ export function wellFormed(value) {
     : value;
 }
 
+// jQuery 3 dropped $.param's "+" for a space; a native submission still sends "+". Only a space
+// encodes as %20, since a literal % encodes as %25.
+export function urlencode(fields, traditional) {
+  return jQuery.param(urlencodedFields(fields), traditional).replace(/%20/g, "+");
+}
+
 export function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
     var value =

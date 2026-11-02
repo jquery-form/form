@@ -1173,14 +1173,12 @@ describe("form", function () {
       assert.strictEqual(serialized, "first=1");
     });
 
-    it("should encode spaces per jQuery version", function () {
+    it("should encode spaces as + on every jQuery version, as a native submission does", function () {
       const $form = $('<form><input name="a" value="x y"></form>');
 
       const serialized = $form.formSerialize();
 
-      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
-      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
-      assert.strictEqual(serialized, `a=x${space}y`);
+      assert.strictEqual(serialized, "a=x+y");
     });
 
     it("should order the clicked image in place only when semantic is true", function () {
@@ -1539,9 +1537,7 @@ describe("form", function () {
 
       const result = $fields.fieldSerialize();
 
-      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
-      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
-      assert.strictEqual(result, `choice=a${space}b&choice=c`);
+      assert.strictEqual(result, "choice=a+b&choice=c");
     });
 
     it("should skip unnamed fields when successful is false", function () {

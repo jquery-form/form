@@ -118,6 +118,7 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 - **Bundlers get the module build; CDNs keep the minified one.** The `browser` field in `package.json` pointed at `dist/jquery.form.min.js`, and bundlers that read it first (webpack, Vite, Browserify) bundled the minified classic build. It is removed: webpack and Vite now use `module` (`dist/jquery.form.mjs`) and Browserify uses `main` (`dist/jquery.form.js`). New `jsdelivr` and `unpkg` fields keep a bare CDN URL serving `dist/jquery.form.min.js`.
 - **The package includes `LICENSE-MIT`.** The package is dual-licensed (LGPL-2.1+ or MIT), but only `LICENSE` was published.
 - **The CommonJS factory uses the window it is given.** `require("jquery-form")(root, $)` read the global `window` and `document`, so it threw in Node unless a DOM was global (as in jest-environment-jsdom). The classic build now takes `window`, `document`, `navigator`, `Element` and `FormData` from `root`, falling back to the global window. jQuery 4 itself still needs a global window when required without one.
+- **Spaces encode as `+` on every jQuery version.** jQuery 3 and later made `$.param` write a space as `%20`, so `formSerialize`, `fieldSerialize`, a GET query string and the `data` that `beforeSend` sees used `%20`, while jQuery 1 and 2 and a native form submission use `+`. They now use `+` everywhere. Servers decode both the same way; only code that compares the strings sees a difference. A string `data` option is passed through unchanged.
 
 ## Known behavior, not changed
 

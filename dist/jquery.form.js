@@ -712,6 +712,12 @@ function wellFormed(value) {
     : value;
 }
 
+// jQuery 3 dropped $.param's "+" for a space; a native submission still sends "+". Only a space
+// encodes as %20, since a literal % encodes as %25.
+function urlencode(fields, traditional) {
+  return jQuery.param(urlencodedFields(fields), traditional).replace(/%20/g, "+");
+}
+
 function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
     var value =
@@ -2072,7 +2078,7 @@ function createSubmission(feature, forms, serialization) {
     if (options.requestFormat === "json") {
       jsonBody(options, fields);
     } else {
-      encode(options, $.param(urlencodedFields(fields), traditional), qx);
+      encode(options, urlencode(fields, traditional), qx);
     }
 
     return {
@@ -2383,7 +2389,7 @@ function createSubmission(feature, forms, serialization) {
    */
   $.fn.formSerialize = function (semantic) {
     // hand off to jQuery.param for proper encoding
-    return $.param(urlencodedFields(this.formToArray(semantic)));
+    return urlencode(this.formToArray(semantic));
   };
 
   /**
@@ -2413,7 +2419,7 @@ function createSubmission(feature, forms, serialization) {
     });
 
     // hand off to jQuery.param for proper encoding
-    return $.param(urlencodedFields(a));
+    return urlencode(a);
   };
 
   /**

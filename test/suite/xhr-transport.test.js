@@ -519,7 +519,7 @@ describe("form", function () {
         const result = submitTransport(upload.$form);
 
         assert.strictEqual(result.transport, "plain");
-        assert.strictEqual(result.settings.data, $.param({ title: "quarterly report" }));
+        assert.strictEqual(result.settings.data, "title=quarterly+report");
       });
 
       it("should use the FormData transport when a descendant file input belongs to another form", function () {
@@ -1217,7 +1217,7 @@ describe("form", function () {
 
         assert.strictEqual(
           settings.url.split("?")[1],
-          $.param({ title: "quarterly report", document: "report.txt" })
+          "title=quarterly+report&document=report.txt"
         );
       });
     });

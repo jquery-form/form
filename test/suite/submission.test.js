@@ -1895,14 +1895,24 @@ describe("form", function () {
     });
 
     describe("request url and body", function () {
-      it("should encode spaces in the request body per jQuery version", function () {
+      it("should encode spaces in the request body as + on every jQuery version", function () {
         const $form = makeForm(
           '<form method="post" action="ajax/text.html"><input name="a" value="x y"></form>'
         );
 
         const settings = submitWith($form, [{}]);
 
-        assert.strictEqual(settings.data, majorVersion() < 3 ? "a=x+y" : "a=x%20y");
+        assert.strictEqual(settings.data, "a=x+y");
+      });
+
+      it("should encode spaces in a GET query string as + on every jQuery version", function () {
+        const $form = makeForm(
+          '<form method="get" action="ajax/text.html"><input name="a" value="x y"></form>'
+        );
+
+        const settings = submitWith($form, [{}]);
+
+        assert.strictEqual(settings.url, absolute("ajax/text.html") + "?a=x+y");
       });
 
       it("should leave a bare ? when a GET form has no fields", function () {

@@ -24,7 +24,7 @@ import { callFormMethod, tagName } from "./form-members.js";
 import {
   createSuccessfulControls,
   isSuccessful,
-  urlencodedFields,
+  urlencode,
   valueOf,
 } from "./successful-controls.js";
 import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
@@ -202,7 +202,7 @@ import { submitterElement } from "./submitter.js";
    */
   $.fn.formSerialize = function (semantic) {
     // hand off to jQuery.param for proper encoding
-    return $.param(urlencodedFields(this.formToArray(semantic)));
+    return urlencode(this.formToArray(semantic));
   };
 
   /**
@@ -232,7 +232,7 @@ import { submitterElement } from "./submitter.js";
     });
 
     // hand off to jQuery.param for proper encoding
-    return $.param(urlencodedFields(a));
+    return urlencode(a);
   };
 
   /**

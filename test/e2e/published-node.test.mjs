@@ -99,8 +99,7 @@ function expected(version, value) {
     ownWindow: true,
     api: true,
     value,
-    // jQuery 1's $.param writes spaces as "+", later versions as "%20".
-    serialized: `text=plain${/^1\./.test(version) ? "+" : "%20"}%C3%BC&pick=b`,
+    serialized: "text=plain+%C3%BC&pick=b",
     data: { method: "POST", body: "text=plain+%C3%BC&pick=b" },
   };
 }
