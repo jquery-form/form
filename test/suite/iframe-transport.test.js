@@ -2786,30 +2786,87 @@ describe("form", function () {
             assert.strictEqual(ajaxErrorReason, "fixture failure");
           });
 
-          it.fails(
-            "should reject with parsererror when the response cannot be parsed",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
+          it("should reject with parsererror when the response cannot be parsed", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
 
-              const result = await submitThroughIframe($form, { dataType: "json" });
-              const rejection = await new Promise((resolve) =>
-                result.xhr.fail((...args) => resolve(args))
+            const result = await submitThroughIframe($form, { dataType: "json" });
+            const rejection = await new Promise((resolve) =>
+              result.xhr.fail((...args) => resolve(args))
+            );
+
+            assert.strictEqual(rejection[1], "parsererror");
+          });
+
+          it("should report the statusText when an error-status response also fails to parse", async function () {
+            const $form = createIframeForm("ajax/iframe-error.html");
+
+            const result = await submitThroughIframe($form, { dataType: "json" });
+
+            assert.strictEqual(result.error[2], "fixture failure");
+          });
+
+          // Submits the form with `options` and records what each callback, ajaxError and the
+          // rejection received.
+          function settleOutcome($form, options) {
+            const seen = {};
+            const onAjaxError = function (event, xhr, settings, reason) {
+              seen.ajaxError = reason;
+            };
+            $(document).on("ajaxError.ifrlog", onAjaxError);
+
+            return new Promise(function (resolve) {
+              $form.ajaxSubmit(
+                $.extend({}, options, {
+                  error: (xhr, status, reason) => (seen.error = [status, reason]),
+                  complete: function (xhr, status) {
+                    seen.complete = status;
+                    $(document).off("ajaxError.ifrlog", onAjaxError);
+                    setTimeout(() => resolve(seen));
+                  },
+                })
               );
+              $form
+                .data("jqxhr")
+                .fail((xhr, status, reason) => (seen.rejection = [status, reason]));
+            });
+          }
 
-              assert.strictEqual(rejection[1], "parsererror");
-            }
-          );
+          it("should report a parse error to every callback, ajaxError and the rejection as the XHR transport does", async function () {
+            const iframeForm = createIframeForm("ajax/iframe-text.html");
+            const xhrForm = createIframeForm("ajax/iframe-text.html");
 
-          it.fails(
-            "should report the statusText when an error-status response also fails to parse",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-error.html");
+            const viaIframe = await settleOutcome(iframeForm, { iframe: true, dataType: "json" });
+            const viaXhr = await settleOutcome(xhrForm, { dataType: "json" });
 
-              const result = await submitThroughIframe($form, { dataType: "json" });
+            const shape = (seen) => ({
+              error: seen.error[0],
+              complete: seen.complete,
+              rejection: seen.rejection[0],
+              sameReason: seen.ajaxError === seen.error[1] && seen.rejection[1] === seen.error[1],
+              reasonIsError: seen.error[1] instanceof Error,
+            });
+            assert.deepEqual(shape(viaIframe), shape(viaXhr));
+            assert.deepEqual(shape(viaIframe), {
+              error: "parsererror",
+              complete: "parsererror",
+              rejection: "parsererror",
+              sameReason: true,
+              reasonIsError: true,
+            });
+          });
 
-              assert.strictEqual(result.error[2], "fixture failure");
-            }
-          );
+          it("should report error and the statusText everywhere when an error-status response fails to parse", async function () {
+            const $form = createIframeForm("ajax/iframe-error.html");
+
+            const seen = await settleOutcome($form, { iframe: true, dataType: "json" });
+
+            assert.deepEqual(seen, {
+              error: ["error", "fixture failure"],
+              rejection: ["error", "fixture failure"],
+              ajaxError: "fixture failure",
+              complete: "error",
+            });
+          });
 
           it("should settle the upload and end the global events when success throws", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");

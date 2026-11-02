@@ -164,8 +164,12 @@ export function createLifecycle(s, frame) {
       return;
     }
 
-    // an emulated HTTP error status wins, as in $.ajax; a parse error is kept otherwise
+    // an emulated HTTP error status wins with the statusText, as in $.ajax; a parse error is
+    // kept otherwise
     if (xhr.status && !((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304)) {
+      if (status === "parsererror") {
+        errMsg = undefined;
+      }
       status = "error";
     }
 
@@ -190,7 +194,7 @@ export function createLifecycle(s, frame) {
     if (s.error) {
       s.error.call(s.context, xhr, status, errMsg);
     }
-    deferred.reject(xhr, "error", errMsg);
+    deferred.reject(xhr, status, errMsg);
     if (g) {
       $.event.trigger("ajaxError", [xhr, s, errMsg]);
     }
