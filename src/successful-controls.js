@@ -105,11 +105,25 @@ export function valueOf(el) {
 /**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
+// A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
+var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+
+function wellFormed(value) {
+  return typeof value === "string"
+    ? value.replace(loneSurrogate, function (match, before) {
+        return (before || "") + "\uFFFD";
+      })
+    : value;
+}
+
 export function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    return field.type === "file" && typeof field.value !== "string"
-      ? { name: field.name, value: field.value.name }
-      : field;
+    var value =
+      field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
+    var name = wellFormed(field.name);
+    value = wellFormed(value);
+
+    return name === field.name && value === field.value ? field : { name: name, value: value };
   });
 }
 

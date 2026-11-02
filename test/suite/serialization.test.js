@@ -1125,6 +1125,16 @@ describe("form", function () {
   });
 
   describe("formSerialize", function () {
+    it("should encode a lone surrogate as U+FFFD like a native submission", function () {
+      const $form = $('<form><input name="q"><input name="ok" value="1"></form>');
+      $form.find("[name=q]").val("a\uD800b\uDC00");
+      $form.find("[name=ok]").attr("name", "n\uDBFF");
+
+      const s = $form.formSerialize();
+
+      assert.equal(s, "q=a%EF%BF%BDb%EF%BF%BD&n%EF%BF%BD=1");
+    });
+
     it("should produce one query-string pair per successful field", function () {
       const $form = $("#form1");
 
@@ -1421,6 +1431,14 @@ describe("form", function () {
   });
 
   describe("fieldSerialize", function () {
+    it("should encode a lone surrogate as U+FFFD like a native submission", function () {
+      const $input = $('<input name="q">').val("\uDC00x\uD800");
+
+      const s = $input.fieldSerialize();
+
+      assert.equal(s, "q=%EF%BF%BDx%EF%BF%BD");
+    });
+
     // Shared Assert step: the serialized pairs match `expected`, in order.
     function assertPairs(serialized, expected) {
       const result = serialized.split("&");

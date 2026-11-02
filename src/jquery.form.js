@@ -232,7 +232,7 @@ import { submitterElement } from "./submitter.js";
     });
 
     // hand off to jQuery.param for proper encoding
-    return $.param(a);
+    return $.param(urlencodedFields(a));
   };
 
   /**

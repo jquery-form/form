@@ -1522,6 +1522,17 @@ describe("form", function () {
         assert.strictEqual(settings.data, "b=changed&c=3");
       });
 
+      it("should send a lone surrogate as U+FFFD in a urlencoded body", function () {
+        const $form = makeForm(
+          '<form method="post" action="ajax/text.html"><input name="a"></form>'
+        );
+        $form.find("input").val("x\uD800");
+
+        const settings = submitWith($form, [{}]);
+
+        assert.strictEqual(settings.data, "a=x%EF%BF%BD");
+      });
+
       it("should pass the same veto object to both veto events", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const seen = {};

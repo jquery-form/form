@@ -30,7 +30,7 @@ function prng(seed) {
 }
 
 const NAMES = ["a", "b", "c", "a b", "ü", "名前", "a[]", "a.b", "x=y", "&", "😀"];
-// Lone surrogates: rare, since formSerialize cannot encode them (class USV-THROW).
+// Lone surrogates: rare; FormData and the plugin both send them as U+FFFD (class USV).
 const LONE = ["q\uD800", "lone\uDC00"];
 const VALUES = [
   "",
@@ -415,17 +415,7 @@ const KNOWN_DIFFERENCES = [
 ];
 
 // Known exceptions: the plugin throws where FormData serializes. Each has an ID and a matcher.
-const KNOWN_THROWS = [
-  {
-    id: "USV-THROW",
-    description: "formSerialize throws URIError on a lone surrogate (jQuery.param encodes it)",
-    matches: (error, ctx) =>
-      error instanceof URIError &&
-      pluginEntries($(ctx.form).formToArray()).some(
-        (e) => toWellFormed(e[0] + e[2]) !== e[0] + e[2]
-      ),
-  },
-];
+const KNOWN_THROWS = [];
 
 // Runs the plugin; an exception passes only when a known class matches it (null then).
 function attempt(act, ctx) {

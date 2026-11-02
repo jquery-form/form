@@ -112,6 +112,10 @@ Collected as the modernization proceeds. Each entry is a change a consumer could
 
 - **Deprecation warnings under `debug`.** With `$.fn.ajaxSubmit.debug = true`, the plugin logs one `console.warn` per page for each feature 5.0 removes: `clearInputs` (use `clearFields`), `$.fn.attr2` (use `.prop()` or `.attr()`), `ajaxForm` queued until the DOM is ready on an empty selection (call it inside `$(fn)` or use `delegation: "<selector>"`), the iframe transport chosen automatically without `FormData` (set `iframe: true`), and jQuery before 3.5 (5.0 needs 3.5 or later). Nothing is logged with `debug` off. `clearInputs` is now a separate function that calls `clearFields`. `enable` and `selected` are kept.
 
+## Phase 13
+
+- **A lone surrogate is sent as U+FFFD.** `formSerialize`, `fieldSerialize` and a urlencoded `ajaxSubmit` body threw `URIError` when a name or value held an unpaired UTF-16 surrogate. Each one is now replaced with U+FFFD, as a native form submission and `FormData` do.
+
 ## Known behavior, not changed
 
 - **`dataType: "script"` on jQuery 4** delivers `undefined` to `success`; jQuery 4 loads async script requests through a script tag. The script still runs. This comes from jQuery, not the plugin.
