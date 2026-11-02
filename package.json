@@ -46,7 +46,7 @@
     "metrics": "node scripts/code-metrics.mjs",
     "test": "npm run lint && npm run format:check && npm run build && vitest run --coverage --project !suite-webkit && vitest run --project suite-webkit",
     "test:docker": "scripts/test-docker.sh",
-    "test:e2e": "playwright test",
+    "test:e2e": "node scripts/pack-fixture.mjs && node --test test/e2e/published-node.test.mjs && playwright test",
     "test:e2e:docker": "scripts/test-docker.sh --e2e",
     "test:firefox": "scripts/test-docker.sh --project suite-firefox"
   },
