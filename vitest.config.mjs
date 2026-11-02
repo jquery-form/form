@@ -81,7 +81,7 @@ const jqueryAsModule = {
 };
 
 // The suite runs on Chromium and WebKit, as instances named suite-chromium and suite-webkit.
-// suite-firefox is added only with JQUERY_FORM_FIREFOX=1 (scripts/test-firefox.sh runs it in Docker):
+// suite-firefox is added only with JQUERY_FORM_FIREFOX=1 (scripts/test-docker.sh runs it in Docker):
 // Playwright's Firefox build does not start on the maintainer's macOS, so npm test leaves it out.
 // V8 coverage only exists in Chromium, so npm test runs suite-webkit in a second run.
 const suiteBrowsers = ["chromium", "webkit"];
