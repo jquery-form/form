@@ -1,7 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import {
-  recordDeprecations,
   resetFixture,
   arrayValue,
   restoreAjaxState,
@@ -9,8 +8,6 @@ import {
   withAjaxStub,
   formHidingParentNode,
 } from "./helpers.js";
-
-const jQueryMajor = Number($.fn.jquery.split(".")[0]);
 
 // Focus, keyboard input and image clicks need rendered controls, but #main is hidden. Tests that
 // need them append to #visible-fixture, which each test gets fresh.
@@ -123,14 +120,6 @@ describe("form", function () {
       }
     });
 
-    it("should not queue an empty selection once the DOM is ready", function () {
-      const $empty = $(".missing-ready-form");
-
-      const warnings = recordDeprecations(true, () => $empty.ajaxForm());
-
-      assert.isFalse(warnings.some((text) => text.includes("queuing")));
-    });
-
     it("should return an empty selection without binding handlers", function () {
       const $missing = $(".missing-ajax-form");
 
@@ -141,10 +130,6 @@ describe("form", function () {
     });
 
     describe("before the DOM is ready", function () {
-      // These tests fake `$.isReady`. jQuery 1.7.2 then re-fires its ready handlers, which closes
-      // the test page, so they only run where the collection has no native selector metadata.
-      const it = globalThis.it.skipIf(Number($.fn.jquery.split(".")[0]) < 3);
-
       function withDomNotReady(run) {
         const isReady = $.isReady;
         $.isReady = false;
@@ -156,42 +141,7 @@ describe("form", function () {
         }
       }
 
-      it("should bind once ready when old jQuery selector metadata is present", async function () {
-        const $pending = $(".queued-ajax-form");
-        $pending.selector = ".queued-ajax-form";
-
-        const result = withDomNotReady(() => $pending.ajaxForm());
-        const $form = $('<form class="queued-ajax-form"></form>').appendTo("#main");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        assert.strictEqual(result, $pending);
-        assert.strictEqual($._data($form[0], "events").submit.length, 1);
-      });
-
-      it("should warn once under debug when ajaxForm is queued until the DOM is ready", function () {
-        const $pending = $(".warned-queue-form");
-        $pending.selector = ".warned-queue-form";
-
-        const warnings = recordDeprecations(true, function () {
-          withDomNotReady(() => $pending.ajaxForm());
-          withDomNotReady(() => $pending.ajaxForm());
-        });
-
-        assert.strictEqual(warnings.filter((text) => text.includes("delegation")).length, 1);
-      });
-
-      it("should not warn about the queue with debug off", function () {
-        const $pending = $(".silent-queue-form");
-        $pending.selector = ".silent-queue-form";
-
-        const warnings = recordDeprecations(false, () =>
-          withDomNotReady(() => $pending.ajaxForm())
-        );
-
-        assert.deepEqual(warnings, []);
-      });
-
-      it("should not queue an empty selection without selector metadata", async function () {
+      it("should not bind a form added later when the selection was empty", async function () {
         const $pending = $(".unqueued-ajax-form");
 
         const result = withDomNotReady(() => $pending.ajaxForm());
@@ -200,82 +150,6 @@ describe("form", function () {
 
         assert.strictEqual(result, $pending);
         assert.strictEqual($._data($form[0], "events"), undefined);
-      });
-
-      it("should bind on a later macrotask, not synchronously, when queued", async function () {
-        const $pending = $(".later-ajax-form");
-        $pending.selector = ".later-ajax-form";
-        const $form = $('<form class="later-ajax-form"></form>').appendTo("#main");
-
-        withDomNotReady(() => $pending.ajaxForm());
-        const boundAtOnce = $._data($form[0], "events");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        assert.strictEqual(boundAtOnce, undefined);
-        assert.strictEqual($._data($form[0], "events").submit.length, 1);
-      });
-
-      it("should bind the queued call with the same options object", async function () {
-        const $pending = $(".same-options-ajax-form");
-        $pending.selector = ".same-options-ajax-form";
-        const options = { url: "ajax/text.html" };
-        withDomNotReady(() => $pending.ajaxForm(options));
-        const $form = $('<form class="same-options-ajax-form"></form>').appendTo("#main");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        const calls = await withAjaxSubmitStub(async function (calls) {
-          $form.trigger("submit");
-          return calls;
-        });
-
-        assert.strictEqual(calls.length, 1);
-        assert.strictEqual(calls[0].options, options);
-      });
-
-      it("should call beforeFormUnbind only when the queued call runs", async function () {
-        const $pending = $(".unbind-later-ajax-form");
-        $pending.selector = ".unbind-later-ajax-form";
-        let calls = 0;
-        const options = {
-          beforeFormUnbind: function () {
-            calls++;
-          },
-        };
-
-        withDomNotReady(() => $pending.ajaxForm(options));
-        const callsAtOnce = calls;
-        $('<form class="unbind-later-ajax-form"></form>').appendTo("#main");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        assert.strictEqual(callsAtOnce, 0);
-        assert.strictEqual(calls, 1);
-      });
-
-      it("should not queue again when the queued call still finds nothing", async function () {
-        const $pending = $(".never-ajax-form");
-        $pending.selector = ".never-ajax-form";
-
-        withDomNotReady(() => $pending.ajaxForm());
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        const $form = $('<form class="never-ajax-form"></form>').appendTo("#main");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        assert.strictEqual($._data($form[0], "events"), undefined);
-      });
-
-      it("should query the queued selector in the original context", async function () {
-        const $context = $("<div></div>").appendTo("#main");
-        const $pending = $(".context-ajax-form");
-        $pending.selector = ".context-ajax-form";
-        $pending.context = $context[0];
-
-        withDomNotReady(() => $pending.ajaxForm());
-        const $inside = $('<form class="context-ajax-form"></form>').appendTo($context);
-        const $outside = $('<form class="context-ajax-form"></form>').appendTo("#main");
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        assert.strictEqual($._data($inside[0], "events").submit.length, 1);
-        assert.strictEqual($._data($outside[0], "events"), undefined);
       });
     });
 
@@ -437,32 +311,6 @@ describe("form", function () {
 
           assert.strictEqual($form[0].clk_x, 21);
           assert.strictEqual($form[0].clk_y, 38);
-        } finally {
-          $.fn.offset = offset;
-        }
-      });
-    });
-
-    it("should derive image coordinates from element offsets without the offset helper", async function () {
-      await withAjaxSubmitStub(async function () {
-        const $form = $('<form><input type="image" name="map"></form>').appendTo("#main");
-        const $image = $form.find("input");
-        const offset = $.fn.offset;
-        $.fn.offset = undefined;
-        Object.defineProperties($image[0], {
-          offsetLeft: { configurable: true, value: 7 },
-          offsetTop: { configurable: true, value: 9 },
-        });
-        const event = $.Event("click");
-        event.pageX = 19;
-        event.pageY = 24;
-
-        try {
-          $form.ajaxForm();
-          $image.trigger(event);
-
-          assert.strictEqual($form[0].clk_x, 12);
-          assert.strictEqual($form[0].clk_y, 15);
         } finally {
           $.fn.offset = offset;
         }
@@ -811,24 +659,6 @@ describe("form", function () {
         });
       });
 
-      it("should set delegation to false and throw when $.fn.on is missing", function () {
-        const $form = $("<form></form>").appendTo("#main");
-        const options = { delegation: true };
-        const on = $.fn.on;
-        $.fn.on = undefined;
-        let bind;
-
-        try {
-          bind = () => $form.ajaxForm(options);
-
-          assert.throws(bind, TypeError);
-        } finally {
-          $.fn.on = on;
-        }
-
-        assert.strictEqual(options.delegation, false);
-      });
-
       it("should use options changed after binding on the next submit", async function () {
         const $form = $("<form></form>").appendTo("#main");
         const options = { url: "ajax/first.html" };
@@ -944,9 +774,8 @@ describe("form", function () {
 
           $form.ajaxForm({ delegation: true });
 
-          const expected = $form.selector === undefined ? 1 : 0;
           assert.strictEqual($.fn.ajaxSubmit.debug, false);
-          assert.strictEqual(warnings.length, expected);
+          assert.strictEqual(warnings.length, 1);
           assert.strictEqual(
             warnings.every((message) => /every form on the page/.test(message)),
             true
@@ -958,10 +787,9 @@ describe("form", function () {
 
           $form.ajaxForm({ delegation: true });
 
-          const expected = $form.selector === undefined ? 1 : 0;
           assert.strictEqual(
             warnings.filter((message) => message.includes('delegation: "form.ajax"')).length,
-            expected
+            1
           );
         });
 
@@ -1051,7 +879,6 @@ describe("form", function () {
         }
       });
 
-      // jQuery 1.7.2 delegates clicks with the selection's selector, which the button does not match.
       it("should capture a submit button outside the form that names it", async function () {
         const $form = $('<form id="delegated-owner"></form>').appendTo("#main");
         const $button = $('<button type="submit" form="delegated-owner">Send</button>').appendTo(
@@ -1064,9 +891,7 @@ describe("form", function () {
             $button.trigger("click");
           });
 
-          // jQuery 1.7.2 misses the click; the submit event names the button where browsers can
-          const named = jQueryMajor >= 3 || "submitter" in SubmitEvent.prototype;
-          assert.strictEqual($form[0].clk, named ? $button[0] : undefined);
+          assert.strictEqual($form[0].clk, $button[0]);
         } finally {
           $(document).off(".form-plugin");
         }

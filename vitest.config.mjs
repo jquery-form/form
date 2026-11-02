@@ -42,7 +42,7 @@ const ajaxXmlFixtures = serveFiles(
   { "Content-Type": "application/xml" }
 );
 
-// A real server labels HTML (iframe fixtures stay unlabeled so the browser sniffs them); without it jQuery 1.7.2 hands back an XMLDocument for the response.
+// A real server labels HTML (iframe fixtures stay unlabeled so the browser sniffs them).
 const ajaxHtmlFixtures = serveFiles(
   "ajax-html-fixtures",
   /\/ajax\/((?!iframe-)[\w.-]+\.html)(\?.*)?$/,

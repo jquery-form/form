@@ -49,13 +49,9 @@ function imagePoint(e, target) {
     return [e.offsetX, e.offsetY];
   }
 
-  if (typeof jQuery.fn.offset === "function") {
-    var offset = jQuery(target).offset();
+  var offset = jQuery(target).offset();
 
-    return [e.pageX - offset.left, e.pageY - offset.top];
-  }
-
-  return [e.pageX - target.offsetLeft, e.pageY - target.offsetTop];
+  return [e.pageX - offset.left, e.pageY - offset.top];
 }
 
 /**

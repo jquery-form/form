@@ -107,26 +107,6 @@ describe("form", function () {
       assert.deepEqual(warnings, []);
     });
 
-    it("should warn once, naming prop and attr, when attr2 is called twice under debug", function () {
-      const $form = $('<form action="a.html"></form>');
-
-      const warnings = recordDeprecations(true, function () {
-        $form.attr2("action");
-        $form.attr2("action");
-      });
-
-      assert.strictEqual(warnings.length, 1);
-      assert.include(warnings[0], ".prop()");
-    });
-
-    it("should stay silent when attr2 is called with debug off", function () {
-      const $form = $('<form action="a.html"></form>');
-
-      const warnings = recordDeprecations(false, () => $form.attr2("action"));
-
-      assert.deepEqual(warnings, []);
-    });
-
     it("should not warn when clearForm clears its fields", function () {
       const $form = $('<form><input type="text" value="x"></form>');
 

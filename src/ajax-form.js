@@ -1,6 +1,6 @@
 import { assertRealParent, closestByTag, formMember, isElement } from "./form-members.js";
 import { captureEventSubmitter, captureSubmitter } from "./submitter.js";
-import { deprecate, log, requireJQuery35 } from "./diagnostics.js";
+import { log, requireJQuery35 } from "./diagnostics.js";
 import jQuery from "jquery";
 import { shorthandOptions } from "./options.js";
 
@@ -31,24 +31,9 @@ function captureSubmittingElement(e) {
   captureSubmitter(e);
 }
 
-// An empty selection: queued until the DOM is ready (old jQuery keeps the selector), or dropped.
-function bindLater($sel, options) {
-  var o = { s: $sel.selector, c: $sel.context };
-
-  if (!jQuery.isReady && o.s) {
-    log("DOM not ready, queuing ajaxForm");
-    deprecate(
-      "queue",
-      "queuing ajaxForm until the DOM is ready is deprecated, call ajaxForm inside $(fn) " +
-        'or use delegation: "<selector>"'
-    );
-    jQuery(function () {
-      jQuery(o.s, o.c).ajaxForm(options);
-    });
-
-    return $sel;
-  }
-
+// An empty selection binds nothing. A page that runs ajaxForm before the forms exist calls it
+// inside $(fn), or uses a delegation selector.
+function bindNothing($sel) {
   // is your DOM ready?  http://docs.jquery.com/Tutorials:Introducing_$(document).ready()
   log("terminating; zero elements found by selector" + (jQuery.isReady ? "" : " (DOM not ready)"));
 
@@ -159,10 +144,11 @@ export function ajaxForm(options, data, dataType, onSuccess) {
     return bindSelector(this, options.delegation, options);
   }
 
-  options.delegation = options.delegation && typeof jQuery.fn.on === "function";
+  // a truthy value other than a selector is written back as true
+  options.delegation = options.delegation && true;
 
   if (!options.delegation && this.length === 0) {
-    return bindLater(this, options);
+    return bindNothing(this);
   }
 
   if (options.delegation) {

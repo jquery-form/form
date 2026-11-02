@@ -19,10 +19,10 @@ import jQuery from "jquery";
 var $ = jQuery;
 
 /**
- * The iframe send step. `hasProp` is what the entry detected at load; `forms.property` reads a
- * form property as attr2 does.
+ * The iframe send step. `forms.property` reads a form property, or the attribute when a control
+ * shadows it.
  */
-export function createIframeTransport(hasProp, forms) {
+export function createIframeTransport(forms) {
   var CLIENT_TIMEOUT_ABORT = 1;
   var SERVER_ABORT = 2;
   // tells apart the frames of uploads that start in the same millisecond
@@ -31,13 +31,7 @@ export function createIframeTransport(hasProp, forms) {
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
     for (var i = 0; i < elements.length; i++) {
-      var el = $(elements[i]);
-
-      if (hasProp) {
-        el.prop("disabled", false);
-      } else {
-        el.removeAttr("disabled");
-      }
+      $(elements[i]).prop("disabled", false);
     }
   }
 

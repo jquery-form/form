@@ -10,7 +10,7 @@ import jQuery from "jquery";
 
 /**
  * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and attr2-style properties (attribute, property), and
+ * `forms` reads form attributes and string properties (attribute, property), and
  * `serialization` collects the form's fields and controls.
  */
 export function createSubmission(feature, forms, serialization) {

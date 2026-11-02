@@ -81,142 +81,6 @@ describe("form", function () {
     });
   });
 
-  describe("attr2", function () {
-    it("should return the resolved absolute URL when the form has a relative action", function () {
-      const $form = $('<form action="relative.html"></form>');
-
-      const action = $form.attr2("action");
-
-      assert.strictEqual(action, new URL("relative.html", document.baseURI).href);
-    });
-
-    it("should return the document URL when the form has no action attribute", function () {
-      const $form = $("<form></form>");
-
-      const action = $form.attr2("action");
-
-      assert.strictEqual(action, document.URL);
-    });
-
-    it("should return the lowercased method when the attribute is uppercase", function () {
-      const $form = $('<form method="POST"></form>');
-
-      const method = $form.attr2("method");
-
-      assert.strictEqual(method, "post");
-    });
-
-    it("should return get when the form has no method or an unknown method", function () {
-      const $forms = [
-        $("<form></form>"),
-        $('<form method="PUT"></form>'),
-        $('<form method="DELETE"></form>'),
-      ];
-
-      const methods = $forms.map(($form) => $form.attr2("method"));
-
-      assert.deepEqual(methods, ["get", "get", "get"]);
-    });
-
-    it("should return an empty string when the form has no target", function () {
-      const $form = $("<form></form>");
-
-      const target = $form.attr2("target");
-
-      assert.strictEqual(target, "");
-    });
-
-    [
-      ["action", "relative.html"],
-      ["method", "PUT"],
-      ["target", "frame"],
-    ].forEach(function ([name, raw]) {
-      it(
-        "should return the raw attribute when one or more controls are named " + name,
-        function () {
-          const attributes = 'action="relative.html" method="PUT" target="frame"';
-          const $one = $("<form " + attributes + '><input name="' + name + '"></form>');
-          const $two = $(
-            "<form " + attributes + '><input name="' + name + '"><input name="' + name + '"></form>'
-          );
-          const $missing = $('<form><input name="' + name + '"></form>');
-
-          const values = [$one.attr2(name), $two.attr2(name), $missing.attr2(name)];
-
-          assert.deepEqual(values, [raw, raw, undefined]);
-        }
-      );
-    });
-
-    it("should fall back to attr when the property is not a string", function () {
-      const $input = $('<input data-x="one" disabled tabindex="3">');
-      const major = Number($.fn.jquery.split(".")[0]);
-
-      const values = [
-        $input.attr2("data-x"),
-        $input.attr2("data-missing"),
-        $input.attr2("disabled"),
-        $input.attr2("tabIndex"),
-      ];
-
-      if (major < 3) {
-        assert.deepEqual(values, ["one", undefined, "disabled", 3]);
-      } else if (major < 4) {
-        assert.deepEqual(values, ["one", undefined, "disabled", "3"]);
-      } else {
-        assert.deepEqual(values, ["one", undefined, "", "3"]);
-      }
-    });
-
-    it("should return undefined when the set is empty and read the first element otherwise", function () {
-      const $forms = $('<form action="first.html"></form><form action="second.html"></form>');
-
-      const values = [$().attr2("action"), $forms.attr2("action")];
-
-      assert.deepEqual(values, [undefined, new URL("first.html", document.baseURI).href]);
-    });
-
-    it("should return a jQuery object held by the property as is", function () {
-      const $form = $("<form></form>");
-      const $held = $("<div></div>");
-      $form[0].held = $held;
-
-      const value = $form.attr2("held");
-
-      assert.strictEqual(value, $held);
-    });
-
-    it("should return an empty string property without falling back to attr", function () {
-      const $iframe = $("<iframe></iframe>");
-
-      const name = $iframe.attr2("name");
-
-      assert.strictEqual(name, "");
-    });
-
-    it("should set the property and return the set when used as a setter", function () {
-      const $form = $("<form></form>");
-
-      const expando = $form.attr2("data-y", "v");
-      const reflected = $form.attr2("name", "n");
-
-      assert.strictEqual(expando, $form);
-      assert.strictEqual(reflected, $form);
-      assert.strictEqual($form[0]["data-y"], "v");
-      assert.isFalse($form[0].hasAttribute("data-y"));
-      assert.strictEqual($form[0].getAttribute("name"), "n");
-    });
-
-    it("should set the action attribute when a control named action shadows it", function () {
-      const $form = $('<form><input name="action"></form>');
-
-      const result = $form.attr2("action", "next.html");
-
-      assert.strictEqual(result, $form);
-      assert.strictEqual($form[0].getAttribute("action"), "next.html");
-    });
-  });
-
   describe("resetForm", function () {
     it("should reset the control a label targets and its nested fields", function () {
       const $target = $('<input id="label-target" value="default">').appendTo("#main");
@@ -972,7 +836,7 @@ describe("form", function () {
       $select.clearFields();
 
       assert.strictEqual($select[0].selectedIndex, -1);
-      assert.deepEqual($select.val(), Number($.fn.jquery.split(".")[0]) < 3 ? null : []);
+      assert.deepEqual($select.val(), []);
     });
 
     it("should clear a selected file when the user agent is not MSIE", function () {
@@ -1076,16 +940,12 @@ describe("form", function () {
       });
     });
 
-    it("should throw a selector syntax error on jQuery 3 and later when includeHidden is not a valid selector", function () {
+    it("should throw a selector syntax error when includeHidden is not a valid selector", function () {
       const $hidden = $('<input type="hidden" value="h">');
 
       const clear = () => $hidden.clearFields("[");
 
-      if (Number($.fn.jquery.split(".")[0]) < 3) {
-        assert.doesNotThrow(clear);
-      } else {
-        assert.throws(clear, /unrecognized expression/);
-      }
+      assert.throws(clear, /unrecognized expression/);
     });
 
     it("should set a value expando on a non-control that matches the includeHidden selector", function () {

@@ -45,7 +45,6 @@
         "ajaxSubmit",
         "ajaxForm",
         "ajaxFormUnbind",
-        "attr2",
         "formToArray",
         "formSerialize",
         "fieldSerialize",

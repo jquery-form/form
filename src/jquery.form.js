@@ -63,7 +63,7 @@ import { submitOptions } from "./options.js";
 			});
 		});
 
-		You can also use ajaxForm with delegation (requires jQuery v1.7+), so the
+		You can also use ajaxForm with delegation, so the
 		form does not have to exist when you invoke ajaxForm:
 
 		$('#myForm').ajaxForm({
@@ -83,12 +83,10 @@ import { submitOptions } from "./options.js";
   feature.fileapi = $('<input type="file">').get(0).files !== undefined;
   feature.formdata = typeof window.FormData !== "undefined";
 
-  var hasProp = !!$.fn.prop;
-  // What attr2 returns for a form: the property when it is a string, otherwise the attribute. The
-  // property is read plainly on purpose: a control named like it shadows it, and then the raw
-  // attribute is used.
+  // A form property when it is a string, otherwise the attribute. The property is read plainly on
+  // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
-    var value = hasProp ? form[name] : undefined;
+    var value = form[name];
 
     return typeof value === "string" ? value : formAttribute(form, name);
   }
@@ -97,29 +95,9 @@ import { submitOptions } from "./options.js";
   var serialization = createSuccessfulControls(feature);
   var steps = createSubmission(feature, forms, serialization);
   var transports = {
-    iframe: createIframeTransport(hasProp, forms),
+    iframe: createIframeTransport(forms),
     formdata: sendFormData,
     ajax: sendAjax,
-  };
-
-  // attr2 uses prop when it can but checks the return type for
-  // an expected string. This accounts for the case where a form
-  // contains inputs with names like "action" or "method"; in those
-  // cases "prop" returns the element
-  $.fn.attr2 = function () {
-    deprecate("attr2", "attr2 is deprecated, use .prop() or .attr()");
-
-    if (!hasProp) {
-      return this.attr.apply(this, arguments);
-    }
-
-    var val = this.prop.apply(this, arguments);
-
-    if ((val && val.jquery) || typeof val === "string") {
-      return val;
-    }
-
-    return this.attr.apply(this, arguments);
   };
 
   /**

@@ -932,9 +932,7 @@ describe("form", function () {
 
         const serialized = $form.formSerialize();
 
-        // jQuery before 3.0 turns undefined into "undefined" in $.param; later versions use "".
-        const missing = Number($.fn.jquery.split(".")[0]) < 3 ? "undefined" : "";
-        assert.strictEqual(serialized, `a=1&map=go&map.x=${missing}&map.y=${missing}`);
+        assert.strictEqual(serialized, "a=1&map=go&map.x=&map.y=");
       });
     });
 

@@ -6,10 +6,12 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 
 ## Summary
 
-| Change                                                                                                        | Who is affected                                                                      | 4.x warning                      |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------- |
-| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency) | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery | "jQuery before 3.5", under debug |
-| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                   | Tools that read the old plugins.jquery.com manifest                                  | None                             |
+| Change                                                                                                                                              | Who is affected                                                                      | 4.x warning                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------- |
+| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery | "jQuery before 3.5", under debug   |
+| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                  | None                               |
+| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                              | "attr2 is deprecated", under debug |
+| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist               | "queuing ajaxForm", under debug    |
 
 Entries are added as each 5.0 change lands.
 
@@ -60,6 +62,51 @@ After (5.0):
 Before (4.x): `form.jquery.json` names `"main": "dist/jquery.form.js"` and `"dependencies": { "jquery": ">=1.7.2" }`.
 
 After (5.0): `package.json` names `"main": "dist/jquery.form.js"` and `"peerDependencies": { "jquery": ">=3.5.0" }`.
+
+### `$.fn.attr2` is removed
+
+**What changed.** `$.fn.attr2` is gone. It returned `.prop()` when the property was a string and `.attr()` otherwise, and on jQuery before 1.6, which has no `.prop()`, it was `.attr()`.
+
+**Why.** It existed for jQuery versions without `.prop()`, which 5.0 does not support. The plugin still reads form properties the same way internally, so a control named `action` or `method` does not hide the form's attribute.
+
+**Are you affected?** Search your code for `attr2`. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs `attr2 is deprecated, use .prop() or .attr()` the first time it is called.
+
+Before (4.x):
+
+```javascript
+var action = $("#myForm").attr2("action");
+```
+
+After (5.0), with the property (resolved against the page URL) or the raw attribute. If the form has a control named `action`, `.prop("action")` returns that control, so use `.attr()`:
+
+```javascript
+var action = $("#myForm").prop("action");
+var raw = $("#myForm").attr("action");
+```
+
+### `ajaxForm` on an empty selection before the DOM is ready no longer waits
+
+**What changed.** On jQuery before 3, `ajaxForm` called before the DOM was ready on a selection that matched nothing queued itself and ran again with the same selector once the DOM was ready. 5.0 does not queue: an empty selection binds nothing and returns, whether or not the DOM is ready. On jQuery 3 and later, 4.x already did nothing, because those versions keep no selector on the selection to run again.
+
+**Why.** The queue needed the `.selector` property that jQuery 3 removed, and every jQuery that 5.0 supports is 3.5 or later.
+
+**Are you affected?** Only if your page called `ajaxForm` before its forms were parsed, for example in a script in the `<head>`, and relied on the queue on an old jQuery. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs `queuing ajaxForm until the DOM is ready is deprecated` when it queues.
+
+Before (4.x), in the `<head>`, on jQuery 1.x or 2.x:
+
+```javascript
+$("#myForm").ajaxForm(); // bound once the DOM is ready
+```
+
+After (5.0), bind when the DOM is ready, or delegate from the document:
+
+```javascript
+$(function () {
+  $("#myForm").ajaxForm();
+});
+
+$(document).ajaxForm({ delegation: "#myForm" });
+```
 
 ## What your server receives
 

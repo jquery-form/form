@@ -718,22 +718,18 @@ describe("form", function () {
         assert.deepEqual(submitted, { own: "kept" });
       });
 
-      // jQuery 1.7.2's selector engine calls setAttribute on the form itself, so it cannot run there.
-      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-        "should submit and restore a form whose controls shadow its methods",
-        async function () {
-          const $form = createIframeForm("ajax/iframe-text.html");
-          $(
-            '<input name="setAttribute" value="a"><input name="removeAttribute" value="b">'
-          ).appendTo($form);
+      it("should submit and restore a form whose controls shadow its methods", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        $('<input name="setAttribute" value="a"><input name="removeAttribute" value="b">').appendTo(
+          $form
+        );
 
-          const result = await submitThroughIframe($form, { dataType: "text" });
+        const result = await submitThroughIframe($form, { dataType: "text" });
 
-          assert.deepEqual(result.events, ["success", "complete"]);
-          assert.match($form[0].getAttribute("action"), /ajax\/iframe-text\.html$/);
-          assert.strictEqual($form[0].hasAttribute("target"), false);
-        }
-      );
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.match($form[0].getAttribute("action"), /ajax\/iframe-text\.html$/);
+        assert.strictEqual($form[0].hasAttribute("target"), false);
+      });
 
       it("should leave a missing action attribute missing when a control is named action", async function () {
         const $form = $('<form method="post"><input name="action" value="save"></form>').appendTo(
@@ -753,19 +749,15 @@ describe("form", function () {
         ["ownerDocument", "the form's document"],
         ["getAttribute", "the form's attributes"],
       ].forEach(function ([name, member]) {
-        // jQuery 1.7.2's selector engine reads both members on the form itself.
-        it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-          `should upload when a control named ${name} shadows ${member}`,
-          async function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            $(`<input name="${name}" value="x">`).appendTo($form);
+        it(`should upload when a control named ${name} shadows ${member}`, async function () {
+          const $form = createIframeForm("ajax/iframe-text.html");
+          $(`<input name="${name}" value="x">`).appendTo($form);
 
-            const result = await submitThroughIframe($form, { dataType: "text" });
+          const result = await submitThroughIframe($form, { dataType: "text" });
 
-            assert.deepEqual(result.events, ["success", "complete"]);
-            assert.strictEqual(result.success[0].trim(), "iframe response");
-          }
-        );
+          assert.deepEqual(result.events, ["success", "complete"]);
+          assert.strictEqual(result.success[0].trim(), "iframe response");
+        });
       });
 
       it("should submit extraData keys and buttons named hasOwnProperty", async function () {
@@ -1272,7 +1264,6 @@ describe("form", function () {
         });
 
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-        const majorVersion = Number($.fn.jquery.split(".")[0]);
 
         // Starts an upload whose native post only runs `inspect`, so nothing is sent. The upload
         // stays open until the test aborts it, or until afterEach does.
@@ -1889,8 +1880,7 @@ describe("form", function () {
 
             $form.ajaxSubmit({ iframe: true, context: context, beforeSend: () => false });
 
-            // jQuery 1.7.2 triggers a global event on every element that handles it.
-            assert.deepEqual(onContext, majorVersion < 3 ? ["ajaxComplete"] : []);
+            assert.deepEqual(onContext, []);
             assert.deepEqual(onDocument, ["ajaxComplete"]);
           });
 
@@ -2428,9 +2418,8 @@ describe("form", function () {
               }
             );
 
-            // jQuery 1.7.2's $.param writes null as "null".
             assert.deepEqual(fields, [
-              ["empty", majorVersion < 3 ? "null" : ""],
+              ["empty", ""],
               ["computed", "called"],
               ["named", ""],
             ]);
@@ -2814,7 +2803,7 @@ describe("form", function () {
             assert.deepEqual(result.success[0], { filtered: true });
           });
 
-          it("should report a script that does not parse by jQuery version", async function () {
+          it("should report success and send the error to the window for a script that does not parse", async function () {
             const $form = createIframeForm("ajax/iframe-plain.html");
 
             const outcome = await withWindowErrors(async function (errors) {
@@ -2825,14 +2814,8 @@ describe("form", function () {
               return { status: (result.success || result.error)[1], errors: errors.length };
             });
 
-            // jQuery 1.7.2 evaluates with eval; later versions insert a script element, whose
-            // error goes to the window instead.
-            assert.deepEqual(
-              outcome,
-              majorVersion < 3
-                ? { status: "parsererror", errors: 0 }
-                : { status: "success", errors: 1 }
-            );
+            // jQuery inserts a script element, whose error goes to the window
+            assert.deepEqual(outcome, { status: "success", errors: 1 });
           });
 
           it("should report success with status 0 when the response has no status attribute", async function () {

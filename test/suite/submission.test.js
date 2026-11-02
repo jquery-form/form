@@ -37,10 +37,6 @@ function uploadBody(settings) {
   return received.data;
 }
 
-function majorVersion() {
-  return Number($.fn.jquery.split(".")[0]);
-}
-
 // Calls ajaxSubmit with `args` through a stubbed $.ajax and returns the settings it received
 // (undefined when no request started). `respond` may answer the request or return the jqXHR;
 // `onReturn` receives what ajaxSubmit returned.
@@ -1755,18 +1751,14 @@ describe("form", function () {
         assert.strictEqual(settings.data, "a=1&x=1");
       });
 
-      it("should handle a data function that returns undefined per jQuery version", function () {
+      it("should send only the fields when a data function returns undefined", function () {
         const $form = makeForm(
           '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
         );
 
-        const run = () => submitWith($form, [{ data: () => undefined }]);
+        const settings = submitWith($form, [{ data: () => undefined }]);
 
-        if (majorVersion() < 3) {
-          assert.throws(run, TypeError);
-        } else {
-          assert.strictEqual(run().data, "a=1");
-        }
+        assert.strictEqual(settings.data, "a=1");
       });
 
       it("should append an array of name/value pairs as fields", function () {
@@ -1783,16 +1775,12 @@ describe("form", function () {
         assert.strictEqual(settings.data, "a=1&x=1&x=2");
       });
 
-      it("should serialize null extra values per jQuery version", function () {
+      it("should serialize a null extra value as an empty value", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
 
         const settings = submitWith($form, [{ data: { n: null } }]);
 
-        if (majorVersion() < 3) {
-          assert.strictEqual(settings.data, "n=null");
-        } else {
-          assert.strictEqual(settings.data, "n=");
-        }
+        assert.strictEqual(settings.data, "n=");
       });
 
       it("should send only the fields when data is an empty object", function () {
@@ -1834,7 +1822,7 @@ describe("form", function () {
         assert.deepEqual(uploadBody(settings).getAll("list"), ["x", "y"]);
       });
 
-      it("should send null extra values on the upload transport per jQuery version", function () {
+      it("should send a null extra value as an empty field on the upload transport", function () {
         const $form = makeForm(
           '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
         );
@@ -1842,7 +1830,7 @@ describe("form", function () {
 
         const settings = submitWith($form, [{ data: { n: null } }]);
 
-        assert.strictEqual(uploadBody(settings).get("n"), majorVersion() < 3 ? "null" : "");
+        assert.strictEqual(uploadBody(settings).get("n"), "");
       });
 
       it("should keep a caller contentType while sending a urlencoded body", function () {
@@ -2423,7 +2411,7 @@ describe("form", function () {
         assert.strictEqual(notified.data, null);
       });
 
-      it("should store the beforeSend result per jQuery version and still notify when beforeSend returns false", function () {
+      it("should store the canceled jqXHR and still notify when beforeSend returns false", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         let notified = false;
         $form.on("form-submit-notify", () => (notified = true));
@@ -2431,31 +2419,23 @@ describe("form", function () {
         $form.ajaxSubmit({ beforeSend: () => false });
 
         const stored = $form.data("jqxhr");
-        if (majorVersion() < 3) {
-          assert.strictEqual(stored, false);
-        } else {
-          assert.strictEqual(typeof stored.abort, "function");
-          assert.strictEqual(stored.statusText, "canceled");
-        }
+        assert.strictEqual(typeof stored.abort, "function");
+        assert.strictEqual(stored.statusText, "canceled");
         assert.strictEqual(notified, true);
       });
     });
 
     describe("controls named like form members", function () {
-      // jQuery 1.7.2's selector engine calls getAttribute on the form itself, so it cannot run there.
-      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-        "should submit when a control named getAttribute shadows the form",
-        function () {
-          const $form = $(
-            '<form action="ajax/text.html" method="post"><input name="getAttribute" value="x"></form>'
-          ).appendTo("#main");
+      it("should submit when a control named getAttribute shadows the form", function () {
+        const $form = $(
+          '<form action="ajax/text.html" method="post"><input name="getAttribute" value="x"></form>'
+        ).appendTo("#main");
 
-          const settings = captureAjaxOptions($form, {});
+        const settings = captureAjaxOptions($form, {});
 
-          assert.strictEqual(settings.data, "getAttribute=x");
-          assert.strictEqual(settings.type, "post");
-        }
-      );
+        assert.strictEqual(settings.data, "getAttribute=x");
+        assert.strictEqual(settings.type, "post");
+      });
 
       // jQuery 3's selector engine calls getElementsByTagName on the form for the file input lookup.
       it.skipIf(Number($.fn.jquery.split(".")[0]) === 3)(

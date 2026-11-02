@@ -5,7 +5,6 @@ import jquery3Slim from "../../node_modules/jquery/dist/jquery.slim.js?raw";
 import jquery4Slim from "../../node_modules/jquery4/dist/jquery.slim.js?raw";
 
 const pluginFields = [
-  "attr2",
   "ajaxSubmit",
   "ajaxForm",
   "ajaxFormUnbind",
@@ -31,74 +30,6 @@ function runClassicScript(source) {
 
 describe("form", function () {
   resetFixture();
-
-  describe("with jQuery older than 1.6", function () {
-    let saved;
-
-    // The plugin detects prop support once at load, so reload it while prop is missing.
-    beforeAll(async function () {
-      saved = { fn: {}, fieldValue: $.fieldValue, prop: $.fn.prop };
-      pluginFields.forEach((name) => {
-        saved.fn[name] = $.fn[name];
-      });
-      delete $.fn.prop;
-
-      try {
-        await import("../../src/jquery.form.js?without-prop");
-      } finally {
-        $.fn.prop = saved.prop;
-      }
-    });
-
-    afterAll(function () {
-      Object.assign($.fn, saved.fn);
-      $.fieldValue = saved.fieldValue;
-    });
-
-    it("should read raw attributes through attr2", function () {
-      const $form = $('<form action="relative.html"></form>');
-
-      const action = $form.attr2("action");
-
-      assert.strictEqual(action, "relative.html");
-    });
-
-    it("should pass getters and setters through to attr even after prop is restored", function () {
-      const $form = $('<form action="relative.html" method="PUT"><input name="action"></form>');
-
-      const values = [$form.attr2("action"), $form.attr2("method"), $form.attr2("target")];
-      const result = $form.attr2("data-y", "v");
-
-      assert.deepEqual(values, ["relative.html", "PUT", undefined]);
-      assert.strictEqual(result, $form);
-      assert.strictEqual($form[0].getAttribute("data-y"), "v");
-    });
-
-    it("should re-enable controls disabled before an iframe upload", async function () {
-      const $form = $('<form action="ajax/iframe-text.html" method="post"></form>').appendTo(
-        "#main"
-      );
-      const $input = $('<input name="field" value="sent">').appendTo($form);
-      let disabledAtSubmit;
-      const nativeSubmit = $form[0].submit;
-      $form[0].submit = function () {
-        disabledAtSubmit = $input[0].disabled;
-        nativeSubmit.call(this);
-      };
-
-      await new Promise((resolve) =>
-        $form.ajaxSubmit({
-          iframe: true,
-          dataType: "text",
-          beforeSubmit: () => $input.attr("disabled", "disabled"),
-          complete: resolve,
-        })
-      );
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-      assert.strictEqual(disabledAtSubmit, false);
-    });
-  });
 
   describe("when the plugin loads again", function () {
     let saved;

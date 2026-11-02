@@ -191,13 +191,9 @@ function imagePoint(e, target) {
     return [e.offsetX, e.offsetY];
   }
 
-  if (typeof jQuery.fn.offset === "function") {
-    var offset = jQuery(target).offset();
+  var offset = jQuery(target).offset();
 
-    return [e.pageX - offset.left, e.pageY - offset.top];
-  }
-
-  return [e.pageX - target.offsetLeft, e.pageY - target.offsetTop];
+  return [e.pageX - offset.left, e.pageY - offset.top];
 }
 
 /**
@@ -447,24 +443,9 @@ function captureSubmittingElement(e) {
   captureSubmitter(e);
 }
 
-// An empty selection: queued until the DOM is ready (old jQuery keeps the selector), or dropped.
-function bindLater($sel, options) {
-  var o = { s: $sel.selector, c: $sel.context };
-
-  if (!jQuery.isReady && o.s) {
-    log("DOM not ready, queuing ajaxForm");
-    deprecate(
-      "queue",
-      "queuing ajaxForm until the DOM is ready is deprecated, call ajaxForm inside $(fn) " +
-        'or use delegation: "<selector>"'
-    );
-    jQuery(function () {
-      jQuery(o.s, o.c).ajaxForm(options);
-    });
-
-    return $sel;
-  }
-
+// An empty selection binds nothing. A page that runs ajaxForm before the forms exist calls it
+// inside $(fn), or uses a delegation selector.
+function bindNothing($sel) {
   // is your DOM ready?  http://docs.jquery.com/Tutorials:Introducing_$(document).ready()
   log("terminating; zero elements found by selector" + (jQuery.isReady ? "" : " (DOM not ready)"));
 
@@ -575,10 +556,11 @@ function ajaxForm(options, data, dataType, onSuccess) {
     return bindSelector(this, options.delegation, options);
   }
 
-  options.delegation = options.delegation && typeof jQuery.fn.on === "function";
+  // a truthy value other than a selector is written back as true
+  options.delegation = options.delegation && true;
 
   if (!options.delegation && this.length === 0) {
-    return bindLater(this, options);
+    return bindNothing(this);
   }
 
   if (options.delegation) {
@@ -1649,10 +1631,10 @@ function createLifecycle(s, frame) {
 var $ = jQuery;
 
 /**
- * The iframe send step. `hasProp` is what the entry detected at load; `forms.property` reads a
- * form property as attr2 does.
+ * The iframe send step. `forms.property` reads a form property, or the attribute when a control
+ * shadows it.
  */
-function createIframeTransport(hasProp, forms) {
+function createIframeTransport(forms) {
   var CLIENT_TIMEOUT_ABORT = 1;
   var SERVER_ABORT = 2;
   // tells apart the frames of uploads that start in the same millisecond
@@ -1661,13 +1643,7 @@ function createIframeTransport(hasProp, forms) {
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
     for (var i = 0; i < elements.length; i++) {
-      var el = $(elements[i]);
-
-      if (hasProp) {
-        el.prop("disabled", false);
-      } else {
-        el.removeAttr("disabled");
-      }
+      $(elements[i]).prop("disabled", false);
     }
   }
 
@@ -1934,7 +1910,7 @@ function createIframeTransport(hasProp, forms) {
 
 /**
  * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and attr2-style properties (attribute, property), and
+ * `forms` reads form attributes and string properties (attribute, property), and
  * `serialization` collects the form's fields and controls.
  */
 function createSubmission(feature, forms, serialization) {
@@ -2345,7 +2321,7 @@ function createSubmission(feature, forms, serialization) {
 			});
 		});
 
-		You can also use ajaxForm with delegation (requires jQuery v1.7+), so the
+		You can also use ajaxForm with delegation, so the
 		form does not have to exist when you invoke ajaxForm:
 
 		$('#myForm').ajaxForm({
@@ -2365,12 +2341,10 @@ function createSubmission(feature, forms, serialization) {
   feature.fileapi = $('<input type="file">').get(0).files !== undefined;
   feature.formdata = typeof window.FormData !== "undefined";
 
-  var hasProp = !!$.fn.prop;
-  // What attr2 returns for a form: the property when it is a string, otherwise the attribute. The
-  // property is read plainly on purpose: a control named like it shadows it, and then the raw
-  // attribute is used.
+  // A form property when it is a string, otherwise the attribute. The property is read plainly on
+  // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
-    var value = hasProp ? form[name] : undefined;
+    var value = form[name];
 
     return typeof value === "string" ? value : formAttribute(form, name);
   }
@@ -2379,29 +2353,9 @@ function createSubmission(feature, forms, serialization) {
   var serialization = createSuccessfulControls(feature);
   var steps = createSubmission(feature, forms, serialization);
   var transports = {
-    iframe: createIframeTransport(hasProp, forms),
+    iframe: createIframeTransport(forms),
     formdata: sendFormData,
     ajax: sendAjax,
-  };
-
-  // attr2 uses prop when it can but checks the return type for
-  // an expected string. This accounts for the case where a form
-  // contains inputs with names like "action" or "method"; in those
-  // cases "prop" returns the element
-  $.fn.attr2 = function () {
-    deprecate("attr2", "attr2 is deprecated, use .prop() or .attr()");
-
-    if (!hasProp) {
-      return this.attr.apply(this, arguments);
-    }
-
-    var val = this.prop.apply(this, arguments);
-
-    if ((val && val.jquery) || typeof val === "string") {
-      return val;
-    }
-
-    return this.attr.apply(this, arguments);
   };
 
   /**
