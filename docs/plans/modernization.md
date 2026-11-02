@@ -62,7 +62,7 @@ status: pending
 content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
 status: in_progress
 - id: hardening-4x
-content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracle against native FormData, end-to-end tests with a real server, published-file tests, a one-off mutation-testing report), then 4.5.0 with Phase 12"
+content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracle against native FormData, end-to-end tests with a real server, published-file tests, a one-off mutation-testing report), then the 4.6.0 release"
 status: pending
 - id: breaking-5
 content: "Phase 14: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
@@ -103,8 +103,9 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 14. ~~Security and bug fixes (Phase 10)~~ — done; the W1–W4 fixes merge in Phase 11
 15. 4.4.0 release with the work so far (Phase 11)
 16. 4.x cleanup and rearchitecture (Phase 12)
-17. 4.x test hardening (Phase 13), then the 4.5.0 release with Phases 12 and 13
-18. 5.0 (Phase 14), then the 5.0 release; 5.x features after
+17. 4.5.0 release with Phase 12
+18. 4.x test hardening (Phase 13), then the 4.6.0 release
+19. 5.0 (Phase 14), then the 5.0 release; 5.x features after
 
 Phase 11 was added on 2026-10-31. The cleanup phase splits `src/jquery.form.js` into modules, which
 would move every W1–W4 sink while the fixes are still on a local branch. Releasing first ships the
@@ -398,7 +399,9 @@ Phase 12 is done locally and waits for the 4.4.0 release before it ships as 4.5.
   those form members (fixed by the form members slice).
 - Run the custom CodeQL query on every refactor branch, so moved code can't reopen a W1–W4 sink.
 
-Phase 12 ships together with Phase 13 as 4.5.0.
+Phase 12 ships on its own as 4.5.0, the same way as Phase 11 but without the advisory steps. A separate
+release lets consumers stay on 4.5.0 if they depended on a behavior Phase 13 changes, however much it
+looked like a bug.
 
 ## Phase 13: 4.x test hardening (no breaking change)
 
@@ -421,8 +424,7 @@ local branch as Phase 12.
   entry in `docs/research/4x-behavior-changes.md`; otherwise it is reported as a bug or an
   undocumented change.
 
-Release Phases 12 and 13 together as 4.5.0, the same way as Phase 11 but without the advisory steps.
-Cut `release/4.x` when 5.0 lands (ADR-0002).
+Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
 ## Phase 14: 5.0 (breaking)
 
