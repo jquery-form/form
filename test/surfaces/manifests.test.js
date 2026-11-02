@@ -37,6 +37,29 @@ describe("when the package manifests are read", () => {
     expect(pkg.unpkg).toBe("dist/jquery.form.min.js");
   });
 
+  it("should export the module build to import, the classic build otherwise, and only dist and package.json by path", () => {
+    expect(pkg.exports).toEqual({
+      ".": { import: "./dist/jquery.form.mjs", default: "./dist/jquery.form.js" },
+      "./dist/*": "./dist/*",
+      "./package.json": "./package.json",
+    });
+  });
+
+  it("should point every exports target at a path the package publishes", () => {
+    // A "./dist/*" target is checked as the directory its pattern matches in.
+    const targets = Object.values(pkg.exports).flatMap((target) =>
+      typeof target === "string" ? [target] : Object.values(target),
+    );
+
+    const paths = targets.map((target) => target.replace(/^\.\//, "").replace(/\/\*$/, ""));
+
+    // npm always publishes package.json; every other path must be under the files list.
+    for (const path of paths) {
+      expect(existsSync(new URL(`../../${path}`, import.meta.url)), path).toBe(true);
+      expect(path === "package.json" || pkg.files.includes(path.split("/")[0]), path).toBe(true);
+    }
+  });
+
   it("should publish the entry points through the files list", () => {
     expect(pkg.files).toContain("dist");
   });

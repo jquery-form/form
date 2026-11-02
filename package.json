@@ -24,6 +24,14 @@
   "module": "dist/jquery.form.mjs",
   "jsdelivr": "dist/jquery.form.min.js",
   "unpkg": "dist/jquery.form.min.js",
+  "exports": {
+    ".": {
+      "import": "./dist/jquery.form.mjs",
+      "default": "./dist/jquery.form.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "src",

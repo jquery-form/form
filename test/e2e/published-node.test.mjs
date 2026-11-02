@@ -111,8 +111,17 @@ describe("when the packed package is installed", () => {
     // Arrange
     const manifest = JSON.parse(readFileSync(resolve(installed, "package.json"), "utf8"));
 
-    // Act
-    const entries = [manifest.main, manifest.module, manifest.jsdelivr, manifest.unpkg];
+    // Act: every exports target that names a file, as well as the classic fields.
+    const targets = Object.values(manifest.exports ?? {}).flatMap((target) =>
+      typeof target === "string" ? [target] : Object.values(target),
+    );
+    const entries = [
+      manifest.main,
+      manifest.module,
+      manifest.jsdelivr,
+      manifest.unpkg,
+      ...targets.filter((target) => !target.includes("*")),
+    ];
 
     // Assert
     assert.deepEqual(
@@ -130,6 +139,74 @@ describe("when the packed package is installed", () => {
 
     // Assert
     assert.deepEqual(missing, []);
+  });
+});
+
+// Resolves each specifier from the fixture, as CommonJS (require.resolve) and as an ES module
+// (import.meta.resolve), to the path inside the installed package or the error code it threw.
+async function resolveFrom(fixture, specifiers) {
+  const code = `const where = (resolve) => (specifier) => {
+      try {
+        return resolve(specifier).split("/node_modules/jquery-form/")[1];
+      } catch (error) {
+        return error.code;
+      }
+    };
+    const specifiers = ${JSON.stringify(specifiers)};
+    report({
+      require: specifiers.map(where(require.resolve)),
+      import: specifiers.map(where(import.meta.resolve)),
+    });`;
+  return run(fixture, code, "module");
+}
+
+describe("when the packed package is resolved by name", () => {
+  const fixture = resolve(packDir, "jquery-3.7.1");
+
+  it("should resolve import to the module build and require to the classic build", async () => {
+    // Arrange
+    const specifiers = ["jquery-form"];
+
+    // Act
+    const result = await resolveFrom(fixture, specifiers);
+
+    // Assert
+    assert.deepEqual(result, {
+      require: ["dist/jquery.form.js"],
+      import: ["dist/jquery.form.mjs"],
+    });
+  });
+
+  it("should resolve every dist file and package.json by its path", async () => {
+    // Arrange
+    const paths = [
+      "dist/jquery.form.js",
+      "dist/jquery.form.mjs",
+      "dist/jquery.form.min.js",
+      "dist/jquery.form.min.js.map",
+      "package.json",
+    ];
+
+    // Act
+    const result = await resolveFrom(
+      fixture,
+      paths.map((path) => `jquery-form/${path}`),
+    );
+
+    // Assert
+    assert.deepEqual(result, { require: paths, import: paths });
+  });
+
+  it("should refuse a path outside the exports map, such as the source", async () => {
+    // Arrange
+    const specifiers = ["jquery-form/src/jquery.form.js", "jquery-form/LICENSE-MIT"];
+
+    // Act
+    const result = await resolveFrom(fixture, specifiers);
+
+    // Assert
+    const refused = specifiers.map(() => "ERR_PACKAGE_PATH_NOT_EXPORTED");
+    assert.deepEqual(result, { require: refused, import: refused });
   });
 });
 
@@ -221,16 +298,17 @@ describe("when the packed package is required from CommonJS", () => {
 
 describe("when the packed package is imported as an ES module", () => {
   for (const version of FIXTURE_VERSIONS) {
-    it(`should resolve its name to the CommonJS factory (jQuery ${version})`, async () => {
-      // Arrange: Node ignores the "module" field, and the package has no "exports" map.
+    it(`should install the module build on the installed jQuery ${version} when imported by name`, async () => {
+      // Arrange: the "import" condition of the exports map names the module build, which reads
+      // the DOM at import time, so the window must be global.
       const code = `${GLOBALS}
-        const { default: factory } = await import("jquery-form");
+        const { default: value } = await import("jquery-form");
         const { default: $ } = await import("jquery");`;
 
       // Act
       const result = await run(
         resolve(packDir, `jquery-${version}`),
-        `${code} const value = factory(dom.window); report(await smoke($, value));`,
+        `${code} report(await smoke($, value));`,
         "module",
       );
 

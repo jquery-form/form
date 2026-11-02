@@ -17,6 +17,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                              | "closeKeepAlive works around a Safari 3/4 bug", under debug                  |
 | [`delegation: true` throws](#delegation-true-throws)                                                                                                | Code that passes `delegation: true` (or another non-string truthy value) to `ajaxForm` | "delegation: true binds every form on the page", always (even without debug) |
 | [The iframe transport is used only with `iframe: true`](#the-iframe-transport-is-used-only-with-iframe-true)                                        | Uploads in browsers without `FormData` or the File API                                 | "choosing the iframe transport automatically", under debug                   |
+| [The package has an `exports` map](#the-package-has-an-exports-map)                                                                                 | Node ES module imports of jquery-form, and imports of paths outside `dist`             | None                                                                         |
 
 Entries are added as each 5.0 change lands.
 
@@ -223,6 +224,46 @@ $("#uploadForm").ajaxSubmit({ iframe: true });
 ```
 
 The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `iframe: true`, comment on https://github.com/jquery-form/form/issues/629 with your use case.
+
+### The package has an `exports` map
+
+**What changed.** `package.json` has an `exports` map, which Node and bundlers that read it use instead of `main` and `module`:
+
+```json
+"exports": {
+  ".": { "import": "./dist/jquery.form.mjs", "default": "./dist/jquery.form.js" },
+  "./dist/*": "./dist/*",
+  "./package.json": "./package.json"
+}
+```
+
+In Node, `import "jquery-form"` now loads the module build, `dist/jquery.form.mjs`: it imports `jquery`, installs the plugin on it when it loads, and exports that jQuery as default. In 4.x, Node ignored `module`, so the import loaded the classic build and its default export was the CommonJS `(root, jQuery)` factory. The module build reads the DOM when it loads, so `window` and `document` must be global before the import. `require("jquery-form")` still returns the factory, and `main`, `module`, `jsdelivr` and `unpkg` are unchanged, so bundlers, CDNs and script tags load the same files as before. Any path under `dist`, such as `jquery-form/dist/jquery.form.min.js`, and `jquery-form/package.json` can still be imported or required. Any other path, such as `jquery-form/src/jquery.form.js` or `jquery-form/LICENSE-MIT`, fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
+**Why.** The map names the files the package supports, so a path outside it is not used by accident, and Node gets the module build that bundlers already use.
+
+**Are you affected?** Only if Node code imports jquery-form as an ES module, by `import` or `import()`, or if your code or build tool imports a path outside `dist`. 4.x has no warning for this. Code that `require`s the package, and bundles that use `module`, are not affected.
+
+A project that loads jquery-form with both `import` and `require` loads two copies, the module build and the classic build (the dual-package hazard). Each one installs the plugin on the jQuery it gets. When that is the same jQuery, the second one replaces the first, and settings such as `$.fn.ajaxSubmit.debug` go back to their defaults; when it is not, each jQuery has its own plugin and settings. Load it one way.
+
+Before (4.x), in a Node ES module:
+
+```javascript
+import factory from "jquery-form";
+const $ = factory(window);
+```
+
+After (5.0), with `window` and `document` global first:
+
+```javascript
+import $ from "jquery-form";
+```
+
+Or keep the factory with `require`:
+
+```javascript
+import { createRequire } from "node:module";
+const $ = createRequire(import.meta.url)("jquery-form")(window);
+```
 
 ## What your server receives
 
