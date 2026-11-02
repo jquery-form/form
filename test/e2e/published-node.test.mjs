@@ -3,7 +3,7 @@
 // ES module, with jsdom as the window. Each case runs in its own process, so globals and module
 // caches never leak between cases.
 import { after, before, describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { createServer } from "node:http";
@@ -207,6 +207,45 @@ describe("when the packed package is resolved by name", () => {
     // Assert
     const refused = specifiers.map(() => "ERR_PACKAGE_PATH_NOT_EXPORTED");
     assert.deepEqual(result, { require: refused, import: refused });
+  });
+});
+
+describe("when the packed package is unpacked", () => {
+  const installed = resolve(packDir, "jquery-3.7.1/node_modules/jquery-form");
+
+  it("should hold the dist build, the licenses, the readme and package.json, and no source", () => {
+    // Arrange
+    const expectedFiles = [
+      "LICENSE",
+      "LICENSE-MIT",
+      "README.md",
+      "dist/jquery.form.js",
+      "dist/jquery.form.min.js",
+      "dist/jquery.form.min.js.map",
+      "dist/jquery.form.mjs",
+      "package.json",
+    ];
+
+    // Act
+    const files = readdirSync(installed, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => resolve(entry.parentPath, entry.name).slice(installed.length + 1))
+      .sort();
+
+    // Assert
+    assert.deepEqual(files, expectedFiles);
+  });
+
+  it("should embed every source file in the source map, since the source is not shipped", () => {
+    // Arrange
+    const map = JSON.parse(readFileSync(resolve(installed, "dist/jquery.form.min.js.map"), "utf8"));
+
+    // Act
+    const embedded = map.sources.filter((source, i) => typeof map.sourcesContent?.[i] === "string");
+
+    // Assert
+    assert.ok(map.sources.length > 0);
+    assert.deepEqual(embedded, map.sources);
   });
 });
 

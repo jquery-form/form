@@ -18,6 +18,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [`delegation: true` throws](#delegation-true-throws)                                                                                                | Code that passes `delegation: true` (or another non-string truthy value) to `ajaxForm` | "delegation: true binds every form on the page", always (even without debug) |
 | [The iframe transport is used only with `iframe: true`](#the-iframe-transport-is-used-only-with-iframe-true)                                        | Uploads in browsers without `FormData` or the File API                                 | "choosing the iframe transport automatically", under debug                   |
 | [The package has an `exports` map](#the-package-has-an-exports-map)                                                                                 | Node ES module imports of jquery-form, and imports of paths outside `dist`             | None                                                                         |
+| [`src` is no longer published](#src-is-no-longer-published)                                                                                         | Code that imports files from `jquery-form/src`                                         | None                                                                         |
 
 Entries are added as each 5.0 change lands.
 
@@ -263,6 +264,26 @@ Or keep the factory with `require`:
 ```javascript
 import { createRequire } from "node:module";
 const $ = createRequire(import.meta.url)("jquery-form")(window);
+```
+
+### `src` is no longer published
+
+**What changed.** The npm package no longer has the `src` directory, the ES modules that the `dist` files are built from. It holds `dist/jquery.form.js`, `dist/jquery.form.min.js` with its source map, `dist/jquery.form.mjs`, the two license files, `README.md` and `package.json`. A deep import such as `jquery-form/src/jquery.form.js` fails, and CDN URLs under `src` (for example on unpkg or jsDelivr) return not found for 5.0.
+
+**Why.** `src` is split into internal modules whose names and layout may change in any release. `dist/jquery.form.mjs` is the same code, as written and not transpiled, in one module, and the source map of `dist/jquery.form.min.js` embeds every source file, so debuggers still show it.
+
+**Are you affected?** Search your code, bundler configuration and CDN URLs for `jquery-form/src`. 4.x has no warning for this. Import `jquery-form`, or `jquery-form/dist/jquery.form.mjs`, instead.
+
+Before (the latest 4.x):
+
+```javascript
+import $ from "jquery-form/src/jquery.form.js";
+```
+
+After (5.0):
+
+```javascript
+import $ from "jquery-form/dist/jquery.form.mjs";
 ```
 
 ## What your server receives

@@ -34,7 +34,6 @@
   },
   "files": [
     "dist",
-    "src",
     "LICENSE-MIT"
   ],
   "repository": {

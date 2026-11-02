@@ -64,6 +64,10 @@ describe("when the package manifests are read", () => {
     expect(pkg.files).toContain("dist");
   });
 
+  it("should publish the dist build and not the source", () => {
+    expect(pkg.files).toEqual(["dist", "LICENSE-MIT"]);
+  });
+
   it("should publish both licenses of the dual license", () => {
     expect(pkg.files).toContain("LICENSE-MIT");
   });
