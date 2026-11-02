@@ -1,4 +1,4 @@
-import { callFormMethod, formMember, isElement, tagName } from "./form-members.js";
+import { callFormMethod, formMember, isDisabled, isElement, tagName } from "./form-members.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 import { submitterOf } from "./submitter.js";
@@ -12,14 +12,6 @@ var rCR = /\r/g;
 
 // Listed form elements that are never submitted.
 var rUnsubmittable = /^(?:fieldset|object|output)$/;
-
-/**
- * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
- * selector matching, only its own disabled property is read.
- */
-function isDisabled(el) {
-  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
-}
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that

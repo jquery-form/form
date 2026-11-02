@@ -1993,6 +1993,82 @@ describe("form", function () {
             assert.deepEqual(fields, []);
           });
 
+          it("should not post a clicked button in a disabled fieldset", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $fieldset = $("<fieldset disabled></fieldset>").appendTo($form);
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $fieldset
+            )[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
+          });
+
+          it("should post a clicked button in the first legend of a disabled fieldset", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $legend = $("<fieldset disabled><legend></legend></fieldset>")
+              .appendTo($form)
+              .children("legend");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $legend
+            )[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["choice", "picked"]]);
+          });
+
+          it("should not post a captured button whose fieldset is disabled before the upload", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $fieldset = $("<fieldset></fieldset>").appendTo($form);
+            const $button = $('<button type="submit" name="choice" value="picked">')
+              .appendTo($fieldset)
+              .on("click", (event) => event.preventDefault());
+            $form.ajaxForm({ iframe: true });
+            $button.trigger("click");
+            $form[0].clk = undefined;
+            $fieldset.prop("disabled", true);
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
+          });
+
+          it("should not post a disabled button passed to requestSubmit", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $fieldset = $("<fieldset disabled></fieldset>").appendTo($form);
+            const own = $('<button type="submit" name="own" value="o" disabled>').appendTo(
+              $form
+            )[0];
+            const inFieldset = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $fieldset
+            )[0];
+            const fields = [];
+            $form[0].submit = function () {
+              fields.push(hiddenFields(this));
+            };
+            $form.ajaxForm({ iframe: true, forceSync: true, error: function () {} });
+
+            $form[0].requestSubmit(own);
+            pending.push($form.data("jqxhr"));
+            $.removeData($form[0], "jqFormSubmitter");
+            $form[0].clk = undefined;
+            $form[0].requestSubmit(inFieldset);
+            pending.push($form.data("jqxhr"));
+
+            assert.deepEqual(fields, [[], []]);
+          });
+
           it("should let the CSRF token override a data field with the param name", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             addCsrfMetas("secret");

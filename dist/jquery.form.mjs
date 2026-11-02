@@ -80,6 +80,14 @@ function tagName(el) {
   return typeof name === "string" ? name.toLowerCase() : "";
 }
 
+/**
+ * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
+ * selector matching, only its own disabled property is read.
+ */
+function isDisabled(el) {
+  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
+}
+
 // Elements only: the subject of formToArray may also be the document or a plain object.
 function isElement(node) {
   return formMember(node, "nodeType") === 1;
@@ -226,7 +234,8 @@ function submitterFields(form) {
   var sub = submitterOf(form);
   var el = sub && sub.el;
 
-  if (el && el.name && !el.disabled) {
+  // a disabled button is not sent, also when a disabled fieldset disables it
+  if (el && el.name && !isDisabled(el)) {
     fields[el.name] = el.value;
     if (el.type === "image") {
       fields[el.name + ".x"] = sub.x;
@@ -579,14 +588,6 @@ var rCR = /\r/g;
 
 // Listed form elements that are never submitted.
 var rUnsubmittable = /^(?:fieldset|object|output)$/;
-
-/**
- * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
- * selector matching, only its own disabled property is read.
- */
-function isDisabled(el) {
-  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
-}
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that

@@ -71,11 +71,11 @@ const E2E_DIFFERENCES = [
   },
   {
     id: "IFRAME-SUBMITTER",
-    description:
-      "an iframe upload appends the submitter's fields after the form's, also for a disabled submitter",
+    description: "an iframe upload appends the submitter's fields after the form's",
     normalize: (pair, ctx) => {
       const sub = ctx.submitter;
-      if (!ctx.transport.iframe || !sub || !sub.name) {
+      // a disabled submitter is sent by neither, so any field of it fails the comparison
+      if (!ctx.transport.iframe || !sub || !sub.name || isDisabled(sub)) {
         return pair;
       }
       // The extra inputs go at the end of the form, before outside controls that follow it.
@@ -85,16 +85,13 @@ const E2E_DIFFERENCES = [
         const index = plugin.map((e) => e[0] === n).lastIndexOf(true);
         plugin = plugin.filter((e, i) => i !== index);
       });
-      let native = pair.native;
-      if (!isDisabled(sub)) {
-        const own = isImage(sub)
-          ? (e) => e[0] === names[1] || e[0] === names[2]
-          : (e) => e[0] === sub.name;
-        const index = isImage(sub) ? -1 : native.map((e) => own(e)).lastIndexOf(true);
-        native = isImage(sub)
-          ? native.filter((e) => !own(e))
-          : native.filter((e, i) => i !== index);
-      }
+      const own = isImage(sub)
+        ? (e) => e[0] === names[1] || e[0] === names[2]
+        : (e) => e[0] === sub.name;
+      const index = isImage(sub) ? -1 : pair.native.map((e) => own(e)).lastIndexOf(true);
+      const native = isImage(sub)
+        ? pair.native.filter((e) => !own(e))
+        : pair.native.filter((e, i) => i !== index);
       return { plugin: plugin, native: native };
     },
   },
