@@ -72,7 +72,7 @@ function smoke($, value) {
 
 // Runs a case in a fresh Node process in `cwd`; resolves the JSON it prints last. Asynchronous,
 // so this process keeps answering the case's requests.
-async function run(cwd, code, type = "commonjs") {
+async function run(cwd, code, type = "commonjs", flags = []) {
   const source =
     type === "module"
       ? `import { createRequire } from "node:module";
@@ -82,7 +82,7 @@ async function run(cwd, code, type = "commonjs") {
       : `${PRELUDE}\n(async () => { ${code} })();`;
   const { stdout } = await promisify(execFile)(
     process.execPath,
-    [`--input-type=${type}`, "-e", source],
+    [...flags, `--input-type=${type}`, "-e", source],
     {
       cwd,
       encoding: "utf8",
@@ -144,7 +144,7 @@ describe("when the packed package is installed", () => {
 
 // Resolves each specifier from the fixture, as CommonJS (require.resolve) and as an ES module
 // (import.meta.resolve), to the path inside the installed package or the error code it threw.
-async function resolveFrom(fixture, specifiers) {
+async function resolveFrom(fixture, specifiers, flags = []) {
   const code = `const where = (resolve) => (specifier) => {
       try {
         return resolve(specifier).split("/node_modules/jquery-form/")[1];
@@ -157,7 +157,7 @@ async function resolveFrom(fixture, specifiers) {
       require: specifiers.map(where(require.resolve)),
       import: specifiers.map(where(import.meta.resolve)),
     });`;
-  return run(fixture, code, "module");
+  return run(fixture, code, "module", flags);
 }
 
 describe("when the packed package is resolved by name", () => {
@@ -173,6 +173,20 @@ describe("when the packed package is resolved by name", () => {
     // Assert
     assert.deepEqual(result, {
       require: ["dist/jquery.form.js"],
+      import: ["dist/jquery.form.mjs"],
+    });
+  });
+
+  it("should resolve import and require to the module build under the bundlers' module condition", async () => {
+    // Arrange: webpack, Rollup, Rolldown and esbuild match "module"; Node matches it only when asked.
+    const specifiers = ["jquery-form"];
+
+    // Act
+    const result = await resolveFrom(fixture, specifiers, ["--conditions=module"]);
+
+    // Assert
+    assert.deepEqual(result, {
+      require: ["dist/jquery.form.mjs"],
       import: ["dist/jquery.form.mjs"],
     });
   });

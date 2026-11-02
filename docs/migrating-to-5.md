@@ -232,19 +232,23 @@ The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `ifram
 
 ```json
 "exports": {
-  ".": { "import": "./dist/jquery.form.mjs", "default": "./dist/jquery.form.js" },
+  ".": {
+    "module": "./dist/jquery.form.mjs",
+    "import": "./dist/jquery.form.mjs",
+    "default": "./dist/jquery.form.js"
+  },
   "./dist/*": "./dist/*",
   "./package.json": "./package.json"
 }
 ```
 
-In Node, `import "jquery-form"` now loads the module build, `dist/jquery.form.mjs`: it imports `jquery`, installs the plugin on it when it loads, and exports that jQuery as default. In 4.x, Node ignored `module`, so the import loaded the classic build and its default export was the CommonJS `(root, jQuery)` factory. The module build reads the DOM when it loads, so `window` and `document` must be global before the import. `require("jquery-form")` still returns the factory, and `main`, `module`, `jsdelivr` and `unpkg` are unchanged, so bundlers, CDNs and script tags load the same files as before. Any path under `dist`, such as `jquery-form/dist/jquery.form.min.js`, and `jquery-form/package.json` can still be imported or required. Any other path, such as `jquery-form/src/jquery.form.js` or `jquery-form/LICENSE-MIT`, fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+In Node, `import "jquery-form"` now loads the module build, `dist/jquery.form.mjs`: it imports `jquery`, installs the plugin on it when it loads, and exports that jQuery as default. In 4.x, Node ignored `module`, so the import loaded the classic build and its default export was the CommonJS `(root, jQuery)` factory. The module build reads the DOM when it loads, so `window` and `document` must be global before the import. `require("jquery-form")` in Node still returns the factory. Bundlers that read `exports`, such as webpack, Rollup, Rolldown (Vite) and esbuild, match the `module` condition, so both `import` and `require` give them the module build, as `module` did in 4.x. `main`, `module`, `jsdelivr` and `unpkg` are unchanged, so bundlers that ignore `exports`, CDNs and script tags load the same files as before. Any path under `dist`, such as `jquery-form/dist/jquery.form.min.js`, and `jquery-form/package.json` can still be imported or required. Any other path, such as `jquery-form/src/jquery.form.js` or `jquery-form/LICENSE-MIT`, fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
 
 **Why.** The map names the files the package supports, so a path outside it is not used by accident, and Node gets the module build that bundlers already use.
 
-**Are you affected?** Only if Node code imports jquery-form as an ES module, by `import` or `import()`, or if your code or build tool imports a path outside `dist`. 4.x has no warning for this. Code that `require`s the package, and bundles that use `module`, are not affected.
+**Are you affected?** Only if Node code imports jquery-form as an ES module, by `import` or `import()`, or if your code or build tool imports a path outside `dist`. 4.x has no warning for this. Code that `require`s the package, and bundled code, are not affected.
 
-A project that loads jquery-form with both `import` and `require` loads two copies, the module build and the classic build (the dual-package hazard). Each one installs the plugin on the jQuery it gets. When that is the same jQuery, the second one replaces the first, and settings such as `$.fn.ajaxSubmit.debug` go back to their defaults; when it is not, each jQuery has its own plugin and settings. Load it one way.
+A Node project that loads jquery-form with both `import` and `require` loads two copies, the module build and the classic build (the dual-package hazard). Each one installs the plugin on the jQuery it gets. When that is the same jQuery, the second one replaces the first, and settings such as `$.fn.ajaxSubmit.debug` go back to their defaults; when it is not, each jQuery has its own plugin and settings. Load it one way.
 
 Before (4.x), in a Node ES module:
 

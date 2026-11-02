@@ -37,12 +37,20 @@ describe("when the package manifests are read", () => {
     expect(pkg.unpkg).toBe("dist/jquery.form.min.js");
   });
 
-  it("should export the module build to import, the classic build otherwise, and only dist and package.json by path", () => {
+  it("should export the module build to bundlers and import, the classic build otherwise, and only dist and package.json by path", () => {
     expect(pkg.exports).toEqual({
-      ".": { import: "./dist/jquery.form.mjs", default: "./dist/jquery.form.js" },
+      ".": {
+        module: "./dist/jquery.form.mjs",
+        import: "./dist/jquery.form.mjs",
+        default: "./dist/jquery.form.js",
+      },
       "./dist/*": "./dist/*",
       "./package.json": "./package.json",
     });
+  });
+
+  it("should list the module condition first, since resolvers take the first condition they match", () => {
+    expect(Object.keys(pkg.exports["."])).toEqual(["module", "import", "default"]);
   });
 
   it("should point every exports target at a path the package publishes", () => {
