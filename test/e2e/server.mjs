@@ -3,21 +3,33 @@
 // named response. No framework: bodies are parsed with the platform's Request#formData().
 //
 // Environment: E2E_PORT (default 4310), JQUERY_FILE (classic jQuery build, default jQuery 3),
-// JQUERY_FORM_DIST (directory holding jquery.form.js, default dist).
+// JQUERY_FORM_DIST (directory holding jquery.form.js, default dist), JQUERY_FORM_PACK_DIR (the
+// installed tarball from scripts/pack-fixture.mjs, default .pack).
 import { createServer } from "node:http";
+import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
 const port = Number(process.env.E2E_PORT || 4310);
 const jqueryFile = resolve(root, process.env.JQUERY_FILE || "node_modules/jquery/dist/jquery.js");
 const distDir = resolve(root, process.env.JQUERY_FORM_DIST || "dist");
+const packageDir = resolve(
+  root,
+  process.env.JQUERY_FORM_PACK_DIR || ".pack",
+  "jquery-3.7.1/node_modules/jquery-form"
+);
+// jQuery's own module build when it has one (jQuery 4), else a module that exports the global.
+const jqueryModule = resolve(dirname(jqueryFile), "../dist-module/jquery.module.js");
 
 const files = {
   "/jquery.js": [jqueryFile, "text/javascript"],
   "/jquery.form.js": [resolve(distDir, "jquery.form.js"), "text/javascript"],
   "/oracle-forms.js": [resolve(root, "test/shared/oracle-forms.js"), "text/javascript"],
   "/harness.js": [resolve(root, "test/e2e/harness.js"), "text/javascript"],
+  "/published.js": [resolve(root, "test/e2e/published.js"), "text/javascript"],
+  "/require.js": [resolve(root, "node_modules/requirejs/require.js"), "text/javascript"],
+  "/jquery.module.js": [jqueryModule, "text/javascript"],
 };
 
 const page = `<!doctype html>
@@ -35,6 +47,50 @@ const page = `<!doctype html>
   </body>
 </html>
 `;
+
+// Published-file pages: /published/<loader>[?min], loading the installed package by the entry
+// points its package.json names (main, browser for the minified build, module).
+async function publishedPage(loader, min) {
+  const manifest = JSON.parse(await readFile(resolve(packageDir, "package.json"), "utf8"));
+  const classic = "/pkg/" + (min ? manifest.browser : manifest.main);
+  const hasModule = existsSync(jqueryModule);
+  const loaders = {
+    script: `<script src="/jquery.js"></script>
+    <script src="${classic}"></script>
+    <script src="/published.js"></script>
+    <script>published.ready("script", jQuery, jQuery);</script>`,
+    amd: `<script src="/require.js"></script>
+    <script src="/published.js"></script>
+    <script>
+      require.config({ paths: { jquery: "/jquery", "jquery-form": "${classic.replace(/\.js$/, "")}" } });
+      require(["jquery", "jquery-form"], function ($, value) {
+        published.ready("amd", $, value);
+      });
+    </script>`,
+    esm: `<script type="importmap">
+      { "imports": { "jquery": "${hasModule ? "/jquery.module.js" : "/jquery-global.js"}", "jquery-form": "/pkg/${manifest.module}" } }
+    </script>
+    ${hasModule ? "" : '<script src="/jquery.js"></script>'}
+    <script src="/published.js"></script>
+    <script type="module">
+      import $ from "jquery";
+      import value from "jquery-form";
+      published.ready("esm", $, value);
+    </script>`,
+  };
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>jquery-form published files</title>
+    ${loaders[loader]}
+  </head>
+  <body>
+    <div id="fixture"></div>
+  </body>
+</html>
+`;
+}
 
 // Named responses: /r/<test id>/<name>[/...].
 const responses = {
@@ -125,6 +181,19 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/" || url.pathname === "/page") {
       return send(res, 200, "text/html; charset=utf-8", page);
+    }
+    if (url.pathname.startsWith("/published/")) {
+      const html = await publishedPage(url.pathname.slice(11), url.searchParams.has("min"));
+      return send(res, 200, "text/html; charset=utf-8", html);
+    }
+    if (url.pathname === "/jquery-global.js") {
+      return send(res, 200, "text/javascript", "export default window.jQuery;\n");
+    }
+    if (url.pathname.startsWith("/pkg/")) {
+      const file = resolve(packageDir, url.pathname.slice(5));
+      if (file.startsWith(packageDir + "/") && existsSync(file)) {
+        return send(res, 200, "text/javascript", await readFile(file));
+      }
     }
     if (files[url.pathname]) {
       const [file, type] = files[url.pathname];

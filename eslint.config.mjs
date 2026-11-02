@@ -86,6 +86,7 @@ export default [
       "test/ajax/**",
       "test-results/**",
       "playwright-report/**",
+      ".pack/**",
     ],
   },
   js.configs.recommended,
@@ -108,6 +109,10 @@ export default [
   {
     files: ["test/shared/**/*.js", "test/e2e/harness.js"],
     languageOptions: { sourceType: "module", globals: globals.browser },
+  },
+  {
+    files: ["test/e2e/published.js"],
+    languageOptions: { sourceType: "script", globals: globals.browser },
   },
   {
     // Node files whose page.evaluate callbacks run in the browser.

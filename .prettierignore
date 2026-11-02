@@ -12,3 +12,4 @@ test/ajax/
 test/img/
 playwright-report/
 test-results/
+.pack/
