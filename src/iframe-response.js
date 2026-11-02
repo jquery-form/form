@@ -5,42 +5,9 @@ import { log } from "./diagnostics.js";
 // and dataType, then parses it as $.ajax would (dataFilter, JSON, script).
 var $ = jQuery;
 
-/** The frame's document, or null when the browser denies access to it. */
+/** The frame's document, or null when the same-origin policy denies access to it. */
 export function getDoc(frame) {
-  /* it looks like contentWindow or contentDocument do not
-   * carry the protocol property in ie8, when running under ssl
-   * frame.document is the only valid response document, since
-   * the protocol is know but not on the other two objects. strange?
-   * "Same origin policy" http://en.wikipedia.org/wiki/Same_origin_policy
-   */
-
-  var doc = null;
-
-  // IE8 cascading access check
-  try {
-    if (frame.contentWindow) {
-      doc = frame.contentWindow.document;
-    }
-  } catch (err) {
-    // IE8 access denied under ssl & missing protocol
-    log("cannot get iframe.contentWindow document: " + err);
-  }
-
-  if (doc) {
-    // successful getting content
-    return doc;
-  }
-
-  try {
-    // simply checking may throw in ie8 under ssl or mismatched protocol
-    doc = frame.contentDocument ? frame.contentDocument : frame.document;
-  } catch (err) {
-    // last attempt
-    log("cannot get iframe.contentDocument: " + err);
-    doc = frame.document;
-  }
-
-  return doc;
+  return frame.contentDocument;
 }
 
 /** Parses the response text or XML for the given (lowercase) dataType. */
@@ -52,9 +19,7 @@ export function httpData(xhr, type, s) {
     data = xml ? xhr.responseXML : xhr.responseText;
 
   if (xml && data.documentElement.nodeName === "parsererror") {
-    if ($.error) {
-      $.error("parsererror");
-    }
+    $.error("parsererror");
   }
   if (s && s.dataFilter) {
     data = s.dataFilter(data, type);
@@ -82,7 +47,7 @@ function readDocument(doc, xhr, s, isXml) {
   var docRoot = doc.body ? doc.body : doc.documentElement;
 
   xhr.responseText = docRoot ? docRoot.innerHTML : null;
-  xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
+  xhr.responseXML = doc;
   if (isXml) {
     s.dataType = "xml";
   }
@@ -116,36 +81,25 @@ function readEmbedded(doc, xhr, dt, s) {
     var b = doc.getElementsByTagName("body")[0];
 
     if (pre) {
-      xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
+      xhr.responseText = pre.textContent;
     } else if (b) {
-      xhr.responseText = b.textContent ? b.textContent : b.innerText;
+      xhr.responseText = b.textContent;
     }
   }
 }
 
 /**
- * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}, or
- * null when `retry()` asks to read the document again later (Opera's untraversable DOM).
+ * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}.
  */
-export function readResponse(doc, xhr, s, retry) {
+export function readResponse(doc, xhr, s) {
   var status = "success",
     data,
     errMsg;
 
   try {
-    var isXml = /^xml$/i.test(s.dataType) || doc.XMLDocument || $.isXMLDoc(doc);
+    var isXml = /^xml$/i.test(s.dataType) || $.isXMLDoc(doc);
 
     log("isXml=" + isXml);
-
-    if (!isXml && window.opera && (doc.body === null || !doc.body.innerHTML)) {
-      // in some browsers (Opera) the iframe DOM is not always traversable when
-      // the onload callback fires, so we loop a bit to accommodate
-      if (retry()) {
-        return null;
-      }
-      // let this fall through because server response could be an empty document
-    }
-
     readDocument(doc, xhr, s, isXml);
 
     var dt = (s.dataType || "").toLowerCase();

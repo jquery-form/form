@@ -27,30 +27,23 @@ export { default } from 'jquery';
 // like a member (elements, setAttribute) shadows that member on the form itself, so members are
 // read through the DOM prototypes, which a control cannot shadow.
 
-// The prototype chain of a form, nearest first. Looked up on every call: old browsers have no
-// DOM prototypes, and tests remove them.
+// The prototype chain of a form, nearest first, looked up on every call.
 var owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
 
-// A form no control can shadow, for methods when the DOM has no prototypes to read them from.
-var plainForm = document.createElement("form");
-
+// The descriptor on the nearest prototype that has the member, or undefined.
 function findDescriptor(name) {
-  for (var i = 0; i < owners.length; i++) {
-    var owner = window[owners[i]];
-    var descriptor = owner && Object.getOwnPropertyDescriptor(owner.prototype, name);
+  var descriptor;
 
-    if (descriptor) {
-      return descriptor;
-    }
+  for (var i = 0; i < owners.length && !descriptor; i++) {
+    descriptor = Object.getOwnPropertyDescriptor(window[owners[i]].prototype, name);
   }
 
-  return null;
+  return descriptor;
 }
 
 /**
- * Reads a member of a form through its prototype getter.
- * Falls back to the plain property without DOM prototypes, or on an element the getter does not
- * accept (such as a fieldset for `elements`).
+ * Reads a member of a form through its prototype getter. Falls back to the plain property on an
+ * element the getter does not accept (such as a fieldset for `elements`).
  */
 function formMember(form, name) {
   var descriptor = findDescriptor(name);
@@ -63,14 +56,10 @@ function formMember(form, name) {
 }
 
 /**
- * Calls a method of a form through its prototype, or through an unshadowed form without DOM
- * prototypes.
+ * Calls a method of a form through its prototype.
  */
 function callFormMethod(form, name) {
-  var descriptor = findDescriptor(name);
-  var method = descriptor ? descriptor.value : plainForm[name];
-
-  return method.apply(form, Array.prototype.slice.call(arguments, 2));
+  return findDescriptor(name).value.apply(form, Array.prototype.slice.call(arguments, 2));
 }
 
 // Nodes such as the document and text nodes have no tag name (#600).
@@ -260,11 +249,7 @@ function log() {
 
   var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
 
-  if (window.console && window.console.log) {
-    window.console.log(msg);
-  } else if (window.opera && window.opera.postError) {
-    window.opera.postError(msg);
-  }
+  window.console.log(msg);
 }
 
 var warned = {};
@@ -279,10 +264,7 @@ function deprecate(id, message) {
   }
 
   warned[id] = true;
-
-  if (window.console && typeof window.console.warn === "function") {
-    window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
-  }
+  window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
 }
 
 // True for a jQuery version string older than 3.5.
@@ -450,24 +432,14 @@ function bindDelegated($sel, options) {
   return $sel;
 }
 
-// The element itself or its nearest ancestor that matches the selector. The walk never reads a
-// parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
+// The element itself or its nearest ancestor that matches the selector. Element.closest never
+// reads a parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
 function closestMatch(el, selector) {
   if (!isElement(el)) {
     return null;
   }
 
-  if (window.Element && Element.prototype.closest) {
-    return Element.prototype.closest.call(el, selector);
-  }
-
-  for (var node = el; node && isElement(node); node = formMember(node, "parentNode")) {
-    if (jQuery(node).is(selector)) {
-      return node;
-    }
-  }
-
-  return null;
+  return Element.prototype.closest.call(el, selector);
 }
 
 // The document handlers bound for each delegation selector, keyed by "s" + selector.
@@ -630,14 +602,6 @@ function selectValue(el) {
 
     if (op.selected && !isDisabled(op)) {
       var v = op.value;
-
-      if (!v) {
-        // extra pain for IE...
-        v =
-          op.attributes && op.attributes.value && !op.attributes.value.specified
-            ? op.text
-            : op.value;
-      }
 
       if (one) {
         return v;
@@ -822,8 +786,8 @@ function createSuccessfulControls(feature) {
       els = ownedBy(els, owner);
     }
 
-    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
-    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
+    // outside fields are already included in form.elements
+    if (formId && semantic) {
       els = els.concat(outsideControls(formId, els, owner));
     }
 
@@ -955,8 +919,6 @@ function deepSerialize(extraData, traditional) {
   var i, part;
 
   for (i = 0; i < len; i++) {
-    // #252; undo param space replacement
-    serialized[i] = serialized[i].replace(/\+/g, " ");
     part = serialized[i].split("=");
     // #278; use array instead of object storage, favoring array serializations
     result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
@@ -1011,8 +973,7 @@ function sendFormData(submission) {
           "progress",
           function (event) {
             var percent = 0;
-            // event.position is the deprecated name, read only when loaded is missing
-            var position = event.loaded !== undefined ? event.loaded : event.position;
+            var position = event.loaded;
             var total = event.total;
 
             if (event.lengthComputable) {
@@ -1069,16 +1030,13 @@ function isGet(method) {
   return /^get$/i.test(method);
 }
 
-// Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
-// apply to both sides of the comparison.
+// Resolves both URLs through anchors, as jQuery does for crossDomain.
 function isSameOrigin(url) {
   var origin = document.createElement("a");
   var target = document.createElement("a");
 
   origin.href = window.location.href;
   target.href = url;
-  // IE fills in the host of a relative URL only once the resolved href is assigned back
-  target.href = target.href; // eslint-disable-line no-self-assign
 
   return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
 }
@@ -1210,42 +1168,9 @@ function submitForm(form) {
 // and dataType, then parses it as $.ajax would (dataFilter, JSON, script).
 var $$2 = jQuery;
 
-/** The frame's document, or null when the browser denies access to it. */
+/** The frame's document, or null when the same-origin policy denies access to it. */
 function getDoc(frame) {
-  /* it looks like contentWindow or contentDocument do not
-   * carry the protocol property in ie8, when running under ssl
-   * frame.document is the only valid response document, since
-   * the protocol is know but not on the other two objects. strange?
-   * "Same origin policy" http://en.wikipedia.org/wiki/Same_origin_policy
-   */
-
-  var doc = null;
-
-  // IE8 cascading access check
-  try {
-    if (frame.contentWindow) {
-      doc = frame.contentWindow.document;
-    }
-  } catch (err) {
-    // IE8 access denied under ssl & missing protocol
-    log("cannot get iframe.contentWindow document: " + err);
-  }
-
-  if (doc) {
-    // successful getting content
-    return doc;
-  }
-
-  try {
-    // simply checking may throw in ie8 under ssl or mismatched protocol
-    doc = frame.contentDocument ? frame.contentDocument : frame.document;
-  } catch (err) {
-    // last attempt
-    log("cannot get iframe.contentDocument: " + err);
-    doc = frame.document;
-  }
-
-  return doc;
+  return frame.contentDocument;
 }
 
 /** Parses the response text or XML for the given (lowercase) dataType. */
@@ -1257,9 +1182,7 @@ function httpData(xhr, type, s) {
     data = xml ? xhr.responseXML : xhr.responseText;
 
   if (xml && data.documentElement.nodeName === "parsererror") {
-    if ($$2.error) {
-      $$2.error("parsererror");
-    }
+    $$2.error("parsererror");
   }
   if (s && s.dataFilter) {
     data = s.dataFilter(data, type);
@@ -1287,7 +1210,7 @@ function readDocument(doc, xhr, s, isXml) {
   var docRoot = doc.body ? doc.body : doc.documentElement;
 
   xhr.responseText = docRoot ? docRoot.innerHTML : null;
-  xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
+  xhr.responseXML = doc;
   if (isXml) {
     s.dataType = "xml";
   }
@@ -1321,36 +1244,25 @@ function readEmbedded(doc, xhr, dt, s) {
     var b = doc.getElementsByTagName("body")[0];
 
     if (pre) {
-      xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
+      xhr.responseText = pre.textContent;
     } else if (b) {
-      xhr.responseText = b.textContent ? b.textContent : b.innerText;
+      xhr.responseText = b.textContent;
     }
   }
 }
 
 /**
- * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}, or
- * null when `retry()` asks to read the document again later (Opera's untraversable DOM).
+ * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}.
  */
-function readResponse(doc, xhr, s, retry) {
+function readResponse(doc, xhr, s) {
   var status = "success",
     data,
     errMsg;
 
   try {
-    var isXml = /^xml$/i.test(s.dataType) || doc.XMLDocument || $$2.isXMLDoc(doc);
+    var isXml = /^xml$/i.test(s.dataType) || $$2.isXMLDoc(doc);
 
     log("isXml=" + isXml);
-
-    if (!isXml && window.opera && (doc.body === null || !doc.body.innerHTML)) {
-      // in some browsers (Opera) the iframe DOM is not always traversable when
-      // the onload callback fires, so we loop a bit to accommodate
-      if (retry()) {
-        return null;
-      }
-      // let this fall through because server response could be an empty document
-    }
-
     readDocument(doc, xhr, s, isXml);
 
     var dt = (s.dataType || "").toLowerCase();
@@ -1660,13 +1572,6 @@ function createIframeTransport(forms) {
   function frameHooks(s, $io) {
     return {
       stop: function () {
-        try {
-          // #214, #257
-          if ($io[0].contentWindow.document.execCommand) {
-            $io[0].contentWindow.document.execCommand("Stop");
-          }
-        } catch (ignore) {}
-
         $io.attr("src", s.iframeSrc); // abort op in progress
       },
       release: function () {
@@ -1678,22 +1583,6 @@ function createIframeTransport(forms) {
         }
       },
     };
-  }
-
-  function listen(io, cb) {
-    if (io.attachEvent) {
-      io.attachEvent("onload", cb);
-    } else {
-      io.addEventListener("load", cb, false);
-    }
-  }
-
-  function unlisten(io, cb) {
-    if (io.detachEvent) {
-      io.detachEvent("onload", cb);
-    } else {
-      io.removeEventListener("load", cb, false);
-    }
   }
 
   // private function for handling file uploads (hat tip to YAHOO!)
@@ -1713,7 +1602,6 @@ function createIframeTransport(forms) {
     var $io = frame.$io,
       io = $io[0];
     var life = createLifecycle(s, frameHooks(s, $io));
-    var domCheckCount = 50;
 
     if (!life.start()) {
       return life.deferred;
@@ -1725,12 +1613,7 @@ function createIframeTransport(forms) {
     // look for server aborts
     function checkState() {
       try {
-        var state = getDoc(io).readyState;
-
-        log("state = " + state);
-        if (state && state.toLowerCase() === "uninitialized") {
-          setTimeout(checkState, 50);
-        }
+        log("state = " + getDoc(io).readyState);
       } catch (e) {
         log("Server abort: ", e, " (", e.name, ")");
         cb(SERVER_ABORT);
@@ -1771,7 +1654,7 @@ function createIframeTransport(forms) {
           return;
         }
 
-        listen(io, cb);
+        io.addEventListener("load", cb, false);
         setTimeout(checkState, 15);
         submitForm(form);
       } finally {
@@ -1779,18 +1662,6 @@ function createIframeTransport(forms) {
         restoreAttributes(form, saved);
         $(extraInputs).remove();
       }
-    }
-
-    // Reads the next document by Opera's rules: false once the retries are used up.
-    function retry() {
-      if (--domCheckCount) {
-        log("requeing onLoad callback, DOM not available");
-        setTimeout(cb, 250);
-
-        return true;
-      }
-
-      return false;
     }
 
     function cb(e) {
@@ -1820,13 +1691,8 @@ function createIframeTransport(forms) {
         return;
       }
 
-      unlisten(io, cb);
-
-      var result = readResponse(doc, life.xhr, s, retry);
-
-      if (result) {
-        life.settle(result);
-      }
+      io.removeEventListener("load", cb, false);
+      life.settle(readResponse(doc, life.xhr, s));
     }
 
     // An exception while posting settles the upload with "error" and the exception.
@@ -1900,10 +1766,6 @@ function createSubmission(feature, forms, serialization) {
 
     // clean url (don't include hash value); an action that is only a fragment means this page
     url = url.split("#")[0] || window.location.href.split("#")[0];
-    // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
-    // Instead of using javascript:false always, let's only apply it for IE.
-    var isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
-    var iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
 
     var merged = $.extend(
       true,
@@ -1911,7 +1773,7 @@ function createSubmission(feature, forms, serialization) {
         url: url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
-        iframeSrc: iframeSrc,
+        iframeSrc: "about:blank",
       },
       options
     );
@@ -2543,11 +2405,7 @@ function createSubmission(feature, forms, serialization) {
       } else if (tag === "select") {
         this.selectedIndex = -1;
       } else if (t === "file") {
-        if (/MSIE/.test(navigator.userAgent)) {
-          $(this).replaceWith($(this).clone(true));
-        } else {
-          $(this).val("");
-        }
+        $(this).val("");
       } else if (includeHidden) {
         // includeHidden can be the value true, or it can be a selector string
         // indicating a special test; for example:

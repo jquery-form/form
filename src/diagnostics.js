@@ -9,11 +9,7 @@ export function log() {
 
   var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
 
-  if (window.console && window.console.log) {
-    window.console.log(msg);
-  } else if (window.opera && window.opera.postError) {
-    window.opera.postError(msg);
-  }
+  window.console.log(msg);
 }
 
 var warned = {};
@@ -28,10 +24,7 @@ export function deprecate(id, message) {
   }
 
   warned[id] = true;
-
-  if (window.console && typeof window.console.warn === "function") {
-    window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
-  }
+  window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
 }
 
 // Forgets which deprecations have warned (for tests).

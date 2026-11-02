@@ -1,12 +1,6 @@
 import { assert, describe, it } from "vitest";
 import pluginExport from "../../src/jquery.form.js";
-import {
-  countHtmlParsed,
-  resetFixture,
-  selectFiles,
-  withAjaxStub,
-  withUserAgent,
-} from "./helpers.js";
+import { countHtmlParsed, resetFixture, selectFiles, withAjaxStub } from "./helpers.js";
 
 // Records the change and input events that reach `root` while `run` executes.
 function recordFieldEvents(root, run) {
@@ -659,29 +653,6 @@ describe("form", function () {
       assert.strictEqual($file.val(), "");
     });
 
-    it("should replace a file input when simulating legacy MSIE", function () {
-      const userAgent = Object.getOwnPropertyDescriptor(navigator, "userAgent");
-      const $container = $('<div><input type="file" name="upload"></div>');
-      const file = $container.find("input")[0];
-      Object.defineProperty(navigator, "userAgent", {
-        configurable: true,
-        value: "MSIE 10.0",
-      });
-
-      try {
-        $(file).clearFields();
-
-        assert.notStrictEqual($container.find("input")[0], file);
-        assert.strictEqual($container.find("input").attr("name"), "upload");
-      } finally {
-        if (userAgent) {
-          Object.defineProperty(navigator, "userAgent", userAgent);
-        } else {
-          delete navigator.userAgent;
-        }
-      }
-    });
-
     it("should return the original set when clearing forms, containers, inputs or empty sets", function () {
       const sets = [$("<form><input></form>"), $("<div><input></div>"), $("<input>"), $()];
 
@@ -839,40 +810,13 @@ describe("form", function () {
       assert.deepEqual($select.val(), []);
     });
 
-    it("should clear a selected file when the user agent is not MSIE", function () {
+    it("should clear a selected file", function () {
       const input = $('<input type="file">')[0];
       selectFiles(input, ["a.txt"]);
 
       $(input).clearFields();
 
       assert.strictEqual(input.files.length, 0);
-    });
-
-    it("should carry data and handlers to the replacement and return the old element when simulating MSIE", function () {
-      const $container = $('<div><input type="file" name="upload"></div>');
-      const $file = $container.find("input");
-      let handled = 0;
-      $file.data("key", "kept");
-      $file.on("custom", () => handled++);
-
-      const result = withUserAgent("MSIE 10.0", () => $file.clearFields());
-
-      const $replacement = $container.find("input");
-      $replacement.trigger("custom");
-      assert.strictEqual(result[0], $file[0]);
-      assert.notStrictEqual($replacement[0], $file[0]);
-      assert.strictEqual($replacement.data("key"), "kept");
-      assert.strictEqual(handled, 1);
-    });
-
-    it("should leave a detached file input unchanged when simulating MSIE", function () {
-      const input = $('<input type="file">')[0];
-      selectFiles(input, ["a.txt"]);
-
-      const result = withUserAgent("MSIE 10.0", () => $(input).clearFields());
-
-      assert.strictEqual(result[0], input);
-      assert.strictEqual(input.files.length, 1);
     });
 
     const buttonsAndHidden =

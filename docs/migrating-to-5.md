@@ -12,6 +12,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                  | None                               |
 | [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                              | "attr2 is deprecated", under debug |
 | [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist               | "queuing ajaxForm", under debug    |
+| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier | None                               |
 
 Entries are added as each 5.0 change lands.
 
@@ -106,6 +107,35 @@ $(function () {
 });
 
 $(document).ajaxForm({ delegation: "#myForm" });
+```
+
+### Internet Explorer, Opera Presto and EdgeHTML are no longer supported
+
+**What changed.** 5.0 runs on current Chrome, Edge, Firefox (and Firefox ESR) and Safari, and is written for Chrome and Edge 80, Firefox 78 and Safari 14 or later. The code that only those older browsers needed is gone:
+
+- `attachEvent` and `detachEvent` for the iframe's load event, and `execCommand("Stop")` when an upload is aborted.
+- The `javascript:false` iframe source for Internet Explorer on HTTPS pages. The `iframeSrc` default is now `about:blank` on every page. An `iframeSrc` option you pass still wins.
+- The `clearFields` (and `clearForm`) clone of a file input in Internet Explorer. A file input is now cleared by setting its value to `""`, which keeps the element, its data and its handlers.
+- The option-text fallback for an `<option>` whose `value` attribute Internet Explorer reported as unspecified.
+- The Edge and Internet Explorer user agent check that added controls outside the form (`form="id"`) to the fields. Every supported browser lists them in `form.elements`.
+- `window.opera.postError` for debug messages when there is no `console.log`, and the console existence checks: debug output and deprecation warnings always go to `console.log` and `console.warn`.
+- The Opera retry that read an empty iframe response again, Internet Explorer's `XMLDocument` XML islands, the `innerText` fallback when reading a text response, and the Internet Explorer 8 ways of reaching the iframe's document (`contentWindow.document`, `frame.document`). The response document is `contentDocument`; a frame whose document the browser does not let the page read (for example a cross-origin response) still ends the upload with `"server abort"`. The poll that waited while Internet Explorer reported the frame as `"uninitialized"` is gone too.
+- The walk that matched `delegation: "<selector>"` without `Element.closest`, and the fallbacks for browsers without DOM prototypes, for upload progress events without `loaded`, and for anchors that resolve relative URLs only on a second assignment.
+
+**Why.** 5.0 supports the current browsers that its tests run in (Chromium, WebKit and Firefox). These code paths ran only in older browsers, so no test could reach them. jQuery 3.5 and 4 still run in Internet Explorer 11, but jquery-form 5 does not.
+
+**Are you affected?** Only if your pages must work in Internet Explorer, in Opera 12 or earlier (Presto), or in Edge 18 or earlier (EdgeHTML). Stay on 4.x for those. 4.x has no warning for this. If you relied on the `javascript:false` default on HTTPS pages, pass it yourself.
+
+Before (4.x), on an HTTPS page in Internet Explorer, the frame's `src` is `javascript:false`:
+
+```javascript
+$("#myForm").ajaxSubmit({ iframe: true });
+```
+
+After (5.0), the frame's `src` is `about:blank` unless you pass `iframeSrc`:
+
+```javascript
+$("#myForm").ajaxSubmit({ iframe: true, iframeSrc: "javascript:false" }); // only if you need it
 ```
 
 ## What your server receives

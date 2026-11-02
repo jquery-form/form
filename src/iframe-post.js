@@ -18,16 +18,13 @@ function isGet(method) {
   return /^get$/i.test(method);
 }
 
-// Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
-// apply to both sides of the comparison.
+// Resolves both URLs through anchors, as jQuery does for crossDomain.
 function isSameOrigin(url) {
   var origin = document.createElement("a");
   var target = document.createElement("a");
 
   origin.href = window.location.href;
   target.href = url;
-  // IE fills in the host of a relative URL only once the resolved href is assigned back
-  target.href = target.href; // eslint-disable-line no-self-assign
 
   return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
 }

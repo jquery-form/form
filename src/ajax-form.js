@@ -1,4 +1,4 @@
-import { assertRealParent, closestByTag, formMember, isElement } from "./form-members.js";
+import { assertRealParent, closestByTag, isElement } from "./form-members.js";
 import { captureEventSubmitter, captureSubmitter } from "./submitter.js";
 import { log, requireJQuery35 } from "./diagnostics.js";
 import jQuery from "jquery";
@@ -67,24 +67,14 @@ function bindDelegated($sel, options) {
   return $sel;
 }
 
-// The element itself or its nearest ancestor that matches the selector. The walk never reads a
-// parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
+// The element itself or its nearest ancestor that matches the selector. Element.closest never
+// reads a parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
 function closestMatch(el, selector) {
   if (!isElement(el)) {
     return null;
   }
 
-  if (window.Element && Element.prototype.closest) {
-    return Element.prototype.closest.call(el, selector);
-  }
-
-  for (var node = el; node && isElement(node); node = formMember(node, "parentNode")) {
-    if (jQuery(node).is(selector)) {
-      return node;
-    }
-  }
-
-  return null;
+  return Element.prototype.closest.call(el, selector);
 }
 
 // The document handlers bound for each delegation selector, keyed by "s" + selector.

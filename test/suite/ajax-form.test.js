@@ -1081,58 +1081,6 @@ describe("form", function () {
 
         assert.strictEqual(calls.length, 1);
       });
-
-      describe("without Element.prototype.closest", function () {
-        let closest;
-
-        beforeEach(function () {
-          closest = Element.prototype.closest;
-          delete Element.prototype.closest;
-        });
-
-        afterEach(function () {
-          Element.prototype.closest = closest;
-        });
-
-        it("should submit a form inside a matching container", async function () {
-          const $form = $('<div class="scoped-ajax-container"><form></form></div>')
-            .appendTo("#main")
-            .find("form");
-
-          const calls = await withAjaxSubmitStub(async function (calls) {
-            $().ajaxForm({ delegation: ".scoped-ajax-container" });
-            $form.trigger("submit");
-            return calls;
-          });
-
-          assert.strictEqual(calls[0].form, $form[0]);
-        });
-
-        it("should not submit a detached form that does not match", async function () {
-          const form = document.createElement("form");
-
-          const calls = await withAjaxSubmitStub(async function (calls) {
-            $().ajaxForm({ delegation: ".scoped-ajax-form" });
-            $(document).triggerHandler($.Event("submit", { target: form }));
-            return calls;
-          });
-
-          assert.strictEqual(calls.length, 0);
-        });
-
-        it("should not submit an attached form that does not match", async function () {
-          const $form = $("<form></form>").appendTo("#main");
-          $form.on("submit", false);
-
-          const calls = await withAjaxSubmitStub(async function (calls) {
-            $().ajaxForm({ delegation: ".scoped-ajax-form" });
-            $form.trigger("submit");
-            return calls;
-          });
-
-          assert.strictEqual(calls.length, 0);
-        });
-      });
     });
 
     describe("binding", function () {

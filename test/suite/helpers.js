@@ -90,16 +90,6 @@ export function captureAjaxOptions($form, options, respond) {
   return settings;
 }
 
-export function withUserAgent(userAgent, run) {
-  Object.defineProperty(navigator, "userAgent", { configurable: true, value: userAgent });
-
-  try {
-    return run();
-  } finally {
-    delete navigator.userAgent;
-  }
-}
-
 export function withDocumentUrl(url, run) {
   Object.defineProperty(document, "URL", { configurable: true, value: url });
 

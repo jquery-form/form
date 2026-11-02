@@ -900,14 +900,6 @@ describe("form", function () {
           assert.strictEqual($form.data("jqxhr").state(), "rejected");
         });
 
-        it("should prefer an IE XMLDocument island as the XML response", async function () {
-          const $form = createIframeForm("ajax/iframe-xml-island.html");
-
-          const result = await submitThroughIframe($form, { dataType: "xml" });
-
-          assert.strictEqual(result.success[0].documentElement.nodeName, "island");
-        });
-
         it("should report a parsererror document as a parser error", async function () {
           const $form = createIframeForm("ajax/iframe-parsererror.xml");
 
@@ -915,20 +907,6 @@ describe("form", function () {
 
           assert.strictEqual(result.error[1], "parsererror");
           assert.strictEqual(result.error[2].message, "parsererror");
-        });
-
-        it("should return a parsererror document when jQuery has no error helper", async function () {
-          const error = $.error;
-          const $form = createIframeForm("ajax/iframe-parsererror.xml");
-          $.error = undefined;
-
-          try {
-            const result = await submitThroughIframe($form, { dataType: "xml" });
-
-            assert.strictEqual(result.success[0].documentElement.nodeName, "parsererror");
-          } finally {
-            $.error = error;
-          }
         });
 
         it("should return an XML document when jQuery has no parseXML helper", async function () {
@@ -946,102 +924,28 @@ describe("form", function () {
         });
       });
 
-      describe("legacy browser frames", function () {
-        const realContentWindow = Object.getOwnPropertyDescriptor(
-          HTMLIFrameElement.prototype,
-          "contentWindow"
-        ).get;
-        const realContentDocument = Object.getOwnPropertyDescriptor(
-          HTMLIFrameElement.prototype,
-          "contentDocument"
-        ).get;
-
-        function createTarget(properties) {
-          const $target = $('<iframe name="legacy-frame"></iframe>').appendTo("#main");
-          Object.defineProperties($target[0], properties || {});
-          return $target;
-        }
-
-        function denied() {
-          throw new Error("Access is denied");
-        }
-
-        // IE fires onload for the initial blank document before the response arrives.
-        function ieEvents(frame, delay) {
-          const detached = [];
-          return {
-            detached: detached,
-            properties: {
-              attachEvent: {
-                configurable: true,
-                value: function (name, handler) {
-                  if (delay === undefined) {
-                    handler();
-                  }
-                  frame().addEventListener("load", () => setTimeout(handler, delay || 0));
-                },
-              },
-              detachEvent: {
-                configurable: true,
-                value: (name) => detached.push(name),
-              },
-            },
-          };
-        }
-
-        it("should read the document when IE8 denies contentWindow access", async function () {
-          const $target = createTarget({
-            contentWindow: { configurable: true, get: denied },
-            contentDocument: {
-              configurable: true,
-              get: () => realContentDocument.call($target[0]),
-            },
-          });
+      describe("frame documents", function () {
+        it("should wait for the response when the frame loads its blank document first", async function () {
+          const $target = $('<iframe name="blank-first-frame"></iframe>').appendTo("#main");
           const $form = createIframeForm("ajax/iframe-text.html");
+          const nativeSubmit = $form[0].submit;
+          $form[0].submit = function () {
+            $target[0].dispatchEvent(new Event("load"));
+            nativeSubmit.call(this);
+          };
 
           const result = await submitThroughIframe($form, {
             iframeTarget: $target,
             dataType: "text",
           });
 
+          assert.deepEqual(result.events, ["success", "complete"]);
           assert.strictEqual(result.success[0].trim(), "iframe response");
         });
 
-        [
-          ["throws", { get: denied }, { timeout: 1000 }],
-          ["is missing", { value: null }, {}],
-        ].forEach(function ([label, contentDocument, options]) {
-          it("should report a server abort when the frame document " + label, async function () {
-            const $target = createTarget({
-              contentWindow: { configurable: true, value: null },
-              contentDocument: $.extend({ configurable: true }, contentDocument),
-            });
-            const $form = createIframeForm("ajax/iframe-text.html");
-
-            const result = await submitThroughIframe(
-              $form,
-              $.extend({ iframeTarget: $target, dataType: "text" }, options)
-            );
-
-            assert.deepEqual(result.error.slice(1, 3), ["aborted", "server abort"]);
-            assert.strictEqual(result.xhr.state(), "rejected");
-          });
-        });
-
-        it("should report an error when IE8 denies access to the response body", async function () {
-          const $target = createTarget({
-            contentWindow: {
-              configurable: true,
-              get: function () {
-                const frameDocument = realContentWindow.call(this).document;
-                return {
-                  document: new Proxy(frameDocument, {
-                    get: (target, name) => (name === "body" ? denied() : target[name]),
-                  }),
-                };
-              },
-            },
-          });
+        it("should report a server abort when the frame document is missing", async function () {
+          const $target = $('<iframe name="unreadable-frame"></iframe>').appendTo("#main");
+          Object.defineProperty($target[0], "contentDocument", { configurable: true, value: null });
           const $form = createIframeForm("ajax/iframe-text.html");
 
           const result = await submitThroughIframe($form, {
@@ -1049,24 +953,27 @@ describe("form", function () {
             dataType: "text",
           });
 
-          assert.strictEqual(result.error[1], "error");
-          assert.strictEqual(result.error[2].message, "Access is denied");
-          assert.deepEqual(result.events, ["error", "complete"]);
+          assert.deepEqual(result.error.slice(1, 3), ["aborted", "server abort"]);
+          assert.strictEqual(result.xhr.state(), "rejected");
         });
 
         it("should report the read error, not the statusText, when an error status fails to read", async function () {
-          const $target = createTarget({
-            contentWindow: {
-              configurable: true,
-              get: function () {
-                const frameDocument = realContentWindow.call(this).document;
-                return {
-                  document: new Proxy(frameDocument, {
-                    get: (target, name) =>
-                      name === "getElementsByTagName" ? denied() : target[name],
-                  }),
-                };
-              },
+          const $target = $('<iframe name="unreadable-error-frame"></iframe>').appendTo("#main");
+          const readDocument = Object.getOwnPropertyDescriptor(
+            HTMLIFrameElement.prototype,
+            "contentDocument"
+          ).get;
+          Object.defineProperty($target[0], "contentDocument", {
+            configurable: true,
+            get: function () {
+              return new Proxy(readDocument.call(this), {
+                get: function (target, name) {
+                  if (name === "getElementsByTagName") {
+                    throw new Error("Access is denied");
+                  }
+                  return target[name];
+                },
+              });
             },
           });
           const $form = createIframeForm("ajax/iframe-error.html");
@@ -1079,80 +986,6 @@ describe("form", function () {
           assert.strictEqual(result.error[0].status, 500);
           assert.strictEqual(result.error[1], "error");
           assert.strictEqual(result.error[2].message, "Access is denied");
-        });
-
-        it("should keep polling while IE reports an uninitialized document", async function () {
-          let polls = 0;
-          let events;
-          const $target = createTarget();
-          events = ieEvents(() => $target[0], 100);
-          Object.defineProperties(
-            $target[0],
-            $.extend(events.properties, {
-              contentWindow: {
-                configurable: true,
-                get: function () {
-                  polls++;
-                  return polls <= 2
-                    ? { document: { readyState: "uninitialized" } }
-                    : realContentWindow.call(this);
-                },
-              },
-            })
-          );
-          const $form = createIframeForm("ajax/iframe-text.html");
-
-          const result = await submitThroughIframe($form, {
-            iframeTarget: $target,
-            dataType: "text",
-          });
-
-          assert.ok(polls > 4, "polled again after uninitialized");
-          assert.strictEqual(result.success[0].trim(), "iframe response");
-          assert.deepEqual(events.detached, ["onload"]);
-        });
-
-        it("should ignore the IE onload for the initial blank document", async function () {
-          const $target = createTarget();
-          const events = ieEvents(() => $target[0]);
-          Object.defineProperties($target[0], events.properties);
-          const $form = createIframeForm("ajax/iframe-text.html");
-
-          const result = await submitThroughIframe($form, {
-            iframeTarget: $target,
-            dataType: "text",
-          });
-
-          assert.deepEqual(result.events, ["success", "complete"]);
-          assert.strictEqual(result.success[0].trim(), "iframe response");
-          assert.deepEqual(events.detached, ["onload"]);
-        });
-
-        it("should requeue Opera's empty DOM until its retries run out", async function () {
-          const $target = createTarget();
-          const $form = createIframeForm("ajax/iframe-empty.html");
-          const successes = [];
-          vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-          window.opera = {};
-
-          try {
-            $form.ajaxSubmit({
-              iframe: true,
-              iframeTarget: $target,
-              forceSync: true,
-              dataType: "text",
-              success: (data) => successes.push(data),
-            });
-            await new Promise((resolve) => $target.one("load", resolve));
-            const beforeRetries = successes.length;
-            vi.advanceTimersByTime(250 * 50);
-
-            assert.strictEqual(beforeRetries, 0);
-            assert.deepEqual(successes, [""]);
-          } finally {
-            vi.useRealTimers();
-            delete window.opera;
-          }
         });
       });
 

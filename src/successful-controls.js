@@ -55,14 +55,6 @@ function selectValue(el) {
     if (op.selected && !isDisabled(op)) {
       var v = op.value;
 
-      if (!v) {
-        // extra pain for IE...
-        v =
-          op.attributes && op.attributes.value && !op.attributes.value.specified
-            ? op.text
-            : op.value;
-      }
-
       if (one) {
         return v;
       }
@@ -246,8 +238,8 @@ export function createSuccessfulControls(feature) {
       els = ownedBy(els, owner);
     }
 
-    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
-    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
+    // outside fields are already included in form.elements
+    if (formId && semantic) {
       els = els.concat(outsideControls(formId, els, owner));
     }
 

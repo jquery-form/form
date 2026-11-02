@@ -255,20 +255,6 @@ describe("form", function () {
       assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
     });
 
-    it("should read form.elements in browsers without DOM prototype accessors", function () {
-      const $form = $('<form><input name="a" value="1"></form>');
-      const HTMLFormElement = window.HTMLFormElement;
-      window.HTMLFormElement = undefined;
-
-      try {
-        const formData = $form.formToArray();
-
-        assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
-      } finally {
-        window.HTMLFormElement = HTMLFormElement;
-      }
-    });
-
     describe("selection and subject", function () {
       it("should leave elements untouched and not call filtering when the selection is empty", function () {
         const elements = ["kept"];
@@ -418,23 +404,6 @@ describe("form", function () {
           { name: "b", value: "2", type: "text", required: false },
         ]);
         assert.deepEqual(empty, []);
-      });
-
-      it("should serialize only a control named elements in browsers without DOM prototype accessors", function () {
-        const $form = $(
-          '<form><input name="a" value="1"><input name="elements" value="e"><input name="b" value="2"></form>'
-        );
-        const HTMLFormElement = window.HTMLFormElement;
-        window.HTMLFormElement = undefined;
-        let names;
-
-        try {
-          names = $form.formToArray().map((field) => field.name);
-        } finally {
-          window.HTMLFormElement = HTMLFormElement;
-        }
-
-        assert.deepEqual(names, ["elements"]);
       });
 
       it("should not call filtering when the form has no candidate elements", function () {
@@ -1301,18 +1270,6 @@ describe("form", function () {
       const value = $.fieldValue(select, false);
 
       assert.strictEqual(value, null);
-    });
-
-    it("should use option text when an empty value attribute is unspecified", function () {
-      const select = $('<select name="choice"><option value="">Label</option></select>')[0];
-      Object.defineProperty(select.options[0], "attributes", {
-        configurable: true,
-        value: { value: { specified: false } },
-      });
-
-      const value = $.fieldValue(select);
-
-      assert.strictEqual(value, "Label");
     });
 
     it("should omit unsuccessful controls by default", function () {

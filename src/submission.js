@@ -29,10 +29,6 @@ export function createSubmission(feature, forms, serialization) {
 
     // clean url (don't include hash value); an action that is only a fragment means this page
     url = url.split("#")[0] || window.location.href.split("#")[0];
-    // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
-    // Instead of using javascript:false always, let's only apply it for IE.
-    var isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
-    var iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
 
     var merged = $.extend(
       true,
@@ -40,7 +36,7 @@ export function createSubmission(feature, forms, serialization) {
         url: url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
-        iframeSrc: iframeSrc,
+        iframeSrc: "about:blank",
       },
       options
     );

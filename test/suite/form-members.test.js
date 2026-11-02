@@ -27,21 +27,6 @@ describe("form members", function () {
 
       assert.strictEqual(elements, fieldset.elements);
     });
-
-    it("should read the plain property when no prototype has the member", function () {
-      const form = $('<form><input name="elements"></form>')[0];
-      const HTMLFormElement = window.HTMLFormElement;
-      window.HTMLFormElement = undefined;
-      let elements;
-
-      try {
-        elements = formMember(form, "elements");
-      } finally {
-        window.HTMLFormElement = HTMLFormElement;
-      }
-
-      assert.strictEqual(elements, form.querySelector("input"));
-    });
   });
 
   describe("callFormMethod", function () {
@@ -59,21 +44,6 @@ describe("form members", function () {
       const id = callFormMethod(form, "getAttribute", "id");
 
       assert.strictEqual(id, "members");
-    });
-
-    it("should call the method of an unshadowed form when no prototype has it", function () {
-      const form = $('<form><input name="checkValidity" required></form>')[0];
-      const HTMLFormElement = window.HTMLFormElement;
-      window.HTMLFormElement = undefined;
-      let valid;
-
-      try {
-        valid = callFormMethod(form, "checkValidity");
-      } finally {
-        window.HTMLFormElement = HTMLFormElement;
-      }
-
-      assert.strictEqual(valid, false);
     });
   });
 

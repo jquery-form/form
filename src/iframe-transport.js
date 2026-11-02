@@ -77,13 +77,6 @@ export function createIframeTransport(forms) {
   function frameHooks(s, $io) {
     return {
       stop: function () {
-        try {
-          // #214, #257
-          if ($io[0].contentWindow.document.execCommand) {
-            $io[0].contentWindow.document.execCommand("Stop");
-          }
-        } catch (ignore) {}
-
         $io.attr("src", s.iframeSrc); // abort op in progress
       },
       release: function () {
@@ -95,22 +88,6 @@ export function createIframeTransport(forms) {
         }
       },
     };
-  }
-
-  function listen(io, cb) {
-    if (io.attachEvent) {
-      io.attachEvent("onload", cb);
-    } else {
-      io.addEventListener("load", cb, false);
-    }
-  }
-
-  function unlisten(io, cb) {
-    if (io.detachEvent) {
-      io.detachEvent("onload", cb);
-    } else {
-      io.removeEventListener("load", cb, false);
-    }
   }
 
   // private function for handling file uploads (hat tip to YAHOO!)
@@ -130,7 +107,6 @@ export function createIframeTransport(forms) {
     var $io = frame.$io,
       io = $io[0];
     var life = createLifecycle(s, frameHooks(s, $io));
-    var domCheckCount = 50;
 
     if (!life.start()) {
       return life.deferred;
@@ -142,12 +118,7 @@ export function createIframeTransport(forms) {
     // look for server aborts
     function checkState() {
       try {
-        var state = getDoc(io).readyState;
-
-        log("state = " + state);
-        if (state && state.toLowerCase() === "uninitialized") {
-          setTimeout(checkState, 50);
-        }
+        log("state = " + getDoc(io).readyState);
       } catch (e) {
         log("Server abort: ", e, " (", e.name, ")");
         cb(SERVER_ABORT);
@@ -188,7 +159,7 @@ export function createIframeTransport(forms) {
           return;
         }
 
-        listen(io, cb);
+        io.addEventListener("load", cb, false);
         setTimeout(checkState, 15);
         submitForm(form);
       } finally {
@@ -196,18 +167,6 @@ export function createIframeTransport(forms) {
         restoreAttributes(form, saved);
         $(extraInputs).remove();
       }
-    }
-
-    // Reads the next document by Opera's rules: false once the retries are used up.
-    function retry() {
-      if (--domCheckCount) {
-        log("requeing onLoad callback, DOM not available");
-        setTimeout(cb, 250);
-
-        return true;
-      }
-
-      return false;
     }
 
     function cb(e) {
@@ -237,13 +196,8 @@ export function createIframeTransport(forms) {
         return;
       }
 
-      unlisten(io, cb);
-
-      var result = readResponse(doc, life.xhr, s, retry);
-
-      if (result) {
-        life.settle(result);
-      }
+      io.removeEventListener("load", cb, false);
+      life.settle(readResponse(doc, life.xhr, s));
     }
 
     // An exception while posting settles the upload with "error" and the exception.

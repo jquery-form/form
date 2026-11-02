@@ -40,20 +40,6 @@ describe("form", function () {
       assert.strictEqual(logged.length, 1);
     });
 
-    it("should fall back to opera.postError without console.log", function () {
-      const posted = [];
-
-      logWithDebug({ console: {}, opera: { postError: (text) => posted.push(text) } });
-
-      assert.strictEqual(posted.length, 1);
-    });
-
-    it("should stay silent without any logging target", function () {
-      const run = () => logWithDebug({ console: undefined, opera: {} });
-
-      assert.doesNotThrow(run);
-    });
-
     it("should prefix the message and join its parts without a separator", function () {
       const logged = [];
       const consoleLog = console.log;
@@ -121,18 +107,6 @@ describe("form", function () {
       const old = versions.map(beforeJQuery35);
 
       assert.deepEqual(old, [true, true, true, false, false, false, false]);
-    });
-
-    it("should not throw when console.warn is missing", function () {
-      const warn = console.warn;
-
-      const warnings = recordDeprecations(true, function () {
-        console.warn = undefined;
-        deprecate("test-missing-warn", "a message");
-        console.warn = warn;
-      });
-
-      assert.deepEqual(warnings, []);
     });
 
     it("should prefix a deprecation warning with the plugin name", function () {

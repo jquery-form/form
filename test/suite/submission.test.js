@@ -6,7 +6,6 @@ import {
   submitAndSettle,
   captureAjaxOptions,
   countHtmlParsed,
-  withUserAgent,
   withDocumentUrl,
   withAjaxStub,
   withAjaxSettings,
@@ -807,28 +806,14 @@ describe("form", function () {
         assert.strictEqual(settings.type, $.ajaxSettings.type);
       });
 
-      [
-        ["an empty user agent", ""],
-        ["IE on a non-HTTPS page", "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0)"],
-      ].forEach(function ([label, userAgent]) {
-        it("should use about:blank as the iframe source for " + label, function () {
-          const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
-
-          const settings = withUserAgent(userAgent, () => captureAjaxOptions($form, {}));
-
-          assert.strictEqual(settings.iframeSrc, "about:blank");
-        });
-      });
-
-      it("should use javascript:false as the iframe source for IE on an HTTPS page", function () {
+      it("should use about:blank as the iframe source on an HTTPS page", function () {
         const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
-        const userAgent = "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0)";
 
         const settings = withDocumentUrl("https://example.test/form", () =>
-          withUserAgent(userAgent, () => captureAjaxOptions($form, {}))
+          captureAjaxOptions($form, {})
         );
 
-        assert.strictEqual(settings.iframeSrc, "javascript:false");
+        assert.strictEqual(settings.iframeSrc, "about:blank");
       });
     });
 

@@ -409,7 +409,6 @@ describe("form", function () {
 
               progressListener({ lengthComputable: true, loaded: 25, total: 40 });
               progressListener({ lengthComputable: false, loaded: 7, total: 0 });
-              progressListener({ lengthComputable: true, position: 3, total: 4 });
 
               assert.deepEqual(
                 progress.map(function (entry) {
@@ -418,7 +417,6 @@ describe("form", function () {
                 [
                   [25, 40, 63],
                   [7, 0, 0],
-                  [3, 4, 75],
                 ]
               );
               assert.strictEqual(progress[0].event.loaded, 25, "passes the native event");

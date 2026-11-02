@@ -14,8 +14,6 @@ export function deepSerialize(extraData, traditional) {
   var i, part;
 
   for (i = 0; i < len; i++) {
-    // #252; undo param space replacement
-    serialized[i] = serialized[i].replace(/\+/g, " ");
     part = serialized[i].split("=");
     // #278; use array instead of object storage, favoring array serializations
     result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
@@ -70,8 +68,7 @@ export function sendFormData(submission) {
           "progress",
           function (event) {
             var percent = 0;
-            // event.position is the deprecated name, read only when loaded is missing
-            var position = event.loaded !== undefined ? event.loaded : event.position;
+            var position = event.loaded;
             var total = event.total;
 
             if (event.lengthComputable) {
