@@ -210,7 +210,7 @@ describe("when the packed package is required from CommonJS", () => {
 
       // Assert: jQuery 4 throws when required without a global window instead of returning a
       // factory, so require('jquery')(root) never runs (a jQuery limit, not the plugin's).
-      if (version === "3.7.1") {
+      if (version.startsWith("3.")) {
         assert.deepEqual(result, expected(version, "jQuery"));
       } else {
         assert.match(result.thrown, /^jQuery requires a window with a document$/);
