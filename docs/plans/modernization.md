@@ -682,7 +682,7 @@ Serialization and spec gaps (N1-N11). Every "match native" item deletes its clas
 Field values and selector options (F1, F3):
 
 - `formToArray`, `formSerialize`, `fieldSerialize` and `ajaxSubmit` use the internal successful-controls module. `$.fieldValue` and `$.fn.fieldValue` stay public readers with the same results, but replacing `$.fieldValue` no longer changes what is sent. The extension point is jQuery `valHooks`. The guide has a `valHooks` example. 4.6.0 warns about the override under `debug` (F2).
-- Selector options never parse HTML. A string `target` goes through `jQuery.find(target)`, a string `iframeTarget` through `jQuery.find(iframeTarget, ownerDocument)`, and a string `includeHidden` through `jQuery.filter(includeHidden, [el]).length`. Elements and jQuery objects pass through. Positional pseudos in `includeHidden` test the element alone. This fixes S-09, S-10 and the CodeQL alert 7 pattern (finding 11), and the trusted-options note for finding 11 narrows to `url`, `action` and `iframeSrc`.
+- Selector options never parse HTML. A string `target` goes through `jQuery.find(target)`, a string `iframeTarget` through `jQuery.find(iframeTarget, ownerDocument)`, and a string `includeHidden` through `jQuery.filter(includeHidden, [el]).length`. Elements and jQuery objects pass through. Positional pseudos in `includeHidden` test the element alone. This removes the HTML parsing of selector options that `security-review.md` finding 11 describes, including the `iframeTarget` lookup behind CodeQL alert 7, and the trusted-options note for finding 11 narrows to `url`, `action` and `iframeSrc`.
 
 Docs examples and FAQ (added 2026-11-10, after the 4.5.0 release):
 
