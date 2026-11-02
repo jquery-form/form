@@ -23,7 +23,7 @@ export function deepSerialize(extraData, traditional) {
 }
 
 /**
- * Posts the fields and extraData as FormData, for files with the File API.
+ * Posts the fields and extraData as FormData, for files or a multipart form.
  * XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
  */
 export function sendFormData(submission) {

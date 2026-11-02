@@ -2579,7 +2579,7 @@ describe("form", function () {
         });
       });
 
-      it("should log once before the transport and once for a parsed target response when debug is on", function () {
+      it("should log nothing before the transport and once for a parsed target response when debug is on", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         $.fn.ajaxSubmit.debug = true;
         let settings;
@@ -2594,7 +2594,7 @@ describe("form", function () {
           $.fn.ajaxSubmit.debug = false;
         }
 
-        assert.deepEqual(counts, [1, 1]);
+        assert.deepEqual(counts, [0, 1]);
       });
     });
   });

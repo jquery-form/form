@@ -15,7 +15,7 @@ import jQuery from "jquery";
 import { log } from "./diagnostics.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
-// for file uploads without the File API or when the iframe option asks for it.
+// when the iframe option asks for it.
 var $ = jQuery;
 
 /**

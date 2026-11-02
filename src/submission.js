@@ -1,19 +1,18 @@
-import { deprecate, log } from "./diagnostics.js";
 import { keepContext, selectorOption } from "./options.js";
 import { urlencode, wellFormedData } from "./successful-controls.js";
 import { assertRealParent } from "./form-members.js";
 import jQuery from "jquery";
+import { log } from "./diagnostics.js";
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
 // { form, $form, fields, controls, options, method, traditional }. `options` is the object the
 // callbacks and events receive; later steps change it in place.
 
 /**
- * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and string properties (attribute, property), and
- * `serialization` collects the form's fields and controls.
+ * The submission steps. `forms` reads form attributes and string properties (attribute,
+ * property), and `serialization` collects the form's fields and controls.
  */
-export function createSubmission(feature, forms, serialization) {
+export function createSubmission(forms, serialization) {
   var $ = jQuery;
 
   function refuse(message) {
@@ -337,8 +336,8 @@ export function createSubmission(feature, forms, serialization) {
   }
 
   /**
-   * The transport for a submission: "iframe" for files without the File API or when forced,
-   * "formdata" for files with it, "ajax" otherwise.
+   * The transport for a submission: "iframe" only when the iframe option asks for it, "formdata"
+   * for files or a multipart form, "ajax" otherwise.
    */
   function chooseTransport(submission) {
     var $set = submission.$form;
@@ -357,25 +356,11 @@ export function createSubmission(feature, forms, serialization) {
     var mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
     var multipart =
       mp.test(forms.attribute($set[0], "enctype")) || mp.test(forms.attribute($set[0], "encoding"));
-    var fileAPI = feature.fileapi && feature.formdata;
+    var transport = hasFileInputs || multipart ? "formdata" : "ajax";
 
-    log("fileAPI :" + fileAPI);
-
-    var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
-
-    var transport = (hasFileInputs || multipart) && fileAPI ? "formdata" : "ajax";
-
-    // options.iframe allows user to force iframe mode
-    // 06-NOV-09: now defaulting to iframe mode if file input is detected
-    if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
+    // a truthy iframe option asks for the iframe transport
+    if (options.iframe) {
       transport = "iframe";
-    }
-
-    if (transport === "iframe" && !options.iframe) {
-      deprecate(
-        "iframe",
-        "choosing the iframe transport automatically without FormData is deprecated, set iframe: true"
-      );
     }
 
     if (transport !== "ajax" && options.requestFormat === "json") {

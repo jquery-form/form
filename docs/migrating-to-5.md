@@ -16,6 +16,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [`clearInputs` is removed](#clearinputs-is-removed)                                                                                                 | Code that calls `clearInputs`                                                          | "clearInputs is deprecated", under debug                                     |
 | [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                              | "closeKeepAlive works around a Safari 3/4 bug", under debug                  |
 | [`delegation: true` throws](#delegation-true-throws)                                                                                                | Code that passes `delegation: true` (or another non-string truthy value) to `ajaxForm` | "delegation: true binds every form on the page", always (even without debug) |
+| [The iframe transport is used only with `iframe: true`](#the-iframe-transport-is-used-only-with-iframe-true)                                        | Uploads in browsers without `FormData` or the File API                                 | "choosing the iframe transport automatically", under debug                   |
 
 Entries are added as each 5.0 change lands.
 
@@ -200,6 +201,28 @@ After (5.0), pass the selector. Any selection works, since the selector decides 
 ```javascript
 $(document).ajaxForm({ delegation: "form.ajax" });
 ```
+
+### The iframe transport is used only with `iframe: true`
+
+**What changed.** `ajaxSubmit` (and `ajaxForm`) post through the hidden iframe only when you pass a truthy `iframe` option, such as `iframe: true`. A form with a selected file or a `multipart/form-data` enctype is otherwise always sent with `FormData` over `XMLHttpRequest`. In 4.x the plugin checked at load whether the browser had the File API and `FormData`, and chose the iframe on its own when it did not. That check is gone. `iframe: false` is the default and changes nothing.
+
+**Why.** Every browser 5.0 supports has the File API and `FormData`, so the automatic choice could no longer happen.
+
+**Are you affected?** Only if your uploads ran in a browser without `FormData` (such as Internet Explorer 9 or earlier), which 5.0 does not support. In a supported browser, 4.x never chose the iframe automatically. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs `choosing the iframe transport automatically without FormData is deprecated, set iframe: true` when it does. If you need the iframe, pass `iframe: true`.
+
+Before (4.x), in a browser without `FormData`, a file upload went through the iframe:
+
+```javascript
+$("#uploadForm").ajaxSubmit();
+```
+
+After (5.0), the same call sends `FormData`. To keep the iframe:
+
+```javascript
+$("#uploadForm").ajaxSubmit({ iframe: true });
+```
+
+The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `iframe: true`, comment on https://github.com/jquery-form/form/issues/629 with your use case.
 
 ## What your server receives
 

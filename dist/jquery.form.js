@@ -738,9 +738,9 @@ function urlencodedFields(fields) {
 }
 
 /**
- * The serialization steps. `feature` holds what the entry detected at load (fileapi).
+ * The serialization steps.
  */
-function createSuccessfulControls(feature) {
+function createSuccessfulControls() {
   var $ = jQuery;
 
   // #386; inputs that name the form in their form attribute, other than the candidates found.
@@ -809,7 +809,7 @@ function createSuccessfulControls(feature) {
       });
     }
 
-    if (feature.fileapi && el.type === "file") {
+    if (el.type === "file") {
       var files = el.files;
 
       // #180: an empty field when no file is selected
@@ -931,7 +931,7 @@ function deepSerialize(extraData, traditional) {
 }
 
 /**
- * Posts the fields and extraData as FormData, for files with the File API.
+ * Posts the fields and extraData as FormData, for files or a multipart form.
  * XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
  */
 function sendFormData(submission) {
@@ -1513,7 +1513,7 @@ function createLifecycle(s, frame) {
 }
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
-// for file uploads without the File API or when the iframe option asks for it.
+// when the iframe option asks for it.
 var $ = jQuery;
 
 /**
@@ -1732,11 +1732,10 @@ function createIframeTransport(forms) {
 // callbacks and events receive; later steps change it in place.
 
 /**
- * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and string properties (attribute, property), and
- * `serialization` collects the form's fields and controls.
+ * The submission steps. `forms` reads form attributes and string properties (attribute,
+ * property), and `serialization` collects the form's fields and controls.
  */
-function createSubmission(feature, forms, serialization) {
+function createSubmission(forms, serialization) {
   var $ = jQuery;
 
   function refuse(message) {
@@ -2060,8 +2059,8 @@ function createSubmission(feature, forms, serialization) {
   }
 
   /**
-   * The transport for a submission: "iframe" for files without the File API or when forced,
-   * "formdata" for files with it, "ajax" otherwise.
+   * The transport for a submission: "iframe" only when the iframe option asks for it, "formdata"
+   * for files or a multipart form, "ajax" otherwise.
    */
   function chooseTransport(submission) {
     var $set = submission.$form;
@@ -2080,25 +2079,11 @@ function createSubmission(feature, forms, serialization) {
     var mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
     var multipart =
       mp.test(forms.attribute($set[0], "enctype")) || mp.test(forms.attribute($set[0], "encoding"));
-    var fileAPI = feature.fileapi && feature.formdata;
+    var transport = hasFileInputs || multipart ? "formdata" : "ajax";
 
-    log("fileAPI :" + fileAPI);
-
-    var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
-
-    var transport = (hasFileInputs || multipart) && fileAPI ? "formdata" : "ajax";
-
-    // options.iframe allows user to force iframe mode
-    // 06-NOV-09: now defaulting to iframe mode if file input is detected
-    if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
+    // a truthy iframe option asks for the iframe transport
+    if (options.iframe) {
       transport = "iframe";
-    }
-
-    if (transport === "iframe" && !options.iframe) {
-      deprecate(
-        "iframe",
-        "choosing the iframe transport automatically without FormData is deprecated, set iframe: true"
-      );
     }
 
     if (transport !== "ajax" && options.requestFormat === "json") {
@@ -2152,14 +2137,6 @@ function createSubmission(feature, forms, serialization) {
 		at the appropriate time.
 	*/
 
-  /**
-   * Feature detection
-   */
-  var feature = {};
-
-  feature.fileapi = $('<input type="file">').get(0).files !== undefined;
-  feature.formdata = typeof window.FormData !== "undefined";
-
   // A form property when it is a string, otherwise the attribute. The property is read plainly on
   // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
@@ -2169,8 +2146,8 @@ function createSubmission(feature, forms, serialization) {
   }
 
   var forms = { attribute: formAttribute, property: formProperty };
-  var serialization = createSuccessfulControls(feature);
-  var steps = createSubmission(feature, forms, serialization);
+  var serialization = createSuccessfulControls();
+  var steps = createSubmission(forms, serialization);
   var transports = {
     iframe: createIframeTransport(forms),
     formdata: sendFormData,

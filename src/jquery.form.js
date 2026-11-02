@@ -75,14 +75,6 @@ import { submitOptions } from "./options.js";
 		at the appropriate time.
 	*/
 
-  /**
-   * Feature detection
-   */
-  var feature = {};
-
-  feature.fileapi = $('<input type="file">').get(0).files !== undefined;
-  feature.formdata = typeof window.FormData !== "undefined";
-
   // A form property when it is a string, otherwise the attribute. The property is read plainly on
   // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
@@ -92,8 +84,8 @@ import { submitOptions } from "./options.js";
   }
 
   var forms = { attribute: formAttribute, property: formProperty };
-  var serialization = createSuccessfulControls(feature);
-  var steps = createSubmission(feature, forms, serialization);
+  var serialization = createSuccessfulControls();
+  var steps = createSubmission(forms, serialization);
   var transports = {
     iframe: createIframeTransport(forms),
     formdata: sendFormData,

@@ -187,9 +187,9 @@ export function urlencodedFields(fields) {
 }
 
 /**
- * The serialization steps. `feature` holds what the entry detected at load (fileapi).
+ * The serialization steps.
  */
-export function createSuccessfulControls(feature) {
+export function createSuccessfulControls() {
   var $ = jQuery;
 
   // #386; inputs that name the form in their form attribute, other than the candidates found.
@@ -258,7 +258,7 @@ export function createSuccessfulControls(feature) {
       });
     }
 
-    if (feature.fileapi && el.type === "file") {
+    if (el.type === "file") {
       var files = el.files;
 
       // #180: an empty field when no file is selected
