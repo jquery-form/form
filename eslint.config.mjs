@@ -78,7 +78,16 @@ const sourceRules = {
 };
 
 export default [
-  { ignores: [".jquery/**", "dist/**", "coverage/**", "test/ajax/**"] },
+  {
+    ignores: [
+      ".jquery/**",
+      "dist/**",
+      "coverage/**",
+      "test/ajax/**",
+      "test-results/**",
+      "playwright-report/**",
+    ],
+  },
   js.configs.recommended,
   {
     files: ["src/**/*.js"],
@@ -97,8 +106,13 @@ export default [
     },
   },
   {
-    files: ["test/shared/**/*.js"],
+    files: ["test/shared/**/*.js", "test/e2e/harness.js"],
     languageOptions: { sourceType: "module", globals: globals.browser },
+  },
+  {
+    // Node files whose page.evaluate callbacks run in the browser.
+    files: ["test/e2e/**/*.mjs"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
     files: ["test/setup.js", "test/surfaces/browser.test.js"],

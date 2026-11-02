@@ -231,4 +231,6 @@ $RECYCLE.BIN/
 ### Build and test output ###
 coverage/
 .vitest/
+test-results/
+playwright-report/
 .jquery/

@@ -10,3 +10,5 @@ package-lock.json
 prototype/
 test/ajax/
 test/img/
+playwright-report/
+test-results/
