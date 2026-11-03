@@ -98,15 +98,6 @@ const E2E_DIFFERENCES = [
   },
 ];
 
-E2E_DIFFERENCES.push({
-  id: "IFRAME-DIRNAME",
-  description: "an iframe upload posts the form itself, so it sends dirname fields as native does",
-  normalize: (pair, ctx) =>
-    ctx.transport.iframe
-      ? { plugin: pair.plugin.filter((e) => !/^dir-\d+$/.test(e[0])), native: pair.native }
-      : pair,
-});
-
 window.e2e = {
   // A seeded form from the serialization oracle.
   generate(seed, attributes) {

@@ -327,14 +327,6 @@ export const KNOWN_DIFFERENCES = [
     }),
   },
   {
-    id: "DIRNAME",
-    description: "FormData adds a dirname field for text inputs and textareas; the plugin does not",
-    normalize: (pair) => ({
-      plugin: pair.plugin,
-      native: pair.native.filter((e) => !/^dir-\d+$/.test(e[0])),
-    }),
-  },
-  {
     id: "SUBMIT-LABEL",
     description:
       'FormData sends the default label of an input submitter without a value; the plugin sends ""',

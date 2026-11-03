@@ -549,6 +549,33 @@ function isSubmittable(el) {
   return rSubmittable.test(tagName(el));
 }
 
+// The input types that, with textarea, send a dirname field (the auto-directionality
+// form-associated elements).
+const rDirnameTypes = /^(?:hidden|text|search|tel|url|email|password|submit|reset|button)$/;
+
+// The dirname field of a control, or null: dirname=ltr or dirname=rtl, from its directionality.
+function dirnameField(el) {
+  const tag = tagName(el);
+  const dirname = el.getAttribute("dirname");
+  const applies = tag === "textarea" || (tag === "input" && rDirnameTypes.test(el.type));
+
+  if (!dirname || !applies) {
+    return null;
+  }
+
+  let rtl;
+
+  try {
+    rtl = el.matches(":dir(rtl)");
+  } catch (e) {
+    // a browser without :dir() (before Chrome 120 and Safari 16.4); a detached control has no
+    // computed direction and counts as ltr
+    rtl = getComputedStyle(el).direction === "rtl";
+  }
+
+  return { name: dirname, value: rtl ? "rtl" : "ltr" };
+}
+
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
@@ -809,8 +836,15 @@ function createSuccessfulControls() {
     const own = fieldsOf(el);
 
     if (own) {
+      const dir = dirnameField(el);
+
       collected.controls.push(el);
       collected.fields.push.apply(collected.fields, own);
+
+      // right after the control's own field, as a native submission sends it
+      if (dir) {
+        collected.fields.push(dir);
+      }
     }
   }
 

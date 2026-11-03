@@ -27,6 +27,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [`semantic` is ignored](#semantic-is-ignored)                                                                                                       | Code that passes `semantic: true`, or a first argument to `formToArray` or `formSerialize`             | None                                                                             |
 | [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)                                             | Servers that read the `name=value` of an image button to tell which button was clicked                 | None                                                                             |
 | [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y)                                     | Forms with an unnamed image button, and servers that have a field named `x` or `y`                     | None                                                                             |
+| [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                                                         | Forms with a `dirname` attribute on an input or a textarea                                             | None                                                                             |
 
 Entries are added as each 5.0 change lands.
 
@@ -545,14 +546,35 @@ After (5.0):
 a=1&x=3&y=4
 ```
 
+### Controls with `dirname` send their direction
+
+**What changed.** An `input` or `textarea` with a non-empty `dirname` attribute sends an extra field, named by that attribute, with the value `ltr` or `rtl`, right after its own field, as a native submission does. The direction comes from `el.matches(":dir(rtl)")`, or from `getComputedStyle(el).direction` in a browser without `:dir()` (before Chrome and Edge 120 and Safari 16.4), where a control outside the document counts as `ltr`. As in the HTML spec, this applies to a `textarea` and to an `input` of type `text`, `search`, `tel`, `url`, `email`, `password` or `hidden`, and to a clicked `submit` input; only a control that is itself sent adds the field. 4.x ignored `dirname`. `fieldSerialize` and `fieldValue` read single controls and do not add it.
+
+**Why.** A server that asked for the direction with `dirname` got it from a native submission but not from the plugin.
+
+**Are you affected?** Only if a form has a `dirname` attribute. Your server now receives the field; if the form also has a control with that name, it receives both. 4.x has no warning for this.
+
+Before (4.x), with `<input name="comment" value="hi" dirname="comment.dir" />`:
+
+```text
+comment=hi
+```
+
+After (5.0):
+
+```text
+comment=hi&comment.dir=ltr
+```
+
 ## What your server receives
 
 These changes alter the fields the plugin sends. The table shows the request body for each entry's example form, urlencoded; a multipart body carries the same fields in the same order. Each entry above has the details.
 
-| Change                                                                                                          | Example                                                    | 4.x body                         | 5.0 body                  |
-| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | ------------------------- |
-| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                 | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map.x=3&map.y=4&b=2` |
-| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)     | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                     |
-| [`semantic` is ignored](#semantic-is-ignored)                                                                   | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`               |
-| [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)         | the image button `map`, value `go`, clicked at 3,4         | `map=go&map.x=3&map.y=4`         | `map.x=3&map.y=4`         |
-| [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y) | an unnamed image button after `a`, clicked at 3,4          | `a=1`                            | `a=1&x=3&y=4`             |
+| Change                                                                                                          | Example                                                    | 4.x body                         | 5.0 body                     |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | ---------------------------- |
+| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                 | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map.x=3&map.y=4&b=2`    |
+| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)     | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                        |
+| [`semantic` is ignored](#semantic-is-ignored)                                                                   | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`                  |
+| [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)         | the image button `map`, value `go`, clicked at 3,4         | `map=go&map.x=3&map.y=4`         | `map.x=3&map.y=4`            |
+| [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y) | an unnamed image button after `a`, clicked at 3,4          | `a=1`                            | `a=1&x=3&y=4`                |
+| [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                     | `comment` with `dirname="comment.dir"`                     | `comment=hi`                     | `comment=hi&comment.dir=ltr` |

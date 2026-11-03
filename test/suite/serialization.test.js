@@ -1065,17 +1065,105 @@ describe("form", function () {
         }
       });
 
-      it("should send the literal value of a hidden input named _charset_ and nothing for dirname", function () {
+      it("should send the literal value of a hidden input named _charset_", function () {
+        const $form = $('<form><input type="hidden" name="_charset_" value="literal"></form>');
+
+        const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs, [["_charset_", "literal"]]);
+      });
+    });
+
+    describe("dirname", function () {
+      it("should send the direction of an input and a textarea right after their own fields", function () {
         const $form = $(
-          '<form><input type="hidden" name="_charset_" value="literal"><input name="t" value="v" dirname="t.dir"></form>',
-        );
+          '<form><input name="t" value="v" dirname="t.dir"><textarea name="area" dir="rtl" dirname="area.dir">x</textarea><input name="after" value="z"></form>',
+        ).appendTo("#main");
 
         const pairs = $form.formToArray().map((field) => [field.name, field.value]);
 
         assert.deepEqual(pairs, [
-          ["_charset_", "literal"],
           ["t", "v"],
+          ["t.dir", "ltr"],
+          ["area", "x"],
+          ["area.dir", "rtl"],
+          ["after", "z"],
         ]);
+      });
+
+      it("should send the direction that dir=auto finds in the value", function () {
+        const $form = $(
+          '<form><input name="t" dir="auto" value="\u05e9\u05dc\u05d5\u05dd" dirname="t.dir"></form>',
+        ).appendTo("#main");
+
+        const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs[1], ["t.dir", "rtl"]);
+      });
+
+      it("should send the direction of a clicked submit input", function () {
+        const $form = $(
+          '<form dir="rtl"><input type="submit" name="go" value="Go" dirname="go.dir"></form>',
+        ).appendTo("#main");
+        $form[0].clk = $form.find("input")[0];
+
+        const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs, [
+          ["go", "Go"],
+          ["go.dir", "rtl"],
+        ]);
+      });
+
+      it("should not send a direction for an empty dirname, an unsent control or an element without dirname", function () {
+        const $form = $(
+          '<form><input name="empty" value="1" dirname=""><input value="unnamed" dirname="u.dir"><input name="off" value="2" disabled dirname="off.dir"><input type="checkbox" name="c" checked dirname="c.dir"><select name="s" dirname="s.dir"><option selected>o</option></select><button name="b" value="3" dirname="b.dir">B</button></form>',
+        ).appendTo("#main");
+        $form[0].clk = $form.find("button")[0];
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["empty", "c", "s", "b"]);
+      });
+
+      describe("in a browser without :dir()", function () {
+        // Makes the control's matches throw for :dir(), as a browser that does not know it does.
+        function withoutDir(el) {
+          el.matches = function (selector) {
+            if (/:dir\(/.test(selector)) {
+              throw new DOMException("unknown pseudo-class", "SyntaxError");
+            }
+            return Element.prototype.matches.call(this, selector);
+          };
+          return el;
+        }
+
+        it("should read the computed direction", function () {
+          const $form = $(
+            '<form><input name="l" value="1" dirname="l.dir"><input name="r" value="2" dir="rtl" dirname="r.dir"></form>',
+          ).appendTo("#main");
+          $form.find("input").each(function () {
+            withoutDir(this);
+          });
+
+          const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+          assert.deepEqual(pairs, [
+            ["l", "1"],
+            ["l.dir", "ltr"],
+            ["r", "2"],
+            ["r.dir", "rtl"],
+          ]);
+        });
+
+        it("should send ltr for a detached control, which has no computed direction", function () {
+          const $form = $('<form><input name="r" value="2" dir="rtl" dirname="r.dir"></form>');
+          withoutDir($form.find("input")[0]);
+
+          const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+          assert.deepEqual(pairs[1], ["r.dir", "ltr"]);
+        });
       });
     });
 
