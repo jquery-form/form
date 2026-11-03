@@ -38,7 +38,7 @@ export function sendFormData(submission) {
 
     formdata.append(
       a[i].name,
-      empty ? new File([], "", { type: "application/octet-stream" }) : a[i].value,
+      empty ? new window.File([], "", { type: "application/octet-stream" }) : a[i].value,
     );
   }
 

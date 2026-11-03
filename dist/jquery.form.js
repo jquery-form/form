@@ -573,7 +573,7 @@ function dirnameField(el) {
   } catch (e) {
     // a browser without :dir() (before Chrome 120 and Safari 16.4); a detached control has no
     // computed direction and counts as ltr
-    rtl = getComputedStyle(el).direction === "rtl";
+    rtl = window.getComputedStyle(el).direction === "rtl";
   }
 
   return { name: dirname, value: rtl ? "rtl" : "ltr" };
@@ -749,10 +749,12 @@ function createSuccessfulControls() {
   // The submittable elements below a root (a document, a shadow root or an element), in tree
   // order. Read through the root's prototype, since a control can shadow a form's or the
   // document's querySelectorAll.
-  const rootOwners = { 9: Document, 11: DocumentFragment };
+  // Interface names, read from the window on each call: the classic build may run against a
+  // window that is not the global object.
+  const rootOwners = { 9: "Document", 11: "DocumentFragment" };
 
   function submittableIn(root) {
-    const owner = rootOwners[formMember(root, "nodeType")] || Element;
+    const owner = window[rootOwners[formMember(root, "nodeType")] || "Element"];
 
     return owner.prototype.querySelectorAll.call(root, submittable);
   }
@@ -920,7 +922,7 @@ function sendFormData(submission) {
 
     formdata.append(
       a[i].name,
-      empty ? new File([], "", { type: "application/octet-stream" }) : a[i].value,
+      empty ? new window.File([], "", { type: "application/octet-stream" }) : a[i].value,
     );
   }
 
