@@ -1,7 +1,7 @@
 import {
   addCsrfField,
   addExtraInputs,
-  addSubmitterFields,
+  addSubmitterInputs,
   restoreAttributes,
   saveAttributes,
   setUploadAttributes,
@@ -13,6 +13,7 @@ import { keepContext, selectorOption } from "./options.js";
 import { createLifecycle } from "./iframe-lifecycle.js";
 import jQuery from "jquery";
 import { log } from "./diagnostics.js";
+import { submitterFields } from "./submitter.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // when the iframe option asks for it.
@@ -114,7 +115,9 @@ export function createIframeTransport(forms) {
       return life.deferred;
     }
 
-    addSubmitterFields(s, form);
+    // read now: the submitter is forgotten shortly after the click
+    const submitter = submitterFields(form);
+
     addCsrfField(s, form, method, forms);
 
     // look for server aborts
@@ -143,6 +146,7 @@ export function createIframeTransport(forms) {
       const extraInputs = [];
 
       try {
+        addSubmitterInputs(submitter, ownerDocument, extraInputs);
         addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
 
         if (!s.iframeTarget) {

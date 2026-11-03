@@ -254,27 +254,23 @@ function imageFields(sub) {
 }
 
 /**
- * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
+ * The submitter and its fields for a post that adds them itself (the iframe upload), as
+ * { el, fields: [{ name, value }] }, or null when no submitter is sent.
  */
 function submitterFields(form) {
-  const fields = {};
   const sub = submitterOf(form);
   const el = sub && sub.el;
 
   // a disabled button is not sent, also when a disabled fieldset disables it
   if (!el || isDisabled(el)) {
-    return fields;
+    return null;
   }
 
   if (el.type === "image") {
-    jQuery.each(imageFields(sub), function (i, field) {
-      fields[field.name] = field.value;
-    });
-  } else if (el.name) {
-    fields[el.name] = el.value;
+    return { el, fields: imageFields(sub) };
   }
 
-  return fields;
+  return el.name ? { el, fields: [{ name: el.name, value: el.value }] } : null;
 }
 
 /**
@@ -1026,15 +1022,42 @@ function isSameOrigin(url) {
   return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
 }
 
-/** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
-function addSubmitterFields(s, form) {
-  // add submitting element to data if we know it
-  const fields = submitterFields(form);
+/**
+ * Inserts a hidden input per submitter field right after the submitter, so the post sends them
+ * in tree order, as a native submission does. A submitter outside the form passes its form
+ * attribute on; one that is in no tree is not sent. Each input is pushed onto `added`.
+ */
+function addSubmitterInputs(submitter, ownerDocument, added) {
+  const el = submitter && submitter.el;
+  let after = el;
 
-  for (const n in fields) {
-    s.extraData = s.extraData || {};
-    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
+  if (!el || !el.parentNode) {
+    return;
   }
+
+  $$3.each(submitter.fields, function (i, field) {
+    const input = hiddenInput(ownerDocument, wellFormed(field.name), wellFormed(field.value));
+
+    if (el.hasAttribute("form")) {
+      input.setAttribute("form", el.getAttribute("form"));
+    }
+
+    // through the prototype: the parent may be the form, where a control can shadow insertBefore
+    callFormMethod(el.parentNode, "insertBefore", input, after.nextSibling);
+    added.push(input);
+    after = input;
+  });
+}
+
+// A hidden input built with DOM properties: a name is never parsed as HTML.
+function hiddenInput(ownerDocument, name, value) {
+  const input = ownerDocument.createElement("input");
+
+  input.type = "hidden";
+  input.name = name;
+  $$3(input).val(value);
+
+  return input;
 }
 
 /** Adds the page's CSRF token to s.extraData when the form is posted to the page's origin. */
@@ -1104,13 +1127,8 @@ function setUploadAttributes(form, target, method, s, forms) {
 
 /** Appends a hidden input per extraData field to the form; each input is pushed onto `added`. */
 function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
-  // Builds the input with DOM properties: a name is never parsed as HTML.
   function addHiddenInput(name, value) {
-    const input = ownerDocument.createElement("input");
-
-    input.type = "hidden";
-    input.name = name;
-    added.push($$3(input).val(value).appendTo(form)[0]);
+    added.push($$3(hiddenInput(ownerDocument, name, value)).appendTo(form)[0]);
   }
 
   if (extraData) {
@@ -1595,7 +1613,9 @@ function createIframeTransport(forms) {
       return life.deferred;
     }
 
-    addSubmitterFields(s, form);
+    // read now: the submitter is forgotten shortly after the click
+    const submitter = submitterFields(form);
+
     addCsrfField(s, form, method, forms);
 
     // look for server aborts
@@ -1624,6 +1644,7 @@ function createIframeTransport(forms) {
       const extraInputs = [];
 
       try {
+        addSubmitterInputs(submitter, ownerDocument, extraInputs);
         addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
 
         if (!s.iframeTarget) {

@@ -29,16 +29,6 @@ function describeData(data) {
   return data === undefined ? { undefined: true } : data;
 }
 
-function isDisabled(el) {
-  return el.disabled || (typeof el.matches === "function" && el.matches(":disabled"));
-}
-
-// The fields a submitter adds: its name, or name.x/name.y (x/y without a name) for an image.
-function submitterNames(el) {
-  const prefix = el.name ? el.name + "." : "";
-  return isImage(el) ? [prefix + "x", prefix + "y"] : [el.name];
-}
-
 // Differences that only show on the wire. `ctx.transport` is what the plugin sent:
 // { plugin: "urlencoded" | "multipart", native: same, iframe: boolean }.
 const E2E_DIFFERENCES = [
@@ -54,32 +44,6 @@ const E2E_DIFFERENCES = [
         plugin: pair.plugin.map((e) => (e[1] === "file" ? [e[0], "text", e[2]] : e)),
         native: pair.native,
       };
-    },
-  },
-  {
-    id: "IFRAME-SUBMITTER",
-    description: "an iframe upload appends the submitter's fields after the form's",
-    normalize: (pair, ctx) => {
-      const sub = ctx.submitter;
-      // a disabled submitter is sent by neither, so any field of it fails the comparison
-      if (!ctx.transport.iframe || !sub || (!sub.name && !isImage(sub)) || isDisabled(sub)) {
-        return pair;
-      }
-      // The extra inputs go at the end of the form, before outside controls that follow it.
-      const names = submitterNames(sub);
-      let plugin = pair.plugin;
-      names.forEach(function (n) {
-        const index = plugin.map((e) => e[0] === n).lastIndexOf(true);
-        plugin = plugin.filter((e, i) => i !== index);
-      });
-      const own = isImage(sub)
-        ? (e) => e[0] === names[0] || e[0] === names[1]
-        : (e) => e[0] === sub.name;
-      const index = isImage(sub) ? -1 : pair.native.map((e) => own(e)).lastIndexOf(true);
-      const native = isImage(sub)
-        ? pair.native.filter((e) => !own(e))
-        : pair.native.filter((e, i) => i !== index);
-      return { plugin: plugin, native: native };
     },
   },
 ];

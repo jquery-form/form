@@ -123,27 +123,23 @@ export function imageFields(sub) {
 }
 
 /**
- * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
+ * The submitter and its fields for a post that adds them itself (the iframe upload), as
+ * { el, fields: [{ name, value }] }, or null when no submitter is sent.
  */
 export function submitterFields(form) {
-  const fields = {};
   const sub = submitterOf(form);
   const el = sub && sub.el;
 
   // a disabled button is not sent, also when a disabled fieldset disables it
   if (!el || isDisabled(el)) {
-    return fields;
+    return null;
   }
 
   if (el.type === "image") {
-    jQuery.each(imageFields(sub), function (i, field) {
-      fields[field.name] = field.value;
-    });
-  } else if (el.name) {
-    fields[el.name] = el.value;
+    return { el, fields: imageFields(sub) };
   }
 
-  return fields;
+  return el.name ? { el, fields: [{ name: el.name, value: el.value }] } : null;
 }
 
 /**

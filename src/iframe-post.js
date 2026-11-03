@@ -1,7 +1,6 @@
 import { callFormMethod } from "./form-members.js";
 import { deepSerialize } from "./xhr-transport.js";
 import jQuery from "jquery";
-import { submitterFields } from "./submitter.js";
 import { wellFormed } from "./successful-controls.js";
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
@@ -29,15 +28,42 @@ function isSameOrigin(url) {
   return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
 }
 
-/** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
-export function addSubmitterFields(s, form) {
-  // add submitting element to data if we know it
-  const fields = submitterFields(form);
+/**
+ * Inserts a hidden input per submitter field right after the submitter, so the post sends them
+ * in tree order, as a native submission does. A submitter outside the form passes its form
+ * attribute on; one that is in no tree is not sent. Each input is pushed onto `added`.
+ */
+export function addSubmitterInputs(submitter, ownerDocument, added) {
+  const el = submitter && submitter.el;
+  let after = el;
 
-  for (const n in fields) {
-    s.extraData = s.extraData || {};
-    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
+  if (!el || !el.parentNode) {
+    return;
   }
+
+  $.each(submitter.fields, function (i, field) {
+    const input = hiddenInput(ownerDocument, wellFormed(field.name), wellFormed(field.value));
+
+    if (el.hasAttribute("form")) {
+      input.setAttribute("form", el.getAttribute("form"));
+    }
+
+    // through the prototype: the parent may be the form, where a control can shadow insertBefore
+    callFormMethod(el.parentNode, "insertBefore", input, after.nextSibling);
+    added.push(input);
+    after = input;
+  });
+}
+
+// A hidden input built with DOM properties: a name is never parsed as HTML.
+function hiddenInput(ownerDocument, name, value) {
+  const input = ownerDocument.createElement("input");
+
+  input.type = "hidden";
+  input.name = name;
+  $(input).val(value);
+
+  return input;
 }
 
 /** Adds the page's CSRF token to s.extraData when the form is posted to the page's origin. */
@@ -107,13 +133,8 @@ export function setUploadAttributes(form, target, method, s, forms) {
 
 /** Appends a hidden input per extraData field to the form; each input is pushed onto `added`. */
 export function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
-  // Builds the input with DOM properties: a name is never parsed as HTML.
   function addHiddenInput(name, value) {
-    const input = ownerDocument.createElement("input");
-
-    input.type = "hidden";
-    input.name = name;
-    added.push($(input).val(value).appendTo(form)[0]);
+    added.push($(hiddenInput(ownerDocument, name, value)).appendTo(form)[0]);
   }
 
   if (extraData) {

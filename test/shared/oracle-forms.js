@@ -319,6 +319,7 @@ export const KNOWN_DIFFERENCES = [
     },
   },
   {
+    // Kept in 5.0 (N6): 5.x fixes this with new FormData(form, submitter).
     id: "SUBMIT-LABEL",
     description:
       'FormData sends the default label of an input submitter without a value; the plugin sends ""',

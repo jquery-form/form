@@ -1898,7 +1898,7 @@ describe("form", function () {
         });
 
         describe("submitter and CSRF", function () {
-          it("should let the clicked button override a data field with the same name", function () {
+          it("should send both the clicked button and a data field with the same name, as the XHR transport does", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
               $form,
@@ -1909,7 +1909,92 @@ describe("form", function () {
               fields = hiddenFields(form);
             });
 
-            assert.deepEqual(fields, [["choice", "picked"]]);
+            assert.deepEqual(fields, [
+              ["choice", "picked"],
+              ["choice", "from data"],
+            ]);
+          });
+
+          it("should put the clicked button's field right after the button, in tree order", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const button = $('<button type="submit" name="choice" value="picked">').prependTo(
+              $form,
+            )[0];
+            $form[0].clk = button;
+            let posted;
+
+            startStubbedUpload($form, {}, function (form) {
+              posted = $(form)
+                .find("input")
+                .map(function () {
+                  return this.name;
+                })
+                .get();
+            });
+
+            assert.deepEqual(posted, ["choice", "upload"]);
+            assert.strictEqual(button.nextSibling, $form.find("[name=upload]")[0]);
+          });
+
+          it("should put the coordinates of a clicked image outside the form after it, with its form attribute", function () {
+            const $form = createIframeForm("ajax/iframe-text.html").attr("id", "ifr-outside");
+            const image = $('<input type="image" name="map" form="ifr-outside">').insertBefore(
+              $form,
+            )[0];
+            $form[0].clk = image;
+            $form[0].clk_x = 3;
+            $form[0].clk_y = 4;
+            let posted;
+
+            startStubbedUpload($form, {}, function (form) {
+              posted = Array.from(form.elements)
+                .filter((el) => el.type === "hidden")
+                .map((el) => [
+                  el.name,
+                  el.value,
+                  el.getAttribute("form"),
+                  el.previousSibling === image ? "image" : el.previousSibling.name,
+                ]);
+            });
+
+            assert.deepEqual(posted, [
+              ["map.x", "3", "ifr-outside", "image"],
+              ["map.y", "4", "ifr-outside", "map.x"],
+            ]);
+            assert.strictEqual(image.nextSibling, $form[0]);
+          });
+
+          it("should not post a clicked button that is in no tree", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">')[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
+          });
+
+          it("should leave the clicked button out of the extraData the callbacks see", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $form,
+            )[0];
+            let seen;
+
+            await new Promise(function (resolve) {
+              $form.ajaxSubmit({
+                iframe: true,
+                data: { a: "1" },
+                complete: function () {
+                  seen = this.extraData;
+                  resolve();
+                },
+              });
+            });
+
+            assert.deepEqual(seen, { a: "1" });
           });
 
           it("should post a clicked button's lone surrogate as U+FFFD", function () {
@@ -2213,7 +2298,7 @@ describe("form", function () {
             assert.deepEqual(log, ["post", "timeout"]);
           });
 
-          it("should append the data, the clicked button and the CSRF field at the end of the form", function () {
+          it("should put the clicked button's field after it and append the data and the CSRF field", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const button = $('<button type="submit" name="choice" value="picked">').appendTo(
               $form,
@@ -2232,12 +2317,12 @@ describe("form", function () {
 
             assert.deepEqual(posted, {
               fields: [
+                ["choice", "picked"],
                 ["b", "2"],
                 ["a", "1"],
-                ["choice", "picked"],
                 ["authenticity_token", "secret"],
               ],
-              afterButton: "b",
+              afterButton: "choice",
               last: "authenticity_token",
             });
           });
@@ -2381,9 +2466,9 @@ describe("form", function () {
             });
 
             assert.deepEqual(fields, [
+              ["choice", "picked"],
               ["x", "1"],
               ["y", "a b"],
-              ["choice", "picked"],
             ]);
           });
 
