@@ -907,16 +907,34 @@ describe("form", function () {
     });
 
     describe("FormData request body", function () {
-      it("should append an empty string when a multipart form has an empty file input", function () {
+      it("should append an empty application/octet-stream file when a multipart form has an empty file input", function () {
+        const $form = makeForm(
+          '<form action="ajax/text.html" method="post" enctype="multipart/form-data">' +
+            '<input type="file" name="document"><input name="text" value="">' +
+            "</form>",
+        );
+
+        const body = uploadBody(captureAjaxOptions($form, {}));
+        const file = body.get("document");
+
+        assert.deepEqual(Array.from(body.keys()), ["document", "text"]);
+        assert.instanceOf(file, File);
+        assert.deepEqual([file.name, file.size, file.type], ["", 0, "application/octet-stream"]);
+        assert.strictEqual(body.get("text"), "");
+      });
+
+      it("should keep an empty file input as an empty field in formToArray and formSerialize", function () {
         const $form = makeForm(
           '<form action="ajax/text.html" method="post" enctype="multipart/form-data">' +
             '<input type="file" name="document">' +
             "</form>",
         );
 
-        const body = uploadBody(captureAjaxOptions($form, {}));
+        const fields = $form.formToArray();
+        const query = $form.formSerialize();
 
-        assert.deepEqual(Array.from(body.entries()), [["document", ""]]);
+        assert.deepEqual(fields, [{ name: "document", value: "", type: "file" }]);
+        assert.strictEqual(query, "document=");
       });
 
       it("should append each file of a multiple file input", function () {

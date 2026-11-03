@@ -886,7 +886,13 @@ function sendFormData(submission) {
   const formdata = new FormData();
 
   for (let i = 0; i < a.length; i++) {
-    formdata.append(a[i].name, a[i].value);
+    // a file input without a file: an empty file, as a native multipart submission sends it
+    const empty = a[i].type === "file" && a[i].value === "";
+
+    formdata.append(
+      a[i].name,
+      empty ? new File([], "", { type: "application/octet-stream" }) : a[i].value,
+    );
   }
 
   if (options.extraData) {

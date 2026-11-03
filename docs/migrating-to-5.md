@@ -29,6 +29,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y)                                     | Forms with an unnamed image button, and servers that have a field named `x` or `y`                     | None                                                                             |
 | [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                                                         | Forms with a `dirname` attribute on an input or a textarea                                             | None                                                                             |
 | [A hidden `_charset_` input sends `UTF-8`](#a-hidden-_charset_-input-sends-utf-8)                                                                   | Forms with `<input type="hidden" name="_charset_">`                                                    | None                                                                             |
+| [An empty file input is sent as an empty file in uploads](#an-empty-file-input-is-sent-as-an-empty-file-in-uploads)                                 | `FormData` uploads with a file input left empty, and servers that read it as a text field              | None                                                                             |
 
 Entries are added as each 5.0 change lands.
 
@@ -587,16 +588,48 @@ After (5.0):
 _charset_=UTF-8
 ```
 
+### An empty file input is sent as an empty file in uploads
+
+**What changed.** When `ajaxSubmit` (and so `ajaxForm`) sends a `FormData` upload, a file input without a selected file is sent as an empty file: a part with an empty file name, the type `application/octet-stream` and no bytes, as a native multipart submission sends it. 4.x sent it as an empty text field. `formToArray` still returns `{ name, value: "", type: "file" }` for it, and `formSerialize` and urlencoded requests still send `name=`. The iframe transport posts the form itself, so it already sent an empty file.
+
+**Why.** A server sees an empty file input the same way whether the form was posted natively or through the plugin.
+
+**Are you affected?** Only if your uploads can leave a file input empty and your server reads that input as a text field. PHP now puts it in `$_FILES` with `"error" => UPLOAD_ERR_NO_FILE` (4) instead of setting `$_POST["name"]` to `""`; other frameworks report a missing or empty file the same way. 4.x has no warning for this. Check for the empty upload, not for the text field.
+
+Before (4.x), with an empty `<input type="file" name="avatar" />` in an upload:
+
+```text
+Content-Disposition: form-data; name="avatar"
+
+```
+
+```php
+if ($_POST["avatar"] === "") { /* no file */ }
+```
+
+After (5.0):
+
+```text
+Content-Disposition: form-data; name="avatar"; filename=""
+Content-Type: application/octet-stream
+
+```
+
+```php
+if ($_FILES["avatar"]["error"] === UPLOAD_ERR_NO_FILE) { /* no file */ }
+```
+
 ## What your server receives
 
-These changes alter the fields the plugin sends. The table shows the request body for each entry's example form, urlencoded; a multipart body carries the same fields in the same order. Each entry above has the details.
+These changes alter the fields the plugin sends. The table shows the request body for each entry's example form, urlencoded unless the entry is about uploads; a multipart body carries the same fields in the same order. Each entry above has the details.
 
-| Change                                                                                                          | Example                                                    | 4.x body                         | 5.0 body                     |
-| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | ---------------------------- |
-| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                 | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map.x=3&map.y=4&b=2`    |
-| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)     | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                        |
-| [`semantic` is ignored](#semantic-is-ignored)                                                                   | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`                  |
-| [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)         | the image button `map`, value `go`, clicked at 3,4         | `map=go&map.x=3&map.y=4`         | `map.x=3&map.y=4`            |
-| [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y) | an unnamed image button after `a`, clicked at 3,4          | `a=1`                            | `a=1&x=3&y=4`                |
-| [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                     | `comment` with `dirname="comment.dir"`                     | `comment=hi`                     | `comment=hi&comment.dir=ltr` |
-| [A hidden `_charset_` input sends `UTF-8`](#a-hidden-_charset_-input-sends-utf-8)                               | a hidden `_charset_` with the value `ISO-8859-1`           | `_charset_=ISO-8859-1`           | `_charset_=UTF-8`            |
+| Change                                                                                                              | Example                                                    | 4.x body                         | 5.0 body                                   |
+| ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | ------------------------------------------ |
+| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                     | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map.x=3&map.y=4&b=2`                  |
+| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)         | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                                      |
+| [`semantic` is ignored](#semantic-is-ignored)                                                                       | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`                                |
+| [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)             | the image button `map`, value `go`, clicked at 3,4         | `map=go&map.x=3&map.y=4`         | `map.x=3&map.y=4`                          |
+| [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y)     | an unnamed image button after `a`, clicked at 3,4          | `a=1`                            | `a=1&x=3&y=4`                              |
+| [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                         | `comment` with `dirname="comment.dir"`                     | `comment=hi`                     | `comment=hi&comment.dir=ltr`               |
+| [A hidden `_charset_` input sends `UTF-8`](#a-hidden-_charset_-input-sends-utf-8)                                   | a hidden `_charset_` with the value `ISO-8859-1`           | `_charset_=ISO-8859-1`           | `_charset_=UTF-8`                          |
+| [An empty file input is sent as an empty file in uploads](#an-empty-file-input-is-sent-as-an-empty-file-in-uploads) | an empty file input `avatar` in a `FormData` upload        | the text part `name="avatar"`    | the file part `name="avatar"; filename=""` |

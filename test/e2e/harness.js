@@ -57,20 +57,6 @@ const E2E_DIFFERENCES = [
     },
   },
   {
-    id: "EMPTY-FILE",
-    description:
-      "a FormData upload sends an empty file input as an empty text field, native as an empty file",
-    normalize: (pair, ctx) => {
-      if (ctx.transport.iframe || ctx.transport.plugin !== "multipart") {
-        return pair;
-      }
-      return {
-        plugin: pair.plugin,
-        native: pair.native.map((e) => (e[1] === "file" && e[2] === "" ? [e[0], "text", ""] : e)),
-      };
-    },
-  },
-  {
     id: "IFRAME-SUBMITTER",
     description: "an iframe upload appends the submitter's fields after the form's",
     normalize: (pair, ctx) => {
