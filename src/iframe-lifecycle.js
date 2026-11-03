@@ -133,7 +133,8 @@ export function createLifecycle(s, frame) {
     return !xhr.aborted;
   }
 
-  // Resolves the upload; returns {error} when the success callback threw.
+  // Resolves the upload with the parsed data, as $.ajax does; returns {error} when the success
+  // callback threw.
   function succeed(data) {
     let failure;
 
@@ -143,7 +144,7 @@ export function createLifecycle(s, frame) {
       failure = { error: err };
     }
 
-    deferred.resolve(xhr.responseText, "success", xhr);
+    deferred.resolve(data, "success", xhr);
 
     if (g) {
       $.event.trigger("ajaxSuccess", [xhr, s, data]);

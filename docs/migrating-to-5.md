@@ -19,6 +19,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [The iframe transport is used only with `iframe: true`](#the-iframe-transport-is-used-only-with-iframe-true)                                        | Uploads in browsers without `FormData` or the File API                                 | "choosing the iframe transport automatically", under debug                   |
 | [The package has an `exports` map](#the-package-has-an-exports-map)                                                                                 | Node ES module imports of jquery-form, and imports of paths outside `dist`             | None                                                                         |
 | [`src` is no longer published](#src-is-no-longer-published)                                                                                         | Code that imports files from `jquery-form/src`                                         | None                                                                         |
+| [Iframe `.done` and `.then` receive the parsed data](#iframe-done-and-then-receive-the-parsed-data)                                                 | `iframe: true` uploads that read the response in `.done` or `.then`                    | None                                                                         |
 
 Entries are added as each 5.0 change lands.
 
@@ -289,6 +290,38 @@ After (5.0):
 ```javascript
 import $ from "jquery-form/dist/jquery.form.mjs";
 ```
+
+### Iframe `.done` and `.then` receive the parsed data
+
+**What changed.** With `iframe: true`, the jqXHR-like object of the upload (`$form.data("jqxhr")`) resolves with `(data, "success", xhr)`, where `data` is the response parsed for the `dataType` (an object for `json`, a document for `xml`, the text for `text` or `html`). The `success` callback, `ajaxSuccess` handlers and `$.ajax` already receive that data. In 4.x, `.done` and `.then` received `xhr.responseText`, the response text, whatever the `dataType`. Failures, aborts and the arguments of `success`, `error` and `complete` are unchanged.
+
+**Why.** An upload's callbacks and its jqXHR received different values for the same response, and code written for `$.ajax` (or for the `FormData` transport, which uses it) got a string instead of the parsed data when it switched to `iframe: true`.
+
+**Are you affected?** Only if you pass `iframe: true` and call `.done` or `.then` on the jqXHR in the form's `jqxhr` data. With `dataType: "text"` or `"html"`, or no `dataType` for a text response, the data is still the text. 4.x has no warning for this. To keep the text, read `xhr.responseText` from the third argument.
+
+Before (4.x):
+
+```javascript
+$("#uploadForm").ajaxSubmit({ iframe: true, dataType: "json" });
+$("#uploadForm")
+  .data("jqxhr")
+  .done(function (text) {
+    var result = JSON.parse(text);
+  });
+```
+
+After (5.0):
+
+```javascript
+$("#uploadForm").ajaxSubmit({ iframe: true, dataType: "json" });
+$("#uploadForm")
+  .data("jqxhr")
+  .done(function (result, textStatus, xhr) {
+    // result is the parsed object; xhr.responseText is still the text
+  });
+```
+
+The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `iframe: true`, comment on https://github.com/jquery-form/form/issues/629 with your use case.
 
 ## What your server receives
 

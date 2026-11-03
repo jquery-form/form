@@ -112,6 +112,8 @@ Boolean flag indicating whether the form should always target the server respons
 
 Without `FormData`, a form with a selected file or a multipart `enctype` also uses the iframe. Choosing it automatically is deprecated (a `debug` warning); 5.0 uses the iframe only when `iframe: true` is set.
 
+The upload's jqXHR (`$form.data("jqxhr")`) resolves `.done` and `.then` with `(data, "success", xhr)`: the parsed data that `success` receives, as `$.ajax` does.
+
 The response is loaded as a document in the hidden iframe, with the same origin as the page, before the plugin reads it. The server must return a response that is safe to render as HTML:
 
 - Send JSON and text as `text/plain`, or wrap them in a `<textarea>` with the content HTML-escaped (`&lt;`, `&amp;`). The plugin reads the first `<textarea>`; without one, a `json`, `script` or `text` response is read from the first `<pre>`, then from the `<body>` text.

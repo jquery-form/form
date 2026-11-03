@@ -2644,7 +2644,7 @@ describe("form", function () {
             assert.strictEqual(result.error[1], "error");
           });
 
-          it("should resolve the Deferred with the response text, success and the xhr", async function () {
+          it("should resolve the Deferred with the data, success and the xhr that success receives", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");
 
             const result = await submitThroughIframe($form, { dataType: "text" });
@@ -2653,6 +2653,7 @@ describe("form", function () {
             );
 
             assert.deepEqual([resolved[0].trim(), resolved[1]], ["iframe response", "success"]);
+            assert.strictEqual(resolved[0], result.success[0]);
             assert.strictEqual(resolved[2], result.success[2]);
           });
 
@@ -2756,16 +2757,22 @@ describe("form", function () {
             );
           });
 
-          it("should resolve the Deferred with the response text, not the parsed data", async function () {
+          it("should resolve .done and .then with the parsed data that success receives, not the response text", async function () {
             const $form = createIframeForm("ajax/iframe-json.html");
-            let resolvedWith;
+            const resolvedWith = {};
 
             const resultPromise = submitThroughIframe($form, { dataType: "json" });
-            $form.data("jqxhr").done((data) => (resolvedWith = data));
+            const jqxhr = $form.data("jqxhr");
+            jqxhr.done((...args) => (resolvedWith.done = args));
+            const then = jqxhr.then((...args) => (resolvedWith.then = args));
             const result = await resultPromise;
+            await then;
 
             assert.deepEqual(result.success[0], { transport: "iframe" });
-            assert.strictEqual(resolvedWith, '{"transport":"iframe"}');
+            assert.deepEqual(resolvedWith.done.slice(0, 2), [{ transport: "iframe" }, "success"]);
+            assert.strictEqual(resolvedWith.done[0], result.success[0]);
+            assert.strictEqual(resolvedWith.done[2], result.success[2]);
+            assert.deepEqual(resolvedWith.then, resolvedWith.done);
           });
 
           it("should pass the data to ajaxSuccess handlers", async function () {
