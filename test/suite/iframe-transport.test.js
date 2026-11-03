@@ -1936,6 +1936,21 @@ describe("form", function () {
             assert.strictEqual(button.nextSibling, $form.find("[name=upload]")[0]);
           });
 
+          it("should give the field of a clicked button inside the form no form attribute, so the form posts it", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $form,
+            )[0];
+            let added;
+
+            startStubbedUpload($form, {}, function (form) {
+              const input = $(form).find('input[name="choice"]')[0];
+              added = [input.hasAttribute("form"), input.form === form];
+            });
+
+            assert.deepEqual(added, [false, true]);
+          });
+
           it("should put the coordinates of a clicked image outside the form after it, with its form attribute", function () {
             const $form = createIframeForm("ajax/iframe-text.html").attr("id", "ifr-outside");
             const image = $('<input type="image" name="map" form="ifr-outside">').insertBefore(

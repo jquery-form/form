@@ -426,6 +426,20 @@ describe("form", function () {
         assert.deepEqual(empty, []);
       });
 
+      it("should skip custom elements in an elements list, even when their tag names contain input", function () {
+        const named = (tag, name) =>
+          Object.assign(document.createElement(tag), { name, value: "v" });
+        const controls = [named("x-input", "x"), named("input-x", "y")].concat(
+          $('<input name="a" value="1">').get(),
+        );
+
+        const names = $({ elements: controls })
+          .formToArray()
+          .map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
       it("should not call filtering when the form has no candidate elements", function () {
         const $form = $("<form></form>");
         let calls = 0;
@@ -1093,6 +1107,19 @@ describe("form", function () {
         ]);
         assert.strictEqual(serialized, "_charset_=UTF-8&_CharSet_=UTF-8&_charset_=text");
       });
+
+      it("should keep the value of a hidden input whose name only contains _charset_", function () {
+        const $form = $(
+          '<form><input type="hidden" name="my_charset_" value="a"><input type="hidden" name="_charset_x" value="b"></form>',
+        );
+
+        const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs, [
+          ["my_charset_", "a"],
+          ["_charset_x", "b"],
+        ]);
+      });
     });
 
     describe("dirname", function () {
@@ -1120,6 +1147,16 @@ describe("form", function () {
         const pairs = $form.formToArray().map((field) => [field.name, field.value]);
 
         assert.deepEqual(pairs[1], ["t.dir", "rtl"]);
+      });
+
+      it("should send the directionality, not the CSS direction, where the browser knows :dir()", function () {
+        const $form = $(
+          '<form><input name="t" value="v" dirname="t.dir" style="direction: rtl"></form>',
+        ).appendTo("#main");
+
+        const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs[1], ["t.dir", "ltr"]);
       });
 
       it("should send the direction of a clicked submit input", function () {
