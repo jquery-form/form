@@ -12,7 +12,7 @@ No special markup is needed, just a normal form. Submitting a form with AJAX doe
 npm install jquery-form
 ```
 
-jQuery is a dependency of the package and is installed with it.
+jQuery is a peer dependency: npm 7 and later install it with the plugin unless your project already has a jQuery 3.5 or later.
 
 ## Download
 * **npm:** [jquery-form](https://www.npmjs.com/package/jquery-form). `dist/jquery.form.min.js` is the minified build, `dist/jquery.form.js` the readable one.
@@ -71,14 +71,15 @@ $(function () {
 `ajaxForm` binds the form so that it submits with AJAX; `ajaxSubmit` submits it now, from your own submit handler. The [API](https://jquery-form.github.io/form/api/) page describes every method, and the [options](https://jquery-form.github.io/form/options/) page every option.
 
 ## File Uploads
-A form with a selected file, or a `multipart/form-data` enctype, is sent with [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) over [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest), and the `uploadProgress` option reports progress as the upload proceeds. With `iframe: true`, the form is posted through a hidden iframe instead, which needs the server to return HTML-safe responses; see [`iframe`](https://jquery-form.github.io/form/options/#iframe).
+A form with a selected file, or a `multipart/form-data` enctype, is sent with [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) over [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest), and the `uploadProgress` option reports progress as the upload proceeds. The hidden-iframe transport is used only with `iframe: true`, and needs the server to return HTML-safe responses; see [`iframe`](https://jquery-form.github.io/form/options/#iframe).
 
 ## Compatibility
 * Requires jQuery 3.5 or later. `main` is tested against jQuery 3.5.0, 3.7.1 and 4.0.0, on Chromium, Firefox and WebKit.
 * jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
-* With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones; use `delegation: "<selector>"` instead. ([issue #353](https://github.com/jquery-form/form/issues/353))
+* Runs in current Chrome, Edge, Firefox (and Firefox ESR) and Safari. The builds use ES2020 syntax, so they need Chrome or Edge 80, Firefox 78 or Safari 14 or later. Internet Explorer, Opera 12 and earlier, and Edge 18 and earlier are not supported; use 4.x for them.
+* `delegation` takes a selector, such as `delegation: "form.ajax"`; `delegation: true` throws. ([issue #353](https://github.com/jquery-form/form/issues/353))
 * **Not** compatible with the jQuery slim builds, which leave out AJAX.
-* 5.0 will need jQuery 3.5 or later. With debug output on (`$.fn.ajaxSubmit.debug = true`), 4.x warns about the features 5.0 removes; see [Deprecations](https://jquery-form.github.io/form/api/#deprecations) and [issue #629](https://github.com/jquery-form/form/issues/629).
+* Upgrading from 4.x? See the [migration guide](https://jquery-form.github.io/form/migrating-to-5/).
 
 ## Security
 Please report security issues privately, not in public issues. See [SECURITY](SECURITY.md).
