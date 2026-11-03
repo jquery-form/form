@@ -216,7 +216,7 @@ $(document).ajaxForm({ delegation: "form.ajax" });
 
 ### The iframe transport is used only with `iframe: true`
 
-**What changed.** `ajaxSubmit` (and `ajaxForm`) post through the hidden iframe only when you pass a truthy `iframe` option, such as `iframe: true`. A form with a selected file or a `multipart/form-data` enctype is otherwise always sent with `FormData` over `XMLHttpRequest`. In 4.x the plugin checked at load whether the browser had the File API and `FormData`, and chose the iframe on its own when it did not. That check is gone. `iframe: false` is the default and changes nothing.
+**What changed.** `ajaxSubmit` (and `ajaxForm`) post through the hidden iframe only when you pass a truthy `iframe` option, such as `iframe: true`. A form with a selected file or a `multipart/form-data` enctype is otherwise always sent with `FormData` over `XMLHttpRequest`. In 4.x the plugin checked at load whether the browser had the File API and `FormData`, and chose the iframe on its own when it did not. That check is gone, and with it the `fileAPI :true` line that `$.fn.ajaxSubmit.debug = true` logged before every submit. `iframe: false` is the default and changes nothing.
 
 **Why.** Every browser 5.0 supports has the File API and `FormData`, so the automatic choice could no longer happen.
 
