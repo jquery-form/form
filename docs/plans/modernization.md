@@ -66,7 +66,7 @@ content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracl
 status: in_progress
 - id: breaking-5
 content: "Phase 14: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
-status: pending
+status: in_progress
 
 ---
 
@@ -612,6 +612,8 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
 
 ## Phase 14: 5.0 (breaking)
 
+Status (local `phase-14` branch): steps 0-7 are done; step 8 (final verification) remains. Nothing is pushed.
+
 Work runs on the local branch `phase-14`, in the worktree `form-phase-14`. The branch is guarded like `phase-13` and is not pushed. After v4.6.0 is tagged and merged to `main`, rebase `phase-14` onto `main` once (B3). The migration guide `docs/migrating-to-5.md` gets an entry for each change, written in the same commit as the change (R3). Release as `5.0.0-beta.N` on the `next` dist-tag, at least two weeks before 5.0.0, and cut `release/4.x` from v4.6.0 just before the merge (R1, R2).
 
 Platform (P1-P5):
@@ -630,13 +632,19 @@ Packaging (K1-K5, ADR-0003):
 
   ```json
   {
-    ".": { "import": "./dist/jquery.form.mjs", "default": "./dist/jquery.form.js" },
+    ".": {
+      "module": "./dist/jquery.form.mjs",
+      "import": "./dist/jquery.form.mjs",
+      "default": "./dist/jquery.form.js"
+    },
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"
   }
   ```
 
   `main`, `module`, `jsdelivr` and `unpkg` stay. Node `import "jquery-form"` now loads the `.mjs` (it needs a DOM at import) instead of the CommonJS factory, so the dual-package hazard applies. `manifests.test.js` checks that every key resolves.
+
+- The `module` condition comes first, so bundlers that read `exports` resolve both `import` and `require` to the module build, as `module` did in 4.x. Node ignores it (`require` gets the `.js`, `import` the `.mjs`), so the hazard is limited to Node projects. A test resolves with `--conditions=module` (K1a, decided at the step 5 review).
 
 - `src` is no longer published: there is no `./src/*` key, and `src` leaves `files` (the source map embeds `sourcesContent`). Deep `jquery-form/src/...` imports move to `dist/jquery.form.mjs`.
 - Every classic surface stays as it is (ADR-0001 holds): the script-tag global, anonymous AMD with no value, and the CommonJS `(root, jQuery)` factory including its `require('jquery')(root)` branch. The files are `jquery.form.js`, `jquery.form.min.js` with its map, and `jquery.form.mjs`.
@@ -656,6 +664,7 @@ Iframe transport (I1-I3, I6):
 - The iframe transport stays in 5.0 as an explicit opt-in (`iframe: true`). Removal is decided for 6.0 with real feedback (I1).
 - It runs only with `iframe: true`. The `fileapi`/`formdata` detection is deleted, so files and multipart always use FormData. `iframe: false` is the default and a no-op. The "chosen automatically" deprecation goes (I2).
 - Iframe `.done` and `.then` receive `(data, "success", xhr)` with the parsed data, like `success`, `ajaxSuccess` and `$.ajax`. They used to receive `responseText` (I3).
+- The iframe rejection arguments stay as in 4.x and are documented in `docs/options.md`: an abort rejects `(xhr, "aborted", status)` where `$.ajax` gives `(jqXHR, "canceled", …)`, and a `beforeSend` veto rejects with no arguments (I4a).
 - Feedback on a possible 6.0 removal goes through issue #629, the migration guide, `docs/options.md`, the beta and release notes, and the Phase 14 PR description. Each says: "the iframe transport is kept in 5.0 and may be removed in 6.0; if you use `iframe: true`, comment on #629 with your use case" (I6). The user posts anything on GitHub.
 
 Delegation (L1-L3):
@@ -673,7 +682,8 @@ Serialization and spec gaps (N1-N11). Every "match native" item deletes its clas
 - `input` and `textarea` with `dirname="x"` send `x=ltr` or `x=rtl`, from `el.matches(":dir(rtl)")` where supported, else `getComputedStyle(el).direction` (N7).
 - A hidden `_charset_` input sends `"UTF-8"` (N8).
 - FormData uploads send an empty file input as `new File([], "", { type: "application/octet-stream" })`. `formSerialize` and urlencoded bodies keep `name=`. PHP sees an empty `$_FILES` entry (error 4) instead of a `$_POST` field (N9).
-- Iframe submitter fields are in tree order: the hidden input goes right after the submitter, with the submitter's `form` attribute when it is outside the form. The e2e IFRAME-SUBMITTER normalization goes (N10).
+- Iframe submitter fields are in tree order: the hidden input goes right after the submitter, with the submitter's `form` attribute when it is outside the form. The e2e IFRAME-SUBMITTER normalization goes (N10). Two side effects are accepted and named in the guide: a `data` or `extraData` key named like the submitter now sends both fields, as XHR does, and `extraData` seen by ajax events and callbacks no longer holds the submitter field (N10a).
+- A non-form subject (a `div` or the document) keeps 4.x for an image button that was not clicked: it still sends `name=value`. A kept-contract test pins it (N2a).
 - Kept as in 4.x:
   - SUBMIT-LABEL: a clicked `<input type=submit>` without a `value` still sends `""` until 5.x, because the native label is localized and cannot be read from script. `new FormData(form, submitter)` fixes it in 5.x. The oracle keeps the class with a 5.x note (N6).
   - FILES-MULTIPART (a file input makes the body multipart without `enctype`) and the GET action's query being kept. Both stay allowlisted and pinned, and `docs/options.md` names them as deliberate (N11).
@@ -708,6 +718,8 @@ Steps, one sub-agent per step, each reviewed by the main session before the next
 6. Behavior changes, one commit each: I3, F1, F3, N1 with N2 and N3, N4 with N5, N7, N8, N9, N10.
 7. Docs and drafts: README, `docs/options.md`, `docs/api.md` (the I6 iframe feedback note, the N11 deliberate quirks), the complete guide, the notes-folder drafts (revised #629 body, I6 texts, 5.0 beta release notes), the "5.0" metrics column and the plan status.
 8. Final verification: all checks on the tip and the W3 run against 4.6.0.
+
+Steps 0-7 are done; step 8 remains.
 
 Test rules:
 
