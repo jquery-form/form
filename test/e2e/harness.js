@@ -198,7 +198,6 @@ window.e2e = {
     const ctx = {
       submitter: current.submitter,
       outsideNames: current.outsideNames,
-      semantic: false,
       transport: transport,
     };
     let pair = { plugin: plugin, native: native };

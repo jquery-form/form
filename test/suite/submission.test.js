@@ -590,9 +590,9 @@ describe("form", function () {
         assert.ok(called, "callback hit");
       });
 
-      it("should call beforeSubmit with fields in document order when semantic is true", async function () {
+      it("should call beforeSubmit with fields in document order", async function () {
         const testData = ["a", "b", "c", "d", "e", "f"];
-        const opts = { semantic: true };
+        const opts = {};
 
         const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
@@ -2031,7 +2031,6 @@ describe("form", function () {
           target: $target,
           resetForm: true,
           clearForm: true,
-          semantic: true,
           replaceTarget: true,
           data: { x: "1" },
         };
@@ -2041,7 +2040,6 @@ describe("form", function () {
         assert.strictEqual(settings.target, $target);
         assert.strictEqual(settings.resetForm, true);
         assert.strictEqual(settings.clearForm, true);
-        assert.strictEqual(settings.semantic, true);
         assert.strictEqual(settings.replaceTarget, true);
         assert.deepEqual(settings.extraData, { x: "1" });
         assert.strictEqual(settings.iframeSrc, "about:blank");
@@ -2055,6 +2053,17 @@ describe("form", function () {
         const settings = submitWith($form, [{ filtering: (el) => (el.name === "b" ? el : null) }]);
 
         assert.strictEqual(settings.data, "b=2");
+      });
+
+      it("should ignore a semantic option and send the fields in tree order", function () {
+        makeForm('<input name="out" value="o" form="sub-semantic">');
+        const $form = makeForm(
+          '<form id="sub-semantic" method="post" action="ajax/text.html"><input name="a" value="1"></form>',
+        );
+
+        const settings = submitWith($form, [{ semantic: true }]);
+
+        assert.strictEqual(settings.data, "out=o&a=1");
       });
     });
 
@@ -2423,13 +2432,13 @@ describe("form", function () {
 
       // jQuery 3's selector engine calls getElementsByTagName on the form for the file input lookup.
       it.skipIf(Number($.fn.jquery.split(".")[0]) === 3)(
-        "should submit semantically when a control named getElementsByTagName shadows the form",
+        "should submit when a control named getElementsByTagName shadows the form",
         function () {
           const $form = $(
             buildForm('<input name="getElementsByTagName" value="x">', "ajax/text.html"),
           );
 
-          const settings = captureAjaxOptions($form, { semantic: true });
+          const settings = captureAjaxOptions($form, {});
 
           assert.match(settings.url, /\?getElementsByTagName=x$/);
         },

@@ -73,7 +73,7 @@ export function generateForm(seed, container) {
   const other = document.createElement("form");
   other.id = formId + "-other";
 
-  // Outside controls get their own names (out-N), so the semantic order class can find them.
+  // Outside controls get their own names (out-N), so a failing seed shows which ones they are.
   function name(outside) {
     if (outside) {
       const outsideName = "out-" + counters.out++;
@@ -378,37 +378,6 @@ export const KNOWN_DIFFERENCES = [
         plugin: pair.plugin,
         native: pair.native.filter((e) => e[0] !== "x" && e[0] !== "y"),
       };
-    },
-  },
-  {
-    id: "IMG-ORDER",
-    description: "without semantic, the plugin appends the clicked image's fields last",
-    normalize: (pair, ctx) => {
-      if (ctx.semantic || !isImage(ctx.submitter) || !ctx.submitter.name) {
-        return pair;
-      }
-      const n = ctx.submitter.name;
-      const last = (list) => {
-        const coords = list.filter((e) => e[0] === n + ".x" || e[0] === n + ".y");
-        return list.filter((e) => coords.indexOf(e) < 0).concat(coords);
-      };
-      return { plugin: last(pair.plugin), native: last(pair.native) };
-    },
-  },
-  {
-    id: "SEM-ORDER",
-    description: "with semantic, the plugin sends outside controls (form=id) after the form's own",
-    normalize: (pair, ctx) => {
-      if (!ctx.semantic) {
-        return pair;
-      }
-      const outsideLast = (list) => {
-        const outside = list.filter(
-          (e) => ctx.outsideNames.indexOf(e[0].replace(/\.[xy]$/, "")) >= 0,
-        );
-        return list.filter((e) => outside.indexOf(e) < 0).concat(outside);
-      };
-      return { plugin: pair.plugin, native: outsideLast(pair.native) };
     },
   },
 ];

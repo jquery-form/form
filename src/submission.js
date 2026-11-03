@@ -222,7 +222,7 @@ export function createSubmission(forms, serialization) {
       traditional = $.ajaxSettings.traditional;
     }
 
-    const collected = serialization.collect($set[0], options.semantic, options.filtering);
+    const collected = serialization.collect($set[0], options.filtering);
     const fields = collected.fields;
     const controls = collected.controls;
     const qx = extraQuery(fields, options, traditional);

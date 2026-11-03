@@ -90,7 +90,7 @@ Callback function to be invoked upon error. It is passed the following arguments
 ### filtering
 
 Default: `null`  
-Callback function that filters the fields before they are serialized. It is called with each field element and its index, as `jQuery.map` calls its callback: return the element to keep it, or `null` or `undefined` to leave it out.
+Callback function that filters the fields before they are serialized. It is called with each `button`, `input`, `select` and `textarea` to serialize, in tree order (for a form, the ones it owns, including controls outside it that name it in their `form` attribute), and its index, as `jQuery.map` calls its callback: return the element to keep it, or `null` or `undefined` to leave it out.
 
 ```javascript
 filtering: function(el, index) {
@@ -153,12 +153,6 @@ Set to `"json"` to send the form as a JSON body instead of a urlencoded one ([#5
 
 Default: `null`  
 Boolean flag indicating whether the form should be reset if the submit is successful
-
-### semantic
-
-Default: `false`  
-Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order with the exception of input elements of `type="image"`.  
-**Note:** You should _only_ set the `semantic` option to `true` if your server has strict semantic requirements **and** your form contains an input element of `type="image"`.
 
 ### success
 

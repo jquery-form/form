@@ -149,9 +149,12 @@ import { submitOptions } from "./options.js";
    *
    * It is this array that is passed to pre-submit callback functions provided to the
    * ajaxSubmit() and ajaxForm() methods.
+   *
+   * The fields are in tree order, as a native submission sends them. The first argument (the
+   * semantic flag before 5.0) is ignored.
    */
-  $.fn.formToArray = function (semantic, elements, filtering) {
-    const collected = serialization.collect(this[0], semantic, filtering);
+  $.fn.formToArray = function (ignored, elements, filtering) {
+    const collected = serialization.collect(this[0], filtering);
 
     if (elements) {
       elements.push.apply(elements, collected.controls);
@@ -164,9 +167,9 @@ import { submitOptions } from "./options.js";
    * Serializes form data into a 'submittable' string. This method will return a string
    * in the format: name1=value1&amp;name2=value2
    */
-  $.fn.formSerialize = function (semantic) {
+  $.fn.formSerialize = function () {
     // hand off to jQuery.param for proper encoding
-    return urlencode(this.formToArray(semantic));
+    return urlencode(this.formToArray());
   };
 
   /**

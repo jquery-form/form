@@ -424,21 +424,6 @@ describe("form", function () {
       assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.y") !== undefined, "y coord");
     });
 
-    it("should include image coordinates when semantic is true", async function () {
-      const opts = { semantic: true };
-
-      const seen = await submitAndSettle(opts, () => {
-        $("#form4").ajaxForm(opts);
-        $("#form4imageSubmit")[0].click();
-      });
-
-      assert.ok(seen.beforeSubmit, "pre-callback");
-      assert.ok(seen.beforeSubmit.data.constructor == Array, "type check");
-      assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
-      assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.x") !== undefined, "x coord");
-      assert.ok(arrayValue(seen.beforeSubmit.data, "myImage.y") !== undefined, "y coord");
-    });
-
     it("should load the response into the target div", async function () {
       $("#targetDiv").empty();
       const opts = { target: "#targetDiv" };

@@ -55,5 +55,11 @@ describe("form members", function () {
 
       assert.strictEqual(value, undefined);
     });
+
+    it("should read the attribute through jQuery when the subject is the document", function () {
+      const value = formAttribute(document, "enctype");
+
+      assert.strictEqual(value, undefined);
+    });
   });
 });

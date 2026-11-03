@@ -1,6 +1,5 @@
-import { callFormMethod, formMember, isDisabled, isElement, tagName } from "./form-members.js";
+import { callFormMethod, formMember, isDisabled, tagName } from "./form-members.js";
 import { submitterElement, submitterOf } from "./submitter.js";
-import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 
 // Successful controls: which controls of a form are sent, and as which name/value fields
@@ -10,8 +9,13 @@ import jQuery from "jquery";
 const rLineBreak = /\r\n|\r|\n/g;
 const rCR = /\r/g;
 
-// Listed form elements that are never submitted.
-const rUnsubmittable = /^(?:fieldset|object|output)$/;
+// The submittable elements: the only ones a form submission sends.
+const submittable = "button, input, select, textarea";
+const rSubmittable = /^(?:button|input|select|textarea)$/;
+
+function isSubmittable(el) {
+  return rSubmittable.test(tagName(el));
+}
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
@@ -180,58 +184,43 @@ export function urlencodedFields(fields) {
 export function createSuccessfulControls() {
   const $ = jQuery;
 
-  // #386; inputs that name the form in their form attribute, other than the candidates found.
-  // A form only gets the ones it owns.
-  function outsideControls(formId, els, owner) {
-    // hat tip @thet; the id is compared, never built into a selector
-    return $(":input[form]")
-      .filter(function () {
-        return (
-          this.getAttribute("form") === formId &&
-          (!owner || this.form === owner) &&
-          $.inArray(this, els) < 0
-        );
-      })
-      .get();
-  }
+  // The submittable elements below a root (a document, a shadow root or an element), in tree
+  // order. Read through the root's prototype, since a control can shadow a form's or the
+  // document's querySelectorAll.
+  const rootOwners = { 9: Document, 11: DocumentFragment };
 
-  // A descendant of a form is a candidate unless it is a control another form owns.
-  function ownedBy(els, owner) {
-    return $.grep(els, function (el) {
-      return typeof el.form === "undefined" || el.form === owner;
-    });
+  function submittableIn(root) {
+    const owner = rootOwners[formMember(root, "nodeType")] || Element;
+
+    return owner.prototype.querySelectorAll.call(root, submittable);
   }
 
   /**
-   * The candidate controls of a form, in order: its elements, or every descendant it owns in
-   * semantic mode, then the outside controls it owns that name it.
+   * The candidate controls of a subject, in tree order: for a form, the submittable elements it
+   * owns, outside controls (form=id) and image buttons included; for a fieldset, the document or
+   * another container, its submittable descendants; for a plain object, its elements list.
    */
-  function controlsOf(form, semantic) {
-    const formId = formAttribute(form, "id");
-    let els = formMember(form, "elements");
-
-    if (semantic || typeof els === "undefined") {
-      // the document is not an element; it has its own getElementsByTagName
-      els = isElement(form)
-        ? callFormMethod(form, "getElementsByTagName", "*")
-        : form.getElementsByTagName("*");
+  function controlsOf(form) {
+    if (tagName(form) === "form") {
+      // #386: the form's tree holds every control it owns, also those outside it
+      return $.grep(submittableIn(callFormMethod(form, "getRootNode")), function (el) {
+        return el.form === form;
+      });
     }
 
-    els = $.makeArray(els);
+    const type = formMember(form, "nodeType");
 
-    // the subject may also be a fieldset, the document or another container
-    const owner = tagName(form) === "form" ? form : null;
-
-    if (semantic && owner) {
-      els = ownedBy(els, owner);
+    if (type === 1 || type === 9) {
+      return $.makeArray(submittableIn(form));
     }
 
-    // outside fields are already included in form.elements
-    if (formId && semantic) {
-      els = els.concat(outsideControls(formId, els, owner));
-    }
+    // a plain object with an elements list; a text node or the window throws a TypeError
+    const listed = form.elements;
 
-    return els;
+    return $.grep(
+      $.makeArray(typeof listed === "undefined" ? form.querySelectorAll(submittable) : listed),
+      isSubmittable,
+    );
   }
 
   // The fields of a control's value, or null when the control is not sent.
@@ -265,29 +254,28 @@ export function createSuccessfulControls() {
   }
 
   // The clicked image's value and coordinates.
-  function imageFields(sub, input, type) {
+  function imageFields(sub, input) {
     const n = input.name;
-    const value = { name: n, value: $(input).val() };
 
-    if (type) {
-      value.type = type;
-    }
-
-    return [value, { name: n + ".x", value: sub.x }, { name: n + ".y", value: sub.y }];
+    return [
+      { name: n, value: $(input).val(), type: input.type },
+      { name: n + ".x", value: sub.x },
+      { name: n + ".y", value: sub.y },
+    ];
   }
 
   // Adds one candidate control's fields, and the control when it has a value to send.
-  function addCandidate(collected, form, el, semantic) {
-    if (!el.name || isDisabled(el) || rUnsubmittable.test(tagName(el))) {
+  function addCandidate(collected, form, el) {
+    if (!el.name || isDisabled(el) || !isSubmittable(el)) {
       return;
     }
 
-    const sub = semantic && el.type === "image" && submitterOf(form);
+    const sub = el.type === "image" && submitterOf(form);
 
     if (sub) {
-      // handle image inputs on the fly when semantic == true
+      // the clicked image at its place in tree order; other image buttons are not sent
       if (sub.el === el) {
-        collected.fields.push.apply(collected.fields, imageFields(sub, el, el.type));
+        collected.fields.push.apply(collected.fields, imageFields(sub, el));
       }
 
       return;
@@ -301,38 +289,24 @@ export function createSuccessfulControls() {
     }
   }
 
-  // input type=='image' are not found in elements array! handle it here
-  function addClickedImage(collected, form) {
-    const sub = submitterOf(form);
-    const input = sub && $(sub.el)[0];
-
-    if (input && input.name && !isDisabled(input) && input.type === "image") {
-      collected.fields.push.apply(collected.fields, imageFields(sub, input));
-    }
-  }
-
   /**
    * The fields of a form, as formToArray returns them, and the controls they came from.
    */
-  function collect(form, semantic, filtering) {
+  function collect(form, filtering) {
     const collected = { fields: [], controls: [] };
 
     if (!form) {
       return collected;
     }
 
-    let els = controlsOf(form, semantic);
+    let els = controlsOf(form);
 
     if (typeof filtering === "function") {
       els = $.map(els, filtering);
     }
 
     for (let i = 0; i < els.length; i++) {
-      addCandidate(collected, form, els[i], semantic);
-    }
-
-    if (!semantic) {
-      addClickedImage(collected, form);
+      addCandidate(collected, form, els[i]);
     }
 
     return collected;

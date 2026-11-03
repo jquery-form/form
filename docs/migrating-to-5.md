@@ -22,6 +22,9 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [Iframe `.done` and `.then` receive the parsed data](#iframe-done-and-then-receive-the-parsed-data)                                                 | `iframe: true` uploads that read the response in `.done` or `.then`                                    | None                                                                             |
 | [Replacing `$.fieldValue` no longer changes what is sent](#replacing-fieldvalue-no-longer-changes-what-is-sent)                                     | Pages that replace `$.fieldValue` to change the values sent                                            | "replacing $.fieldValue to change what is serialized is deprecated", under debug |
 | [Selector options are never parsed as HTML](#selector-options-are-never-parsed-as-html)                                                             | Code that passes markup in `target` or `iframeTarget`, or a positional pseudo-class in `includeHidden` | None                                                                             |
+| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                                                     | Servers that depend on field order, with an image button or a control outside the form (`form="id"`)   | None                                                                             |
+| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)                                         | Forms with form-associated custom elements, and `filtering` callbacks that count or see other elements | None                                                                             |
+| [`semantic` is ignored](#semantic-is-ignored)                                                                                                       | Code that passes `semantic: true`, or a first argument to `formToArray` or `formSerialize`             | None                                                                             |
 
 Entries are added as each 5.0 change lands.
 
@@ -393,6 +396,111 @@ After (5.0), the same option throws a syntax error when the response arrives. Pa
 $("#myForm").ajaxSubmit({ target: "#output" });
 ```
 
+### Fields are sent in tree order
+
+**What changed.** `formToArray`, `formSerialize` and `ajaxSubmit` (and so `ajaxForm`) return and send a form's fields in tree order, the order a native submission and `new FormData(form)` use, whatever options you pass. Two kinds of field move:
+
+- A control outside the form that names it in its `form` attribute (`<input form="myForm">`) is sent at its place in the document. With `semantic: true`, 4.x sent it after the form's own controls; without it, 4.x already sent it in place.
+- A clicked image button's fields are sent at the image's place. Without `semantic: true`, 4.x sent them after every other field of the form.
+
+The `data` option and `extraData` are still sent after the form's fields. The iframe transport posts the form itself, so the form's own fields were already in tree order there.
+
+**Why.** A server that reads fields in order, for example one that pairs repeated names by position, gets the order of a native submission, and the order no longer depends on an option.
+
+**Are you affected?** Only if a form has an image button or a control outside it with a `form` attribute, and your server or a `beforeSubmit` callback depends on the order of the fields. 4.x has no warning for this.
+
+Before (4.x), with the image button `map` clicked at 3,4 and no `semantic` option:
+
+```html
+<form id="myForm">
+  <input name="a" value="1" />
+  <input type="image" name="map" value="go" src="map.png" />
+  <input name="b" value="2" />
+</form>
+```
+
+```text
+a=1&b=2&map=go&map.x=3&map.y=4
+```
+
+After (5.0):
+
+```text
+a=1&map=go&map.x=3&map.y=4&b=2
+```
+
+### Only buttons, inputs, selects and textareas are sent
+
+**What changed.** The fields come from submittable elements only: `button`, `input`, `select` and `textarea`. A form sends the ones it owns, as the HTML spec defines it: its descendants that are not owned by another form, and the controls elsewhere in its document (or shadow root) that name it in their `form` attribute. A fieldset, a `div`, the document or another container passed to `formToArray` sends its submittable descendants in tree order, but no controls outside it. Compared with 4.x:
+
+- A form-associated custom element (a custom element with `static formAssociated = true`) is not sent. 4.x sent its `name` and `value` properties.
+- 4.x also sent other named descendants, such as `<a name>` and `<img name>`, with an empty value: always for a `div` or the document, and for a form with `semantic: true`. With `semantic: true`, a container with an `id` also sent the outside controls that named that `id`.
+- A clicked image button that the form does not own (a `clk` property the page set to another form's image) is not sent; 4.x sent it after the other fields.
+- The `filtering` option and the third argument of `formToArray` receive only these candidates, so the `index` they get counts only them. In 4.x they also received fieldsets, outputs, objects and custom elements, and with `semantic: true` every descendant of the form.
+
+**Why.** These are the elements a native submission reads. A custom element's form value is set with `ElementInternals.setFormValue()`, which script cannot read back, so its `value` property was not what a native submission sends.
+
+**Are you affected?** Only if a form holds form-associated custom elements, a `filtering` callback relies on its `index` or on seeing other elements, or you set a form's `clk` yourself. 4.x has no warning for this. To send a custom element's value, copy it into a hidden input or pass it in the `data` option.
+
+Before (4.x), where `<my-rating>` is a form-associated custom element whose `value` property is `"4"`:
+
+```html
+<form id="myForm">
+  <my-rating name="rating"></my-rating>
+  <input name="a" value="1" />
+</form>
+```
+
+```text
+rating=4&a=1
+```
+
+After (5.0):
+
+```text
+a=1
+```
+
+### `semantic` is ignored
+
+**What changed.** The `semantic` option and the first argument of `formToArray` and `formSerialize` are ignored, like any option `$.ajax` does not know, and passing them throws no error. 5.0 always serializes in native tree order, which `semantic: true` approximated. `formToArray` keeps its arguments in place, so the elements list and `filtering` are still its second and third arguments.
+
+**Why.** `semantic: true` read every descendant of the form instead of `form.elements`, which leaves out image buttons, so that a clicked image's fields were sent at its place; it then sent outside controls last. 5.0 reads the form's own controls in tree order in every case, so there is nothing left for the option to choose.
+
+**Are you affected?** Search your code for `semantic` and for `formToArray(true` or `formSerialize(true`. With `semantic: true`, outside controls (`form="id"`) are now sent at their place in the document, as described in [Fields are sent in tree order](#fields-are-sent-in-tree-order). 4.x has no warning for this. Leave the option out.
+
+Before (4.x):
+
+```javascript
+$("#myForm").ajaxSubmit({ semantic: true });
+var fields = $("#myForm").formToArray(true, elements);
+```
+
+After (5.0):
+
+```javascript
+$("#myForm").ajaxSubmit();
+var fields = $("#myForm").formToArray(false, elements);
+```
+
+With `semantic: true` and `<input name="out" value="o" form="myForm" />` placed before `<form id="myForm"><input name="a" value="1" /></form>`, 4.x sends:
+
+```text
+a=1&out=o
+```
+
+5.0 sends:
+
+```text
+out=o&a=1
+```
+
 ## What your server receives
 
-This section will hold before and after request bodies for the serialization changes.
+These changes alter the fields the plugin sends. The table shows the request body for each entry's example form, urlencoded; a multipart body carries the same fields in the same order. Each entry above has the details.
+
+| Change                                                                                                      | Example                                                    | 4.x body                         | 5.0 body                         |
+| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | -------------------------------- |
+| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                             | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map=go&map.x=3&map.y=4&b=2` |
+| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent) | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                            |
+| [`semantic` is ignored](#semantic-is-ignored)                                                               | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`                      |

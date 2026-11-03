@@ -119,23 +119,6 @@ describe("serialization oracle", function () {
           Object.assign(g, { comparison: "formToArray, submitter" }),
         );
       });
-
-      it("formToArray with semantic should send what FormData collects with the submitter", function () {
-        const g = arrange(seed);
-        const submitter = supportsSubmitterArgument() ? g.submitter : null;
-        setSubmitter(g.form, submitter);
-
-        const plugin = pluginEntries($(g.form).formToArray(true));
-        const native = nativeEntries(
-          submitter ? new FormData(g.form, submitter) : new FormData(g.form),
-        );
-
-        assertSameEntries(
-          plugin,
-          native,
-          Object.assign(g, { submitter: submitter, semantic: true, comparison: "semantic" }),
-        );
-      });
     });
   });
 });
