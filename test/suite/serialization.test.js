@@ -1206,44 +1206,111 @@ describe("form", function () {
   });
 
   describe("fieldValue", function () {
-    it("should be used by formToArray, fieldSerialize and fieldValue when a page overrides it", function () {
-      const $form = $('<form><input name="a" value="1"></form>');
+    function withReplacedFieldValue(replacement, run) {
       const saved = $.fieldValue;
-      $.fieldValue = function () {
-        return "over";
-      };
+      $.fieldValue = replacement;
 
       try {
-        const results = [
-          $form.formToArray()[0].value,
-          $form.find("input").fieldSerialize(),
-          $form.find("input").fieldValue(),
-        ];
-
-        assert.deepEqual(results, ["over", "a=over", ["over"]]);
+        return run();
       } finally {
         $.fieldValue = saved;
       }
+    }
+
+    function sentBy($form) {
+      let body;
+      $form.ajaxSubmit({
+        beforeSend: function (xhr, settings) {
+          body = settings.data;
+          return false;
+        },
+      });
+
+      return body;
+    }
+
+    it("should not change what formToArray, formSerialize, fieldSerialize or ajaxSubmit send when a page replaces it", function () {
+      const $form = $(
+        '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
+      );
+      $form.appendTo("#main");
+
+      const results = withReplacedFieldValue(
+        () => "over",
+        () => [
+          $form.formToArray().map((field) => field.value),
+          $form.formSerialize(),
+          $form.find("input").fieldSerialize(),
+          sentBy($form),
+        ],
+      );
+
+      assert.deepEqual(results, [["1"], "a=1", "a=1", "a=1"]);
     });
 
-    it("should skip a control for which an overriding $.fieldValue returns undefined", function () {
+    it("should still send a control for which a replacement returns undefined", function () {
       const $form = $('<form><input name="a" value="1"></form>');
-      const saved = $.fieldValue;
-      $.fieldValue = function () {
-        return undefined;
-      };
 
-      try {
-        const results = [
-          $form.formToArray(),
-          $form.find("input").fieldSerialize(),
-          $form.find("input").fieldValue(),
-        ];
+      const results = withReplacedFieldValue(
+        () => undefined,
+        () => [$form.formSerialize(), $form.find("input").fieldSerialize()],
+      );
 
-        assert.deepEqual(results, [[], "", []]);
-      } finally {
-        $.fieldValue = saved;
+      assert.deepEqual(results, ["a=1", "a=1"]);
+    });
+
+    it("should be read by fieldValue when a page replaces it", function () {
+      const $input = $('<input name="a" value="1">');
+
+      const results = withReplacedFieldValue(
+        (el) => (el.value === "1" ? "over" : undefined),
+        () => [$input.fieldValue(), $input.val("2").fieldValue()],
+      );
+
+      assert.deepEqual(results, [["over"], []]);
+    });
+
+    describe("when a jQuery valHook changes a value", function () {
+      function withHiddenValHook(run) {
+        const saved = $.valHooks.hidden;
+        $.valHooks.hidden = { get: () => "hooked" };
+
+        try {
+          return run();
+        } finally {
+          if (saved) {
+            $.valHooks.hidden = saved;
+          } else {
+            delete $.valHooks.hidden;
+          }
+        }
       }
+
+      it("should send the hooked value from formToArray, formSerialize, fieldSerialize and ajaxSubmit, and read it with fieldValue and $.fieldValue", function () {
+        const $form = $(
+          '<form method="post" action="ajax/text.html"><input type="hidden" name="h" value="raw"></form>',
+        );
+        $form.appendTo("#main");
+        const $input = $form.find("input");
+
+        const results = withHiddenValHook(() => [
+          $form.formToArray().map((field) => field.value),
+          $form.formSerialize(),
+          $input.fieldSerialize(),
+          sentBy($form),
+          $input.fieldValue(),
+          $.fieldValue($input[0]),
+        ]);
+
+        assert.deepEqual(results, [
+          ["hooked"],
+          "h=hooked",
+          "h=hooked",
+          "h=hooked",
+          ["hooked"],
+          "hooked",
+        ]);
+      });
     });
 
     it("should return null for a control inside a disabled fieldset", function () {

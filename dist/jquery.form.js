@@ -281,21 +281,6 @@ function log() {
   window.console.log(msg);
 }
 
-let warned = {};
-
-/**
- * A deprecation warning: console.warn, only while debug is on, once per id per page. The message
- * names the replacement; the warning adds that the feature is removed in 5.0.
- */
-function deprecate(id, message) {
-  if (!jQuery.fn.ajaxSubmit.debug || warned[id]) {
-    return;
-  }
-
-  warned[id] = true;
-  window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
-}
-
 // True for a jQuery version string older than 3.5.
 function beforeJQuery35(version) {
   const parts = String(version).split(".");
@@ -652,17 +637,6 @@ function fieldValue(el, successful) {
   return valueOf(el);
 }
 
-// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
-// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
-function deprecateFieldValueOverride() {
-  if (jQuery.fieldValue !== fieldValue) {
-    deprecate(
-      "fieldValue-override",
-      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks",
-    );
-  }
-}
-
 /**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
@@ -800,8 +774,8 @@ function createSuccessfulControls() {
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
     const n = el.name;
-    // read at call time, so a page that replaces $.fieldValue changes what is sent
-    const v = $.fieldValue(el, true);
+    // the plugin's own reader: a page that replaces $.fieldValue does not change what is sent
+    const v = fieldValue(el, true);
 
     if (v && v.constructor === Array) {
       return $.map(v, function (value) {
@@ -883,8 +857,6 @@ function createSuccessfulControls() {
     if (!form) {
       return collected;
     }
-
-    deprecateFieldValueOverride();
 
     let els = controlsOf(form, semantic);
 
@@ -2244,8 +2216,6 @@ function createSubmission(forms, serialization) {
   $.fn.fieldSerialize = function (successful) {
     const a = [];
 
-    deprecateFieldValueOverride();
-
     this.each(function () {
       const n = this.name;
 
@@ -2254,7 +2224,8 @@ function createSubmission(forms, serialization) {
         return;
       }
 
-      const v = $.fieldValue(this, successful);
+      // the plugin's own reader, not a replaced $.fieldValue
+      const v = fieldValue(this, successful);
 
       if (v && v.constructor === Array) {
         for (let i = 0, max = v.length; i < max; i++) {

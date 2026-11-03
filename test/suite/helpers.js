@@ -1,5 +1,4 @@
 import { afterEach, beforeAll, beforeEach } from "vitest";
-import { resetDeprecations } from "../../src/diagnostics.js";
 
 // helper method
 export var arrayCount = function (arr, key) {
@@ -243,15 +242,13 @@ export async function withWindowErrors(run) {
   }
 }
 
-// Runs `run` with debug set as given and console.warn recorded; returns the warnings. The
-// once-per-page record of deprecations is cleared before and after.
-export function recordDeprecations(debug, run) {
+// Runs `run` with debug set as given and console.warn recorded; returns the warnings.
+export function recordWarnings(debug, run) {
   const warnings = [];
   const warn = console.warn;
   const log = console.log;
   console.warn = (text) => warnings.push(text);
   console.log = () => {};
-  resetDeprecations();
   $.fn.ajaxSubmit.debug = debug;
 
   try {
@@ -260,7 +257,6 @@ export function recordDeprecations(debug, run) {
     $.fn.ajaxSubmit.debug = false;
     console.warn = warn;
     console.log = log;
-    resetDeprecations();
   }
 
   return warnings;

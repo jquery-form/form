@@ -12,26 +12,6 @@ export function log() {
   window.console.log(msg);
 }
 
-let warned = {};
-
-/**
- * A deprecation warning: console.warn, only while debug is on, once per id per page. The message
- * names the replacement; the warning adds that the feature is removed in 5.0.
- */
-export function deprecate(id, message) {
-  if (!jQuery.fn.ajaxSubmit.debug || warned[id]) {
-    return;
-  }
-
-  warned[id] = true;
-  window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
-}
-
-// Forgets which deprecations have warned (for tests).
-export function resetDeprecations() {
-  warned = {};
-}
-
 // True for a jQuery version string older than 3.5.
 export function beforeJQuery35(version) {
   const parts = String(version).split(".");

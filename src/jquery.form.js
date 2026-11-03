@@ -21,12 +21,7 @@
  */
 import { ajaxForm, ajaxFormUnbind } from "./ajax-form.js";
 import { callFormMethod, tagName } from "./form-members.js";
-import {
-  createSuccessfulControls,
-  deprecateFieldValueOverride,
-  fieldValue,
-  urlencode,
-} from "./successful-controls.js";
+import { createSuccessfulControls, fieldValue, urlencode } from "./successful-controls.js";
 import { log, requireJQuery35 } from "./diagnostics.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
 import { createIframeTransport } from "./iframe-transport.js";
@@ -181,8 +176,6 @@ import { submitOptions } from "./options.js";
   $.fn.fieldSerialize = function (successful) {
     const a = [];
 
-    deprecateFieldValueOverride();
-
     this.each(function () {
       const n = this.name;
 
@@ -191,7 +184,8 @@ import { submitOptions } from "./options.js";
         return;
       }
 
-      const v = $.fieldValue(this, successful);
+      // the plugin's own reader, not a replaced $.fieldValue
+      const v = fieldValue(this, successful);
 
       if (v && v.constructor === Array) {
         for (let i = 0, max = v.length; i < max; i++) {

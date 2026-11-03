@@ -1,6 +1,5 @@
 import { callFormMethod, formMember, isDisabled, isElement, tagName } from "./form-members.js";
 import { submitterElement, submitterOf } from "./submitter.js";
-import { deprecate } from "./diagnostics.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 
@@ -99,17 +98,6 @@ export function fieldValue(el, successful) {
   }
 
   return valueOf(el);
-}
-
-// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
-// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
-export function deprecateFieldValueOverride() {
-  if (jQuery.fieldValue !== fieldValue) {
-    deprecate(
-      "fieldValue-override",
-      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks",
-    );
-  }
 }
 
 /**
@@ -249,8 +237,8 @@ export function createSuccessfulControls() {
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
     const n = el.name;
-    // read at call time, so a page that replaces $.fieldValue changes what is sent
-    const v = $.fieldValue(el, true);
+    // the plugin's own reader: a page that replaces $.fieldValue does not change what is sent
+    const v = fieldValue(el, true);
 
     if (v && v.constructor === Array) {
       return $.map(v, function (value) {
@@ -332,8 +320,6 @@ export function createSuccessfulControls() {
     if (!form) {
       return collected;
     }
-
-    deprecateFieldValueOverride();
 
     let els = controlsOf(form, semantic);
 

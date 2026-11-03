@@ -12,7 +12,7 @@ import {
   selectFiles,
   formHidingParentNode,
   buildForm,
-  recordDeprecations,
+  recordWarnings,
   submitTransport,
 } from "./helpers.js";
 
@@ -2494,7 +2494,7 @@ describe("form", function () {
           '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
-        const warnings = recordDeprecations(true, () => submitWith($form, [{}]));
+        const warnings = recordWarnings(true, () => submitWith($form, [{}]));
 
         assert.deepEqual(
           warnings.filter((text) => text.includes("iframe")),

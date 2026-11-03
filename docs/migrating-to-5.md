@@ -6,20 +6,21 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 
 ## Summary
 
-| Change                                                                                                                                              | Who is affected                                                                        | 4.x warning                                                                  |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery   | "jQuery before 3.5", under debug                                             |
-| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                    | None                                                                         |
-| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                                | "attr2 is deprecated", under debug                                           |
-| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist                 | "queuing ajaxForm", under debug                                              |
-| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier   | None                                                                         |
-| [`clearInputs` is removed](#clearinputs-is-removed)                                                                                                 | Code that calls `clearInputs`                                                          | "clearInputs is deprecated", under debug                                     |
-| [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                              | "closeKeepAlive works around a Safari 3/4 bug", under debug                  |
-| [`delegation: true` throws](#delegation-true-throws)                                                                                                | Code that passes `delegation: true` (or another non-string truthy value) to `ajaxForm` | "delegation: true binds every form on the page", always (even without debug) |
-| [The iframe transport is used only with `iframe: true`](#the-iframe-transport-is-used-only-with-iframe-true)                                        | Uploads in browsers without `FormData` or the File API                                 | "choosing the iframe transport automatically", under debug                   |
-| [The package has an `exports` map](#the-package-has-an-exports-map)                                                                                 | Node ES module imports of jquery-form, and imports of paths outside `dist`             | None                                                                         |
-| [`src` is no longer published](#src-is-no-longer-published)                                                                                         | Code that imports files from `jquery-form/src`                                         | None                                                                         |
-| [Iframe `.done` and `.then` receive the parsed data](#iframe-done-and-then-receive-the-parsed-data)                                                 | `iframe: true` uploads that read the response in `.done` or `.then`                    | None                                                                         |
+| Change                                                                                                                                              | Who is affected                                                                        | 4.x warning                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [jQuery 3.5 or later is required, as a peer dependency](#jquery-35-or-later-is-required-as-a-peer-dependency)                                       | Apps on jQuery before 3.5, and installs that relied on jquery-form to pull in jQuery   | "jQuery before 3.5", under debug                                                 |
+| [`form.jquery.json` is removed](#formjqueryjson-is-removed)                                                                                         | Tools that read the old plugins.jquery.com manifest                                    | None                                                                             |
+| [`$.fn.attr2` is removed](#fnattr2-is-removed)                                                                                                      | Code that calls `attr2`                                                                | "attr2 is deprecated", under debug                                               |
+| [`ajaxForm` on an empty selection before the DOM is ready no longer waits](#ajaxform-on-an-empty-selection-before-the-dom-is-ready-no-longer-waits) | Pages on jQuery before 3 that call `ajaxForm` before their forms exist                 | "queuing ajaxForm", under debug                                                  |
+| [Internet Explorer, Opera Presto and EdgeHTML are no longer supported](#internet-explorer-opera-presto-and-edgehtml-are-no-longer-supported)        | Pages that still serve Internet Explorer, Opera 12 or earlier, or Edge 18 or earlier   | None                                                                             |
+| [`clearInputs` is removed](#clearinputs-is-removed)                                                                                                 | Code that calls `clearInputs`                                                          | "clearInputs is deprecated", under debug                                         |
+| [`closeKeepAlive` is ignored](#closekeepalive-is-ignored)                                                                                           | Iframe uploads that pass `closeKeepAlive`                                              | "closeKeepAlive works around a Safari 3/4 bug", under debug                      |
+| [`delegation: true` throws](#delegation-true-throws)                                                                                                | Code that passes `delegation: true` (or another non-string truthy value) to `ajaxForm` | "delegation: true binds every form on the page", always (even without debug)     |
+| [The iframe transport is used only with `iframe: true`](#the-iframe-transport-is-used-only-with-iframe-true)                                        | Uploads in browsers without `FormData` or the File API                                 | "choosing the iframe transport automatically", under debug                       |
+| [The package has an `exports` map](#the-package-has-an-exports-map)                                                                                 | Node ES module imports of jquery-form, and imports of paths outside `dist`             | None                                                                             |
+| [`src` is no longer published](#src-is-no-longer-published)                                                                                         | Code that imports files from `jquery-form/src`                                         | None                                                                             |
+| [Iframe `.done` and `.then` receive the parsed data](#iframe-done-and-then-receive-the-parsed-data)                                                 | `iframe: true` uploads that read the response in `.done` or `.then`                    | None                                                                             |
+| [Replacing `$.fieldValue` no longer changes what is sent](#replacing-fieldvalue-no-longer-changes-what-is-sent)                                     | Pages that replace `$.fieldValue` to change the values sent                            | "replacing $.fieldValue to change what is serialized is deprecated", under debug |
 
 Entries are added as each 5.0 change lands.
 
@@ -322,6 +323,34 @@ $("#uploadForm")
 ```
 
 The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `iframe: true`, comment on https://github.com/jquery-form/form/issues/629 with your use case.
+
+### Replacing `$.fieldValue` no longer changes what is sent
+
+**What changed.** `formToArray`, `formSerialize`, `fieldSerialize` and `ajaxSubmit` (and so `ajaxForm`) read each control's value with the plugin's own code, not through `$.fieldValue`. A page that assigns its own function to `$.fieldValue` no longer changes the fields they return or send. `$.fieldValue` and `$.fn.fieldValue` are still public and return the same values as in 4.x, and `$.fn.fieldValue` still reads through `$.fieldValue`, so a replacement still changes what `fieldValue()` returns. The way to change a value is a jQuery [`valHooks`](https://api.jquery.com/jQuery.valHooks/) entry, which 4.x already honored: the plugin reads an `input` (other than a file input) or a `textarea` with `.val()`. A `select`'s values are read from its selected options, so a `valHooks` entry for `select` or `option` does not change them.
+
+**Why.** The fields sent should not depend on a global function that any script on the page can replace, and `valHooks` is jQuery's own way to change what `.val()` reads, used the same way by `.serialize()`.
+
+**Are you affected?** Search your code for assignments to `$.fieldValue` or `jQuery.fieldValue`. With `$.fn.ajaxSubmit.debug = true`, the latest 4.x logs `replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks` the first time `formToArray`, `formSerialize`, `fieldSerialize` or `ajaxSubmit` reads values through a replacement. A `valHooks` entry is keyed by the control's `type` (or its tag name), not its name, and it changes `.val()` everywhere on the page.
+
+Before (4.x), commas are removed from the `price` field before it is sent:
+
+```javascript
+var fieldValue = $.fieldValue;
+$.fieldValue = function (el, successful) {
+  var value = fieldValue(el, successful);
+  return el.name === "price" && typeof value === "string" ? value.replace(/,/g, "") : value;
+};
+```
+
+After (5.0), with a `valHooks` entry for text inputs. Returning `undefined` lets jQuery read the value as usual:
+
+```javascript
+$.valHooks.text = {
+  get: function (el) {
+    return el.name === "price" ? el.value.replace(/,/g, "") : undefined;
+  },
+};
+```
 
 ## What your server receives
 

@@ -1,6 +1,6 @@
 import { assert, describe, it } from "vitest";
-import { beforeJQuery35, deprecate, log, requireJQuery35 } from "../../src/diagnostics.js";
-import { recordDeprecations, resetFixture } from "./helpers.js";
+import { beforeJQuery35, log, requireJQuery35 } from "../../src/diagnostics.js";
+import { recordWarnings, resetFixture } from "./helpers.js";
 
 describe("form", function () {
   resetFixture();
@@ -71,159 +71,13 @@ describe("form", function () {
     });
   });
 
-  describe("deprecations", function () {
+  describe("jQuery versions", function () {
     it("should tell versions before 3.5 from later ones", function () {
       const versions = ["1.7.2", "2.2.4", "3.4.1", "3.5.0", "3.7.1", "3.10.0", "4.0.0"];
 
       const old = versions.map(beforeJQuery35);
 
       assert.deepEqual(old, [true, true, true, false, false, false, false]);
-    });
-
-    it("should prefix a deprecation warning with the plugin name", function () {
-      const warnings = recordDeprecations(true, () => deprecate("test-prefix", "a message"));
-
-      assert.deepEqual(warnings, ["[jquery.form] a message (removed in 5.0)"]);
-    });
-
-    describe("when a page replaces $.fieldValue", function () {
-      function withReplacedFieldValue(run) {
-        const saved = $.fieldValue;
-        $.fieldValue = () => "over";
-
-        try {
-          return run();
-        } finally {
-          $.fieldValue = saved;
-        }
-      }
-
-      function aboutFieldValue(warnings) {
-        return warnings.filter((text) => text.includes("$.fieldValue"));
-      }
-
-      it("should warn once, naming valHooks, when formToArray serializes under debug, and still use the replacement", function () {
-        const $form = $('<form><input name="a" value="1"><input name="b" value="2"></form>');
-        let fields;
-
-        const warnings = recordDeprecations(true, function () {
-          withReplacedFieldValue(function () {
-            fields = $form.formToArray();
-          });
-        });
-
-        assert.deepEqual(warnings, [
-          "[jquery.form] replacing $.fieldValue to change what is serialized is deprecated, " +
-            "use jQuery valHooks (removed in 5.0)",
-        ]);
-        assert.deepEqual(
-          fields.map((field) => field.value),
-          ["over", "over"],
-        );
-      });
-
-      it("should stay silent when formToArray serializes with debug off", function () {
-        const $form = $('<form><input name="a" value="1"></form>');
-
-        const warnings = recordDeprecations(false, function () {
-          withReplacedFieldValue(() => $form.formToArray());
-        });
-
-        assert.deepEqual(warnings, []);
-      });
-
-      it("should not warn while $.fieldValue is the plugin's own", function () {
-        const $form = $('<form action="ajax/text.html"><input name="a" value="1"></form>');
-        $form.appendTo("#main");
-
-        const warnings = recordDeprecations(true, function () {
-          $form.formToArray();
-          $form.formSerialize();
-          $form.find("input").fieldSerialize();
-          $form.ajaxSubmit({ beforeSubmit: () => false });
-        });
-
-        assert.deepEqual(aboutFieldValue(warnings), []);
-      });
-
-      it("should warn only once per page across repeated serializations", function () {
-        const $form = $('<form action="ajax/text.html"><input name="a" value="1"></form>');
-        $form.appendTo("#main");
-
-        const warnings = recordDeprecations(true, function () {
-          withReplacedFieldValue(function () {
-            $form.formToArray();
-            $form.formToArray();
-            $form.formSerialize();
-            $form.find("input").fieldSerialize();
-            $form.ajaxSubmit({ beforeSubmit: () => false });
-          });
-        });
-
-        assert.strictEqual(aboutFieldValue(warnings).length, 1);
-      });
-
-      it("should warn when formSerialize serializes under debug", function () {
-        const $form = $('<form><input name="a" value="1"></form>');
-        let serialized;
-
-        const warnings = recordDeprecations(true, function () {
-          withReplacedFieldValue(function () {
-            serialized = $form.formSerialize();
-          });
-        });
-
-        assert.strictEqual(aboutFieldValue(warnings).length, 1);
-        assert.strictEqual(serialized, "a=over");
-      });
-
-      it("should warn when fieldSerialize serializes under debug", function () {
-        const $input = $('<input name="a" value="1">');
-        let serialized;
-
-        const warnings = recordDeprecations(true, function () {
-          withReplacedFieldValue(function () {
-            serialized = $input.fieldSerialize();
-          });
-        });
-
-        assert.strictEqual(aboutFieldValue(warnings).length, 1);
-        assert.strictEqual(serialized, "a=over");
-      });
-
-      it("should warn when ajaxSubmit serializes under debug", function () {
-        const $form = $('<form action="ajax/text.html"><input name="a" value="1"></form>');
-        $form.appendTo("#main");
-        let fields;
-
-        const warnings = recordDeprecations(true, function () {
-          withReplacedFieldValue(function () {
-            $form.ajaxSubmit({
-              beforeSubmit: function (sent) {
-                fields = sent;
-                return false;
-              },
-            });
-          });
-        });
-
-        assert.strictEqual(aboutFieldValue(warnings).length, 1);
-        assert.strictEqual(fields[0].value, "over");
-      });
-
-      it("should not warn when fieldValue reads through the replacement", function () {
-        const $input = $('<input name="a" value="1">');
-        let values;
-
-        const warnings = recordDeprecations(true, function () {
-          withReplacedFieldValue(function () {
-            values = $input.fieldValue();
-          });
-        });
-
-        assert.deepEqual(warnings, []);
-        assert.deepEqual(values, ["over"]);
-      });
     });
   });
 
@@ -365,7 +219,7 @@ describe("form", function () {
       const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
       let error;
 
-      const warnings = recordDeprecations(true, function () {
+      const warnings = recordWarnings(true, function () {
         try {
           $form.ajaxSubmit({ beforeSubmit: () => false });
           $form.ajaxForm();

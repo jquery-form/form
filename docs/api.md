@@ -117,7 +117,7 @@ $("#myFormId .specialFields").clearFields();
 
 ### Deprecations
 
-Features that 5.0 removes still work on 4.x. With debug output on (`$.fn.ajaxSubmit.debug = true`), the plugin logs a `console.warn` the first time each one is used, once per page, naming the replacement. Nothing is logged with debug off.
+Features that 5.0 removes still work on 4.x. With debug output on (`$.fn.ajaxSubmit.debug = true`), 4.x logs a `console.warn` the first time each one is used, once per page, naming the replacement. Nothing is logged with debug off. 5.0 logs none of these warnings; the [migration guide](migrating-to-5.md) describes each change.
 
 | Deprecated                                                                                     | Use instead                                                       |
 | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
