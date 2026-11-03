@@ -812,6 +812,19 @@ describe("form", function () {
     });
 
     describe("image submitters", function () {
+      it("should send an image button of a div that was not clicked as its name and value", function () {
+        const $div = $(
+          '<div><input name="a" value="1"><input type="image" name="map" value="go"></div>',
+        );
+
+        const pairs = $div.formToArray().map((field) => [field.name, field.value]);
+
+        assert.deepEqual(pairs, [
+          ["a", "1"],
+          ["map", "go"],
+        ]);
+      });
+
       it("should skip every image input when nothing was clicked", function () {
         const $form = $(
           '<form><input type="image" name="i1" value="a"><input name="a" value="1"></form>',
