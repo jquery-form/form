@@ -233,5 +233,4 @@ coverage/
 .vitest/
 test-results/
 playwright-report/
-.jquery/
 .pack/

@@ -82,7 +82,6 @@ const sourceRules = {
 export default [
   {
     ignores: [
-      ".jquery/**",
       "dist/**/*.map",
       "coverage/**",
       "test/ajax/**",
