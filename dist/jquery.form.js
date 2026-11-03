@@ -241,6 +241,19 @@ function submitterOf(form) {
 }
 
 /**
+ * The fields of a clicked image button, as a native submission sends them: only its coordinates,
+ * named name.x and name.y, or x and y when it has no name.
+ */
+function imageFields(sub) {
+  const prefix = sub.el.name ? sub.el.name + "." : "";
+
+  return [
+    { name: prefix + "x", value: sub.x },
+    { name: prefix + "y", value: sub.y },
+  ];
+}
+
+/**
  * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
  */
 function submitterFields(form) {
@@ -249,12 +262,16 @@ function submitterFields(form) {
   const el = sub && sub.el;
 
   // a disabled button is not sent, also when a disabled fieldset disables it
-  if (el && el.name && !isDisabled(el)) {
+  if (!el || isDisabled(el)) {
+    return fields;
+  }
+
+  if (el.type === "image") {
+    jQuery.each(imageFields(sub), function (i, field) {
+      fields[field.name] = field.value;
+    });
+  } else if (el.name) {
     fields[el.name] = el.value;
-    if (el.type === "image") {
-      fields[el.name + ".x"] = sub.x;
-      fields[el.name + ".y"] = sub.y;
-    }
   }
 
   return fields;
@@ -768,20 +785,9 @@ function createSuccessfulControls() {
     return [{ name: n, value: v, type: el.type, required: el.required }];
   }
 
-  // The clicked image's value and coordinates.
-  function imageFields(sub, input) {
-    const n = input.name;
-
-    return [
-      { name: n, value: $(input).val(), type: input.type },
-      { name: n + ".x", value: sub.x },
-      { name: n + ".y", value: sub.y },
-    ];
-  }
-
   // Adds one candidate control's fields, and the control when it has a value to send.
   function addCandidate(collected, form, el) {
-    if (!el.name || isDisabled(el) || !isSubmittable(el)) {
+    if (isDisabled(el) || !isSubmittable(el)) {
       return;
     }
 
@@ -790,9 +796,13 @@ function createSuccessfulControls() {
     if (sub) {
       // the clicked image at its place in tree order; other image buttons are not sent
       if (sub.el === el) {
-        collected.fields.push.apply(collected.fields, imageFields(sub, el));
+        collected.fields.push.apply(collected.fields, imageFields(sub));
       }
 
+      return;
+    }
+
+    if (!el.name) {
       return;
     }
 

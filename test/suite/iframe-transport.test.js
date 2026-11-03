@@ -122,7 +122,7 @@ describe("form", function () {
         assert.strictEqual(xhr.aborted, 1);
       });
 
-      it("should submit clicked image values and coordinates as hidden inputs", async function () {
+      it("should submit only the clicked image's coordinates as hidden inputs", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const image = $('<input type="image" name="map" value="go">').appendTo($form)[0];
         const submitted = {};
@@ -139,7 +139,27 @@ describe("form", function () {
 
         await submitThroughIframe($form, { dataType: "text" });
 
-        assert.deepEqual(submitted, { map: "go", "map.x": "12", "map.y": "34" });
+        assert.deepEqual(submitted, { "map.x": "12", "map.y": "34" });
+      });
+
+      it("should submit x and y for a clicked image without a name", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const image = $('<input type="image" value="go">').appendTo($form)[0];
+        const submitted = {};
+        $form[0].clk = image;
+        $form[0].clk_x = 5;
+        $form[0].clk_y = 6;
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        await submitThroughIframe($form, { dataType: "text" });
+
+        assert.deepEqual(submitted, { x: "5", y: "6" });
       });
 
       it("should submit CSRF metadata and remove its temporary input", async function () {

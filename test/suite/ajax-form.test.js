@@ -1347,7 +1347,7 @@ describe("form", function () {
         });
 
         if ("submitter" in SubmitEvent.prototype) {
-          assert.strictEqual(requests[0].data, "a=1&im=&im.x=0&im.y=0");
+          assert.strictEqual(requests[0].data, "a=1&im.x=0&im.y=0");
         } else {
           assert.strictEqual(requests[0].data, "a=1");
         }
@@ -1626,7 +1626,7 @@ describe("form", function () {
           $form.find("[name=im]").trigger($.Event("click", { offsetX: 3, offsetY: 4 }));
         });
 
-        assert.strictEqual(requests[0].data, "clk_x=1&clk_y=2&im=&im.x=3&im.y=4");
+        assert.strictEqual(requests[0].data, "clk_x=1&clk_y=2&im.x=3&im.y=4");
       });
 
       it("should send NaN image coordinates when the click is triggered without coordinates", async function () {

@@ -25,6 +25,8 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                                                     | Servers that depend on field order, with an image button or a control outside the form (`form="id"`)   | None                                                                             |
 | [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)                                         | Forms with form-associated custom elements, and `filtering` callbacks that count or see other elements | None                                                                             |
 | [`semantic` is ignored](#semantic-is-ignored)                                                                                                       | Code that passes `semantic: true`, or a first argument to `formToArray` or `formSerialize`             | None                                                                             |
+| [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)                                             | Servers that read the `name=value` of an image button to tell which button was clicked                 | None                                                                             |
+| [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y)                                     | Forms with an unnamed image button, and servers that have a field named `x` or `y`                     | None                                                                             |
 
 Entries are added as each 5.0 change lands.
 
@@ -423,10 +425,10 @@ Before (4.x), with the image button `map` clicked at 3,4 and no `semantic` optio
 a=1&b=2&map=go&map.x=3&map.y=4
 ```
 
-After (5.0):
+After (5.0), where `map=go` is also gone (see [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)):
 
 ```text
-a=1&map=go&map.x=3&map.y=4&b=2
+a=1&map.x=3&map.y=4&b=2
 ```
 
 ### Only buttons, inputs, selects and textareas are sent
@@ -495,12 +497,62 @@ a=1&out=o
 out=o&a=1
 ```
 
+### A clicked image button sends only its coordinates
+
+**What changed.** When an image button (`<input type="image">`) submits the form, `formToArray`, `formSerialize` and `ajaxSubmit`, on every transport, send only its coordinates, `name.x` and `name.y`. 4.x also sent `name=value` before them.
+
+**Why.** A native submission never sends an image button's value, only the point that was clicked, so 4.x sent a field the server would not get from the same form without the plugin.
+
+**Are you affected?** Only if your server reads the image button's own name (for example `$_POST["map"]` in PHP) to know that it was clicked, or reads its value. 4.x has no warning for this. Check for `name.x` instead, which a native submission sends too (PHP turns the dot into an underscore: `$_POST["map_x"]`). To tell several image buttons apart, give them different names.
+
+Before (4.x), with `<input type="image" name="map" value="go" src="map.png" />` clicked at 3,4:
+
+```text
+map=go&map.x=3&map.y=4
+```
+
+```php
+if (isset($_POST["map"])) { /* the map was clicked */ }
+```
+
+After (5.0):
+
+```text
+map.x=3&map.y=4
+```
+
+```php
+if (isset($_POST["map_x"])) { /* the map was clicked */ }
+```
+
+### A clicked image button without a name sends `x` and `y`
+
+**What changed.** An image button without a `name` that submits the form sends its coordinates as `x` and `y`, at its place among the fields, on every transport. 4.x sent nothing for it.
+
+**Why.** A native submission sends `x` and `y` for an unnamed image button.
+
+**Are you affected?** Only if a form has an image button without a `name`. Your server now receives `x` and `y`; if the form also has controls named `x` or `y`, the server receives both. 4.x has no warning for this.
+
+Before (4.x), with `<input type="image" src="go.png" />` after `<input name="a" value="1" />`, clicked at 3,4:
+
+```text
+a=1
+```
+
+After (5.0):
+
+```text
+a=1&x=3&y=4
+```
+
 ## What your server receives
 
 These changes alter the fields the plugin sends. The table shows the request body for each entry's example form, urlencoded; a multipart body carries the same fields in the same order. Each entry above has the details.
 
-| Change                                                                                                      | Example                                                    | 4.x body                         | 5.0 body                         |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | -------------------------------- |
-| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                             | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map=go&map.x=3&map.y=4&b=2` |
-| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent) | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                            |
-| [`semantic` is ignored](#semantic-is-ignored)                                                               | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`                      |
+| Change                                                                                                          | Example                                                    | 4.x body                         | 5.0 body                  |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- | ------------------------- |
+| [Fields are sent in tree order](#fields-are-sent-in-tree-order)                                                 | the image button `map` clicked at 3,4, between `a` and `b` | `a=1&b=2&map=go&map.x=3&map.y=4` | `a=1&map.x=3&map.y=4&b=2` |
+| [Only buttons, inputs, selects and textareas are sent](#only-buttons-inputs-selects-and-textareas-are-sent)     | a form-associated custom element `rating` before `a`       | `rating=4&a=1`                   | `a=1`                     |
+| [`semantic` is ignored](#semantic-is-ignored)                                                                   | `semantic: true`, with `out` outside and before the form   | `a=1&out=o`                      | `out=o&a=1`               |
+| [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)         | the image button `map`, value `go`, clicked at 3,4         | `map=go&map.x=3&map.y=4`         | `map.x=3&map.y=4`         |
+| [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y) | an unnamed image button after `a`, clicked at 3,4          | `a=1`                            | `a=1&x=3&y=4`             |

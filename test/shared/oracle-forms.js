@@ -351,35 +351,6 @@ export const KNOWN_DIFFERENCES = [
       };
     },
   },
-  {
-    id: "IMG-VALUE",
-    description: "the plugin sends a clicked image button's name=value before its coordinates",
-    normalize: (pair, ctx) => {
-      if (!isImage(ctx.submitter) || !ctx.submitter.name) {
-        return pair;
-      }
-      const n = ctx.submitter.name;
-      return {
-        plugin: pair.plugin.filter(
-          (e, i) => !(e[0] === n && pair.plugin[i + 1] && pair.plugin[i + 1][0] === n + ".x"),
-        ),
-        native: pair.native,
-      };
-    },
-  },
-  {
-    id: "IMG-UNNAMED",
-    description: "FormData sends x and y for an unnamed image submitter; the plugin sends nothing",
-    normalize: (pair, ctx) => {
-      if (!isImage(ctx.submitter) || ctx.submitter.name || ctx.submitter.disabled) {
-        return pair;
-      }
-      return {
-        plugin: pair.plugin,
-        native: pair.native.filter((e) => e[0] !== "x" && e[0] !== "y"),
-      };
-    },
-  },
 ];
 
 // Applies every known class to { plugin, native } entry lists.

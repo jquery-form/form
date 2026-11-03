@@ -1,5 +1,5 @@
 import { callFormMethod, formMember, isDisabled, tagName } from "./form-members.js";
-import { submitterElement, submitterOf } from "./submitter.js";
+import { imageFields, submitterElement, submitterOf } from "./submitter.js";
 import jQuery from "jquery";
 
 // Successful controls: which controls of a form are sent, and as which name/value fields
@@ -253,20 +253,9 @@ export function createSuccessfulControls() {
     return [{ name: n, value: v, type: el.type, required: el.required }];
   }
 
-  // The clicked image's value and coordinates.
-  function imageFields(sub, input) {
-    const n = input.name;
-
-    return [
-      { name: n, value: $(input).val(), type: input.type },
-      { name: n + ".x", value: sub.x },
-      { name: n + ".y", value: sub.y },
-    ];
-  }
-
   // Adds one candidate control's fields, and the control when it has a value to send.
   function addCandidate(collected, form, el) {
-    if (!el.name || isDisabled(el) || !isSubmittable(el)) {
+    if (isDisabled(el) || !isSubmittable(el)) {
       return;
     }
 
@@ -275,9 +264,13 @@ export function createSuccessfulControls() {
     if (sub) {
       // the clicked image at its place in tree order; other image buttons are not sent
       if (sub.el === el) {
-        collected.fields.push.apply(collected.fields, imageFields(sub, el));
+        collected.fields.push.apply(collected.fields, imageFields(sub));
       }
 
+      return;
+    }
+
+    if (!el.name) {
       return;
     }
 

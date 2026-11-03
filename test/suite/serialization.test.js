@@ -51,7 +51,6 @@ describe("form", function () {
       assert.deepEqual(
         data.map((field) => [field.name, field.value]),
         [
-          ["second", "b"],
           ["second.x", 3],
           ["second.y", 4],
         ],
@@ -165,7 +164,7 @@ describe("form", function () {
       assert.deepEqual(elements, [$form[0].elements[0]]);
     });
 
-    it("should include the clicked image value and coordinates", function () {
+    it("should send only the coordinates of the clicked image, not its value", function () {
       const $form = $('<form><input type="image" name="map" value="go"></form>').appendTo("#main");
       const image = $form.find("input")[0];
       $form[0].clk = image;
@@ -175,7 +174,6 @@ describe("form", function () {
       const formData = $form.formToArray();
 
       assert.deepEqual(formData, [
-        { name: "map", value: "go", type: "image" },
         { name: "map.x", value: 12 },
         { name: "map.y", value: 34 },
       ]);
@@ -194,7 +192,6 @@ describe("form", function () {
 
       assert.deepEqual(formData, [
         { name: "token", value: "abc", type: "hidden", required: false },
-        { name: "map", value: "go", type: "image" },
         { name: "map.x", value: 5 },
         { name: "map.y", value: 8 },
         { name: "after", value: "z", type: "text", required: false },
@@ -836,21 +833,46 @@ describe("form", function () {
         assert.deepEqual(names, ["go", "a"]);
       });
 
-      it("should not send a clicked image that is disabled or unnamed", function () {
+      it("should not send a clicked image that is disabled", function () {
         const $disabled = $(
           '<form><input name="a" value="1"><input type="image" name="map" value="go" disabled></form>',
         );
-        const $unnamed = $(
-          '<form><input name="a" value="1"><input type="image" value="go"></form>',
-        );
         $disabled[0].clk = $disabled.find('[type="image"]')[0];
-        $unnamed[0].clk = $unnamed.find('[type="image"]')[0];
 
-        const disabledNames = $disabled.formToArray().map((field) => field.name);
-        const unnamedNames = $unnamed.formToArray().map((field) => field.name);
+        const names = $disabled.formToArray().map((field) => field.name);
 
-        assert.deepEqual(disabledNames, ["a"]);
-        assert.deepEqual(unnamedNames, ["a"]);
+        assert.deepEqual(names, ["a"]);
+      });
+
+      it("should send x and y for a clicked image without a name", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input type="image" value="go"><input name="b" value="2"></form>',
+        );
+        $form[0].clk = $form.find('[type="image"]')[0];
+        $form[0].clk_x = 7;
+        $form[0].clk_y = 9;
+        const elements = [];
+
+        const formData = $form.formToArray(false, elements);
+
+        assert.deepEqual(
+          formData.map((field) => [field.name, field.value]),
+          [
+            ["a", "1"],
+            ["x", 7],
+            ["y", 9],
+            ["b", "2"],
+          ],
+        );
+        assert.strictEqual(elements.length, 2);
+      });
+
+      it("should not send an unnamed image that was not clicked", function () {
+        const $form = $('<form><input type="image" value="go"><input name="a" value="1"></form>');
+
+        const names = $form.formToArray().map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
       });
 
       it("should send the clicked image when it is the only control", function () {
@@ -862,7 +884,6 @@ describe("form", function () {
         const formData = $form.formToArray();
 
         assert.deepEqual(formData, [
-          { name: "map", value: "go", type: "image" },
           { name: "map.x", value: 4 },
           { name: "map.y", value: 6 },
         ]);
@@ -879,13 +900,15 @@ describe("form", function () {
         assert.deepEqual(formData, [{ name: "a", value: "1", type: "text", required: false }]);
       });
 
-      it("should send an empty value for a clicked image without a value attribute", function () {
-        const $form = $('<form><input name="a" value="1"><input type="image" name="map"></form>');
+      it("should not send a name=value pair for a clicked image with a value attribute", function () {
+        const $form = $(
+          '<form><input name="a" value="1"><input type="image" name="map" value="go"></form>',
+        );
         $form[0].clk = $form.find('[type="image"]')[0];
 
-        const formData = $form.formToArray();
+        const names = $form.formToArray().map((field) => field.name);
 
-        assert.strictEqual(formData[1].value, "");
+        assert.deepEqual(names, ["a", "map.x", "map.y"]);
       });
 
       it("should leave the clicked image out of elements", function () {
@@ -908,7 +931,7 @@ describe("form", function () {
 
         const serialized = $form.formSerialize();
 
-        assert.strictEqual(serialized, "a=1&map=go&map.x=&map.y=");
+        assert.strictEqual(serialized, "a=1&map.x=&map.y=");
       });
     });
 
@@ -1198,7 +1221,7 @@ describe("form", function () {
       const plain = $form.formSerialize();
       const flagged = $form.formSerialize(false);
 
-      assert.strictEqual(plain, "a=1&map=go&map.x=3&map.y=4&b=2");
+      assert.strictEqual(plain, "a=1&map.x=3&map.y=4&b=2");
       assert.strictEqual(flagged, plain);
     });
 
