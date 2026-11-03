@@ -2,6 +2,7 @@ import { afterEach, assert, describe, it, vi } from "vitest";
 import {
   countHtmlParsed,
   resetFixture,
+  countParsedHTML,
   restoreAjaxState,
   selectFiles,
   submitTransport,
@@ -1375,6 +1376,44 @@ describe("form", function () {
 
             assert.match($targets[0].name, /^jqFormIO\d+$/);
             assert.strictEqual($targets[1].name, $targets[0].name);
+          });
+
+          it("should find a string iframeTarget in the form's document", function () {
+            $('<iframe id="string-target" name="string-target"></iframe>').appendTo("#main");
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let submittedTarget;
+
+            const deferred = startStubbedUpload(
+              $form,
+              { iframeTarget: "#string-target" },
+              (form) => {
+                submittedTarget = form.getAttribute("target");
+              },
+            );
+            deferred.abort();
+
+            assert.strictEqual(submittedTarget, "string-target");
+          });
+
+          it("should throw a selector syntax error from ajaxSubmit before any event, and create no frame, when iframeTarget is an HTML string", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+            const frames = $("iframe").length;
+
+            const parsed = countParsedHTML(() =>
+              $form.ajaxSubmit({
+                iframe: true,
+                forceSync: true,
+                iframeTarget: '<iframe name="made-frame"></iframe>',
+                error: function () {},
+              }),
+            );
+
+            assert.match(parsed.error.message, /unrecognized expression/);
+            assert.strictEqual(parsed.count, 0);
+            assert.deepEqual(events, []);
+            assert.strictEqual($("iframe").length, frames);
           });
 
           it("should settle the upload and end the global events when iframeTarget matches nothing", function () {

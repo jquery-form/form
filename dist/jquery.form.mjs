@@ -270,7 +270,8 @@ function requireJQuery35(version) {
   }
 }
 
-// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
+// The arguments ajaxSubmit and ajaxForm accept in place of an options object, and the options
+// that name elements.
 
 /**
  * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
@@ -336,22 +337,12 @@ function keepContext(settings, sources) {
 }
 
 /**
- * The elements a selector option (target, iframeTarget) names. A string is only ever a selector,
- * looked up in the document, so jQuery never builds elements from it; a string starting with "<"
- * is HTML, not a selector, and matches nothing. Elements and jQuery objects are used as given.
+ * A selector option (target, iframeTarget) as a jQuery set. A string is only a selector, matched
+ * in `context` (the document when it is missing) and never parsed as HTML; an element or a jQuery
+ * set passes through.
  */
-function selectorOption(value, ownerDocument) {
-  if (typeof value !== "string") {
-    return jQuery(value);
-  }
-
-  if (/^\s*</.test(value)) {
-    log("ignoring HTML given as a selector: ", value);
-
-    return jQuery([]);
-  }
-
-  return jQuery(ownerDocument || document).find(value);
+function selectorOption(value, context) {
+  return typeof value === "string" ? jQuery(jQuery.find(value, context)) : jQuery(value);
 }
 
 // ajaxForm binding: the submit and click handlers that send a form through ajaxSubmit. The
@@ -2312,10 +2303,11 @@ function createSubmission(forms, serialization) {
         // includeHidden can be the value true, or it can be a selector string
         // indicating a special test; for example:
         // $('#myForm').clearForm('.special:hidden')
-        // the above would clean hidden inputs that have the class of 'special'
+        // the above would clean hidden inputs that have the class of 'special'.
+        // The selector tests the element alone and is never parsed as HTML.
         if (
           (includeHidden === true && /hidden/.test(t)) ||
-          (typeof includeHidden === "string" && $(this).is(includeHidden))
+          (typeof includeHidden === "string" && $.filter(includeHidden, [this]).length)
         ) {
           this.value = "";
         }

@@ -1,6 +1,12 @@
 import { assert, describe, it } from "vitest";
 import pluginExport from "../../src/jquery.form.js";
-import { countHtmlParsed, resetFixture, selectFiles, withAjaxStub } from "./helpers.js";
+import {
+  countHtmlParsed,
+  countParsedHTML,
+  resetFixture,
+  selectFiles,
+  withAjaxStub,
+} from "./helpers.js";
 
 // Records the change and input events that reach `root` while `run` executes.
 function recordFieldEvents(root, run) {
@@ -873,6 +879,42 @@ describe("form", function () {
         $hidden.clearFields(includeHidden);
 
         assert.strictEqual($hidden.val(), "h");
+      });
+    });
+
+    describe("when includeHidden has a positional pseudo-class", function () {
+      function specialHiddenInputs() {
+        return $(
+          '<div><input type="hidden" class="special" value="a"><input type="hidden" class="special" value="b"></div>',
+        )
+          .appendTo("#main")
+          .find("input");
+      }
+
+      it("should test each element alone, so :first matches every element", function () {
+        const $fields = specialHiddenInputs();
+
+        $fields.clearFields(".special:first");
+
+        assert.deepEqual($fields.map((i, el) => el.value).get(), ["", ""]);
+      });
+
+      it("should test each element alone, so :eq(1) matches none", function () {
+        const $fields = specialHiddenInputs();
+
+        $fields.clearFields(".special:eq(1)");
+
+        assert.deepEqual($fields.map((i, el) => el.value).get(), ["a", "b"]);
+      });
+
+      it("should throw a selector syntax error, not parse HTML, when the selector has markup", function () {
+        const $fields = specialHiddenInputs();
+
+        const parsed = countParsedHTML(() => $fields.clearFields('<img class="made"> :first'));
+
+        assert.match(parsed.error.message, /unrecognized expression/);
+        assert.strictEqual(parsed.count, 0);
+        assert.deepEqual($fields.map((i, el) => el.value).get(), ["a", "b"]);
       });
     });
 

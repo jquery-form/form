@@ -131,7 +131,7 @@ String value that should be used for the iframe's src attribute when/if an ifram
 
 Default: `null`  
 Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server. **(version added: 2.76)**  
-A string is only ever a selector, never parsed as HTML: one that starts with `<` matches nothing. **(since 4.6.0)**
+The value may be a selector string, a jQuery object, or a DOM element. A string is matched in the form's document with `jQuery.find` and is never parsed as HTML.
 
 ### method
 
@@ -173,7 +173,7 @@ Callback function to be invoked after the form has been submitted. If a 'success
 ### target
 
 Default: `null`  
-Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element. A string is only ever a selector, never parsed as HTML: one that starts with `<` matches nothing. **(since 4.6.0)**
+Identifies the element(s) in the page to be updated with the server response. This value may be specified as a selector string, a jQuery object, or a DOM element. A string is matched with `jQuery.find` when the response arrives and is never parsed as HTML.
 
 The response is inserted as HTML, as `$.fn.load` does, so the endpoint must return markup you trust. To sanitize it, filter it with [`dataFilter`](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings), which runs before the response reaches the target on both the XHR and the iframe transport:
 
@@ -214,12 +214,11 @@ URL to which the form data will be submitted.
 These options are trusted input only: pass values your code controls, never values taken from users, the URL or a response.
 
 - `url`, and the form's `action`
-- `target` and `replaceTarget`
-- `iframeSrc` and `iframeTarget`
-- `closeKeepAlive`, which is deprecated: it works around a Safari 3/4 bug, warns under `debug` and is removed in 5.0
+- `iframeSrc`
 - `dataType: "script"`, which evaluates the response
 - the keys of `data` and `extraData` (values may come from users)
-- the `includeHidden` selector of `clearForm` and `clearFields`
+
+A string in `target`, `iframeTarget` or the `includeHidden` selector of `clearForm` and `clearFields` is only matched as a selector and never parsed as HTML.
 
 ## Example
 

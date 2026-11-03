@@ -1,7 +1,7 @@
 import jQuery from "jquery";
-import { log } from "./diagnostics.js";
 
-// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
+// The arguments ajaxSubmit and ajaxForm accept in place of an options object, and the options
+// that name elements.
 
 /**
  * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
@@ -67,20 +67,10 @@ export function keepContext(settings, sources) {
 }
 
 /**
- * The elements a selector option (target, iframeTarget) names. A string is only ever a selector,
- * looked up in the document, so jQuery never builds elements from it; a string starting with "<"
- * is HTML, not a selector, and matches nothing. Elements and jQuery objects are used as given.
+ * A selector option (target, iframeTarget) as a jQuery set. A string is only a selector, matched
+ * in `context` (the document when it is missing) and never parsed as HTML; an element or a jQuery
+ * set passes through.
  */
-export function selectorOption(value, ownerDocument) {
-  if (typeof value !== "string") {
-    return jQuery(value);
-  }
-
-  if (/^\s*</.test(value)) {
-    log("ignoring HTML given as a selector: ", value);
-
-    return jQuery([]);
-  }
-
-  return jQuery(ownerDocument || document).find(value);
+export function selectorOption(value, context) {
+  return typeof value === "string" ? jQuery(jQuery.find(value, context)) : jQuery(value);
 }

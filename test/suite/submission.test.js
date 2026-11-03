@@ -14,6 +14,7 @@ import {
   buildForm,
   recordWarnings,
   submitTransport,
+  countParsedHTML,
 } from "./helpers.js";
 
 function makeForm(html) {
@@ -2156,6 +2157,20 @@ describe("form", function () {
         assert.strictEqual($late.html(), "<b>late</b>");
       });
 
+      it("should treat an HTML string target as a selector and throw a selector syntax error instead of parsing it", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        const successes = [];
+        const settings = submitWith($form, [
+          { target: '<div class="made-target"></div>', success: () => successes.push(1) },
+        ]);
+
+        const parsed = countParsedHTML(() => settings.success("<b>x</b>", "success", {}));
+
+        assert.match(parsed.error.message, /unrecognized expression/);
+        assert.strictEqual(parsed.count, 0);
+        assert.deepEqual(successes, []);
+      });
+
       it("should not insert an XML document into the target", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const $target = $("#targetDiv").html("kept");
@@ -2241,22 +2256,6 @@ describe("form", function () {
           s.success("x", "success", {}),
         );
 
-        assert.strictEqual(calls, 1);
-      });
-
-      it("should build no elements and insert nothing when target is an HTML string", async function () {
-        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
-        window.__targetHtml = 0;
-        let calls = 0;
-        const target = '<img src="data:," onerror="window.__targetHtml = 1">';
-        const parsed = await countHtmlParsed("window.__targetHtml", async () => {
-          const settings = submitWith($form, [{ target: target, success: () => calls++ }]);
-          settings.success("<b>response</b>", "success", {});
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        });
-
-        assert.strictEqual(parsed, 0);
-        assert.strictEqual(window.__targetHtml, 0);
         assert.strictEqual(calls, 1);
       });
 

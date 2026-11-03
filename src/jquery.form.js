@@ -301,10 +301,11 @@ import { submitOptions } from "./options.js";
         // includeHidden can be the value true, or it can be a selector string
         // indicating a special test; for example:
         // $('#myForm').clearForm('.special:hidden')
-        // the above would clean hidden inputs that have the class of 'special'
+        // the above would clean hidden inputs that have the class of 'special'.
+        // The selector tests the element alone and is never parsed as HTML.
         if (
           (includeHidden === true && /hidden/.test(t)) ||
-          (typeof includeHidden === "string" && $(this).is(includeHidden))
+          (typeof includeHidden === "string" && $.filter(includeHidden, [this]).length)
         ) {
           this.value = "";
         }

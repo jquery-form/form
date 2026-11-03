@@ -6,31 +6,19 @@ describe("options", function () {
   resetFixture();
 
   describe("selectorOption", function () {
-    it("should match nothing and parse nothing for an HTML string", async function () {
-      let $matched;
+    it("should throw a selector syntax error, not parse HTML, for an HTML string", async function () {
+      let thrown;
 
       const parsed = await countHtmlParsed("data-option-html", function () {
-        $matched = selectorOption('<iframe data-option-html="1"></iframe>');
+        try {
+          selectorOption('<iframe data-option-html="1"></iframe>');
+        } catch (error) {
+          thrown = error;
+        }
       });
 
-      assert.strictEqual($matched.length, 0);
+      assert.match(String(thrown), /syntax error/i);
       assert.strictEqual(parsed, 0);
-    });
-
-    it("should log that it ignored an HTML string under debug", function () {
-      const logged = [];
-      const consoleLog = console.log;
-      console.log = (text) => logged.push(text);
-      $.fn.ajaxSubmit.debug = true;
-
-      try {
-        selectorOption(" <b>x</b>");
-      } finally {
-        $.fn.ajaxSubmit.debug = false;
-        console.log = consoleLog;
-      }
-
-      assert.deepEqual(logged, ["[jquery.form] ignoring HTML given as a selector:  <b>x</b>"]);
     });
 
     it("should find a selector string in the given document", function () {

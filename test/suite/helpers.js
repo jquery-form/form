@@ -261,3 +261,24 @@ export function recordWarnings(debug, run) {
 
   return warnings;
 }
+
+// Runs `run` while counting the calls of $.parseHTML, through which $() parses an HTML string;
+// returns { count, error } with the error `run` threw, if any.
+export function countParsedHTML(run) {
+  const parseHTML = $.parseHTML;
+  const result = { count: 0, error: undefined };
+  $.parseHTML = function () {
+    result.count++;
+    return parseHTML.apply(this, arguments);
+  };
+
+  try {
+    run();
+  } catch (error) {
+    result.error = error;
+  } finally {
+    $.parseHTML = parseHTML;
+  }
+
+  return result;
+}
