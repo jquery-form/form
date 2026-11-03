@@ -33,7 +33,7 @@ var queryString = $("#myForm :text").fieldSerialize();
     </p>
     jQuery expression:
     <input id="query" type="text" value=":text">
-    <span style="color:#555">(ie: textarea, [@type='hidden'], :radio, :checkbox, etc)</span><br>
+    <span style="color:#555">(ie: textarea, [type=hidden], :radio, :checkbox, etc)</span><br>
     <input id="successful" type="checkbox" checked="checked"> <a href="https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set">Successful controls</a> only<br>
     <input type="submit" value="Test">
   </div>
