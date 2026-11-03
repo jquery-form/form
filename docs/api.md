@@ -115,22 +115,20 @@ Chainable: Yes.
 $("#myFormId .specialFields").clearFields();
 ```
 
-### Deprecations
+### Removed in 5.0
 
-Features that 5.0 removes still work on 4.x. With debug output on (`$.fn.ajaxSubmit.debug = true`), 4.x logs a `console.warn` the first time each one is used, once per page, naming the replacement. Nothing is logged with debug off. 5.0 logs none of these warnings; the [migration guide](migrating-to-5.md) describes each change.
+5.0 removes or changes the features below. The latest 4.x still supports them, and with debug output on (`$.fn.ajaxSubmit.debug = true`) it logs a `console.warn` for most of them, naming the replacement. 5.0 logs no deprecation warnings. The [migration guide](migrating-to-5.md) describes each change, with before and after code.
 
-| Deprecated                                                                                     | Use instead                                                       |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `clearInputs`                                                                                  | `clearFields`                                                     |
-| `$.fn.attr2`                                                                                   | `.prop()` or `.attr()`                                            |
-| `ajaxForm` on an empty selection before the DOM is ready (queued until ready, old jQuery only) | call `ajaxForm` inside `$(fn)`, or use `delegation: "<selector>"` |
-| the iframe transport chosen automatically because the browser has no `FormData`                | set `iframe: true`                                                |
-| jQuery before 3.5 (warned on the first `ajaxSubmit` or `ajaxForm`)                             | jQuery 3.5 or later                                               |
-| the `closeKeepAlive` option (a Safari 3/4 workaround)                                          | nothing; leave it out                                             |
-| replacing `$.fieldValue` to change what is serialized                                          | jQuery `valHooks`                                                 |
+| Removed or changed                                                    | Use instead                                                       |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `clearInputs`                                                         | `clearFields`                                                     |
+| `$.fn.attr2`                                                          | `.prop()` or `.attr()`                                            |
+| `ajaxForm` on an empty selection before the DOM is ready (no queue)   | call `ajaxForm` inside `$(fn)`, or use `delegation: "<selector>"` |
+| `delegation: true` (throws)                                           | `delegation: "<selector>"`                                        |
+| the iframe transport chosen automatically without `iframe: true`      | set `iframe: true`                                                |
+| the `closeKeepAlive` option (ignored)                                 | nothing; leave it out                                             |
+| the `semantic` option (ignored; fields are always sent in tree order) | nothing; leave it out                                             |
+| replacing `$.fieldValue` to change what is serialized                 | jQuery `valHooks`                                                 |
+| jQuery before 3.5 (`ajaxSubmit` and `ajaxForm` throw)                 | jQuery 3.5 or later                                               |
 
-`clearInputs` is now its own function that warns and then calls `clearFields`, so `$.fn.clearInputs !== $.fn.clearFields`.
-
-A replaced `$.fieldValue` is still used on 4.x, and `formToArray`, `formSerialize`, `fieldSerialize` and `ajaxSubmit` warn when they read through one. In 5.0 they read values without it, so only a jQuery `valHooks` entry changes what they send; `$.fn.fieldValue` keeps reading through `$.fieldValue` and does not warn.
-
-One warning does not need debug output: `delegation: true` on jQuery 3 and later binds every form on the page, because those versions have no `.selector` to scope it, so it warns on every `ajaxForm` call that uses it. Pass a selector instead, such as `delegation: "form.ajax"`.
+`$.fieldValue` and `$.fn.fieldValue` are still public and return the same values. `formToArray`, `formSerialize`, `fieldSerialize` and `ajaxSubmit` read values without `$.fieldValue`, so only a jQuery `valHooks` entry changes what they send; `$.fn.fieldValue` keeps reading through `$.fieldValue`.
