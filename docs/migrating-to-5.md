@@ -32,8 +32,6 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [An empty file input is sent as an empty file in uploads](#an-empty-file-input-is-sent-as-an-empty-file-in-uploads)                                 | `FormData` uploads with a file input left empty, and servers that read it as a text field                           | None                                                                             |
 | [Iframe uploads send the submitter at its place](#iframe-uploads-send-the-submitter-at-its-place)                                                   | `iframe: true` uploads whose server depends on field order, or whose `data` has a key named like the clicked button | None                                                                             |
 
-Entries are added as each 5.0 change lands.
-
 ## Changes
 
 ### jQuery 3.5 or later is required, as a peer dependency
@@ -136,7 +134,7 @@ $(document).ajaxForm({ delegation: "#myForm" });
 - The `clearFields` (and `clearForm`) clone of a file input in Internet Explorer. A file input is now cleared by setting its value to `""`, which keeps the element, its data and its handlers.
 - The option-text fallback for an `<option>` whose `value` attribute Internet Explorer reported as unspecified.
 - The Edge and Internet Explorer user agent check that added controls outside the form (`form="id"`) to the fields. Every supported browser lists them in `form.elements`.
-- `window.opera.postError` for debug messages when there is no `console.log`, and the console existence checks: debug output and deprecation warnings always go to `console.log` and `console.warn`.
+- `window.opera.postError` for debug messages when there is no `console.log`, and the console existence check: debug output always goes to `console.log`. 5.0 logs no deprecation warnings.
 - The Opera retry that read an empty iframe response again, Internet Explorer's `XMLDocument` XML islands, the `innerText` fallback when reading a text response, and the Internet Explorer 8 ways of reaching the iframe's document (`contentWindow.document`, `frame.document`). The response document is `contentDocument`; a frame whose document the browser does not let the page read (for example a cross-origin response) still ends the upload with `"server abort"`. The poll that waited while Internet Explorer reported the frame as `"uninitialized"` is gone too.
 - The walk that matched `delegation: "<selector>"` without `Element.closest`, and the fallbacks for browsers without DOM prototypes, for upload progress events without `loaded`, and for anchors that resolve relative URLs only on a second assignment.
 
@@ -622,7 +620,7 @@ if ($_FILES["avatar"]["error"] === UPLOAD_ERR_NO_FILE) { /* no file */ }
 
 ### Iframe uploads send the submitter at its place
 
-**What changed.** With `iframe: true`, the field of the clicked submit button (or an image button's coordinates) is a temporary hidden input placed right after the button, so the upload sends it at the button's place among the fields, as a native submission does. A button outside the form passes its `form` attribute on to the input. A button that is in no document sends nothing, as on the other transports. The input is removed after the post, like the other temporary inputs. In 4.x the submitter was added to the extra fields and posted at the end of the form, after the form's own controls and the `data` fields. Two more things follow:
+**What changed.** With `iframe: true`, the field of the clicked submit button (or an image button's coordinates) is a temporary hidden input placed right after the button, so the upload sends it at the button's place among the fields, as a native submission does. A button outside the form passes its `form` attribute on to the input. A clicked button that is in no tree, for example one removed from the page before the upload starts, is no longer posted, as on the other transports; 4.x posted it. The input is removed after the post, like the other temporary inputs. In 4.x the submitter was added to the extra fields and posted at the end of the form, after the form's own controls and the `data` fields. Two more things follow:
 
 - A key of the `data` (or `extraData`) option named like the clicked button is now sent as well, after the button's field, as the `FormData` and urlencoded transports already send it. 4.x replaced that key's value with the button's and sent one field.
 - `extraData` in the settings that `ajaxSuccess`, `ajaxError` and `ajaxComplete` handlers receive, and on `this` in the callbacks, no longer holds the submitter's field. It holds only the `data` fields and the CSRF field.
