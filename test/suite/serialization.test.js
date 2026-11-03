@@ -1065,12 +1065,20 @@ describe("form", function () {
         }
       });
 
-      it("should send the literal value of a hidden input named _charset_", function () {
-        const $form = $('<form><input type="hidden" name="_charset_" value="literal"></form>');
+      it("should send UTF-8 for a hidden input named _charset_ in any ASCII case, whatever its value", function () {
+        const $form = $(
+          '<form><input type="hidden" name="_charset_" value="literal"><input type="hidden" name="_CharSet_"><input name="_charset_" value="text"></form>',
+        );
 
         const pairs = $form.formToArray().map((field) => [field.name, field.value]);
+        const serialized = $form.formSerialize();
 
-        assert.deepEqual(pairs, [["_charset_", "literal"]]);
+        assert.deepEqual(pairs, [
+          ["_charset_", "UTF-8"],
+          ["_CharSet_", "UTF-8"],
+          ["_charset_", "text"],
+        ]);
+        assert.strictEqual(serialized, "_charset_=UTF-8&_CharSet_=UTF-8&_charset_=text");
       });
     });
 

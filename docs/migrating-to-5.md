@@ -28,6 +28,7 @@ This guide is for people who use jquery-form 4.x and are moving to 5.0. 5.0 has 
 | [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)                                             | Servers that read the `name=value` of an image button to tell which button was clicked                 | None                                                                             |
 | [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y)                                     | Forms with an unnamed image button, and servers that have a field named `x` or `y`                     | None                                                                             |
 | [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                                                         | Forms with a `dirname` attribute on an input or a textarea                                             | None                                                                             |
+| [A hidden `_charset_` input sends `UTF-8`](#a-hidden-_charset_-input-sends-utf-8)                                                                   | Forms with `<input type="hidden" name="_charset_">`                                                    | None                                                                             |
 
 Entries are added as each 5.0 change lands.
 
@@ -566,6 +567,26 @@ After (5.0):
 comment=hi&comment.dir=ltr
 ```
 
+### A hidden `_charset_` input sends `UTF-8`
+
+**What changed.** An `<input type="hidden">` whose name is `_charset_` (in any ASCII case) sends `UTF-8`, the encoding of the request, instead of its value, whatever its `value` is. This is the HTML spec's rule for a native submission and `FormData`. `formToArray`, `formSerialize` and the `FormData` and urlencoded transports always encode as UTF-8; the iframe transport posts the form itself, so the browser fills in the form's own encoding there, as in 4.x. A `_charset_` control of another type sends its value as before. 4.x sent the value of the hidden input, or an empty string without one.
+
+**Why.** A server that reads `_charset_` to learn the encoding of the request got whatever the page put in the input, which could say an encoding the plugin did not use.
+
+**Are you affected?** Only if a form has a hidden input named `_charset_` and your server reads its value for something other than the encoding. 4.x has no warning for this. Rename the input to keep its value.
+
+Before (4.x), with `<input type="hidden" name="_charset_" value="ISO-8859-1" />`:
+
+```text
+_charset_=ISO-8859-1
+```
+
+After (5.0):
+
+```text
+_charset_=UTF-8
+```
+
 ## What your server receives
 
 These changes alter the fields the plugin sends. The table shows the request body for each entry's example form, urlencoded; a multipart body carries the same fields in the same order. Each entry above has the details.
@@ -578,3 +599,4 @@ These changes alter the fields the plugin sends. The table shows the request bod
 | [A clicked image button sends only its coordinates](#a-clicked-image-button-sends-only-its-coordinates)         | the image button `map`, value `go`, clicked at 3,4         | `map=go&map.x=3&map.y=4`         | `map.x=3&map.y=4`            |
 | [A clicked image button without a name sends `x` and `y`](#a-clicked-image-button-without-a-name-sends-x-and-y) | an unnamed image button after `a`, clicked at 3,4          | `a=1`                            | `a=1&x=3&y=4`                |
 | [Controls with `dirname` send their direction](#controls-with-dirname-send-their-direction)                     | `comment` with `dirname="comment.dir"`                     | `comment=hi`                     | `comment=hi&comment.dir=ltr` |
+| [A hidden `_charset_` input sends `UTF-8`](#a-hidden-_charset_-input-sends-utf-8)                               | a hidden `_charset_` with the value `ISO-8859-1`           | `_charset_=ISO-8859-1`           | `_charset_=UTF-8`            |

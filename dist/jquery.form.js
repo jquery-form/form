@@ -549,6 +549,9 @@ function isSubmittable(el) {
   return rSubmittable.test(tagName(el));
 }
 
+// The name of the hidden control that sends the encoding, matched ASCII case-insensitively.
+const rCharset = /^_charset_$/i;
+
 // The input types that, with textarea, send a dirname field (the auto-directionality
 // form-associated elements).
 const rDirnameTypes = /^(?:hidden|text|search|tel|url|email|password|submit|reset|button)$/;
@@ -809,7 +812,10 @@ function createSuccessfulControls() {
       return null;
     }
 
-    return [{ name: n, value: v, type: el.type, required: el.required }];
+    // a hidden _charset_ sends the request's encoding, which is always UTF-8 here
+    const value = el.type === "hidden" && rCharset.test(n) ? "UTF-8" : v;
+
+    return [{ name: n, value, type: el.type, required: el.required }];
   }
 
   // Adds one candidate control's fields, and the control when it has a value to send.

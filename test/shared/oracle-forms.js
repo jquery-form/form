@@ -319,14 +319,6 @@ export const KNOWN_DIFFERENCES = [
     },
   },
   {
-    id: "CHARSET",
-    description: "FormData sends a hidden _charset_ control's value as the document encoding",
-    normalize: (pair) => ({
-      plugin: pair.plugin.map((e) => (e[0] === "_charset_" ? [e[0], e[1], "UTF-8"] : e)),
-      native: pair.native,
-    }),
-  },
-  {
     id: "SUBMIT-LABEL",
     description:
       'FormData sends the default label of an input submitter without a value; the plugin sends ""',
