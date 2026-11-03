@@ -79,6 +79,14 @@ describe("form", function () {
       assert.strictEqual($.fn.ajaxSubmit.debug, false);
     });
 
+    it("should not install attr2 or clearInputs, which 5.0 removes", function () {
+      const removed = ["attr2", "clearInputs"];
+
+      const installed = removed.filter((name) => name in $.fn);
+
+      assert.deepEqual(installed, []);
+    });
+
     it("should add no nodes to the document when the plugin loads", function () {
       const before = nodesBefore;
 
