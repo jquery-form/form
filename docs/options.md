@@ -70,13 +70,13 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 ### delegation
 
 Default: `undefined`  
-A selector string, or `true`, to handle forms through a binding on the document, so forms added later are handled too (`ajaxForm` only; requires jQuery 1.7+). With a selector, a form is submitted through the plugin when it, or an element around it, matches the selector; the selection is ignored, and binding the same selector again replaces its options. An empty string throws an error. `ajaxFormUnbind()` removes every delegated binding; `ajaxFormUnbind(selector)` removes one.
+A selector string, to handle forms through a binding on the document, so forms added later are handled too (`ajaxForm` only). A form is submitted through the plugin when it, or an element around it, matches the selector. The selection `ajaxForm` is called on is ignored, so any selection works, such as `$(document)`; binding the same selector again replaces its options. `ajaxFormUnbind()` removes every delegated binding; `ajaxFormUnbind(selector)` removes one.
 
 ```javascript
 $(document).ajaxForm({ delegation: "form.ajax" });
 ```
 
-**Warning:** `delegation: true` binds **every form on the page** on jQuery 3 and later (jQuery 3.0 removed the selector it relied on), so the options (`data`, `headers`) go with any form's submission. The plugin logs a `console.warn` for each such call, even with `debug` off. Use a selector.
+`delegation: true`, an empty string and any other truthy value that is not a string throw `Error: jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"`, before anything is bound. `false`, `null`, `undefined` and `0` mean no delegation.
 
 ### error
 
@@ -103,16 +103,19 @@ filtering: function(el, index) {
 ### forceSync
 
 Default: `false`  
-Boolean value. Set to true to remove short delay before posting form when uploading files (or using the iframe option). The delay is used to allow the browser to render DOM updates prior to performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait…" **(version added: 2.38)**
+Boolean value. Set to true to remove short delay before posting the form with the [`iframe`](#iframe) option. The delay is used to allow the browser to render DOM updates prior to performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait…" **(version added: 2.38)**
 
 ### iframe
 
 Default: `false`  
-Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the [file upload example](examples.md#file-upload).
+Set to `true` to post the form through a hidden iframe, as a native form submission targeting the frame, instead of `XMLHttpRequest`. The iframe transport is used only when this option is truthy. Without it, a form with a selected file or a `multipart/form-data` enctype is sent with `FormData`, and [`uploadProgress`](#uploadprogress) reports its progress.
 
-Without `FormData`, a form with a selected file or a multipart `enctype` also uses the iframe. Choosing it automatically is deprecated (a `debug` warning); 5.0 uses the iframe only when `iframe: true` is set.
+The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `iframe: true`, comment on [issue #629](https://github.com/jquery-form/form/issues/629) with your use case.
 
-The upload's jqXHR (`$form.data("jqxhr")`) resolves `.done` and `.then` with `(data, "success", xhr)`: the parsed data that `success` receives, as `$.ajax` does.
+The upload's jqXHR (`$form.data("jqxhr")`) resolves `.done` and `.then` with `(data, "success", xhr)`: the parsed data that `success` receives, as `$.ajax` does. Its rejections differ from `$.ajax`:
+
+- An abort, through `abort(status)` on the jqXHR or on the `xhr` that callbacks receive, rejects with `(xhr, "aborted", status)`, where `status` is the argument passed to `abort` (`undefined` without one). `$.ajax` rejects with `(jqXHR, "canceled", "canceled")`, or with the text passed to `abort` in place of both.
+- A `beforeSend` callback that returns `false` rejects with no arguments. `$.ajax` rejects with `(jqXHR, "canceled", "canceled")`.
 
 The response is loaded as a document in the hidden iframe, with the same origin as the page, before the plugin reads it. The server must return a response that is safe to render as HTML:
 
@@ -124,7 +127,6 @@ The response is loaded as a document in the hidden iframe, with the same origin 
 ### iframeSrc
 
 Default: `about:blank`  
-Default value for HTTPS pages: `javascript:false`  
 String value that should be used for the iframe's src attribute when/if an iframe is used.
 
 ### iframeTarget
@@ -180,8 +182,6 @@ $("#myForm").ajaxForm({
 });
 ```
 
-Sanitizing needs jQuery 3.5 or later: older versions rewrite some markup when it is inserted, after the sanitizer has run.
-
 ### type
 
 Default: value of form's `method` attribute (or 'GET' if none found)  
@@ -213,6 +213,14 @@ These options are trusted input only: pass values your code controls, never valu
 - the keys of `data` and `extraData` (values may come from users)
 
 A string in `target`, `iframeTarget` or the `includeHidden` selector of `clearForm` and `clearFields` is only matched as a selector and never parsed as HTML.
+
+## Differences from a native submission
+
+The fields the plugin sends match a native submission of the form, in the same order, apart from the [`data`](#data) option and these deliberate differences:
+
+- **A selected file makes the request multipart.** A form with a selected file is sent as a `multipart/form-data` `FormData` upload even when it has no `enctype="multipart/form-data"`. A native submission of such a form is urlencoded and sends only the file's name.
+- **A `GET` request keeps the action's query.** With the `GET` method, the fields are added to the query string of [`url`](#url) (the form's `action` by default), after any query it already has. A native `GET` submission replaces the action's query with the fields, and so does the [`iframe`](#iframe) transport, which submits the form itself.
+- **A clicked `<input type="submit">` without a `value` sends an empty value.** A native submission sends the browser's default label, which is localized and cannot be read from script.
 
 ## Example
 
