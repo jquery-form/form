@@ -56,7 +56,7 @@ Each was reproduced with browser probes on jQuery 1.7.2, 3.7.1 and 4.0.0; a payl
 - **The sink.** `$(':input[form="' + formId + '"]')`, which runs with `semantic: true`, or when the user agent matches `Edge/` or `Trident/`.
 - **What happens.** On jQuery < 1.9, `id='x"]<img src=x onerror=…>'` is parsed as HTML. On every version, `id='x"],[name=password'` adds matching fields from anywhere on the page to the request, and an id with a stray `"` throws, losing the submit under `ajaxForm`.
 - **Who controls it.** DOM text (a form `id` built from user content).
-- **Fix.** `$(":input[form]")` filtered by comparing `getAttribute("form")` with the id.
+- **Fix.** `$(":input[form]")` filtered by comparing `getAttribute("form")` with the id. 5.0 removes `semantic`.
 
 ### W4. `target` inserts a parsed JSON response as HTML
 
@@ -83,7 +83,7 @@ Ranked by severity, then by who controls the input.
 | 7   | `hasOwnProperty` is called as a method on `extraData`                     | Developer           | All    | Low      | Phase 10 (fixed)   |
 | 8   | Robustness: crashes and lost data on unusual input                        | DOM text, developer | Varies | Low      | Phase 10 (fixed)   |
 | 9   | #554 "code injection" is a false positive                                 | —                   | —      | Info     | Close #554         |
-| 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 14           |
+| 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 14 (fixed)   |
 | 11  | Options that are URLs or selectors must be trusted                        | Developer           | All    | Info     | Docs               |
 | 12  | Supply chain                                                              | —                   | —      | Info     | Release            |
 
@@ -191,9 +191,11 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 
 5.0 should limit the walk to form-associated elements (`form.elements` in document order).
 
+In 5.0, `formToArray` collects only submittable elements (`button`, `input`, `select`, `textarea`), in tree order: for a form, the ones it owns; for another container, its descendants. The `semantic` option is removed. Other named elements, such as `<a name>` or `<img name>`, no longer add request parameters.
+
 ### 11. Options that must be trusted
 
-- **`url`, a form's `action`, `iframeSrc`, `closeKeepAlive`, `target` and `iframeTarget` are developer input.** A `javascript:` URL in `url` or `action` runs when the iframe transport submits. That is the same as a native submit. Selector options passed to `$()` were parsed as HTML: on jQuery < 1.9 if they contain a tag, and on every version if they start with `<`. 4.6.0 looks `target` and `iframeTarget` strings up with `$(document).find()`, where a string starting with `<` matches nothing. In 5.0, `target`, `iframeTarget` and `includeHidden` strings are matched with `jQuery.find` or `jQuery.filter` and never parsed as HTML, so this finding's trusted options narrow to `url`, `action` and `iframeSrc`.
+- **`url`, a form's `action`, `iframeSrc`, `closeKeepAlive`, `target` and `iframeTarget` are developer input.** A `javascript:` URL in `url` or `action` runs when the iframe transport submits. That is the same as a native submit. Selector options passed to `$()` are parsed as HTML when they start with `<` (after any leading whitespace) on jQuery 1.9 and later, and when they contain a tag anywhere on jQuery < 1.9. 4.6.0 looks `target` and `iframeTarget` strings up with `$(document).find()`, where a string starting with `<` matches nothing. In 5.0, `target`, `iframeTarget` and `includeHidden` strings are matched with `jQuery.find` or `jQuery.filter` and never parsed as HTML, so this finding's trusted options narrow to `url`, `action` and `iframeSrc`.
 - **No `document.domain` handling remains.** A cross-origin response fails closed: `getDoc` throws, and the transport reports a server abort (lines 644–661).
 - **Docs.** List these options as trusted-only in `docs/options.md`.
 
