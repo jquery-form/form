@@ -338,8 +338,8 @@ Prepare in public (normal PRs, nothing about W1–W4):
   before publishing.
 - On npmjs.com, the maintainer adds that workflow as the trusted publisher for `jquery-form`. Then
   set publishing access to require 2FA and disallow tokens, and review the package's maintainer list.
-- Wait until GitHub has assigned a CVE ID to each of the four draft advisories. Review their text,
-  affected range (`<= 4.3.0`) and credits.
+- Review the four draft advisories: text, affected range (`<= 4.3.0`), credits, and any reviewer
+  comments on the CVE requests. Don't wait for the CVE IDs (see Release train).
 - Check that the custom CodeQL query pack resolves its `codeql/javascript-all` dependency in Actions,
   since it couldn't be run there before release day.
 
@@ -358,14 +358,52 @@ Release day, in one sitting:
 4. Tag `v4.4.0` on the merge commit and push the tag. The workflow publishes to npm. Check
    `npm view jquery-form`, the provenance badge, jsDelivr, cdnjs (git autoupdate) and Packagist.
 5. Set `patched_versions` to `4.4.0` on the four advisories and publish them. GitHub then publishes
-   the CVE records and the GitHub Advisory Database entries, which feed `npm audit` and Dependabot.
-6. Publish the GitHub release notes from `4x-behavior-changes.md`.
+   the GitHub Advisory Database entries, which feed `npm audit` and Dependabot. The CVE requests
+   stay open and GitHub adds the IDs to the published advisories when it assigns them.
+6. Publish the GitHub release notes from `4x-behavior-changes.md`. Cite the GHSA IDs and say the CVE
+   IDs are pending.
 7. Comment on and close #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org
    #3607794. Credit Rudloff for W1 and W2.
    - Check that CodeQL alerts 1 and 4 closed. Dismiss alert 7 (`iframeTarget`) as "won't fix",
      linking finding 11 in `security-review.md`: the option is a developer-supplied selector.
 8. Delete the local fix branch. Keep the probe copies until the modernization project ends: they
    keep checking the W1–W4 fixes through the 5.0 refactors.
+9. When GitHub assigns the CVE IDs, add them to the 4.4.0 release notes, `security-review.md`,
+   `4x-behavior-changes.md` and the drupal.org issue. Don't request IDs from another CNA meanwhile;
+   a second request can produce duplicate CVEs.
+
+## Release train: 4.4.0, 4.5.0, 4.6.0
+
+Decided on 2026-11-06: ship without waiting for CVE IDs. The four CVE requests had no IDs and no
+GitHub activity after 6 days, one finding is already public on drupal.org, and the GHSA IDs alone
+drive `npm audit`, Dependabot and OSV. What waits for the CVEs: scanners that read only NVD, and the
+CVE references in our own docs (Phase 11, step 9).
+
+The local branches are stacked: `phase-10-advisories` (the W1–W4 fixes) is in `phase-12`, which is
+in `phase-13`, which is in `phase-14`. So until the advisories are published:
+
+- Push none of those branches and open no PR from them. Each one reveals the W1–W4 fixes.
+- Public PRs to `main` stay limited to work that names no W1–W4 sink.
+
+The order:
+
+1. **4.4.0** (Phase 11). Release day as above. Afterwards, rebase `phase-12` on `main` with
+   `git rebase --onto main phase-10-advisories phase-12` if the fix commits were rebased or squashed
+   on the way in, then rebase `phase-13` and `phase-14` the same way onto the new tips.
+2. **Soak 4.4.0 for about a week.** Watch issues, npm downloads and the CDN builds. A regression goes
+   out as 4.4.1 from `main` before 4.5.0, and `phase-12` rebases on it.
+3. **4.5.0** (Phase 12). Push `phase-12` and open its PR; this is the first CI and CodeQL run for
+   those commits, so leave time for fixes. Run the custom CodeQL query. Bump, tag and publish the
+   same way as 4.4.0, without the advisory steps. Close PR #557 and the issues Phase 12 fixed.
+4. **Soak 4.5.0 for about a week**, the same way.
+5. **4.6.0** (Phase 13). Before the PR, fix `release.yml`: `npm test` on `phase-13` runs
+   `suite-webkit`, but the release `verify` job installs only Chromium, so it would fail. Install
+   `chromium webkit` with `--with-deps`, as `ci.yml` does, and rehearse with `workflow_dispatch`.
+   Then push `phase-13`; its Firefox, WebKit and end-to-end CI jobs run for the first time. Release
+   the same way as 4.5.0.
+6. **5.0** (Phase 14) after 4.6.0. Cut `release/4.x` from the 4.6.0 tag first (ADR-0002).
+
+Each release adds its column to `docs/metrics.md` and its section to the GitHub release notes.
 
 ## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
