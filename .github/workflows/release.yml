@@ -34,7 +34,8 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - run: npx playwright install chromium
+      # npm test runs the suite in Chromium and WebKit; WebKit needs its system libraries.
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm test
       - name: Check committed dist matches the build
         run: git diff --exit-code -- dist
