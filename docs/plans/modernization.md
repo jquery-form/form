@@ -396,11 +396,10 @@ The order:
    those commits, so leave time for fixes. Run the custom CodeQL query. Bump, tag and publish the
    same way as 4.4.0, without the advisory steps. Close PR #557 and the issues Phase 12 fixed.
 4. **Soak 4.5.0 for about a week**, the same way.
-5. **4.6.0** (Phase 13). Before the PR, fix `release.yml`: `npm test` on `phase-13` runs
-   `suite-webkit`, but the release `verify` job installs only Chromium, so it would fail. Install
-   `chromium webkit` with `--with-deps`, as `ci.yml` does, and rehearse with `workflow_dispatch`.
-   Then push `phase-13`; its Firefox, WebKit and end-to-end CI jobs run for the first time. Release
-   the same way as 4.5.0.
+5. **4.6.0** (Phase 13). `npm test` on `phase-13` runs `suite-webkit`, so the release `verify` job
+   now installs `chromium webkit` with `--with-deps`, as `ci.yml` does. Push `phase-13`; its
+   Firefox, WebKit and end-to-end CI jobs run for the first time. Rehearse `release.yml` with
+   `workflow_dispatch` on the branch before tagging, then release the same way as 4.5.0.
 6. **5.0** (Phase 14) after 4.6.0. Cut `release/4.x` from the 4.6.0 tag first (ADR-0002).
 
 Each release adds its column to `docs/metrics.md` and its section to the GitHub release notes.
