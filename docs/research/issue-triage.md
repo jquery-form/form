@@ -99,6 +99,11 @@ on release is enough.
 | 611 | Hold for Phase 8; unmergeable as written (pins jQuery 1.11.0-beta3, regenerates `dist` and the lockfile).                                           |
 | 557 | Hold: needs a design decision on #545 and a rebase.                                                                                                 |
 
+## 4.4.0 release (2026-11-07)
+
+- Fixed: #597 (iframe array values, with GHSA-x8mc-9vpg-2rc8), #604 (iframe built from strings, GHSA-x8mc-9vpg-2rc8), #553, #588, #600, #616 and #618.
+- Closed on release with a comment: #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org #3607794.
+
 ## Counts if all proposals are applied
 
 Issues: 27 open → 13 after the 14 closures proposed now → 11 after the release closes #616 and #618 → 10 once #624 has its channel. PRs: 8 open → 3 held (5 closures).

@@ -319,6 +319,9 @@ Status: done. The public fixes merged in PR #632 (eff1ea9): findings 4, 6, 7 and
 A minor release of Phases 0–10 and the W1–W4 fixes. It changes no API; the consumer-visible changes
 are in `docs/research/4x-behavior-changes.md`.
 
+Status (2026-11-07): released without waiting for CVE IDs, which were still unassigned. The W1–W4
+details are now in `security-review.md` and the behavior changes in `4x-behavior-changes.md`.
+
 Prepare in public (normal PRs, nothing about W1–W4):
 
 - A release workflow (`.github/workflows/release.yml`) that publishes a `v*` tag to npm with npm

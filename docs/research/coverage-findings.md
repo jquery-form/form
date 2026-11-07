@@ -22,6 +22,8 @@
   source lines still count toward coverage.
 - Suggested fix: look the target up by id (`document.getElementById`) and combine with
   `list.add(target)` instead of `unshift`.
+- Fixed in 4.4.0 with GHSA-8395-7m7x-q7q2: the target is found with `htmlFor` and `getElementById`,
+  added with `.add()`, and the test is an `it`.
 
 ## Iframe script responses are not evaluated
 
