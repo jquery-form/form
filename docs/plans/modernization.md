@@ -506,7 +506,9 @@ Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
 - Docs: a Deprecations section in `docs/api.md` listing each warning and its replacement.
 - Dev only (not in the published package): an npm `overrides` entry pins `minimatch` to 11.0.4
   for Dependabot alert 97 (CVE-2026-118764, through eslint, which still requires `minimatch@^10`
-  and has no patched 10.x). Remove the override once eslint allows minimatch 11.
+  and has no patched 10.x). Remove the override once eslint allows minimatch 11. The same commit
+  went to `main` early in PR #638, after Dependabot reopened the alert there as alert 98; the
+  `phase-13` rebase drops its copy as already applied.
 
 Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
