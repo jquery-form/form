@@ -57,7 +57,7 @@ content: "Security and bug fixes: private advisories, review findings, P1 and Ph
 status: completed
 - id: release-4x
 content: "Phase 11: release 4.4.0 with Phases 0-10 and the W1-W4 fixes, publish with npm provenance, publish the advisories and release notes"
-status: pending
+status: completed
 - id: cleanup-4x
 content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
 status: completed
@@ -331,6 +331,16 @@ are in `docs/research/4x-behavior-changes.md`.
 Status (2026-11-07): released without waiting for CVE IDs, which were still unassigned. The W1–W4
 details are now in `security-review.md` and the behavior changes in `4x-behavior-changes.md`.
 
+- 4.4.0 is on npm from a06a0c8 (PR #639), with provenance. The four advisories are published with
+  `patched_versions` 4.4.0; GHSA-x8mc and GHSA-8395 carry the CVSS 3.1 vector
+  `AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N` (6.1, Medium) instead of the drafted High.
+- Release notes are on the `v4.4.0` GitHub release. #604, #554, #553, #588, #597, #600, #616 and #618
+  are closed; the drupal.org comment is posted. CodeQL alerts 1 and 4 are fixed and alert 7 is
+  dismissed, so `main` has no open alerts.
+- Left: PR #640 (published severities, jQuery 4 wording); the README and site CDN snippets, once
+  cdnjs serves 4.4.0 and its hash can be checked; Packagist, which has no webhook and still shows
+  4.3.0; and step 9 when the CVE IDs arrive.
+
 Prepare in public (normal PRs, nothing about W1–W4):
 
 - A release workflow (`.github/workflows/release.yml`) that publishes a `v*` tag to npm with npm
@@ -407,10 +417,11 @@ in `phase-13`, which is in `phase-14`. So until the advisories are published:
 
 The order:
 
-1. **4.4.0** (Phase 11). Release day as above. Afterwards, rebase `phase-12` on `main` with
+1. **4.4.0** (Phase 11). Done 2026-11-07, and the stacked branches are rebased (backups under
+   `refs/backup/pre-4.4.0/`). Release day as above. Afterwards, rebase `phase-12` on `main` with
    `git rebase --onto main phase-10-advisories phase-12` if the fix commits were rebased or squashed
    on the way in, then rebase `phase-13` and `phase-14` the same way onto the new tips.
-2. **Soak 4.4.0 for about a week.** Watch issues, npm downloads and the CDN builds. A regression goes
+2. **Soak 4.4.0 for about a week** (until about 2026-11-14). Watch issues, npm downloads and the CDN builds. A regression goes
    out as 4.4.1 from `main` before 4.5.0, and `phase-12` rebases on it.
 3. **4.5.0** (Phase 12). Push `phase-12` and open its PR; this is the first CI and CodeQL run for
    those commits, so leave time for fixes. Run the custom CodeQL query. Bump, tag and publish the
@@ -420,6 +431,10 @@ The order:
    now installs `chromium webkit` with `--with-deps`, as `ci.yml` does. Push `phase-13`; its
    Firefox, WebKit and end-to-end CI jobs run for the first time. Rehearse `release.yml` with
    `workflow_dispatch` on the branch before tagging, then release the same way as 4.5.0.
+   - `phase-13` renames the matrix checks to `jQuery <version> on <browser>`, so the required checks
+     on `main` (`jQuery 1.7.2`, `jQuery 3.7.1`, `jQuery 4.0.0`) never report and the PR stays
+     blocked. Update branch protection to the new names (or a subset, such as the Chromium ones)
+     when the PR's first run shows them.
 6. **5.0** (Phase 14) after 4.6.0. Cut `release/4.x` from the 4.6.0 tag first (ADR-0002).
 
 Each release adds its column to `docs/metrics.md` and its section to the GitHub release notes.
