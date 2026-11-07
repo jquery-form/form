@@ -343,10 +343,15 @@ Prepare in public (normal PRs, nothing about W1–W4):
   - Reviewed 2026-11-07: GitHub has left no comments and assigned no CVEs. Rudloff is credited and
     accepted on both reports, and is a collaborator as their author (we invited no one). Their one
     comment points to the public drupal.org issue.
-  - Before publishing, reword "Found during the Phase 8 security review" in GHSA-g7mw and GHSA-4w39,
-    which means nothing to readers outside this plan.
+  - "Found during the Phase 8 security review" in GHSA-g7mw and GHSA-4w39 now reads "Found during a
+    maintainer security review" (2026-11-07).
 - Trial run of `release.yml` on `main` passed on 2026-11-06 (run 42311458706). The trusted publisher
-  is set up on npmjs.com with publish permission only, not dist-tag.
+  is set up on npmjs.com with publish permission only, not dist-tag. Publishing requires 2FA and
+  disallows tokens, and the inactive maintainers were removed (2026-11-07).
+- Merge the `docs-site-internal-docs` PR. The docs site served `docs/plans/`, `docs/research/`,
+  `docs/agents/`, `docs/adr/` and `docs/metrics.md`; it now excludes them, so `security-review.md`
+  isn't published on the site when the W1–W4 details move into it. After the merge, check that
+  `https://jquery-form.github.io/form/plans/modernization/` returns 404.
 - Check that the custom CodeQL query pack resolves its `codeql/javascript-all` dependency in Actions,
   since it couldn't be run there before release day.
 
@@ -367,8 +372,10 @@ Release day, in one sitting:
 5. Set `patched_versions` to `4.4.0` on the four advisories and publish them. GitHub then publishes
    the GitHub Advisory Database entries, which feed `npm audit` and Dependabot. The CVE requests
    stay open and GitHub adds the IDs to the published advisories when it assigns them.
-6. Publish the GitHub release notes from `4x-behavior-changes.md`. Cite the GHSA IDs and say the CVE
-   IDs are pending.
+6. Publish the GitHub release notes, written from `4x-behavior-changes.md` but not copied: follow the
+   public-text rule in `docs/agents/coding-standards.md` (no phases, no internal IDs such as `W1` or
+   `D-09`, no links to `docs/research/`). Cite the GHSA IDs and say the CVE IDs are pending. The same
+   rule applies to the issue and drupal.org comments in step 7.
 7. Comment on and close #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org
    #3607794. Credit Rudloff for W1 and W2.
    - Check that CodeQL alerts 1 and 4 closed. Dismiss alert 7 (`iframeTarget`) as "won't fix",
