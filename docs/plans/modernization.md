@@ -306,7 +306,7 @@ enforces it. Each removed branch and the reason it was dead are in `docs/researc
   branch until release day.
 - Four draft advisories exist: the two accepted reports (severity high) and W3 and W4 (severity
   medium). CVEs were requested for all four on 2026-10-31. Reporters are not invited as
-  collaborators. Set `patched_versions` on each before publishing.
+  collaborators beyond their own reports. Set `patched_versions` on each before publishing.
 - A custom CodeQL query that catches W1–W4, which the built-in queries miss. It must flag them before
   the fixes and pass after. Keep it private until the fixed release ships, since it reveals the sinks.
 - The review's findings 4, 6, 7 and 8. Fixing finding 7 also clears the three `no-prototype-builtins` warnings.
@@ -340,6 +340,13 @@ Prepare in public (normal PRs, nothing about W1–W4):
   set publishing access to require 2FA and disallow tokens, and review the package's maintainer list.
 - Review the four draft advisories: text, affected range (`<= 4.3.0`), credits, and any reviewer
   comments on the CVE requests. Don't wait for the CVE IDs (see Release train).
+  - Reviewed 2026-11-07: GitHub has left no comments and assigned no CVEs. Rudloff is credited and
+    accepted on both reports, and is a collaborator as their author (we invited no one). Their one
+    comment points to the public drupal.org issue.
+  - Before publishing, reword "Found during the Phase 8 security review" in GHSA-g7mw and GHSA-4w39,
+    which means nothing to readers outside this plan.
+- Trial run of `release.yml` on `main` passed on 2026-11-06 (run 42311458706). The trusted publisher
+  is set up on npmjs.com with publish permission only, not dist-tag.
 - Check that the custom CodeQL query pack resolves its `codeql/javascript-all` dependency in Actions,
   since it couldn't be run there before release day.
 
