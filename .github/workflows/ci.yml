@@ -184,8 +184,11 @@ jobs:
           JQUERY_FORM_FIREFOX: ${{ matrix.browser == 'firefox' && '1' || '' }}
 
   # End-to-end tests: the built plugin posting to a real server (npm run test:e2e).
+  # Not a required check, so a docs-only PR can skip the whole job.
   e2e:
     name: e2e on jQuery ${{ matrix.jquery }} on ${{ matrix.browser }}
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
