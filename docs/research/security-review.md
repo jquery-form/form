@@ -19,16 +19,54 @@ This doc only records findings. Fixes are scheduled in the phases of `docs/plans
 
 A sink that DOM text can reach matters most, because correct escaping on the server does not protect against it.
 
-## Withheld until the fix is released
+## Security advisories fixed in 4.4.0
 
-Four findings let DOM text, plugin options or a JSON response become executable HTML in the current code. Two of them were reported privately as GitHub security advisories; one of those is also public on drupal.org (#3607794). Their details are kept out of this repository until a fixed 4.x release ships. They will then be published in the advisories, the release notes and this doc.
+Four findings let DOM text, plugin options or a JSON response become executable HTML in 4.3.0 and earlier. They were withheld from this repository until 4.4.0 shipped, and are published as GitHub security advisories. CVE IDs were requested on 2026-10-31 and are pending.
 
-| #   | Area                                                                       | Reported by                                                           | Severity | Fix in   |
-| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------- | -------- |
-| W1  | Iframe upload transport: how it builds its iframe and hidden inputs (#604) | Private advisory; same lines as #604's CodeQL alerts                  | High     | Phase 10 |
-| W2  | `resetForm` on `<label>` elements                                          | Private advisory; public on drupal.org; overlaps a Phase 5 `it.fails` | High     | Phase 10 |
-| W3  | `formToArray` lookup of controls outside the form (`semantic`)             | This review                                                           | Medium   | Phase 10 |
-| W4  | `target` with a response that jQuery has already parsed                    | This review                                                           | Medium   | Phase 10 |
+| #   | Advisory                                                                                           | Area                                                 | Reported by                                         | Severity |
+| --- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- | -------- |
+| W1  | [GHSA-x8mc-9vpg-2rc8](https://github.com/jquery-form/form/security/advisories/GHSA-x8mc-9vpg-2rc8) | The iframe upload transport builds HTML from strings | Rudloff (`extraData` name); the rest in this review | High     |
+| W2  | [GHSA-8395-7m7x-q7q2](https://github.com/jquery-form/form/security/advisories/GHSA-8395-7m7x-q7q2) | `resetForm` on a `<label>` passes `for` to `$()`     | Rudloff; also public on drupal.org #3607794         | High     |
+| W3  | [GHSA-g7mw-rwc2-4h3g](https://github.com/jquery-form/form/security/advisories/GHSA-g7mw-rwc2-4h3g) | `formToArray` builds a selector from the form `id`   | This review                                         | Medium   |
+| W4  | [GHSA-4w39-46xw-8jm2](https://github.com/jquery-form/form/security/advisories/GHSA-4w39-46xw-8jm2) | `target` inserts a parsed JSON response as HTML      | This review                                         | Medium   |
+
+Each was reproduced with browser probes on jQuery 1.7.2, 3.7.1 and 4.0.0; a payload set a `window` flag from an `<img src=x onerror=…>` handler. Line numbers below are for `src/jquery.form.js` in 4.3.0.
+
+### W1. The iframe upload transport builds HTML from strings (#604)
+
+- **The sink.** `$('<input type="hidden" name="' + name + '">', ownerDocument)` for each extra field, and `'<iframe name="…" src="' + s.iframeSrc + '" />'` for the iframe. Values were set safely with `.val()`; names and the iframe URL went straight into HTML.
+- **Inputs that reach it:**
+  - the `name` of an `extraData`/`data` entry in the `{ name, value }` form (Rudloff's report)
+  - an `extraData`/`data` object key
+  - the `name` of the clicked submit button: DOM text, so markup the server escaped correctly as an attribute still becomes HTML
+  - the `content` of `<meta name="csrf-param">`
+  - the `iframeSrc` option, with a payload that closes `</iframe>` first
+- **Reach.** Only the iframe transport: `iframe: true`, or file and multipart forms in browsers without FormData.
+- **Fix.** The inputs and the iframe are created with `createElement`, with `name`, `type` and `src` set as properties or with `setAttribute`. Array and object values in `data`/`extraData` are sent as `$.param` sends them (#597).
+
+### W2. `resetForm` on a `<label>` passes `for` to `$()`
+
+- **The sink.** `var forEl = $(el.attr("for"));`.
+- **What happens.** A `for` value that starts with `<` runs on every jQuery version; on jQuery < 1.9 any string containing a tag does (CVE-2012-6708). A plain id (`for="email"`) matched nothing, so the documented feature never worked, and a match threw `list.unshift is not a function`.
+- **Who controls it.** DOM text, wherever user content can set a label's `for`. Drupal removed `resetForm()` from its bundled copy.
+- **Fix.** The control is looked up with `this.htmlFor` and `getElementById`, then filtered to `input`, `select` and `textarea`. The filter also stops a `for` that names an ancestor from recursing until the stack overflows.
+
+### W3. `formToArray` builds a selector from the form `id`
+
+- **The sink.** `$(':input[form="' + formId + '"]')`, which runs with `semantic: true`, or when the user agent matches `Edge/` or `Trident/`.
+- **What happens.** On jQuery < 1.9, `id='x"]<img src=x onerror=…>'` is parsed as HTML. On every version, `id='x"],[name=password'` adds matching fields from anywhere on the page to the request, and an id with a stray `"` throws, losing the submit under `ajaxForm`.
+- **Who controls it.** DOM text (a form `id` built from user content).
+- **Fix.** `$(":input[form]")` filtered by comparing `getAttribute("form")` with the id.
+
+### W4. `target` inserts a parsed JSON response as HTML
+
+- **The sink.** `$(options.target)[fn](data)` when `data` is not a string.
+- **What happens.** With no `dataType` and an `application/json` response, jQuery parses the body into an array or object. `.html(array)` calls `.append(array)`, which parses every string containing markup as HTML. A JSON endpoint that correctly encodes user strings becomes an XSS sink. The iframe transport is not affected, because its data stays a string.
+- **Fix.** `target` inserts only string responses. Parsed data is skipped with a `debug` log, and `success` is still called once per target element. Forcing `dataType: "html"` was rejected: the raw JSON text still contains the markup.
+
+### Detection
+
+The built-in CodeQL queries flagged only W1's `extraData` name and `iframeSrc` variants (alerts 4 and 1). A custom query pack in `.github/codeql/jquery-form-queries/` flags all four sinks and runs on every PR; it was checked against reopened copies of each sink.
 
 ## Findings
 
@@ -63,7 +101,7 @@ Ranked by severity, then by who controls the input.
 - **No new option.** A dedicated `sanitize` option would duplicate `dataFilter`. Reconsider it only if users ask.
 - **Close PRs #586 and #611 with credit**, pointing to this recommendation.
 
-W4 is a related but separate problem, fixed in Phase 10 whatever happens here.
+W4 is a related but separate problem, fixed in 4.4.0 (GHSA-4w39-46xw-8jm2).
 
 ### 2. `delegation: true` takes over every form (#353)
 
@@ -178,7 +216,7 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 - `js/html-constructed-from-input` on the two lines #604 reported.
 - `js/unsafe-jquery-plugin` on the `iframeTarget` lookup, which is a developer-supplied selector (finding 11).
 
-Most of the withheld findings are not flagged. A clean CodeQL run is therefore not evidence that those are fixed; the Phase 10 tests are.
+Most of W1–W4 were not flagged by the built-in queries; the custom pack (see Detection above) covers them, and the tests pin the fixes.
 
 Default setup was not used because it cannot exclude the duplicate builds.
 
@@ -223,7 +261,7 @@ Details are in finding 2.
 Yes, as an explicit opt-in only:
 
 - Every browser 5.0 supports has FormData, so automatic iframe fallback and the feature detection go away.
-- Users who opt in today (for example with `iframeTarget`) keep working. Once W1 is fixed, it builds its elements with DOM APIs.
+- Users who opt in today (for example with `iframeTarget`) keep working. Since 4.4.0 (W1), it builds its elements with DOM APIs.
 - Removing the transport entirely would make 5.0 smaller. Consider it if 4.x deprecation feedback shows nobody needs it.
 - It keeps the response caveats of finding 3, and fixes #597 there.
 

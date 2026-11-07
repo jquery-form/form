@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 4.3.0
+ * version: 4.4.0
  * Requires jQuery v1.7.2 or later
  * Project repository: https://github.com/jquery-form/form
 
@@ -280,13 +280,20 @@ export { default } from 'jquery';
 
       callbacks.push(function (data, textStatus, jqXHR) {
         var successArguments = arguments,
-          fn = options.replaceTarget ? "replaceWith" : "html";
+          fn = options.replaceTarget ? "replaceWith" : "html",
+          $target = $(options.target);
 
-        $(options.target)
-          [fn](data)
-          .each(function () {
-            oldSuccess.apply(this, successArguments);
-          });
+        // Only a string response is inserted. jQuery has already parsed a JSON or XML response,
+        // and inserting it would parse each of its strings as HTML.
+        if (typeof data === "string") {
+          $target[fn](data);
+        } else {
+          log("target: the response was parsed by jQuery, so it is not inserted");
+        }
+
+        $target.each(function () {
+          oldSuccess.apply(this, successArguments);
+        });
       });
     } else if (options.success) {
       if (Array.isArray(options.success)) {
@@ -510,7 +517,10 @@ export { default } from 'jquery';
           id = n;
         }
       } else {
-        $io = $('<iframe name="' + id + '" src="' + s.iframeSrc + '" />', ownerDocument);
+        io = ownerDocument.createElement("iframe");
+        io.setAttribute("name", id);
+        io.setAttribute("src", s.iframeSrc);
+        $io = $(io);
         $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
       }
       io = $io[0];
@@ -669,11 +679,13 @@ export { default } from 'jquery';
         return doc;
       }
 
-      // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin
+      // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
+      // only when the form is posted, since a get form would put the token in the url
       var csrf_token = $("meta[name=csrf-token]").attr("content");
       var csrf_param = $("meta[name=csrf-param]").attr("content");
+      var posts = !method || /post/i.test(method) || /post/i.test($form.attr2("method"));
 
-      if (csrf_param && csrf_token && isSameOrigin(s.url)) {
+      if (csrf_param && csrf_token && posts && isSameOrigin(s.url)) {
         s.extraData = s.extraData || {};
         s.extraData[csrf_param] = csrf_token;
       }
@@ -734,6 +746,15 @@ export { default } from 'jquery';
         // add "extra" data to form if provided in options
         var extraInputs = [];
 
+        // Builds the input with DOM properties: a name is never parsed as HTML.
+        function addHiddenInput(name, value) {
+          var input = ownerDocument.createElement("input");
+
+          input.type = "hidden";
+          input.name = name;
+          extraInputs.push($(input).val(value).appendTo(form)[0]);
+        }
+
         try {
           if (s.extraData) {
             for (var n in s.extraData) {
@@ -744,17 +765,17 @@ export { default } from 'jquery';
                   hasOwn.call(s.extraData[n], "name") &&
                   hasOwn.call(s.extraData[n], "value")
                 ) {
-                  extraInputs.push(
-                    $('<input type="hidden" name="' + s.extraData[n].name + '">', ownerDocument)
-                      .val(s.extraData[n].value)
-                      .appendTo(form)[0]
-                  );
+                  addHiddenInput(s.extraData[n].name, s.extraData[n].value);
                 } else {
-                  extraInputs.push(
-                    $('<input type="hidden" name="' + n + '">', ownerDocument)
-                      .val(s.extraData[n])
-                      .appendTo(form)[0]
-                  );
+                  // arrays and objects become one field per value, as $.param sends them (#597)
+                  var single = {};
+
+                  single[n] = s.extraData[n];
+                  var fields = deepSerialize(single);
+
+                  for (var f = 0; f < fields.length; f++) {
+                    addHiddenInput(fields[f][0], fields[f][1]);
+                  }
                 }
               }
             }
@@ -1145,7 +1166,12 @@ export { default } from 'jquery';
     // #386; account for inputs outside the form which use the 'form' attribute
     // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
     if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      els2 = $(':input[form="' + formId + '"]').get(); // hat tip @thet
+      // hat tip @thet; the id is compared, never built into a selector
+      els2 = $(":input[form]")
+        .filter(function () {
+          return this.getAttribute("form") === formId;
+        })
+        .get();
       if (els2.length) {
         els = els.concat(els2);
       }
@@ -1491,14 +1517,11 @@ export { default } from 'jquery';
           return true;
 
         case "label":
-          var forEl = $(el.attr("for"));
-          var list = el.find("input,select,textarea");
+          // The control whose id the for attribute names, and the controls inside the label. The
+          // filter keeps a for that names an ancestor from resetting the label again.
+          var forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
 
-          if (forEl[0]) {
-            list.unshift(forEl[0]);
-          }
-
-          list.resetForm();
+          el.find("input,select,textarea").add(forEl).filter("input,select,textarea").resetForm();
 
           return true;
 

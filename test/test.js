@@ -308,6 +308,31 @@ describe("form", function () {
       assert.deepEqual(elements, [$form[0].elements[0]]);
     });
 
+    it("should match form attributes to an id that contains selector syntax", function () {
+      const id = 'owner"],[name=password';
+      const $form = $('<form><input name="inside" value="1"></form>').attr("id", id);
+      $form.appendTo("#main");
+      $('<input name="password" value="secret">').appendTo("#main");
+      $('<input name="outside" value="2">').attr("form", id).appendTo("#main");
+
+      const names = $form.formToArray(true).map((field) => field.name);
+
+      assert.deepEqual(names, ["inside", "outside"]);
+    });
+
+    it("should not parse a form id as HTML", async function () {
+      window.formIdPayload = 0;
+      const $form = $('<form><input name="a" value="1"></form>')
+        .attr("id", 'x"]<img src=x onerror="window.formIdPayload=1">')
+        .appendTo("#main");
+
+      const formData = $form.formToArray(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      assert.deepEqual(formData.length, 1);
+      assert.strictEqual(window.formIdPayload, 0);
+    });
+
     it("should collect every control when one is named elements", function () {
       const $form = $('<form><input name="a" value="1"><input name="elements" value="2"></form>');
 
@@ -360,10 +385,9 @@ describe("form", function () {
   });
 
   describe("resetForm", function () {
-    // jQuery collections have no unshift, so a matching for target throws a TypeError.
-    it.fails("should reset the control a label targets and its nested fields", function () {
+    it("should reset the control a label targets and its nested fields", function () {
       const $target = $('<input id="label-target" value="default">').appendTo("#main");
-      const $label = $('<label for="#label-target"><input value="nested"></label>').appendTo(
+      const $label = $('<label for="label-target"><input value="nested"></label>').appendTo(
         "#main"
       );
       $target.val("changed");
@@ -384,6 +408,42 @@ describe("form", function () {
 
       assert.doesNotThrow(reset);
       assert.strictEqual($input.val(), "default");
+    });
+
+    [
+      ["starts with markup", '<img src=x onerror="window.labelPayload=1">'],
+      ["contains markup", 'x <img src=x onerror="window.labelPayload=1">'],
+    ].forEach(function ([label, value]) {
+      it("should not parse a for attribute that " + label + " as HTML", async function () {
+        window.labelPayload = 0;
+        const $label = $("<label>").attr("for", value).appendTo("#main");
+
+        $label.resetForm();
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        assert.strictEqual(window.labelPayload, 0);
+      });
+    });
+
+    it("should ignore a for attribute that names no element", function () {
+      const $label = $('<label for="no-such-control"><input value="nested"></label>').appendTo(
+        "#main"
+      );
+      $label.find("input").val("changed");
+
+      $label.resetForm();
+
+      assert.strictEqual($label.find("input").val(), "nested");
+    });
+
+    it("should not reset a label again when its for attribute names an ancestor", function () {
+      const $outer = $('<div id="label-owner"><label for="label-owner">L</label></div>').appendTo(
+        "#main"
+      );
+
+      const reset = () => $outer.find("label").resetForm();
+
+      assert.doesNotThrow(reset);
     });
 
     it("should reset nested fields of a label without a for attribute", function () {
@@ -1785,6 +1845,31 @@ describe("form", function () {
       });
     });
 
+    describe("target with a parsed response", function () {
+      [
+        ["a JSON array", ['<img src=x onerror="window.targetPayload=1">']],
+        ["a JSON object", { html: '<img src=x onerror="window.targetPayload=1">' }],
+      ].forEach(function ([label, data]) {
+        it("should not insert " + label + " but still call success", async function () {
+          window.targetPayload = 0;
+          const $target = $('<div id="parsed-target">kept</div>').appendTo("#main");
+          const $form = $('<form action="ajax/json.json"></form>').appendTo("#main");
+          const successes = [];
+
+          captureAjaxOptions(
+            $form,
+            { target: $target, success: (response) => successes.push(response) },
+            (settings) => settings.success(data, "success", {})
+          );
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          assert.strictEqual($target.html(), "kept");
+          assert.deepEqual(successes, [data]);
+          assert.strictEqual(window.targetPayload, 0);
+        });
+      });
+    });
+
     describe("callbacks", function () {
       it("should call beforeSubmit with the field array and the form", async function () {
         const opts = {};
@@ -2073,6 +2158,35 @@ describe("form", function () {
           $param.remove();
         }
       });
+
+      for (const [label, markup] of [
+        ["a get form", '<form method="get">'],
+        ["a form without a method", "<form>"],
+      ]) {
+        it(`should not send CSRF metadata with ${label}, whose query it would join`, function () {
+          const $form = $(markup + '<input name="upload" value="yes"></form>')
+            .attr("action", "ajax/iframe-text.html")
+            .appendTo("#main");
+          const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
+          const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
+            document.head
+          );
+          let submittedTokens;
+          $form[0].submit = function () {
+            submittedTokens = $(this).find('[name="authenticity_token"]').length;
+          };
+
+          try {
+            $form.ajaxSubmit({ iframe: true, forceSync: true, error: function () {} });
+            $form.data("jqxhr").abort();
+
+            assert.strictEqual(submittedTokens, 0);
+          } finally {
+            $token.remove();
+            $param.remove();
+          }
+        });
+      }
 
       it("should override the action during submission and then restore it", async function () {
         const $form = createIframeForm("ajax/original.html");
@@ -2372,8 +2486,8 @@ describe("form", function () {
         assert.strictEqual(result.success[0].trim(), "iframe response");
       });
 
-      // #597: each extraData value goes into one hidden input, so an array is joined with commas.
-      it.fails("should submit array extraData values as separate fields", async function () {
+      // #597: arrays and objects are sent as $.param sends them.
+      it("should submit array extraData values as separate fields", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const submitted = [];
         inspectNativeSubmit($form, function (form) {
@@ -2390,6 +2504,110 @@ describe("form", function () {
           ["tags[]", "a"],
           ["tags[]", "b"],
         ]);
+      });
+
+      it("should submit nested extraData objects as bracketed fields", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const submitted = [];
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted.push([this.name, this.value]);
+            });
+        });
+
+        await submitThroughIframe($form, {
+          data: { meta: { owner: "Ada", tags: ["x"] }, plain: "a+b c" },
+          dataType: "text",
+        });
+
+        assert.deepEqual(submitted, [
+          ["meta[owner]", "Ada"],
+          ["meta[tags][]", "x"],
+          ["plain", "a+b c"],
+        ]);
+      });
+
+      // Starts an iframe upload whose native submit only records the generated hidden inputs and
+      // iframe, then aborts it.
+      async function submitAndAbort($form, options) {
+        const seen = {};
+        $form[0].submit = function () {
+          seen.hidden = $(this)
+            .find('input[type="hidden"]')
+            .map(function () {
+              return [[this.name, this.value]];
+            })
+            .get();
+          const target = this.getAttribute("target");
+          seen.iframeSrc = $("iframe")
+            .filter((i, frame) => frame.name === target)
+            .attr("src");
+        };
+
+        $form.ajaxSubmit($.extend({ iframe: true, forceSync: true, error: () => {} }, options));
+        $form.data("jqxhr").abort();
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        return seen;
+      }
+
+      const payload = '"><img src=x onerror="window.iframePayload=1">';
+
+      [
+        ["an extraData name", { extraData: { field: { name: payload, value: "v" } } }],
+        ["an extraData key", { extraData: { [payload]: "v" } }],
+      ].forEach(function ([label, options]) {
+        it("should submit " + label + " as text, not HTML", async function () {
+          window.iframePayload = 0;
+          const $form = createIframeForm("ajax/iframe-text.html");
+
+          const seen = await submitAndAbort($form, options);
+
+          assert.deepEqual(seen.hidden, [[payload, "v"]]);
+          assert.strictEqual(window.iframePayload, 0);
+        });
+      });
+
+      it("should submit a clicked button's name as text, not HTML", async function () {
+        window.iframePayload = 0;
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const $button = $('<button type="submit" value="v">').attr("name", payload).appendTo($form);
+        $form[0].clk = $button[0];
+
+        const seen = await submitAndAbort($form, {});
+
+        assert.deepEqual(seen.hidden, [[payload, "v"]]);
+        assert.strictEqual(window.iframePayload, 0);
+      });
+
+      it("should submit the CSRF parameter name as text, not HTML", async function () {
+        window.iframePayload = 0;
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const $metas = $('<meta name="csrf-token" content="t"><meta name="csrf-param">');
+        $metas.last().attr("content", payload);
+        $metas.appendTo(document.head);
+
+        try {
+          const seen = await submitAndAbort($form, {});
+
+          assert.deepEqual(seen.hidden, [[payload, "t"]]);
+          assert.strictEqual(window.iframePayload, 0);
+        } finally {
+          $metas.remove();
+        }
+      });
+
+      it("should set the iframe source as an attribute, not HTML", async function () {
+        window.iframePayload = 0;
+        const iframeSrc = 'about:blank"></iframe><img src=x onerror="window.iframePayload=1">';
+        const $form = createIframeForm("ajax/iframe-text.html");
+
+        const seen = await submitAndAbort($form, { iframeSrc: iframeSrc });
+
+        assert.strictEqual(seen.iframeSrc, iframeSrc);
+        assert.strictEqual(window.iframePayload, 0);
       });
 
       it("should submit only own extraData properties", async function () {
