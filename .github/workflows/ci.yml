@@ -4,8 +4,9 @@ on:
   push:
     branches: [main]
     paths-ignore: ["docs/**", "**/*.md"]
+  # No paths-ignore on pull requests: a skipped workflow never reports the required checks, which
+  # blocks the merge. The `changes` job skips the slow steps instead when only docs changed.
   pull_request:
-    paths-ignore: ["docs/**", "**/*.md"]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -15,8 +16,33 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # code is "false" for a pull request that only changes docs/ or Markdown files.
+  changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Check for changes outside docs
+        id: diff
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only HEAD^1 HEAD | grep -qvE '^docs/|\.md$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only docs changed: lint and format:check run, the build and suites are skipped."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      CODE: ${{ needs.changes.outputs.code }}
     steps:
       - name: Set timings file path
         run: echo "TIMINGS=$RUNNER_TEMP/timings.tsv" >> "$GITHUB_ENV"
@@ -32,13 +58,16 @@ jobs:
           npm ci
       - name: Get Playwright version
         id: playwright
+        if: env.CODE == 'true'
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
+        if: env.CODE == 'true'
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium
+        if: env.CODE == 'true'
         run: |
           start=$(date +%s)
           trap 'printf "%s\t%s\n" "Install Chromium" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
@@ -64,16 +93,19 @@ jobs:
           trap 'printf "%s\t%s\n" "npm run format:check" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
           npm run format:check
       - name: npm run build
+        if: env.CODE == 'true'
         run: |
           start=$(date +%s)
           trap 'printf "%s\t%s\n" "npm run build" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
           npm run build
       - name: vitest run --coverage
+        if: env.CODE == 'true'
         run: |
           start=$(date +%s)
           trap 'printf "%s\t%s\n" "vitest run --coverage" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
           npx vitest run --coverage --reporter=default --reporter=json --outputFile.json=vitest-report.json
       - name: Check committed dist matches the build
+        if: env.CODE == 'true'
         run: |
           start=$(date +%s)
           trap 'printf "%s\t%s\n" "Check committed dist matches the build" "$(($(date +%s) - start))" >> "$TIMINGS"' EXIT
@@ -95,8 +127,11 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # The suite against the jQuery support floor, the latest 3.x, and 4.x.
+  # Branch protection requires each matrix check by name, so a docs-only PR skips the steps, not the
+  # job: a job skipped by `if` reports one unexpanded "jQuery ${{ matrix.jquery }}" check instead.
   jquery:
     name: jQuery ${{ matrix.jquery }}
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -106,26 +141,35 @@ jobs:
           - { jquery: "1.7.2", file: ".jquery/jquery-1.7.2.js" }
           - { jquery: "3.7.1", file: "node_modules/jquery/dist/jquery.js" }
           - { jquery: "4.0.0", file: "node_modules/jquery4/dist/jquery.js" }
+    env:
+      CODE: ${{ needs.changes.outputs.code }}
     steps:
       - uses: actions/checkout@v7
+        if: env.CODE == 'true'
       - uses: actions/setup-node@v7
+        if: env.CODE == 'true'
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+        if: env.CODE == 'true'
       - name: Get Playwright version
         id: playwright
+        if: env.CODE == 'true'
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
+        if: env.CODE == 'true'
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - run: npx playwright install chromium
+        if: env.CODE == 'true'
       - name: Fetch jQuery 1.7.2
-        if: matrix.jquery == '1.7.2'
+        if: env.CODE == 'true' && matrix.jquery == '1.7.2'
         run: scripts/fetch-jquery.sh 1.7.2
       - name: Run the suite on jQuery ${{ matrix.jquery }}
+        if: env.CODE == 'true'
         run: npx vitest run --project suite
         env:
           JQUERY_FILE: ${{ matrix.file }}
