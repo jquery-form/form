@@ -16,7 +16,7 @@ Please report security issues privately, not in public issues. See [SECURITY](SE
 
 ## Compatibility
 * Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0.
-* jQuery 4 needs a release newer than 4.3.0; 4.3.0 uses APIs that jQuery 4 removed.
+* jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
 * With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones. ([issue #353](https://github.com/jquery-form/form/issues/353))
 * **Not** compatible with the jQuery slim builds, which leave out AJAX.
 
