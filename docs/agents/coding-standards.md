@@ -27,6 +27,22 @@ Human PR/process stays in `CONTRIBUTING.md`.
 
 Use **[Conventional Commits](https://www.conventionalcommits.org/)**. Each message is **1–3 lines** total (subject plus at most a short body). Prefer the type that matches the change (`fix`, `feat`, `docs`, `test`, `chore`, `refactor`, `ci`, `build`). Omit `Co-authored-by` and similar trailers.
 
+## Public text
+
+Public text is anything a user of the library reads: `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, the
+docs site pages, comments in `src/` (they ship in `dist/`), GitHub release notes, security advisories,
+and issue, PR and drupal.org comments.
+
+- Write it so it makes sense without the internal notes in `docs/plans/`, `docs/research/`,
+  `docs/agents/` and `docs/adr/`. Those may be removed or condensed later.
+- Don't mention plan phases ("Phase 8"), internal finding IDs (`W1`, `D-09`, `SER-18`, `IFR-122`),
+  `it.fails` records or probes. Name the behavior, the version, the GHSA or CVE ID, or the GitHub
+  issue instead.
+- Don't link to `docs/plans/` or `docs/research/`. An ADR link is fine where its reasoning helps a
+  contributor.
+- The docs site (`docs/` on `main`) excludes those folders in `docs/_config.yml`. Keep a new
+  internal folder or file out of it the same way.
+
 ## Tests
 
 - **Names:** BDD-style — behavior in plain language (`describe` / `it` or the runner's equivalent), e.g. when X, it should Y.

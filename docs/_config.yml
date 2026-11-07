@@ -16,5 +16,13 @@ defaults:
     values:
       layout: "default"
 
+# Project-internal notes live in the repository, not on the site.
 exclude:
   - .gitignore
+  - Gemfile
+  - Gemfile.lock
+  - adr/
+  - agents/
+  - plans/
+  - research/
+  - metrics.md

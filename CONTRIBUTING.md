@@ -41,7 +41,7 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 ### Things to keep in mind
 
 * Smaller PRs are likely to be merged more quickly than bigger changes.
-* Every merge needs maintainer review. Feature/community PRs wait until the modernization coverage work is done (see the plan); they are not merged before that gate.
+* Every merge needs maintainer review.
 * This project is using [Semantic Versioning 2.0.0](http://semver.org/)
 
 ## Branching and releases
