@@ -65,5 +65,8 @@
     "requirejs": "2.3.8",
     "rollup": "4.65.0",
     "vitest": "5.0.5"
+  },
+  "overrides": {
+    "minimatch": "11.0.4"
   }
 }
