@@ -28,11 +28,7 @@ Please report security issues privately, not in public issues. See [SECURITY](SE
 
 ### CDN
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.3.0/jquery.form.min.js" integrity="sha384-qlmct0AOBiA2VPZkMY3+2WqkHtIQ9lSdAsAn5RUJD/3vA5MKDgSGcdmIv4ycVxyn" crossorigin="anonymous"></script>
-```
-or
-```html
-<script src="https://cdn.jsdelivr.net/gh/jquery-form/form@4.3.0/dist/jquery.form.min.js" integrity="sha384-qlmct0AOBiA2VPZkMY3+2WqkHtIQ9lSdAsAn5RUJD/3vA5MKDgSGcdmIv4ycVxyn" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.4.0/dist/jquery.form.min.js" integrity="sha384-xXCcBDQcC69XJrsBralQhdrm4++0kesmFgISJCmlIdKADiFvig1TUhJW47Im0OJX" crossorigin="anonymous"></script>
 ```
 
 ---
