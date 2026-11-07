@@ -21,14 +21,14 @@ A sink that DOM text can reach matters most, because correct escaping on the ser
 
 ## Security advisories fixed in 4.4.0
 
-Four findings let DOM text, plugin options or a JSON response become executable HTML in 4.3.0 and earlier. They were withheld from this repository until 4.4.0 shipped, and are published as GitHub security advisories. CVE IDs were requested on 2026-10-31 and are pending.
+Four findings let DOM text, plugin options or a JSON response become executable HTML in 4.3.0 and earlier. They were withheld from this repository until 4.4.0 shipped, and are published as GitHub security advisories. W1 and W2 were drafted as High and published with the CVSS 3.1 vector `AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N` (6.1, Medium). CVE IDs were requested on 2026-10-31 and are pending.
 
-| #   | Advisory                                                                                           | Area                                                 | Reported by                                         | Severity |
-| --- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- | -------- |
-| W1  | [GHSA-x8mc-9vpg-2rc8](https://github.com/jquery-form/form/security/advisories/GHSA-x8mc-9vpg-2rc8) | The iframe upload transport builds HTML from strings | Rudloff (`extraData` name); the rest in this review | High     |
-| W2  | [GHSA-8395-7m7x-q7q2](https://github.com/jquery-form/form/security/advisories/GHSA-8395-7m7x-q7q2) | `resetForm` on a `<label>` passes `for` to `$()`     | Rudloff; also public on drupal.org #3607794         | High     |
-| W3  | [GHSA-g7mw-rwc2-4h3g](https://github.com/jquery-form/form/security/advisories/GHSA-g7mw-rwc2-4h3g) | `formToArray` builds a selector from the form `id`   | This review                                         | Medium   |
-| W4  | [GHSA-4w39-46xw-8jm2](https://github.com/jquery-form/form/security/advisories/GHSA-4w39-46xw-8jm2) | `target` inserts a parsed JSON response as HTML      | This review                                         | Medium   |
+| #   | Advisory                                                                                           | Area                                                 | Reported by                                         | Severity          |
+| --- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- | ----------------- |
+| W1  | [GHSA-x8mc-9vpg-2rc8](https://github.com/jquery-form/form/security/advisories/GHSA-x8mc-9vpg-2rc8) | The iframe upload transport builds HTML from strings | Rudloff (`extraData` name); the rest in this review | Medium (CVSS 6.1) |
+| W2  | [GHSA-8395-7m7x-q7q2](https://github.com/jquery-form/form/security/advisories/GHSA-8395-7m7x-q7q2) | `resetForm` on a `<label>` passes `for` to `$()`     | Rudloff; also public on drupal.org #3607794         | Medium (CVSS 6.1) |
+| W3  | [GHSA-g7mw-rwc2-4h3g](https://github.com/jquery-form/form/security/advisories/GHSA-g7mw-rwc2-4h3g) | `formToArray` builds a selector from the form `id`   | This review                                         | Medium            |
+| W4  | [GHSA-4w39-46xw-8jm2](https://github.com/jquery-form/form/security/advisories/GHSA-4w39-46xw-8jm2) | `target` inserts a parsed JSON response as HTML      | This review                                         | Medium            |
 
 Each was reproduced with browser probes on jQuery 1.7.2, 3.7.1 and 4.0.0; a payload set a `window` flag from an `<img src=x onerror=…>` handler. Line numbers below are for `src/jquery.form.js` in 4.3.0.
 
