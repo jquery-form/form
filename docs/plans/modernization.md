@@ -352,6 +352,12 @@ Prepare in public (normal PRs, nothing about W1–W4):
   `docs/agents/`, `docs/adr/` and `docs/metrics.md`; it now excludes them, so `security-review.md`
   isn't published on the site when the W1–W4 details move into it. After the merge, check that
   `https://jquery-form.github.io/form/plans/modernization/` returns 404.
+  - The same PR (#636) unblocks docs-only PRs: `ci.yml` no longer uses `paths-ignore` on pull
+    requests, and a `changes` job makes the required `test` and jQuery jobs skip their slow steps.
+    When `phase-13` rebases onto it, `ci.yml` will conflict: keep the step gating on `test` and
+    the jQuery matrix, and skip the new browser and end-to-end jobs with a job-level
+    `if: needs.changes.outputs.code == 'true'` (they aren't required checks, so a skipped job is
+    fine there).
 - Check that the custom CodeQL query pack resolves its `codeql/javascript-all` dependency in Actions,
   since it couldn't be run there before release day.
 
