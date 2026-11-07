@@ -26,3 +26,4 @@ exclude:
   - plans/
   - research/
   - metrics.md
+# Probe for the docs-only CI path.
