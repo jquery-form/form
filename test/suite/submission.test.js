@@ -2259,6 +2259,30 @@ describe("form", function () {
         assert.strictEqual(calls, 1);
       });
 
+      it("should build no elements and insert nothing when target is an HTML string", async function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        window.__targetHtml = 0;
+        let calls = 0;
+        const target = '<img src="data:," onerror="window.__targetHtml = 1">';
+        const settings = submitWith($form, [{ target: target, success: () => calls++ }]);
+
+        settings.success("<b>response</b>", "success", {});
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        assert.strictEqual(window.__targetHtml, 0);
+        assert.strictEqual(calls, 1);
+      });
+
+      it("should look up a target selector with a tag in an attribute value", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        const $target = makeForm('<div title="<b>"></div>');
+        const settings = submitWith($form, [{ target: 'div[title="<b>"]' }]);
+
+        settings.success("<i>loaded</i>", "success", {});
+
+        assert.strictEqual($target.html(), "<i>loaded</i>");
+      });
+
       it("should call success once with jQuery's settings as this when the target matches nothing", async function () {
         const $form = $("#form3");
         const calls = [];

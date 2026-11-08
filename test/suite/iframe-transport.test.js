@@ -1546,6 +1546,41 @@ describe("form", function () {
             assert.include(events, "ajaxStop");
           });
 
+          it("should build no elements from an iframeTarget given as an HTML string", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].submit = function () {};
+            window.__frameHtml = 0;
+            $.active = 0;
+
+            try {
+              $form.ajaxSubmit({
+                iframe: true,
+                forceSync: true,
+                iframeTarget: '<img src="data:," onerror="window.__frameHtml = 1">',
+                error: function () {},
+              });
+            } catch {
+              // an iframeTarget that matches nothing throws here
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            assert.strictEqual(window.__frameHtml, 0);
+            assert.strictEqual($.active, 0);
+          });
+
+          it("should find an iframeTarget selector with a tag in an attribute value", function () {
+            const $target = $('<iframe title="<b>"></iframe>').appendTo("#main");
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            $form.ajaxSubmit({
+              iframe: true,
+              iframeTarget: 'iframe[title="<b>"]',
+              beforeSend: () => false,
+            });
+
+            assert.match($target.attr("name"), /^jqFormIO\d+$/);
+          });
+
           describe("when the frame is not in the document", function () {
             const message = "jquery.form: the upload frame is not in the document";
 

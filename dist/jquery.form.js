@@ -401,6 +401,25 @@ function keepContext(settings, sources) {
   return settings;
 }
 
+/**
+ * The elements a selector option (target, iframeTarget) names. A string is only ever a selector,
+ * looked up in the document, so jQuery never builds elements from it; a string starting with "<"
+ * is HTML, not a selector, and matches nothing. Elements and jQuery objects are used as given.
+ */
+function selectorOption(value, ownerDocument) {
+  if (typeof value !== "string") {
+    return jQuery(value);
+  }
+
+  if (/^\s*</.test(value)) {
+    log("ignoring HTML given as a selector: ", value);
+
+    return jQuery([]);
+  }
+
+  return jQuery(ownerDocument || document).find(value);
+}
+
 // ajaxForm binding: the submit and click handlers that send a form through ajaxSubmit. The
 // handlers look up $.fn.ajaxSubmit when they run, so a replacement installed later is used.
 
@@ -1667,7 +1686,7 @@ function createIframeTransport(hasProp, forms) {
     var $io, n;
 
     if (s.iframeTarget) {
-      $io = $(s.iframeTarget, ownerDocument);
+      $io = selectorOption(s.iframeTarget, ownerDocument);
       n = $io.attr("name");
       if (!n) {
         $io.attr("name", id);
@@ -2196,7 +2215,7 @@ function createSubmission(feature, forms, serialization) {
       callbacks.push(function (data, textStatus, jqXHR) {
         var successArguments = arguments,
           fn = options.replaceTarget ? "replaceWith" : "html",
-          $target = $(options.target);
+          $target = selectorOption(options.target);
 
         // Only a string response is inserted. jQuery has already parsed a JSON or XML response,
         // and inserting it would parse each of its strings as HTML.
