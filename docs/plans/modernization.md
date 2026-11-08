@@ -519,6 +519,11 @@ Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
 - Packaging: no `browser` field (bundlers get the module build; `jsdelivr` and `unpkg` name the
   minified build), `LICENSE-MIT` published, and the CommonJS factory uses the window it is given.
 - Docs: a Deprecations section in `docs/api.md` listing each warning and its replacement.
+- `target` and `iframeTarget` strings are only selectors (`$(document).find()`), never parsed as
+  HTML. Decided on 2026-11-08: alert 7 had been dismissed as "won't fix" under finding 11, but
+  unlike `url` or `iframeSrc` this risk is not inherent, and the fix keeps every selector's result.
+  It goes in 4.6.0, not 4.5.0, in case a consumer relied on an HTML string. Closes CodeQL alert 10,
+  the alert 7 lookup reopened by the 4.5.0 module split (it shows on PR #642).
 - Dev only (not in the published package): an npm `overrides` entry pins `minimatch` to 11.0.4
   for Dependabot alert 97 (CVE-2026-118764, through eslint, which still requires `minimatch@^10`
   and has no patched 10.x). Remove the override once eslint allows minimatch 11. The same commit

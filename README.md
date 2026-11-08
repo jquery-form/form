@@ -179,7 +179,7 @@ Boolean flag indicating whether the form should *always* target the server respo
 String value that should be used for the iframe's src attribute when an iframe is used.
 
 ### iframeTarget
-Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This option allows you to use an existing iframe if you wish. When using this option the plugin will not attempt handling the response from the server.
+Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This option allows you to use an existing iframe if you wish. When using this option the plugin will not attempt handling the response from the server. Since 4.6.0 a string is only ever a selector, never parsed as HTML: one that starts with `<` matches nothing.
 
 ### method
 The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').
@@ -205,7 +205,7 @@ Callback function to be invoked after the form has been submitted. If a 'success
 4. `$form` jQuery object containing form element
 
 ### target
-Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
+Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element. Since 4.6.0 a string is only ever a selector, never parsed as HTML: one that starts with `<` matches nothing.
 
 ### type
 The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').  

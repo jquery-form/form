@@ -193,7 +193,7 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 
 ### 11. Options that must be trusted
 
-- **`url`, a form's `action`, `iframeSrc`, `closeKeepAlive`, `target` and `iframeTarget` are developer input.** A `javascript:` URL in `url` or `action` runs when the iframe transport submits. That is the same as a native submit. Selector options passed to `$()` are parsed as HTML on jQuery < 1.9 if they contain a tag.
+- **`url`, a form's `action`, `iframeSrc`, `closeKeepAlive`, `target` and `iframeTarget` are developer input.** A `javascript:` URL in `url` or `action` runs when the iframe transport submits. That is the same as a native submit. Selector options passed to `$()` were parsed as HTML: on jQuery < 1.9 if they contain a tag, and on every version if they start with `<`. Since 4.6.0, `target` and `iframeTarget` strings are looked up with `$(document).find()` and are never parsed as HTML; they stay trusted because they choose where the response goes.
 - **No `document.domain` handling remains.** A cross-origin response fails closed: `getDoc` throws, and the transport reports a server abort (lines 644–661).
 - **Docs.** List these options as trusted-only in `docs/options.md`.
 
@@ -214,7 +214,7 @@ With `semantic`, `formToArray` walks `getElementsByTagName("*")` (line 1114). Th
 **What it finds.** On `main`, the built-in queries report three alerts in `src/`:
 
 - `js/html-constructed-from-input` on the two lines #604 reported.
-- `js/unsafe-jquery-plugin` on the `iframeTarget` lookup, which is a developer-supplied selector (finding 11).
+- `js/unsafe-jquery-plugin` on the `iframeTarget` lookup, which is a developer-supplied selector (finding 11). Dismissed as alert 7 for 4.4.0; the 4.5.0 module split reopened it as alert 10. Fixed in 4.6.0, which looks selector strings up with `.find()`.
 
 Most of W1–W4 were not flagged by the built-in queries; the custom pack (see Detection above) covers them, and the tests pin the fixes.
 
