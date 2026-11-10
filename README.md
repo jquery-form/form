@@ -30,7 +30,7 @@ Some options must be trusted input only, and a `target` response is inserted as 
 
 ### CDN
 ```html
-<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.4.0/dist/jquery.form.min.js" integrity="sha384-xXCcBDQcC69XJrsBralQhdrm4++0kesmFgISJCmlIdKADiFvig1TUhJW47Im0OJX" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.5.0/dist/jquery.form.min.js" integrity="sha384-bAYSkj1642QKZXFX6ioC3jTHXX/156RH9dx/gagqvP0ldOVz4mUpmdd9xcuOowqd" crossorigin="anonymous"></script>
 ```
 
 ---
