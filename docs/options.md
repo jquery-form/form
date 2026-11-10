@@ -56,6 +56,17 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 
 **'script'**: if dataType == 'script' the server response is evaluated in the global context
 
+### delegation
+
+Default: `undefined`  
+A selector string, or `true`, to handle forms through a binding on the document, so forms added later are handled too (`ajaxForm` only; requires jQuery 1.7+). With a selector, a form is submitted through the plugin when it, or an element around it, matches the selector; the selection is ignored, and binding the same selector again replaces its options. An empty string throws an error. `ajaxFormUnbind()` removes every delegated binding; `ajaxFormUnbind(selector)` removes one.
+
+```javascript
+$(document).ajaxForm({ delegation: "form.ajax" });
+```
+
+**Warning:** `delegation: true` binds **every form on the page** on jQuery 3 and later (jQuery 3.0 removed the selector it relied on), so the options (`data`, `headers`) go with any form's submission. The plugin logs a `console.warn` for each such call, even with `debug` off. Use a selector.
+
 ### error
 
 Callback function to be invoked upon error. It is passed the following arguments:
@@ -75,6 +86,15 @@ Boolean value. Set to true to remove short delay before posting form when upload
 Default: `false`  
 Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the _File Uploads_ documentation on the [Code Samples](#code-samples) page for more info.
 
+Without `FormData`, a form with a selected file or a multipart `enctype` also uses the iframe. Choosing it automatically is deprecated (a `debug` warning); 5.0 uses the iframe only when `iframe: true` is set.
+
+The response is loaded as a document in the hidden iframe, with the same origin as the page, before the plugin reads it. The server must return a response that is safe to render as HTML:
+
+- Send JSON and text as `text/plain`, or wrap them in a `<textarea>` with the content HTML-escaped (`&lt;`, `&amp;`). The plugin reads the first `<textarea>`; without one, a `json`, `script` or `text` response is read from the first `<pre>`, then from the `<body>` text.
+- The iframe cannot see the HTTP status. Set `status` and `statusText` attributes on the `<textarea>` or the `<body>` to report one; otherwise the request succeeds whatever the server answered.
+- A response is read as XML when `dataType` is `"xml"` or the browser parsed the document as XML (an XML content type).
+- With `dataType: "script"`, the text is evaluated even when it is a server error page, because the iframe cannot tell. Return scripts only from endpoints you control.
+
 ### iframeSrc
 
 Default: `about:blank`  
@@ -89,12 +109,18 @@ Identifies the iframe element to be used as the response target for file uploads
 ### method
 
 Default: value of form's `method` attribute (or `GET` if none found)  
-The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT'). **(version added: 4.2.0)**
+The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT'). **(version added: 4.2.0)**  
+The method is read after `beforeSubmit` and the `form-submit-validate` event, so a change made there is used by every transport. An iframe upload can only send `GET` or `POST`, as a native form submit does; with any other method it posts with the form's own `method`.
 
 ### replaceTarget
 
 Default: `false`  
 Optionally used along with the the [`target`](#target) option. Set to `true` if the target should be replaced or `false` if only the target _contents_ should be replaced. **(version added: 2.43)**
+
+### requestFormat
+
+Default: `null`  
+Set to `"json"` to send the form as a JSON body instead of a urlencoded one (#545). The fields become an object, a name used more than once becomes an array of its values, and an object [`data`](#data) option is merged over them. The request is sent with `contentType: "application/json; charset=UTF-8"`, replacing any `contentType` you pass. It needs a method with a body: a `GET` method (including a form without a `method` attribute) throws an error, as do a string `data` option, a selected file, a multipart form and the [`iframe`](#iframe) option. **(version added: 4.5.0)** Based on the idea in PR #557 by zhangciwu (changwei).
 
 ### resetForm
 
@@ -122,6 +148,19 @@ Callback function to be invoked after the form has been submitted. If a 'success
 Default: `null`  
 Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
 
+The response is inserted as HTML, as `$.fn.load` does, so the endpoint must return markup you trust. To sanitize it, filter it with [`dataFilter`](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings), which runs before the response reaches the target on both the XHR and the iframe transport:
+
+```javascript
+$("#myForm").ajaxForm({
+  target: "#output",
+  dataFilter: function (html) {
+    return DOMPurify.sanitize(html);
+  },
+});
+```
+
+Sanitizing needs jQuery 3.5 or later: older versions rewrite some markup when it is inserted, after the sanitizer has run.
+
 ### type
 
 Default: value of form's `method` attribute (or 'GET' if none found)  
@@ -142,6 +181,18 @@ Callback function to be invoked with upload progress information (if supported b
 
 Default: value of form's `action` attribute  
 URL to which the form data will be submitted.
+
+## Trusted options
+
+These options are trusted input only: pass values your code controls, never values taken from users, the URL or a response.
+
+- `url`, and the form's `action`
+- `target` and `replaceTarget`
+- `iframeSrc` and `iframeTarget`
+- `closeKeepAlive`, which is deprecated: it works around a Safari 3/4 bug, warns under `debug` and is removed in 5.0
+- `dataType: "script"`, which evaluates the response
+- the keys of `data` and `extraData` (values may come from users)
+- the `includeHidden` selector of `clearForm` and `clearFields`
 
 ## Example
 

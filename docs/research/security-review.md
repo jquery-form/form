@@ -75,15 +75,15 @@ Ranked by severity, then by who controls the input.
 | #   | Finding                                                                   | Who controls it     | jQuery | Severity | Fix in             |
 | --- | ------------------------------------------------------------------------- | ------------------- | ------ | -------- | ------------------ |
 | 1   | `target` inserts the response as HTML and runs its scripts                | Server response     | All    | Medium   | Phase 12 (opt-in)  |
-| 2   | `delegation: true` takes over every form on the page                      | Page                | ≥ 3.0  | Medium   | Phase 12, Phase 13 |
-| 3   | The iframe transport renders the response as a same-origin document       | Server response     | All    | Medium   | Docs, Phase 13     |
+| 2   | `delegation: true` takes over every form on the page                      | Page                | ≥ 3.0  | Medium   | Phase 12, Phase 14 |
+| 3   | The iframe transport renders the response as a same-origin document       | Server response     | All    | Medium   | Docs, Phase 14     |
 | 4   | The Rails CSRF token is sent to cross-origin upload URLs                  | Page, developer     | All    | Medium   | Phase 10 (fixed)   |
-| 5   | The supported jQuery range includes versions with CVEs the plugin reaches | Consumer            | < 3.5  | Medium   | Docs, Phase 13     |
+| 5   | The supported jQuery range includes versions with CVEs the plugin reaches | Consumer            | < 3.5  | Medium   | Docs, Phase 14     |
 | 6   | Form fields named like form properties break serialization and uploads    | DOM text            | All    | Low      | Phase 10 (fixed)   |
 | 7   | `hasOwnProperty` is called as a method on `extraData`                     | Developer           | All    | Low      | Phase 10 (fixed)   |
 | 8   | Robustness: crashes and lost data on unusual input                        | DOM text, developer | Varies | Low      | Phase 10 (fixed)   |
 | 9   | #554 "code injection" is a false positive                                 | —                   | —      | Info     | Close #554         |
-| 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 13           |
+| 10  | `semantic: true` collects every named element, not only form controls     | DOM text            | All    | Info     | Phase 14           |
 | 11  | Options that are URLs or selectors must be trusted                        | Developer           | All    | Info     | Docs               |
 | 12  | Supply chain                                                              | —                   | —      | Info     | Release            |
 
@@ -108,7 +108,7 @@ W4 is a related but separate problem, fixed in 4.4.0 (GHSA-4w39-46xw-8jm2).
 - **What happens.** Lines 1017–1025 delegate from `document` using `this.selector`. jQuery 3.0 removed `.selector`, so the selector is `undefined` and the handler catches **every** form submit on the page (`selector-context-delegation.md`).
 - **The security impact is new here.** If the options include `url`, every form on the page posts its fields to that URL. That includes forms the developer never meant to bind, such as a login or payment form. Probes reproduced this on 3.7.1 and 4.0.0; 1.7.2 is scoped correctly.
 - **Fix in Phase 12 (additive):** accept `delegation: "<selector>"` and use it as the delegated selector. `true` keeps its current behavior.
-- **Fix in Phase 13 (breaking):** a selector is required. Bare `true` logs and does nothing, and the `.selector`/`.context` DOM-not-ready queue (lines 999–1015) is removed.
+- **Fix in Phase 14 (breaking):** a selector is required. Bare `true` logs and does nothing, and the `.selector`/`.context` DOM-not-ready queue (lines 999–1015) is removed.
 - **Until then:** the README and `docs/options.md` warn that `delegation: true` is not scoped on jQuery 3 and later.
 
 ### 3. The iframe transport renders the response as a same-origin document
@@ -118,8 +118,8 @@ W4 is a related but separate problem, fixed in 4.4.0 (GHSA-4w39-46xw-8jm2).
 - **Status codes can be forged.** The first `<textarea>` or `<pre>` and the `status`/`statusText` attributes are trusted (lines 813–840). Injected markup earlier in the document can fake the status.
 - **Who reaches this.** Only `iframe: true`, or browsers without FormData, use this transport.
 - **Docs (Phase 12).** Iframe responses must be HTML-safe: `text/plain`, or JSON HTML-escaped inside the textarea.
-- **5.0 (Phase 13).** The iframe transport runs only when `iframe: true` is set.
-- **Possible hardening.** `sandbox="allow-same-origin"` on the generated iframe would block scripts and still let the plugin read the document. It is not yet verified across browsers; evaluate it in Phase 13.
+- **5.0 (Phase 14).** The iframe transport runs only when `iframe: true` is set.
+- **Possible hardening.** `sandbox="allow-same-origin"` on the generated iframe would block scripts and still let the plugin read the document. It is not yet verified across browsers; evaluate it in Phase 14.
 
 ### 4. The CSRF token is sent cross-origin
 
@@ -171,7 +171,7 @@ Each item below was confirmed by a probe except where marked.
 - **`#` action plus a field named `action`.** With a GET form, line 144 leaves `url` undefined, and line 221 throws (all versions).
 - **`url` with a hash.** On a GET, the query is appended after the fragment (line 221). jQuery 3 and 4 then keep it inside the fragment, and jQuery 1.7.2 strips it. Either way the form data is lost. (The hash cleanup at line 144 only applies to `action`, because a `url` option overrides it in the `$.extend`.)
 - **`data: {}` on a FormData upload.** It appends a field with an empty name and the value `undefined` (lines 341–352). Also, `deepSerialize` reads `options.traditional`, not the computed default at line 182 (from reading the code).
-- **Context is copied.** The deep `$.extend` copies a plain-object `context`, so `this` in callbacks is a copy, not the object passed in. The existing tests compare by property for this reason. Info only; it changes in Phase 13 if options stop being deep-copied.
+- **Context is copied.** The deep `$.extend` copies a plain-object `context`, so `this` in callbacks is a copy, not the object passed in. The existing tests compare by property for this reason. Info only. Fixed in 4.5.0 (Phase 12): the merged settings keep the caller's `context` object, so `this === context` on every transport.
 
 ### 9. #554 is a false positive
 
@@ -273,7 +273,7 @@ These items are sequenced in the plan.
 - **Phase 12: no breaking change.**
   - Split the 1,560-line IIFE into source modules (serialization, field helpers, XHR transport, iframe transport, `ajaxForm` binding). Rollup emits the same three `dist` files.
   - Reduce the complexity hot spots measured by `npm run metrics`: iframe `cb` 62, `ajaxSubmit` 55, `formToArray` 37, `$.fieldValue` 28, `fileUploadIframe` 24.
-- **Phase 13: breaking.**
+- **Phase 14: breaking.**
   - Delete the jQuery < 3 and IE/Opera/Edge shims.
   - Remove deprecated API: `clearInputs`, and the `$.fn.attr2` helper leaking onto `$.fn`.
   - Move to ES2015+ syntax.

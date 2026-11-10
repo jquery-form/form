@@ -1,14 +1,15 @@
 // Prints size and complexity metrics for the plugin source, for the before-and-after columns in
 // docs/metrics.md. Build size is measured separately (`gzip -c | wc -c`).
 //
-//   npm run metrics                 src/jquery.form.js in the working tree
-//   npm run metrics -- v4.3.0       src/jquery.form.js at a git ref
+//   npm run metrics                 every src/*.js in the working tree
+//   npm run metrics -- v4.3.0       every src/*.js at a git ref (older refs have one file)
 //   npm run metrics -- path/to.js   any one file
 //
-// The source is formatted with the repo's Prettier config before counting, so line counts do not
-// depend on how a given version was formatted.
+// Several files are summed (lines, functions, complexity); hot spots are labeled file:line and
+// public members are the union. The source is formatted with the repo's Prettier config before
+// counting, so line counts do not depend on how a given version was formatted.
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { Linter } from "eslint";
 import prettier from "prettier";
 
@@ -16,13 +17,27 @@ const SOURCE = "src/jquery.form.js";
 
 function load(arg) {
   if (!arg) {
-    return { label: SOURCE, source: readFileSync(SOURCE, "utf8") };
+    const files = readdirSync("src")
+      .filter((name) => name.endsWith(".js"))
+      .sort()
+      .map((name) => `src/${name}`);
+    return { label: "src/*.js", files: files.map((file) => [file, readFileSync(file, "utf8")]) };
   }
   if (existsSync(arg)) {
-    return { label: arg, source: readFileSync(arg, "utf8") };
+    return { label: arg, files: [[arg, readFileSync(arg, "utf8")]] };
   }
-  const source = execFileSync("git", ["show", `${arg}:${SOURCE}`], { encoding: "utf8" });
-  return { label: `${SOURCE} at ${arg}`, source };
+  const listed = execFileSync("git", ["ls-tree", "--name-only", arg, "src/"], { encoding: "utf8" })
+    .split("\n")
+    .filter((file) => file.endsWith(".js"))
+    .sort();
+  const files = listed.length ? listed : [SOURCE];
+  return {
+    label: `${files.length > 1 ? "src/*.js" : files[0]} at ${arg}`,
+    files: files.map((file) => [
+      file,
+      execFileSync("git", ["show", `${arg}:${file}`], { encoding: "utf8" }),
+    ]),
+  };
 }
 
 function lintMessages(code) {
@@ -72,20 +87,35 @@ function publicMembers(code) {
   return { fn: [...fn].sort(), statics: [...statics].sort() };
 }
 
-const { label, source } = load(process.argv[2]);
+const { label, files } = load(process.argv[2]);
 const config = await prettier.resolveConfig(SOURCE);
-const formatted = await prettier.format(source, { ...config, filepath: SOURCE });
-const { messages, sourceCode } = lintMessages(formatted);
-const lines = countLines(sourceCode);
-const complexity = ruleValues(messages, "complexity", /complexity of (\d+)/);
-const depth = ruleValues(messages, "max-depth", /too deeply \((\d+)\)/);
+const lines = { physical: 0, code: 0, comment: 0 };
+const complexity = [];
+const depth = [];
+const members = { fn: new Set(), statics: new Set() };
+
+for (const [file, source] of files) {
+  const formatted = await prettier.format(source, { ...config, filepath: SOURCE });
+  const { messages, sourceCode } = lintMessages(formatted);
+  const counted = countLines(sourceCode);
+  const at = (m) => ({ ...m, line: files.length > 1 ? `${file}:${m.line}` : m.line });
+  for (const key of Object.keys(lines)) {
+    lines[key] += counted[key];
+  }
+  complexity.push(...ruleValues(messages, "complexity", /complexity of (\d+)/).map(at));
+  depth.push(...ruleValues(messages, "max-depth", /too deeply \((\d+)\)/));
+  const found = publicMembers(formatted);
+  found.fn.forEach((name) => members.fn.add(name));
+  found.statics.forEach((name) => members.statics.add(name));
+}
+members.fn = [...members.fn].sort();
+members.statics = [...members.statics].sort();
 const values = complexity.map((c) => c.value);
 const total = values.reduce((sum, n) => sum + n, 0);
 const largest = [...complexity].sort((a, b) => b.value - a.value).slice(0, 5);
-const members = publicMembers(formatted);
 
 const rows = [
-  ["Source", label],
+  ["Source", `${label} (${files.length} file${files.length > 1 ? "s" : ""})`],
   ["Lines (physical, after Prettier)", lines.physical],
   ["Code lines", lines.code],
   ["Comment-only lines", lines.comment],

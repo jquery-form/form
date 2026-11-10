@@ -18,6 +18,16 @@ $(function () {
 });
 ```
 
+### ajaxFormUnbind
+
+Removes the handlers `ajaxForm` bound on the selection, and every delegated binding (the `delegation` option) the plugin made on the document. `ajaxFormUnbind(selector)` removes only the delegated binding for that selector and leaves the selection's handlers. Calling `ajaxForm` again on a form does not remove delegated bindings.  
+Chainable: Yes.
+
+```javascript
+$("#myFormId").ajaxFormUnbind();
+$(document).ajaxFormUnbind("form.ajax");
+```
+
 ### ajaxSubmit
 
 Immediately submits the form via AJAX. In the most common use case this is invoked in response to the user clicking a submit button on the form. `ajaxSubmit` takes zero or one argument. The single argument can be either a callback function or an [Options Object](http://malsup.com/jquery/form/#options-object).  

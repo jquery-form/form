@@ -14,10 +14,12 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 ### Security
 Please report security issues privately, not in public issues. See [SECURITY](SECURITY.md).
 
+Some options must be trusted input only, and a `target` response is inserted as HTML; see [Trusted options](docs/options.md#trusted-options) and the [`target`](docs/options.md#target) sanitizing recipe. Iframe uploads need HTML-safe responses; see [`iframe`](docs/options.md#iframe).
+
 ## Compatibility
 * Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0.
 * jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
-* With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones. ([issue #353](https://github.com/jquery-form/form/issues/353))
+* With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones; use `delegation: "<selector>"` instead. ([issue #353](https://github.com/jquery-form/form/issues/353))
 * **Not** compatible with the jQuery slim builds, which leave out AJAX.
 
 ## Download
@@ -57,6 +59,14 @@ Use ajaxForm when you want the plugin to manage all the event binding for you.
 $('form').ajaxForm({
     target: '#myResultsDiv'
 });
+````
+
+### ajaxFormUnbind( [selector] )
+Removes the handlers `ajaxForm` bound on the selection, and every delegated binding (`delegation: true` or a selector) the plugin made on the document. With a selector string it removes only that delegated binding and leaves the selection's handlers alone. Calling `ajaxForm` again on a form does not remove delegated bindings.
+
+````javascript
+$('#myForm').ajaxFormUnbind();       // the form's handlers and all delegated bindings
+$(document).ajaxFormUnbind('form.ajax'); // one delegated binding
 ````
 
 ### ajaxSubmit( options )
@@ -136,17 +146,19 @@ Expected data type of the response. One of: null, 'xml', 'script', or 'json'. Th
 * 'script': server response is evaluated in the global context
 
 ### delegation
-true to enable support for event delegation
+A selector string, or `true`, to handle forms through a document-level (delegated) binding, so forms added later are handled too.
 *requires jQuery v1.7+*
 
-**Note:** jQuery 3.0 removed the selector information this option relied on, so on jQuery 3 and later delegation is not limited to the selected forms; every form submit on the page is handled. See `docs/research/selector-context-delegation.md`.
+With a selector, a form is submitted through the plugin when it, or an element around it, matches the selector. The selection `ajaxForm` is called on is ignored. Binding the same selector again replaces its options. An empty string throws an error.
 
 ````javascript
-// prepare all existing and future forms for ajax submission
-$('form').ajaxForm({
-    delegation: true
+// prepare existing and future forms with class "ajax" for ajax submission
+$(document).ajaxForm({
+    delegation: 'form.ajax'
 });
 ````
+
+**Warning:** `delegation: true` uses the selection's selector, which jQuery 3.0 removed. On jQuery 3 and later it binds **every form on the page**, so the options (`data`, `headers`) go with any form's submission. The plugin logs a `console.warn` for each such call, even with `debug` off. Use a selector. jQuery 5.0 support will require one.
 
 ### error
 Callback function to be invoked upon error. It is passed the following arguments:
@@ -174,6 +186,9 @@ The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').
 
 ### replaceTarget
 Optionally used along with the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
+
+### requestFormat
+Set to `"json"` to send the fields (repeated names as arrays) merged with object `data` as a JSON body, with `contentType: "application/json; charset=UTF-8"`. Throws with a GET method, string `data`, files or the iframe transport. Based on the idea in PR #557 by zhangciwu.
 
 ### resetForm
 Boolean flag indicating whether the form should be reset if the submit is successful

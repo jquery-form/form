@@ -27,7 +27,7 @@ function serveFiles(name, pattern, toPath, headers = {}) {
   };
 }
 
-// test/test.js requests fixtures by several relative paths (ajax/x, test/ajax/x).
+// The suite requests fixtures by several relative paths (ajax/x, test/ajax/x).
 const ajaxFixtures = serveFiles(
   "ajax-fixtures",
   /\/ajax\/([\w.-]+)/,
@@ -108,7 +108,7 @@ export default defineConfig({
             { find: /^jquery\/dist\/jquery\.js$/, replacement: jqueryFile },
           ],
           globals: true,
-          include: ["test/test.js"],
+          include: ["test/suite/**/*.test.js"],
           setupFiles: ["test/setup.js"],
           browser: browser(),
         },

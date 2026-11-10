@@ -106,22 +106,59 @@ predicate objectKeyStep(DataFlow::Node pred, DataFlow::Node succ) {
 }
 
 /**
- * Holds if `callbacks[i].apply(context, [a, b])` passes `pred` to `succ`, a parameter of a
- * function pushed onto `callbacks`.
+ * A function value tracked from where it is created, through helper returns, parameters and
+ * imports or exports between modules.
+ */
+private DataFlow::SourceNode trackedFunction(DataFlow::FunctionNode f, DataFlow::TypeTracker t) {
+  t.start() and result = f
+  or
+  exists(DataFlow::TypeTracker t2 | result = trackedFunction(f, t2).track(t2, t))
+}
+
+/**
+ * An array tracked from where it is created, through helper parameters and returns and imports
+ * or exports between modules.
+ */
+private DataFlow::SourceNode trackedArray(DataFlow::ArrayCreationNode a, DataFlow::TypeTracker t) {
+  t.start() and result = a
+  or
+  exists(DataFlow::TypeTracker t2 | result = trackedArray(a, t2).track(t2, t))
+}
+
+/** Holds if `node` may hold the array created at `a`. */
+private predicate isArray(DataFlow::ArrayCreationNode a, DataFlow::Node node) {
+  trackedArray(a, DataFlow::TypeTracker::end()).flowsTo(node)
+}
+
+/** Holds if `callback` is pushed onto the array created at `list`, wherever either is used. */
+private predicate pushedCallback(DataFlow::ArrayCreationNode list, DataFlow::FunctionNode callback) {
+  exists(DataFlow::MethodCallNode push |
+    push.getMethodName() = "push" and
+    isArray(list, push.getReceiver()) and
+    trackedFunction(callback, DataFlow::TypeTracker::end()).flowsTo(push.getAnArgument())
+  )
+}
+
+/**
+ * Holds if `list[i].apply(context, [a, b])` or `list[i].call(context, a, b)` passes `pred` to
+ * `succ`, a parameter of a function pushed onto `list`. The list, the callbacks and the
+ * arguments array may each come from another function or module.
  */
 predicate callbackListStep(DataFlow::Node pred, DataFlow::Node succ) {
   exists(
-    DataFlow::MethodCallNode apply, DataFlow::ArrayCreationNode args, DataFlow::MethodCallNode push,
-    DataFlow::FunctionNode callback, Variable list, int i
+    DataFlow::MethodCallNode invoke, DataFlow::ArrayCreationNode list,
+    DataFlow::FunctionNode callback, int i
   |
-    apply.getMethodName() = "apply" and
-    refersTo(apply.getReceiver().(DataFlow::PropRead).getBase(), list, "") and
-    args = apply.getArgument(1).getALocalSource() and
-    push.getMethodName() = "push" and
-    refersTo(push.getReceiver(), list, "") and
-    push.getAnArgument().getALocalSource() = callback and
-    pred = args.getElement(i) and
+    isArray(list, invoke.getReceiver().(DataFlow::PropRead).getBase()) and
+    pushedCallback(list, callback) and
     succ = callback.getParameter(i)
+  |
+    invoke.getMethodName() = "apply" and
+    exists(DataFlow::ArrayCreationNode args |
+      isArray(args, invoke.getArgument(1)) and pred = args.getElement(i)
+    )
+    or
+    invoke.getMethodName() = "call" and pred = invoke.getArgument(i + 1)
   )
 }
 

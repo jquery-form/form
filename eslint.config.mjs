@@ -90,7 +90,7 @@ export default [
     rules: sourceRules,
   },
   {
-    files: ["test/test.js"],
+    files: ["test/suite/**/*.js"],
     languageOptions: {
       sourceType: "module",
       globals: { ...globals.browser, $: "readonly", jQuery: "readonly" },

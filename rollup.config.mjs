@@ -34,14 +34,18 @@ const umdHeader = `(function (factory) {
 const moduleLines =
   /^import jQuery from ['"]jquery['"];\nexport \{ default \} from ['"]jquery['"];\n\n/;
 const preamble = /^\/\*![\s\S]*?\*\/\n\n?/m;
-const bodyStart = "(function ($) {\n";
 
-// Rollup places the license preamble after the imports; lift it back to the top of the file.
+// Rollup places the license preamble after the imports and after any module the entry imports;
+// lift it back to the top of the file.
 function splitPreamble(plugin, code) {
   const imports = code.match(moduleLines);
   const header = code.match(preamble);
   if (!imports || !header) {
     plugin.error("expected the jquery import, default re-export, and license preamble");
+  }
+  // Modules other than the entry are inlined after the imports; only the entry has a license.
+  if (code.split("/*!").length !== 2) {
+    plugin.error("expected exactly one license preamble, in the entry module");
   }
   const chunk = new MagicString(code);
   chunk.remove(0, imports[0].length);
@@ -62,13 +66,9 @@ const classicLayout = {
   name: "classic-layout",
   renderChunk(code) {
     const { chunk, header } = splitPreamble(this, code);
-    const body = code.indexOf(bodyStart);
-    if (body < 0) {
-      this.error(`expected the plugin body to start with ${bodyStart.trim()}`);
-    }
-    // Rollup drops directives because modules are strict; a classic script is not.
-    chunk.appendLeft(body + bodyStart.length, "\t'use strict';\n");
-    chunk.prepend(header + umdHeader).append("\n}));\n");
+    // Rollup drops directives because modules are strict; a classic script is not, so the whole
+    // factory body is made strict, including module code hoisted above the plugin body.
+    chunk.prepend(header + umdHeader + "\t'use strict';\n").append("\n}));\n");
     return { code: chunk.toString(), map: chunk.generateMap({ hires: true }) };
   },
 };
