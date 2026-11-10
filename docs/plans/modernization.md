@@ -337,9 +337,9 @@ details are now in `security-review.md` and the behavior changes in `4x-behavior
 - Release notes are on the `v4.4.0` GitHub release. #604, #554, #553, #588, #597, #600, #616 and #618
   are closed; the drupal.org comment is posted. CodeQL alerts 1 and 4 are fixed and alert 7 is
   dismissed, so `main` has no open alerts.
-- Left: PR #640 (published severities, jQuery 4 wording); the README and site CDN snippets, once
-  cdnjs serves 4.4.0 and its hash can be checked; Packagist, which has no webhook and still shows
-  4.3.0; and step 9 when the CVE IDs arrive.
+- Left: step 9 when the CVE IDs arrive. Done since: PR #640; the README and site CDN snippets on
+  jsDelivr (PR #641, then 4.5.0 in PR #643); a Packagist webhook. The cdnjs alternative snippet
+  moved to the 4.6.0 docs cleanup (Phase 13).
 
 Prepare in public (normal PRs, nothing about W1–W4):
 
@@ -426,7 +426,9 @@ The order:
 3. **4.5.0** (Phase 12). Push `phase-12` and open its PR; this is the first CI and CodeQL run for
    those commits, so leave time for fixes. Run the custom CodeQL query. Bump, tag and publish the
    same way as 4.4.0, without the advisory steps. Close PR #557 and the issues Phase 12 fixed.
-4. **Soak 4.5.0 for about a week**, the same way.
+   Done 2026-11-10 (PR #642, released three days into the 4.4.0 soak with no new issues); #545
+   and #541 closed, #353 left open for 5.0.
+4. **Soak 4.5.0 for about a week** (until about 2026-11-17), the same way.
 5. **4.6.0** (Phase 13). `npm test` on `phase-13` runs `suite-webkit`, so the release `verify` job
    now installs `chromium webkit` with `--with-deps`, as `ci.yml` does. Push `phase-13`; its
    Firefox, WebKit and end-to-end CI jobs run for the first time. Rehearse `release.yml` with
@@ -530,6 +532,18 @@ Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
   went to `main` early in PR #638, after Dependabot reopened the alert there as alert 98; the
   `phase-13` rebase drops its copy as already applied.
 
+Docs site and README cleanup, with 4.6.0 (docs only, so it can also go to `main` as a small PR
+before the release):
+
+- `docs/_layouts/default.html`: remove the html5shiv script (its Google Code URL is a 404), the
+  IE conditional comment, the `X-UA-Compatible: chrome=1` meta (Chrome Frame), and the Universal
+  Analytics block, which never renders because `_config.yml` sets no `google_analytics`.
+- Add a cdnjs snippet back to the README as the alternative to jsDelivr, once cdnjs serves the
+  current version. Check its sha384 against the published `dist/jquery.form.min.js` first.
+- Fix the broken XMLHttpRequest Level 2 link in the README (the URL is wrapped in quotes), and
+  switch `http://` links that have an `https://` version.
+- Bump the CDN snippets in `README.md` and `docs/index.md` to 4.6.0 with the new SRI hash.
+
 Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
 ## Phase 14: 5.0 (breaking)
@@ -564,6 +578,16 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
   - A clicked image sends its `name=value` before `name.x`/`name.y`; native sends only the
     coordinates.
   - An unnamed clicked image sends nothing; native sends `x` and `y`.
+- Docs examples and FAQ for 5.0:
+  - `docs/examples.md` posts to Mike Alsup's demo scripts on malsup.com (`dummy.php`,
+    `json-echo.php` and others) over plain `http`, and loads `submit.gif` from there. Replace them
+    with examples that need no third-party server, or document the expected response instead.
+  - Rewrite the examples for the 5.0 API: jQuery 3.5 or later, `delegation: "<selector>"`,
+    `iframe: true` for uploads without `FormData`, and no deprecated methods.
+  - `docs/faq.md`: replace the malsup.com comparison page, unit-test and `view-source:` progress
+    demo links, and the retired `docs.jquery.com/Plugins` link in the examples.
+  - README: the pointer to malsup.com docs for 3.51 and older, and the jQuery 4 compatibility
+    notes, which change with the peer dependency.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x
