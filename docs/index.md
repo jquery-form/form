@@ -21,13 +21,13 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
    <html>
      <head>
        <script
-         src="https://code.jquery.com/jquery-3.5.1.min.js"
-         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+         src="https://code.jquery.com/jquery-3.7.1.min.js"
+         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
          crossorigin="anonymous"
        ></script>
        <script
-         src="https://cdn.jsdelivr.net/npm/jquery-form@4.4.0/dist/jquery.form.min.js"
-         integrity="sha384-xXCcBDQcC69XJrsBralQhdrm4++0kesmFgISJCmlIdKADiFvig1TUhJW47Im0OJX"
+         src="https://cdn.jsdelivr.net/npm/jquery-form@4.5.0/dist/jquery.form.min.js"
+         integrity="sha384-bAYSkj1642QKZXFX6ioC3jTHXX/156RH9dx/gagqvP0ldOVz4mUpmdd9xcuOowqd"
          crossorigin="anonymous"
        ></script>
 
