@@ -60,7 +60,7 @@ content: "Phase 11: release 4.4.0 with Phases 0-10 and the W1-W4 fixes, publish 
 status: pending
 - id: cleanup-4x
 content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
-status: in_progress
+status: completed
 - id: hardening-4x
 content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracle against native FormData, end-to-end tests with a real server, published-file tests, a one-off mutation-testing report), then the 4.6.0 release"
 status: pending
@@ -102,8 +102,8 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 13. ~~Coverage to 100% (Phase 9)~~ — done; see Phase 9 below
 14. ~~Security and bug fixes (Phase 10)~~ — done; the W1–W4 fixes merge in Phase 11
 15. 4.4.0 release with the work so far (Phase 11)
-16. 4.x cleanup and rearchitecture (Phase 12)
-17. 4.5.0 release with Phase 12
+16. ~~4.x cleanup and rearchitecture (Phase 12)~~ — done
+17. ~~4.5.0 release with Phase 12~~ — done (PR #642)
 18. 4.x test hardening (Phase 13), then the 4.6.0 release
 19. 5.0 (Phase 14), then the 5.0 release; 5.x features after
 
@@ -379,7 +379,9 @@ GET uploads). The ajaxForm binding slice is done (`src/ajax-form.js`, `delegatio
 `ajaxFormUnbind(selector)`, the `delegation: true` warning). The deprecation warnings, the
 `target` sanitizing, trusted-options and iframe-response docs, and the remaining fixes (D-12, D-13,
 D-15, D-19, D-25, the FormData `beforeSend` veto) are done; IFR-122/123 stay `it.fails` for 5.0.
-Phase 12 is done locally and waits for the 4.4.0 release before it ships as 4.5.0.
+Phase 12 shipped as 4.5.0 on 2026-11-10 (PR #642), three days into the 4.4.0 soak with no new
+issues. CodeQL alert 10 (the `target` lookup, moved by the module split) was dismissed as "won't
+fix"; 4.6.0 removes the lookup. The custom CodeQL canary flagged every reopened W1–W4 sink.
 
 - First, split `test/test.js` into one file per area under `test/suite/`. Move tests only: names and
   bodies stay the same, and the test-name list before and after must match.
