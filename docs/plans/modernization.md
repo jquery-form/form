@@ -563,6 +563,10 @@ Docs site:
 - `docs/index.md`: add npm installation to the Quick Start, next to the CDN snippet.
 - `docs/faq.md`: point "Run unit tests" at `CONTRIBUTING.md` instead of the 3.x test page on
   malsup.com, and replace the `view-source:` progress demo link.
+- Checked every malsup.com link on 2026-11-10. All serve content except
+  `jquery.malsup.com/form/` (an empty page; `CONTRIBUTORS.md` now links `malsup.com/jquery/form/`).
+  The FAQ comparison and code-sample links and the examples' progress demos point at the docs
+  site instead; the demo endpoints stay, over https, until the 5.0 examples rewrite.
 
 Package metadata (in the 4.6.0 package):
 
@@ -622,13 +626,13 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
   - An unnamed clicked image sends nothing; native sends `x` and `y`.
 - Docs examples and FAQ for 5.0:
   - `docs/examples.md` posts to Mike Alsup's demo scripts on malsup.com (`dummy.php`,
-    `json-echo.php` and others) over plain `http`, and loads `submit.gif` from there. Replace them
+    `json-echo.php` and others) and loads `submit.gif` from there. Replace them
     with examples that need no third-party server, or document the expected response instead.
   - Rewrite the examples for the 5.0 API: jQuery 3.5 or later, `delegation: "<selector>"`,
     `iframe: true` for uploads without `FormData`, and no deprecated methods.
-  - `docs/faq.md`: replace the malsup.com comparison page link, and the retired
-    `docs.jquery.com/Plugins` link in the examples. 4.6.0 fixes the unit-test and progress demo
-    links.
+  - Replace the retired `docs.jquery.com/Plugins` link in the examples. 4.6.0 replaces every
+    malsup.com documentation link (FAQ comparison, unit tests, code samples, progress demos) with
+    the docs site's own pages, and loads the demo endpoints over https until this rewrite.
   - README: the pointer to malsup.com docs for 3.51 and older, and the jQuery 4 compatibility
     notes, which change with the peer dependency.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
