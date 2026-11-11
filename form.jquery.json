@@ -22,7 +22,7 @@
   "bugs": "https://github.com/jquery-form/form/issues",
   "licenses": [
     {
-      "type": "LGPL-2.1+",
+      "type": "LGPL-2.1-or-later",
       "url": "https://github.com/jquery-form/form/blob/main/LICENSE"
     },
     {

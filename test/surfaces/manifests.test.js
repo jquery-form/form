@@ -8,7 +8,7 @@ const composer = read("composer.json");
 const registry = read("form.jquery.json");
 
 const distFiles = ["dist/jquery.form.js", "dist/jquery.form.mjs", "dist/jquery.form.min.js"];
-const license = "(LGPL-2.1+ OR MIT)";
+const license = "(LGPL-2.1-or-later OR MIT)";
 
 describe("when the package manifests are read", () => {
   it("should point every entry point at a built dist file", () => {
@@ -60,7 +60,7 @@ describe("when the package manifests are read", () => {
     expect(pkg.license).toBe(license);
     expect(bower.license).toBe(license);
     expect(composer.license).toBe(license);
-    expect(registry.licenses.map((entry) => entry.type)).toEqual(["LGPL-2.1+", "MIT"]);
+    expect(registry.licenses.map((entry) => entry.type)).toEqual(["LGPL-2.1-or-later", "MIT"]);
   });
 
   it("should agree on the jQuery dependency range", () => {

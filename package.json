@@ -15,7 +15,7 @@
   ],
   "homepage": "https://github.com/jquery-form/form",
   "bugs": "https://github.com/jquery-form/form/issues",
-  "license": "(LGPL-2.1+ OR MIT)",
+  "license": "(LGPL-2.1-or-later OR MIT)",
   "contributors": [
     "Mike Alsup",
     "Kevin Morris"

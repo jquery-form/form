@@ -12,7 +12,7 @@
     "jquery-form"
   ],
   "homepage": "https://github.com/jquery-form/form",
-  "license": "(LGPL-2.1+ OR MIT)",
+  "license": "(LGPL-2.1-or-later OR MIT)",
   "authors": [
     {
       "name": "Kevin Morris"
