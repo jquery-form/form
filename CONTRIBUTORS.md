@@ -6,5 +6,5 @@ Project Home: [github.com/jquery-form/form](https://github.com/jquery-form/form/
 
 ### Copyright 2006-2014 Mike Alsup
 Original work [jQuery Form](https://github.com/malsup/form/) by Mike Alsup  
-Project Home: [jquery.malsup.com/form](https://jquery.malsup.com/form/)  
+Project Home: [malsup.com/jquery/form](https://malsup.com/jquery/form/)  
 The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.  
