@@ -532,17 +532,52 @@ Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
   went to `main` early in PR #638, after Dependabot reopened the alert there as alert 98; the
   `phase-13` rebase drops its copy as already applied.
 
-Docs site and README cleanup, with 4.6.0 (docs only, so it can also go to `main` as a small PR
-before the release):
+Docs, README and repository cleanup, with 4.6.0. Decided on 2026-11-10. Only the `package.json`
+items ship in the package; the rest can also go to `main` as small PRs before the release.
+
+README (a landing page; the docs site is the one reference):
+
+- Cut the API, Options and Utility Methods sections and link to the docs site pages instead.
+  Keep overview, installation, quick start, compatibility, security, contributing and license.
+- Add Installation and Usage: `npm install jquery-form`, the module import (it registers the
+  plugin and needs jQuery importable), the CommonJS `(root, jQuery)` factory, and a script tag
+  after jQuery.
+- Point Download at npm, the CDN and the release tag, not at `dist/` on `main`, which will hold
+  5.0 code once Phase 14 lands.
+- Rewrite File Uploads (it says "As of today (March 2012)"): FormData by default, `iframe: true`
+  as the fallback, and fix its XMLHttpRequest Level 2 link (the URL is wrapped in quotes).
+- Compatibility: name the tested browsers (Chromium, Firefox and WebKit), and say that 5.0 will
+  need jQuery 3.5 or later, linking #629.
+- Add a cdnjs snippet back as the alternative to jsDelivr, once cdnjs serves the current version.
+  Check its sha384 against the published `dist/jquery.form.min.js` first.
+- Switch `http://` links that have an `https://` version.
+- Bump the CDN snippets in `README.md` and `docs/index.md` to 4.6.0 with the new SRI hash.
+
+Docs site:
 
 - `docs/_layouts/default.html`: remove the html5shiv script (its Google Code URL is a 404), the
   IE conditional comment, the `X-UA-Compatible: chrome=1` meta (Chrome Frame), and the Universal
   Analytics block, which never renders because `_config.yml` sets no `google_analytics`.
-- Add a cdnjs snippet back to the README as the alternative to jsDelivr, once cdnjs serves the
-  current version. Check its sha384 against the published `dist/jquery.form.min.js` first.
-- Fix the broken XMLHttpRequest Level 2 link in the README (the URL is wrapped in quotes), and
-  switch `http://` links that have an `https://` version.
-- Bump the CDN snippets in `README.md` and `docs/index.md` to 4.6.0 with the new SRI hash.
+- `docs/index.md`: add npm installation to the Quick Start, next to the CDN snippet.
+- `docs/faq.md`: point "Run unit tests" at `CONTRIBUTING.md` instead of the 3.x test page on
+  malsup.com, and replace the `view-source:` progress demo link.
+
+Package metadata (in the 4.6.0 package):
+
+- `license`: `(LGPL-2.1-or-later OR MIT)` instead of the deprecated SPDX `LGPL-2.1+`; the same in
+  `bower.json`, `composer.json` and `form.jquery.json`. Same terms.
+- `homepage`: the docs site, https://jquery-form.github.io/form/.
+
+Repository:
+
+- Replace `.github/issue_template.md` (it asks for a "LoadJSON" version) with an issue form that
+  asks for the plugin, jQuery and browser versions, and a `config.yml` that sends security
+  reports to `SECURITY.md`.
+- Add `.github/dependabot.yml` version updates for GitHub Actions and grouped npm dev
+  dependencies (only alerts are on today).
+- Delete the root `_config.yml`; Pages builds from `/docs`. Fix the broken headings in
+  `CONTRIBUTORS.md`.
+- Close #544 at the release: both items it lists are resolved, and #353 tracks the rest.
 
 Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
@@ -584,8 +619,9 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
     with examples that need no third-party server, or document the expected response instead.
   - Rewrite the examples for the 5.0 API: jQuery 3.5 or later, `delegation: "<selector>"`,
     `iframe: true` for uploads without `FormData`, and no deprecated methods.
-  - `docs/faq.md`: replace the malsup.com comparison page, unit-test and `view-source:` progress
-    demo links, and the retired `docs.jquery.com/Plugins` link in the examples.
+  - `docs/faq.md`: replace the malsup.com comparison page link, and the retired
+    `docs.jquery.com/Plugins` link in the examples. 4.6.0 fixes the unit-test and progress demo
+    links.
   - README: the pointer to malsup.com docs for 3.51 and older, and the jQuery 4 compatibility
     notes, which change with the peer dependency.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
