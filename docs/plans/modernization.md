@@ -428,7 +428,8 @@ The order:
    same way as 4.4.0, without the advisory steps. Close PR #557 and the issues Phase 12 fixed.
    Done 2026-11-10 (PR #642, released three days into the 4.4.0 soak with no new issues); #545
    and #541 closed, #353 left open for 5.0.
-4. **Soak 4.5.0 for about a week** (until about 2026-11-17), the same way.
+4. **Soak 4.5.0 for a day or two** (decided 2026-11-10: 4.4.0 drew no issues, comments or
+   regressions in its first three days). Release 4.6.0 once 4.5.0 shows no engagement either.
 5. **4.6.0** (Phase 13). `npm test` on `phase-13` runs `suite-webkit`, so the release `verify` job
    now installs `chromium webkit` with `--with-deps`, as `ci.yml` does. Push `phase-13`; its
    Firefox, WebKit and end-to-end CI jobs run for the first time. Rehearse `release.yml` with
@@ -532,8 +533,9 @@ Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
   went to `main` early in PR #638, after Dependabot reopened the alert there as alert 98; the
   `phase-13` rebase drops its copy as already applied.
 
-Docs, README and repository cleanup, with 4.6.0. Decided on 2026-11-10. Only the `package.json`
-items ship in the package; the rest can also go to `main` as small PRs before the release.
+Docs, README and repository cleanup, with 4.6.0. Decided on 2026-11-10. Everything lands as
+commits on `phase-13` and ships in the 4.6.0 PR, so the stacked branches rebase once. Only the
+`package.json` items change the published package.
 
 README (a landing page; the docs site is the one reference):
 
