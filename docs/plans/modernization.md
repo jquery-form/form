@@ -575,6 +575,10 @@ Repository:
   reports to `SECURITY.md`.
 - Add `.github/dependabot.yml` version updates for GitHub Actions and grouped npm dev
   dependencies (only alerts are on today).
+- Replace `CODE_OF_CONDUCT.md` (Contributor Covenant 1.4) with Contributor Covenant 2.1 (decided
+  2026-11-10): "community leaders" and its four-step enforcement guidelines. The maintainer
+  chooses the reporting contact; the 1.4 text says to contact
+  "the project team" but gives no address or method.
 - Delete the root `_config.yml`; Pages builds from `/docs`. Fix the broken headings in
   `CONTRIBUTORS.md`.
 - Close #544 at the release: both items it lists are resolved, and #353 tracks the rest.
