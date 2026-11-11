@@ -13,7 +13,7 @@ jQuery Form Plugin is compatible with jQuery v1.7.2 and later. `main` is tested 
 
 #### Is jQuery Form Plugin fast? Does it serialize forms accurately?
 
-Yes! See our [comparison page](https://malsup.com/jquery/form/comp/) for a look at how jQuery Form Plugin compares to other libraries (including Prototype and dojo).
+Yes. It follows the HTML rules for which controls are submitted (see [Why aren't all my input values posted?](#why-arent-all-my-input-values-posted)), and the test suite compares what it sends with the browser's own `FormData` on generated forms and with what a server receives from a native submit.
 
 #### What is the easiet way to use jQuery Form Plugin?
 
@@ -28,7 +28,7 @@ There are two main differences between these methods:
 
 #### How can I cancel a form submit?
 
-You can prevent a form from being submitted by adding a 'beforeSubmit' callback function and returning false from that function. See the [Code Samples](https://malsup.com/jquery/form/#ajaxForm) page for an example.
+You can prevent a form from being submitted by adding a 'beforeSubmit' callback function and returning false from that function. See the [validation examples](examples.md#validation).
 
 #### Is there a unit test suite for jQuery Form Plugin?
 

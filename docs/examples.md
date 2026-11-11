@@ -587,8 +587,15 @@ The form below provides an input element of type "file" along with a select elem
 <label>Output:</label>
 <div id="uploadOutput"></div>
 
-Examples that show how to display upload progress:
+To show upload progress, pass an [`uploadProgress`](options.md#uploadprogress) callback. It is called as the upload proceeds, with the progress event, the bytes sent, the total and the percentage. The iframe transport (`iframe: true`) cannot report progress.
 
-- [Progress Demo 1](http://malsup.com/jquery/form/progress.html)
-- [Progress Demo 2](http://malsup.com/jquery/form/progress2.html)
-- [Progress Demo 3](http://malsup.com/jquery/form/progress3.html)
+```javascript
+$("#uploadForm").ajaxForm({
+  uploadProgress: function (event, position, total, percentComplete) {
+    $("#uploadOutput").text(percentComplete + "%");
+  },
+  success: function () {
+    $("#uploadOutput").text("Done");
+  },
+});
+```
