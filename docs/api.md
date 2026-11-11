@@ -7,7 +7,7 @@ The Form Plugin API provides several methods that allow you to easily manage for
 
 ### ajaxForm
 
-Prepares a form to be submitted via AJAX by adding all of the necessary event listeners. It does **not** submit the form. Use `ajaxForm` in your document's `ready` function to prepare your form(s) for AJAX submission. `ajaxForm` takes zero or one argument. The single argument can be either a callback function or an [Options Object](http://malsup.com/jquery/form/#options-object).  
+Prepares a form to be submitted via AJAX by adding all of the necessary event listeners. It does **not** submit the form. Use `ajaxForm` in your document's `ready` function to prepare your form(s) for AJAX submission. `ajaxForm` takes zero or one argument. The single argument can be either a callback function or an [Options Object](options.md).  
 Chainable: Yes.
 
 **Note:** You can pass any of the standard [$.ajax settings](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings) to ajaxForm
@@ -30,7 +30,7 @@ $(document).ajaxFormUnbind("form.ajax");
 
 ### ajaxSubmit
 
-Immediately submits the form via AJAX. In the most common use case this is invoked in response to the user clicking a submit button on the form. `ajaxSubmit` takes zero or one argument. The single argument can be either a callback function or an [Options Object](http://malsup.com/jquery/form/#options-object).  
+Immediately submits the form via AJAX. In the most common use case this is invoked in response to the user clicking a submit button on the form. `ajaxSubmit` takes zero or one argument. The single argument can be either a callback function or an [Options Object](options.md).  
 Chainable: Yes.
 
 **Note:** You can pass any of the standard [$.ajax settings](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings) to ajaxSubmit.
@@ -42,6 +42,18 @@ $("#myFormId").submit(function () {
   $(this).ajaxSubmit();
   // return false to prevent normal browser submit and page navigation
   return false;
+});
+```
+
+### The jqXHR of a submission
+
+`ajaxSubmit` stores the jqXHR of each submission in the form's data cache under the `jqxhr` key, so you can add callbacks or abort the request after it starts.
+
+```javascript
+var xhr = $("#myFormId").ajaxSubmit().data("jqxhr");
+
+xhr.done(function (data) {
+  // ...
 });
 ```
 
@@ -87,7 +99,7 @@ $("#myFormId").resetForm();
 
 ### clearForm
 
-Clears the form elements. This method emptys all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs.  
+Clears the form elements. This method empties all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs. It does _not_ clear hidden inputs, unless you pass `true` (all hidden inputs) or a selector (the hidden inputs that match it), as in `clearForm(".special:hidden")`. `clearFields` takes the same argument.  
 Chainable: Yes.
 
 ```javascript

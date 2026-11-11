@@ -6,6 +6,17 @@
 Both `ajaxForm` and `ajaxSubmit` support numerous options which can be provided using plain JavaScript `options` object containing any of the options below:  
 **Note:** Aside from the options listed below, you can also pass any of the standard [$.ajax settings](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings) to ajaxForm and ajaxSubmit.
 
+### beforeFormUnbind
+
+Default: `null`  
+Callback function invoked by `ajaxForm` just before it removes the form's handlers and binds them again, so it runs each time `ajaxForm` is called on the form. It provides a chance to manipulate the form before the events are bound again. It is invoked with two arguments: the jQuery object for the form, and the Options Object passed into `ajaxForm`. It is not called for a `delegation` binding.
+
+```javascript
+beforeFormUnbind: function($form, options) {
+  // your callback code
+}
+```
+
 ### beforeSerialize
 
 Default: `null`  
@@ -48,7 +59,7 @@ data: { key1: 'value1', key2: 'value2' }
 ### dataType
 
 Default: `null`  
-Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The `dataType` option provides a means for specifying how the server response should be handled. This maps directly to the `jQuery.httpData` method. The following values are supported:
+Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The `dataType` option provides a means for specifying how the server response should be handled. It is passed to `$.ajax` as its `dataType`; the iframe transport parses the response the same way. The following values are supported:
 
 **'xml'**: if dataType == 'xml' the server response is treated as XML and the 'success' callback method, if specified, will be passed the responseXML value
 
@@ -75,6 +86,19 @@ Callback function to be invoked upon error. It is passed the following arguments
 2. `textStatus`, string
 3. `errorThrown`, string
 4. `$form` jQuery object containing form element
+
+### filtering
+
+Default: `null`  
+Callback function that filters the fields before they are serialized. It is called with each field element and its index, as `jQuery.map` calls its callback: return the element to keep it, or `null` or `undefined` to leave it out.
+
+```javascript
+filtering: function(el, index) {
+  if (!$(el).hasClass("ignore")) {
+    return el;
+  }
+}
+```
 
 ### forceSync
 
