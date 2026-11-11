@@ -706,6 +706,11 @@ Docs examples and FAQ (added 2026-11-10, after the 4.5.0 release):
   the docs site's own pages, drops the README pointer to the malsup.com docs for 3.51 and older,
   and loads the demo endpoints over https until this rewrite.
 - README: the jQuery 4 compatibility notes, which change with the peer dependency.
+- `CONTRIBUTING.md` (deferred from 4.6.0 by the user, with or after 5.0 as part of a larger docs
+  revamp): the Releases section still says maintainers publish by hand and CI does not publish
+  (`release.yml` publishes from a tag with provenance), the workflow says to edit
+  `src/jquery.form.js` (now split into modules), and setup installs only Chromium although
+  `npm test` also runs WebKit.
 
 Steps, one sub-agent per step, each reviewed by the main session before the next (W1):
 
