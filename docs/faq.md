@@ -41,7 +41,7 @@ Yes!
 
 #### Why aren't all my input values posted?
 
-jQuery Form serialization adheres closely to the HTML spec. Only [successful controls](https://www.w3.org/TR/html5/forms.html#constructing-form-data-set) are valid for submission.
+jQuery Form serialization adheres closely to the HTML spec. Only [successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set) are valid for submission.
 
 #### How do I display upload progress information?
 

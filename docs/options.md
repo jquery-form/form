@@ -108,7 +108,7 @@ Boolean value. Set to true to remove short delay before posting form when upload
 ### iframe
 
 Default: `false`  
-Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the _File Uploads_ documentation on the [Code Samples](#code-samples) page for more info.
+Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the [file upload example](examples.md#file-upload).
 
 Without `FormData`, a form with a selected file or a multipart `enctype` also uses the iframe. Choosing it automatically is deprecated (a `debug` warning); 5.0 uses the iframe only when `iframe: true` is set.
 
@@ -145,7 +145,7 @@ Optionally used along with the the [`target`](#target) option. Set to `true` if 
 ### requestFormat
 
 Default: `null`  
-Set to `"json"` to send the form as a JSON body instead of a urlencoded one (#545). The fields become an object, a name used more than once becomes an array of its values, and an object [`data`](#data) option is merged over them. The request is sent with `contentType: "application/json; charset=UTF-8"`, replacing any `contentType` you pass. It needs a method with a body: a `GET` method (including a form without a `method` attribute) throws an error, as do a string `data` option, a selected file, a multipart form and the [`iframe`](#iframe) option. **(version added: 4.5.0)** Based on the idea in PR #557 by zhangciwu (changwei).
+Set to `"json"` to send the form as a JSON body instead of a urlencoded one ([#545](https://github.com/jquery-form/form/issues/545)). The fields become an object, a name used more than once becomes an array of its values, and an object [`data`](#data) option is merged over them. The request is sent with `contentType: "application/json; charset=UTF-8"`, replacing any `contentType` you pass. It needs a method with a body: a `GET` method (including a form without a `method` attribute) throws an error, as do a string `data` option, a selected file, a multipart form and the [`iframe`](#iframe) option. **(version added: 4.5.0)** Based on the idea in PR [#557](https://github.com/jquery-form/form/pull/557) by zhangciwu (changwei).
 
 ### resetForm
 
