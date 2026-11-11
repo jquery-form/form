@@ -16,7 +16,7 @@
     "jquery-form"
   ],
   "authors": [{ "name": "Kevin Morris" }, { "name": "Mike Alsup" }],
-  "homepage": "https://github.com/jquery-form/form",
+  "homepage": "https://jquery-form.github.io/form/",
   "repository": {
     "type": "git",
     "url": "https://github.com/jquery-form/form.git"
