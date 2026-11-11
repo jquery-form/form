@@ -16,7 +16,7 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
      <input type="submit" value="Submit Comment" />
    </form>
    ```
-2. Include jQuery and the Form Plugin external script files and a short script to initialize the form when the DOM is ready:
+2. Include jQuery and the Form Plugin external script files and a short script to initialize the form when the DOM is ready. The scripts below load from a CDN; to bundle the plugin instead, install it with `npm install jquery-form` and see [Installation](#installation).
    ```html
    <html>
      <head>
@@ -47,5 +47,29 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
 **That's it!**
 
 When this form is submitted the _name_ and _comment_ fields will be posted to _comment.php_. If the server returns a success status then the user will see a "Thank you" message.
+
+### Installation
+
+Install the plugin from npm:
+
+```sh
+npm install jquery-form
+```
+
+With a bundler, importing the module registers the plugin on the jQuery that `import "jquery"` resolves to:
+
+```javascript
+import $ from "jquery";
+import "jquery-form";
+```
+
+With CommonJS, the package exports a factory that takes the window and jQuery, registers the plugin and returns jQuery:
+
+```javascript
+var $ = require("jquery");
+require("jquery-form")(window, $);
+```
+
+Without a bundler, load `dist/jquery.form.min.js` with a script tag after jQuery, as in the Quick Start above.
 
 *[AJAX]: Asynchronous JavaScript and XML
