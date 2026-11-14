@@ -490,10 +490,11 @@ The Phase 12 sweep found about 70 bugs that 100% coverage had not caught. This p
 tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the local
 `phase-13` branch, which starts after the 4.5.0 cut on `phase-12`.
 
-Status: done locally, waiting for the 4.4.0 and 4.5.0 releases before it ships as 4.6.0. All five
-kinds of tests are in place and pass on Chromium, WebKit and Firefox with jQuery 1.7.2, 3.7.1 and
-4.0.0; no `it.fails` remain. The mutation score went from 91.67% to 94.34%. The new CI jobs have not
-run yet, because the branch is not pushed.
+Status: done, and in the 4.6.0 release PR (#644, branch `release-4.6.0`). All five kinds of tests
+are in place and pass on Chromium, WebKit and Firefox with jQuery 1.7.2, 3.7.1 and 4.0.0; no
+`it.fails` remain. The mutation score went from 91.67% to 94.34%. The new WebKit, Firefox and
+end-to-end CI jobs ran for the first time on the PR and pass. The `release.yml` rehearsal on the
+branch passed on 2026-11-14 (run 43600588779), and the version bump is in.
 
 - Run the suite on Firefox and WebKit as well as Chromium (Vitest browser instances), locally and in
   CI.
