@@ -16,19 +16,19 @@ jQuery is a dependency of the package and is installed with it.
 
 ## Download
 * **npm:** [jquery-form](https://www.npmjs.com/package/jquery-form). `dist/jquery.form.min.js` is the minified build, `dist/jquery.form.js` the readable one.
-* **GitHub:** each version's built files are in the `dist` folder of its tag, such as [`v4.5.0/dist`](https://github.com/jquery-form/form/tree/v4.5.0/dist); see the [releases](https://github.com/jquery-form/form/releases). The `dist` folder on `main` holds unreleased code.
+* **GitHub:** each version's built files are in the `dist` folder of its tag, such as [`v4.6.0/dist`](https://github.com/jquery-form/form/tree/v4.6.0/dist); see the [releases](https://github.com/jquery-form/form/releases). The `dist` folder on `main` holds unreleased code.
 
 ### CDN
 From jsDelivr:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.5.0/dist/jquery.form.min.js" integrity="sha384-bAYSkj1642QKZXFX6ioC3jTHXX/156RH9dx/gagqvP0ldOVz4mUpmdd9xcuOowqd" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.6.0/dist/jquery.form.min.js" integrity="sha384-6nWaJ1CxEQhUyWbY8mCCA3pAsWr1hPIee2byhQUP4SN9ydEguzTY7hVQV/NVNgiQ" crossorigin="anonymous"></script>
 ```
 
 Or from cdnjs:
 
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.5.0/jquery.form.min.js" integrity="sha384-bAYSkj1642QKZXFX6ioC3jTHXX/156RH9dx/gagqvP0ldOVz4mUpmdd9xcuOowqd" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.6.0/jquery.form.min.js" integrity="sha384-6nWaJ1CxEQhUyWbY8mCCA3pAsWr1hPIee2byhQUP4SN9ydEguzTY7hVQV/NVNgiQ" crossorigin="anonymous"></script>
 ```
 
 ## Usage
@@ -36,7 +36,7 @@ With a script tag, load the plugin after jQuery:
 
 ```html
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.5.0/dist/jquery.form.min.js" integrity="sha384-bAYSkj1642QKZXFX6ioC3jTHXX/156RH9dx/gagqvP0ldOVz4mUpmdd9xcuOowqd" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.6.0/dist/jquery.form.min.js" integrity="sha384-6nWaJ1CxEQhUyWbY8mCCA3pAsWr1hPIee2byhQUP4SN9ydEguzTY7hVQV/NVNgiQ" crossorigin="anonymous"></script>
 ```
 
 With a bundler, importing the module registers the plugin on the jQuery that `import "jquery"` resolves to, so `jquery` must be importable:
