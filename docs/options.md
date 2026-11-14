@@ -6,6 +6,17 @@
 Both `ajaxForm` and `ajaxSubmit` support numerous options which can be provided using plain JavaScript `options` object containing any of the options below:  
 **Note:** Aside from the options listed below, you can also pass any of the standard [$.ajax settings](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings) to ajaxForm and ajaxSubmit.
 
+### beforeFormUnbind
+
+Default: `null`  
+Callback function invoked by `ajaxForm` just before it removes the form's handlers and binds them again, so it runs each time `ajaxForm` is called on the form. It provides a chance to manipulate the form before the events are bound again. It is invoked with two arguments: the jQuery object for the form, and the Options Object passed into `ajaxForm`. It is not called for a `delegation` binding.
+
+```javascript
+beforeFormUnbind: function($form, options) {
+  // your callback code
+}
+```
+
 ### beforeSerialize
 
 Default: `null`  
@@ -48,7 +59,7 @@ data: { key1: 'value1', key2: 'value2' }
 ### dataType
 
 Default: `null`  
-Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The `dataType` option provides a means for specifying how the server response should be handled. This maps directly to the `jQuery.httpData` method. The following values are supported:
+Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The `dataType` option provides a means for specifying how the server response should be handled. It is passed to `$.ajax` as its `dataType`; the iframe transport parses the response the same way. The following values are supported:
 
 **'xml'**: if dataType == 'xml' the server response is treated as XML and the 'success' callback method, if specified, will be passed the responseXML value
 
@@ -76,6 +87,19 @@ Callback function to be invoked upon error. It is passed the following arguments
 3. `errorThrown`, string
 4. `$form` jQuery object containing form element
 
+### filtering
+
+Default: `null`  
+Callback function that filters the fields before they are serialized. It is called with each field element and its index, as `jQuery.map` calls its callback: return the element to keep it, or `null` or `undefined` to leave it out.
+
+```javascript
+filtering: function(el, index) {
+  if (!$(el).hasClass("ignore")) {
+    return el;
+  }
+}
+```
+
 ### forceSync
 
 Default: `false`  
@@ -84,7 +108,7 @@ Boolean value. Set to true to remove short delay before posting form when upload
 ### iframe
 
 Default: `false`  
-Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the _File Uploads_ documentation on the [Code Samples](#code-samples) page for more info.
+Boolean flag indicating whether the form should always target the server response to an iframe. This is useful in conjuction with file uploads. See the [file upload example](examples.md#file-upload).
 
 Without `FormData`, a form with a selected file or a multipart `enctype` also uses the iframe. Choosing it automatically is deprecated (a `debug` warning); 5.0 uses the iframe only when `iframe: true` is set.
 
@@ -104,7 +128,8 @@ String value that should be used for the iframe's src attribute when/if an ifram
 ### iframeTarget
 
 Default: `null`  
-Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server. **(version added: 2.76)**
+Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server. **(version added: 2.76)**  
+A string is only ever a selector, never parsed as HTML: one that starts with `<` matches nothing. **(since 4.6.0)**
 
 ### method
 
@@ -120,7 +145,7 @@ Optionally used along with the the [`target`](#target) option. Set to `true` if 
 ### requestFormat
 
 Default: `null`  
-Set to `"json"` to send the form as a JSON body instead of a urlencoded one (#545). The fields become an object, a name used more than once becomes an array of its values, and an object [`data`](#data) option is merged over them. The request is sent with `contentType: "application/json; charset=UTF-8"`, replacing any `contentType` you pass. It needs a method with a body: a `GET` method (including a form without a `method` attribute) throws an error, as do a string `data` option, a selected file, a multipart form and the [`iframe`](#iframe) option. **(version added: 4.5.0)** Based on the idea in PR #557 by zhangciwu (changwei).
+Set to `"json"` to send the form as a JSON body instead of a urlencoded one ([#545](https://github.com/jquery-form/form/issues/545)). The fields become an object, a name used more than once becomes an array of its values, and an object [`data`](#data) option is merged over them. The request is sent with `contentType: "application/json; charset=UTF-8"`, replacing any `contentType` you pass. It needs a method with a body: a `GET` method (including a form without a `method` attribute) throws an error, as do a string `data` option, a selected file, a multipart form and the [`iframe`](#iframe) option. **(version added: 4.5.0)** Based on the idea in PR [#557](https://github.com/jquery-form/form/pull/557) by zhangciwu (changwei).
 
 ### resetForm
 
@@ -146,7 +171,7 @@ Callback function to be invoked after the form has been submitted. If a 'success
 ### target
 
 Default: `null`  
-Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
+Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element. A string is only ever a selector, never parsed as HTML: one that starts with `<` matches nothing. **(since 4.6.0)**
 
 The response is inserted as HTML, as `$.fn.load` does, so the endpoint must return markup you trust. To sanitize it, filter it with [`dataFilter`](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings), which runs before the response reaches the target on both the XHR and the iframe transport:
 

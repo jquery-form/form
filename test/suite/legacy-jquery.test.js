@@ -259,6 +259,27 @@ describe("form", function () {
       assert.strictEqual(result.transport, "iframe");
     });
 
+    it("should send a form without files that is not multipart as a plain request", function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+      ).appendTo("#main");
+
+      const result = submitTransport($form);
+
+      assert.strictEqual(result.transport, "plain");
+    });
+
+    it("should send a selected file as a plain request when iframe is false", function () {
+      const $form = $(
+        '<form action="ajax/text.html" method="post"><input type="file" name="up"></form>'
+      ).appendTo("#main");
+      selectFiles($form.find("input")[0], ["x.txt"]);
+
+      const result = submitTransport($form, { iframe: false });
+
+      assert.strictEqual(result.transport, "plain");
+    });
+
     it("should use the iframe transport when the form is multipart and has no file", function () {
       const $form = $(
         '<form action="ajax/text.html" method="post" enctype="multipart/form-data"></form>'

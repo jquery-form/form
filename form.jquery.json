@@ -1,7 +1,7 @@
 {
   "name": "form",
   "title": "jQuery Form",
-  "version": "4.5.0",
+  "version": "4.6.0",
   "author": {
     "name": "Kevin Morris",
     "url": "https://github.com/kevindb/"
@@ -17,12 +17,12 @@
     "form",
     "jquery-form"
   ],
-  "homepage": "https://github.com/jquery-form/form",
+  "homepage": "https://jquery-form.github.io/form/",
   "docs": "https://jquery-form.github.io/form/",
   "bugs": "https://github.com/jquery-form/form/issues",
   "licenses": [
     {
-      "type": "LGPL-2.1+",
+      "type": "LGPL-2.1-or-later",
       "url": "https://github.com/jquery-form/form/blob/main/LICENSE"
     },
     {

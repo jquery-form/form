@@ -1,3 +1,6 @@
+import jQuery from "jquery";
+import { log } from "./diagnostics.js";
+
 // The arguments ajaxSubmit and ajaxForm accept in place of an options object.
 
 /**
@@ -61,4 +64,23 @@ export function keepContext(settings, sources) {
   }
 
   return settings;
+}
+
+/**
+ * The elements a selector option (target, iframeTarget) names. A string is only ever a selector,
+ * looked up in the document, so jQuery never builds elements from it; a string starting with "<"
+ * is HTML, not a selector, and matches nothing. Elements and jQuery objects are used as given.
+ */
+export function selectorOption(value, ownerDocument) {
+  if (typeof value !== "string") {
+    return jQuery(value);
+  }
+
+  if (/^\s*</.test(value)) {
+    log("ignoring HTML given as a selector: ", value);
+
+    return jQuery([]);
+  }
+
+  return jQuery(ownerDocument || document).find(value);
 }

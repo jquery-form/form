@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/jquery-form/form/security/advisories/new
+    about: Please report security issues privately, as the security policy (SECURITY.md) describes, not in a public issue.
+  - name: Documentation
+    url: https://jquery-form.github.io/form/
+    about: The API, options and examples.

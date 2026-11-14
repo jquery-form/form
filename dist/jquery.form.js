@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 4.5.0
+ * version: 4.6.0
  * Requires jQuery v1.7.2 or later
  * Project repository: https://github.com/jquery-form/form
 
@@ -23,7 +23,9 @@
 (function (factory) {
 	if (typeof define === 'function' && define.amd) {
 		// AMD. Register as an anonymous module.
-		define(['jquery'], factory);
+		define(['jquery'], function (jQuery) {
+			factory(jQuery, window);
+		});
 	} else if (typeof module === 'object' && module.exports) {
 		// Node/CommonJS
 		module.exports = function( root, jQuery ) {
@@ -37,16 +39,19 @@
 					jQuery = require('jquery')(root);
 				}
 			}
-			factory(jQuery);
+			factory(jQuery, root || (typeof window !== 'undefined' ? window : undefined));
 			return jQuery;
 		};
 	} else {
 		// Browser globals
-		factory(jQuery);
+		factory(jQuery, window);
 	}
 
-}(function (jQuery) {
+}(function (jQuery, root) {
 	'use strict';
+	var window = root;
+	var document = window.document, navigator = window.navigator;
+	var Element = window.Element, FormData = window.FormData;
 // Form members: the properties and methods the plugin reads or calls on a form. A control named
 // like a member (elements, setAttribute) shadows that member on the form itself, so members are
 // read through the DOM prototypes, which a control cannot shadow.
@@ -102,6 +107,14 @@ function tagName(el) {
   var name = formMember(el, "tagName");
 
   return typeof name === "string" ? name.toLowerCase() : "";
+}
+
+/**
+ * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
+ * selector matching, only its own disabled property is read.
+ */
+function isDisabled(el) {
+  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
 }
 
 // Elements only: the subject of formToArray may also be the document or a plain object.
@@ -250,7 +263,8 @@ function submitterFields(form) {
   var sub = submitterOf(form);
   var el = sub && sub.el;
 
-  if (el && el.name && !el.disabled) {
+  // a disabled button is not sent, also when a disabled fieldset disables it
+  if (el && el.name && !isDisabled(el)) {
     fields[el.name] = el.value;
     if (el.type === "image") {
       fields[el.name + ".x"] = sub.x;
@@ -385,6 +399,25 @@ function keepContext(settings, sources) {
   }
 
   return settings;
+}
+
+/**
+ * The elements a selector option (target, iframeTarget) names. A string is only ever a selector,
+ * looked up in the document, so jQuery never builds elements from it; a string starting with "<"
+ * is HTML, not a selector, and matches nothing. Elements and jQuery objects are used as given.
+ */
+function selectorOption(value, ownerDocument) {
+  if (typeof value !== "string") {
+    return jQuery(value);
+  }
+
+  if (/^\s*</.test(value)) {
+    log("ignoring HTML given as a selector: ", value);
+
+    return jQuery([]);
+  }
+
+  return jQuery(ownerDocument || document).find(value);
 }
 
 // ajaxForm binding: the submit and click handlers that send a form through ajaxSubmit. The
@@ -605,14 +638,6 @@ var rCR = /\r/g;
 var rUnsubmittable = /^(?:fieldset|object|output)$/;
 
 /**
- * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
- * selector matching, only its own disabled property is read.
- */
-function isDisabled(el) {
-  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
-}
-
-/**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
  */
@@ -694,13 +719,101 @@ function valueOf(el) {
 }
 
 /**
+ * The plugin's own $.fieldValue: the value of a control, or null when `successful` is true or
+ * missing and the control is not sent.
+ */
+function fieldValue(el, successful) {
+  var required = typeof successful === "undefined" || successful;
+
+  if (required && !isSuccessful(el, submitterElement(el.form))) {
+    return null;
+  }
+
+  return valueOf(el);
+}
+
+// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
+// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
+function deprecateFieldValueOverride() {
+  if (jQuery.fieldValue !== fieldValue) {
+    deprecate(
+      "fieldValue-override",
+      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
+    );
+  }
+}
+
+/**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
+// A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
+var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+
+function wellFormed(value) {
+  return typeof value === "string"
+    ? value.replace(loneSurrogate, function (match, before) {
+        return (before || "") + "\uFFFD";
+      })
+    : value;
+}
+
+// Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
+function setKey(object, key, value) {
+  Object.defineProperty(object, key, {
+    value: value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Data for $.param (the data option or extraData) with lone surrogates in its keys and string
+ * values made well formed. Arrays and objects are walked as $.param walks them, inherited keys
+ * included; they are copied only when something changes.
+ */
+function wellFormedData(data) {
+  var isArray = Array.isArray(data);
+
+  if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
+    return wellFormed(data);
+  }
+
+  var copy = isArray ? [] : {};
+  var changed = false;
+
+  if (isArray) {
+    for (var i = 0; i < data.length; i++) {
+      copy[i] = wellFormedData(data[i]);
+      changed = changed || copy[i] !== data[i];
+    }
+  } else {
+    for (var key in data) {
+      var name = wellFormed(key);
+      var value = wellFormedData(data[key]);
+
+      changed = changed || name !== key || value !== data[key];
+      setKey(copy, name, value);
+    }
+  }
+
+  return changed ? copy : data;
+}
+
+// jQuery 3 dropped $.param's "+" for a space; a native submission still sends "+". Only a space
+// encodes as %20, since a literal % encodes as %25.
+function urlencode(fields, traditional) {
+  return jQuery.param(urlencodedFields(fields), traditional).replace(/%20/g, "+");
+}
+
 function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    return field.type === "file" && typeof field.value !== "string"
-      ? { name: field.name, value: field.value.name }
-      : field;
+    var value =
+      field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
+    var name = wellFormed(field.name);
+    value = wellFormed(value);
+
+    return name === field.name && value === field.value ? field : { name: name, value: value };
   });
 }
 
@@ -851,6 +964,8 @@ function createSuccessfulControls(feature) {
       return collected;
     }
 
+    deprecateFieldValueOverride();
+
     var els = controlsOf(form, semantic);
 
     if (typeof filtering === "function") {
@@ -880,7 +995,7 @@ var $$4 = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 function deepSerialize(extraData, traditional) {
-  var param = $$4.param(extraData, traditional);
+  var param = $$4.param(wellFormedData(extraData), traditional);
   var serialized = param ? param.split("&") : [];
   var len = serialized.length;
   var result = [];
@@ -1022,7 +1137,7 @@ function addSubmitterFields(s, form) {
 
   for (var n in fields) {
     s.extraData = s.extraData || {};
-    s.extraData[n] = fields[n];
+    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
   }
 }
 
@@ -1111,7 +1226,7 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
           hasOwn.call(extraData[n], "name") &&
           hasOwn.call(extraData[n], "value")
         ) {
-          addHiddenInput(extraData[n].name, extraData[n].value);
+          addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
           var single = {};
@@ -1467,8 +1582,12 @@ function createLifecycle(s, frame) {
       return;
     }
 
-    // an emulated HTTP error status wins, as in $.ajax; a parse error is kept otherwise
+    // an emulated HTTP error status wins with the statusText, as in $.ajax; a parse error is
+    // kept otherwise
     if (xhr.status && !((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304)) {
+      if (status === "parsererror") {
+        errMsg = undefined;
+      }
       status = "error";
     }
 
@@ -1493,7 +1612,7 @@ function createLifecycle(s, frame) {
     if (s.error) {
       s.error.call(s.context, xhr, status, errMsg);
     }
-    deferred.reject(xhr, "error", errMsg);
+    deferred.reject(xhr, status, errMsg);
     if (g) {
       $$1.event.trigger("ajaxError", [xhr, s, errMsg]);
     }
@@ -1567,7 +1686,7 @@ function createIframeTransport(hasProp, forms) {
     var $io, n;
 
     if (s.iframeTarget) {
-      $io = $(s.iframeTarget, ownerDocument);
+      $io = selectorOption(s.iframeTarget, ownerDocument);
       n = $io.attr("name");
       if (!n) {
         $io.attr("name", id);
@@ -1889,7 +2008,7 @@ function createSubmission(feature, forms, serialization) {
 
     options.extraData = optionsData;
 
-    return $.param(optionsData, traditional);
+    return $.param(wellFormedData(optionsData), traditional);
   }
 
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.
@@ -2053,7 +2172,7 @@ function createSubmission(feature, forms, serialization) {
     if (options.requestFormat === "json") {
       jsonBody(options, fields);
     } else {
-      encode(options, $.param(urlencodedFields(fields), traditional), qx);
+      encode(options, urlencode(fields, traditional), qx);
     }
 
     return {
@@ -2096,7 +2215,7 @@ function createSubmission(feature, forms, serialization) {
       callbacks.push(function (data, textStatus, jqXHR) {
         var successArguments = arguments,
           fn = options.replaceTarget ? "replaceWith" : "html",
-          $target = $(options.target);
+          $target = selectorOption(options.target);
 
         // Only a string response is inserted. jQuery has already parsed a JSON or XML response,
         // and inserting it would parse each of its strings as HTML.
@@ -2364,7 +2483,7 @@ function createSubmission(feature, forms, serialization) {
    */
   $.fn.formSerialize = function (semantic) {
     // hand off to jQuery.param for proper encoding
-    return $.param(urlencodedFields(this.formToArray(semantic)));
+    return urlencode(this.formToArray(semantic));
   };
 
   /**
@@ -2373,6 +2492,8 @@ function createSubmission(feature, forms, serialization) {
    */
   $.fn.fieldSerialize = function (successful) {
     var a = [];
+
+    deprecateFieldValueOverride();
 
     this.each(function () {
       var n = this.name;
@@ -2394,7 +2515,7 @@ function createSubmission(feature, forms, serialization) {
     });
 
     // hand off to jQuery.param for proper encoding
-    return $.param(a);
+    return urlencode(a);
   };
 
   /**
@@ -2457,15 +2578,7 @@ function createSubmission(feature, forms, serialization) {
   /**
    * Returns the value of the field element.
    */
-  $.fieldValue = function (el, successful) {
-    var required = typeof successful === "undefined" || successful;
-
-    if (required && !isSuccessful(el, submitterElement(el.form))) {
-      return null;
-    }
-
-    return valueOf(el);
-  };
+  $.fieldValue = fieldValue;
 
   /**
    * Clears the form data. Takes the following actions on the form's input fields:

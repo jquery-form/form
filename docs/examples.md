@@ -70,7 +70,7 @@ function showResponse(responseText, statusText, xhr, $form) {
 }
 ```
 
-<form id="myForm1" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
+<form id="myForm1" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
   <input type="hidden" name="Hidden" value="hiddenValue">
   <table>
   <tr><td>Name:</td><td><input name="Name" type="text" value="MyName1"></td></tr>
@@ -118,9 +118,9 @@ function showResponse(responseText, statusText, xhr, $form) {
   </table>
   <input type="reset"   name="resetButton " value="Reset">
   <input type="submit"  name="submitButton" value="Submit1">
-  <input type="image"   name="submitButton" value="Submit2" src="http://malsup.com/jquery/form/submit.gif">
-  <input type="image"   name="submitButton" value="Submit3" src="http://malsup.com/jquery/form/submit.gif">
-  <input type="image"   name="submitButton" value="Submit4" src="http://malsup.com/jquery/form/submit.gif">
+  <input type="image"   name="submitButton" value="Submit2" src="https://malsup.com/jquery/form/submit.gif">
+  <input type="image"   name="submitButton" value="Submit3" src="https://malsup.com/jquery/form/submit.gif">
+  <input type="image"   name="submitButton" value="Submit4" src="https://malsup.com/jquery/form/submit.gif">
   <button type="submit" name="submitButton" value="Submit5"><span>submit 5</span></button>
 </div></form>
 
@@ -205,7 +205,7 @@ function showResponse(responseText, statusText, xhr, $form) {
 }
 ```
 
-<form id="myForm2" action="http://malsup.com/jquery/form/dummy2.php" method="post"><div>
+<form id="myForm2" action="https://malsup.com/jquery/form/dummy2.php" method="post"><div>
   <input type="hidden" name="Hidden" value="hiddenValue">
   <table>
     <tr><td>Name:</td><td><input name="Name" type="text" value="MyName2"></td></tr>
@@ -253,7 +253,7 @@ function showResponse(responseText, statusText, xhr, $form) {
   </table>
   <input type="reset"   name="resetButton " value="Reset">
   <input type="submit"  name="submitButton" value="Submit1">
-  <input type="image"   name="submitButton" value="Submit2" src="http://malsup.com/jquery/form/submit.gif">
+  <input type="image"   name="submitButton" value="Submit2" src="https://malsup.com/jquery/form/submit.gif">
 </div></form>
 
 #### Output Div (#output2):
@@ -271,7 +271,7 @@ The following login form is used for each of the examples that follow. Each exam
 #### Form Markup:
 
 ```html
-<form id="validationForm" action="http://malsup.com/jquery/form/dummy.php" method="post">
+<form id="validationForm" action="https://malsup.com/jquery/form/dummy.php" method="post">
   Username: <input type="text" name="username" /> Password:
   <input type="password" name="password" />
   <input type="submit" value="Submit" />
@@ -290,7 +290,7 @@ $(document).ready(function () {
 
 #### Validate Using the `formData` Argument
 
-<form id="validateForm1" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
+<form id="validateForm1" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
     Username: <input type="text" name="username">
     Password: <input type="password" name="password">
     <input type="submit" value="Submit">
@@ -322,7 +322,7 @@ function validate(formData, jqForm, options) {
 
 #### Validate Using the `jqForm` Argument
 
-<form id="validateForm2" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
+<form id="validateForm2" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
     Username: <input type="text" name="username">
     Password: <input type="password" name="password">
     <input type="submit" value="Submit">
@@ -347,7 +347,7 @@ function validate(formData, jqForm, options) {
 
 #### Validate Using the `fieldValue` Method
 
-<form id="validateForm3" action="http://malsup.com/jquery/form/dummy.php" method="post"><div>
+<form id="validateForm3" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
     Username: <input type="text" name="username">
     Password: <input type="password" name="password">
     <input type="submit" value="Submit">
@@ -387,13 +387,13 @@ This page shows how to handle JSON data returned from the server. The form below
 #### Form markup:
 
 ```html
-<form id="jsonForm" action="http://malsup.com/jquery/form/json-echo.php" method="post">
+<form id="jsonForm" action="https://malsup.com/jquery/form/json-echo.php" method="post">
   Message: <input type="text" name="message" value="Hello JSON" />
   <input type="submit" value="Echo as JSON" />
 </form>
 ```
 
-<form id="jsonForm" action="http://malsup.com/jquery/form/json-echo.php" method="post"><div>
+<form id="jsonForm" action="https://malsup.com/jquery/form/json-echo.php" method="post"><div>
     Message: <input type="text" name="message" value="Hello JSON">
     <input type="submit" value="Echo as JSON">
 </div></form>
@@ -439,13 +439,13 @@ This page shows how to handle XML data returned from the server. The form below 
 #### Form markup:
 
 ```html
-<form id="xmlForm" action="http://malsup.com/jquery/form/xml-echo.php" method="post">
+<form id="xmlForm" action="https://malsup.com/jquery/form/xml-echo.php" method="post">
   Message: <input type="text" name="message" value="Hello XML" />
   <input type="submit" value="Echo as XML" />
 </form>
 ```
 
-<form id="xmlForm" action="http://malsup.com/jquery/form/xml-echo.php" method="post"><div>
+<form id="xmlForm" action="https://malsup.com/jquery/form/xml-echo.php" method="post"><div>
   Message: <input type="text" name="message" value="Hello XML">
   <input type="submit" value="Echo as XML">
 </div></form>
@@ -497,13 +497,13 @@ This page shows how to handle HTML data returned from the server. The form below
 #### Form markup:
 
 ```html
-<form id="htmlForm" action="http://malsup.com/jquery/form/html-echo.php" method="post">
+<form id="htmlForm" action="https://malsup.com/jquery/form/html-echo.php" method="post">
   Message: <input type="text" name="message" value="Hello HTML" />
   <input type="submit" value="Echo as HTML" />
 </form>
 ```
 
-<form id="htmlForm" action="http://malsup.com/jquery/form/html-echo.php" method="post"><div>
+<form id="htmlForm" action="https://malsup.com/jquery/form/html-echo.php" method="post"><div>
   Message: <input type="text" name="message" value="Hello HTML">
   <input type="submit" value="Echo as HTML">
 </div></form>
@@ -572,7 +572,7 @@ if (!$xhr)
 
 The form below provides an input element of type "file" along with a select element to specify the dataType of the response. The form is submitted to `files.php` which uses the dataType to determine what type of response to return.
 
-<form id="uploadForm" action="http://malsup.com/jquery/form/files.php" method="POST" enctype="multipart/form-data">
+<form id="uploadForm" action="https://malsup.com/jquery/form/files.php" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="MAX_FILE_SIZE" value="100000">
     File: <input type="file" name="file">
     Return Type: <select id="uploadResponseType" name="mimetype">
@@ -587,8 +587,15 @@ The form below provides an input element of type "file" along with a select elem
 <label>Output:</label>
 <div id="uploadOutput"></div>
 
-Examples that show how to display upload progress:
+To show upload progress, pass an [`uploadProgress`](options.md#uploadprogress) callback. It is called as the upload proceeds, with the progress event, the bytes sent, the total and the percentage. The iframe transport (`iframe: true`) cannot report progress.
 
-- [Progress Demo 1](http://malsup.com/jquery/form/progress.html)
-- [Progress Demo 2](http://malsup.com/jquery/form/progress2.html)
-- [Progress Demo 3](http://malsup.com/jquery/form/progress3.html)
+```javascript
+$("#uploadForm").ajaxForm({
+  uploadProgress: function (event, position, total, percentComplete) {
+    $("#uploadOutput").text(percentComplete + "%");
+  },
+  success: function () {
+    $("#uploadOutput").text("Done");
+  },
+});
+```

@@ -6,7 +6,9 @@ import terser from "@rollup/plugin-terser";
 const umdHeader = `(function (factory) {
 	if (typeof define === 'function' && define.amd) {
 		// AMD. Register as an anonymous module.
-		define(['jquery'], factory);
+		define(['jquery'], function (jQuery) {
+			factory(jQuery, window);
+		});
 	} else if (typeof module === 'object' && module.exports) {
 		// Node/CommonJS
 		module.exports = function( root, jQuery ) {
@@ -20,16 +22,23 @@ const umdHeader = `(function (factory) {
 					jQuery = require('jquery')(root);
 				}
 			}
-			factory(jQuery);
+			factory(jQuery, root || (typeof window !== 'undefined' ? window : undefined));
 			return jQuery;
 		};
 	} else {
 		// Browser globals
-		factory(jQuery);
+		factory(jQuery, window);
 	}
 
-}(function (jQuery) {
+}(function (jQuery, root) {
 `;
+
+// The plugin reads these as globals. In the classic build they come from the window the wrapper
+// passes, so a CommonJS factory called with a root works where that root is not the global window.
+const rootGlobals =
+  "\tvar window = root;\n" +
+  "\tvar document = window.document, navigator = window.navigator;\n" +
+  "\tvar Element = window.Element, FormData = window.FormData;\n";
 
 const moduleLines =
   /^import jQuery from ['"]jquery['"];\nexport \{ default \} from ['"]jquery['"];\n\n/;
@@ -68,7 +77,7 @@ const classicLayout = {
     const { chunk, header } = splitPreamble(this, code);
     // Rollup drops directives because modules are strict; a classic script is not, so the whole
     // factory body is made strict, including module code hoisted above the plugin body.
-    chunk.prepend(header + umdHeader + "\t'use strict';\n").append("\n}));\n");
+    chunk.prepend(header + umdHeader + "\t'use strict';\n" + rootGlobals).append("\n}));\n");
     return { code: chunk.toString(), map: chunk.generateMap({ hires: true }) };
   },
 };

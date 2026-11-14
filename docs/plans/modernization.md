@@ -57,13 +57,13 @@ content: "Security and bug fixes: private advisories, review findings, P1 and Ph
 status: completed
 - id: release-4x
 content: "Phase 11: release 4.4.0 with Phases 0-10 and the W1-W4 fixes, publish with npm provenance, publish the advisories and release notes"
-status: pending
+status: completed
 - id: cleanup-4x
 content: "Phase 12: 4.x cleanup and rearchitecture without breaking changes (source modules, lower complexity, additive options, deprecations), then a 4.x minor release"
 status: completed
 - id: hardening-4x
 content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracle against native FormData, end-to-end tests with a real server, published-file tests, a one-off mutation-testing report), then the 4.6.0 release"
-status: pending
+status: in_progress
 - id: breaking-5
 content: "Phase 14: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
 status: pending
@@ -306,7 +306,7 @@ enforces it. Each removed branch and the reason it was dead are in `docs/researc
   branch until release day.
 - Four draft advisories exist: the two accepted reports (severity high) and W3 and W4 (severity
   medium). CVEs were requested for all four on 2026-10-31. Reporters are not invited as
-  collaborators. Set `patched_versions` on each before publishing.
+  collaborators beyond their own reports. Set `patched_versions` on each before publishing.
 - A custom CodeQL query that catches W1–W4, which the built-in queries miss. It must flag them before
   the fixes and pass after. Keep it private until the fixed release ships, since it reveals the sinks.
 - The review's findings 4, 6, 7 and 8. Fixing finding 7 also clears the three `no-prototype-builtins` warnings.
@@ -331,6 +331,16 @@ are in `docs/research/4x-behavior-changes.md`.
 Status (2026-11-07): released without waiting for CVE IDs, which were still unassigned. The W1–W4
 details are now in `security-review.md` and the behavior changes in `4x-behavior-changes.md`.
 
+- 4.4.0 is on npm from a06a0c8 (PR #639), with provenance. The four advisories are published with
+  `patched_versions` 4.4.0; GHSA-x8mc and GHSA-8395 carry the CVSS 3.1 vector
+  `AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N` (6.1, Medium) instead of the drafted High.
+- Release notes are on the `v4.4.0` GitHub release. #604, #554, #553, #588, #597, #600, #616 and #618
+  are closed; the drupal.org comment is posted. CodeQL alerts 1 and 4 are fixed and alert 7 is
+  dismissed, so `main` has no open alerts.
+- Left: step 9 when the CVE IDs arrive. Done since: PR #640; the README and site CDN snippets on
+  jsDelivr (PR #641, then 4.5.0 in PR #643); a Packagist webhook. The cdnjs alternative snippet
+  moved to the 4.6.0 docs cleanup (Phase 13).
+
 Prepare in public (normal PRs, nothing about W1–W4):
 
 - A release workflow (`.github/workflows/release.yml`) that publishes a `v*` tag to npm with npm
@@ -338,8 +348,26 @@ Prepare in public (normal PRs, nothing about W1–W4):
   before publishing.
 - On npmjs.com, the maintainer adds that workflow as the trusted publisher for `jquery-form`. Then
   set publishing access to require 2FA and disallow tokens, and review the package's maintainer list.
-- Wait until GitHub has assigned a CVE ID to each of the four draft advisories. Review their text,
-  affected range (`<= 4.3.0`) and credits.
+- Review the four draft advisories: text, affected range (`<= 4.3.0`), credits, and any reviewer
+  comments on the CVE requests. Don't wait for the CVE IDs (see Release train).
+  - Reviewed 2026-11-07: GitHub has left no comments and assigned no CVEs. Rudloff is credited and
+    accepted on both reports, and is a collaborator as their author (we invited no one). Their one
+    comment points to the public drupal.org issue.
+  - "Found during the Phase 8 security review" in GHSA-g7mw and GHSA-4w39 now reads "Found during a
+    maintainer security review" (2026-11-07).
+- Trial run of `release.yml` on `main` passed on 2026-11-06 (run 42311458706). The trusted publisher
+  is set up on npmjs.com with publish permission only, not dist-tag. Publishing requires 2FA and
+  disallows tokens, and the inactive maintainers were removed (2026-11-07).
+- Merge the `docs-site-internal-docs` PR. The docs site served `docs/plans/`, `docs/research/`,
+  `docs/agents/`, `docs/adr/` and `docs/metrics.md`; it now excludes them, so `security-review.md`
+  isn't published on the site when the W1–W4 details move into it. After the merge, check that
+  `https://jquery-form.github.io/form/plans/modernization/` returns 404.
+  - The same PR (#636) unblocks docs-only PRs: `ci.yml` no longer uses `paths-ignore` on pull
+    requests, and a `changes` job makes the required `test` and jQuery jobs skip their slow steps.
+    When `phase-13` rebases onto it, `ci.yml` will conflict: keep the step gating on `test` and
+    the jQuery matrix, and skip the new browser and end-to-end jobs with a job-level
+    `if: needs.changes.outputs.code == 'true'` (they aren't required checks, so a skipped job is
+    fine there).
 - Check that the custom CodeQL query pack resolves its `codeql/javascript-all` dependency in Actions,
   since it couldn't be run there before release day.
 
@@ -358,11 +386,61 @@ Release day, in one sitting:
 4. Tag `v4.4.0` on the merge commit and push the tag. The workflow publishes to npm. Check
    `npm view jquery-form`, the provenance badge, jsDelivr, cdnjs (git autoupdate) and Packagist.
 5. Set `patched_versions` to `4.4.0` on the four advisories and publish them. GitHub then publishes
-   the CVE records and the GitHub Advisory Database entries, which feed `npm audit` and Dependabot.
-6. Publish the GitHub release notes from `4x-behavior-changes.md`.
+   the GitHub Advisory Database entries, which feed `npm audit` and Dependabot. The CVE requests
+   stay open and GitHub adds the IDs to the published advisories when it assigns them.
+6. Publish the GitHub release notes, written from `4x-behavior-changes.md` but not copied: follow the
+   public-text rule in `docs/agents/coding-standards.md` (no phases, no internal IDs such as `W1` or
+   `D-09`, no links to `docs/research/`). Cite the GHSA IDs and say the CVE IDs are pending. The same
+   rule applies to the issue and drupal.org comments in step 7.
 7. Comment on and close #604, #554, #553, #588, #597, #600, #616 and #618. Comment on drupal.org
    #3607794. Credit Rudloff for W1 and W2.
-8. Delete the local fix branch and the probe copies.
+   - Check that CodeQL alerts 1 and 4 closed. Dismiss alert 7 (`iframeTarget`) as "won't fix",
+     linking finding 11 in `security-review.md`: the option is a developer-supplied selector.
+8. Delete the local fix branch. Keep the probe copies until the modernization project ends: they
+   keep checking the W1–W4 fixes through the 5.0 refactors.
+9. When GitHub assigns the CVE IDs, add them to the 4.4.0 release notes, `security-review.md`,
+   `4x-behavior-changes.md` and the drupal.org issue. Don't request IDs from another CNA meanwhile;
+   a second request can produce duplicate CVEs.
+
+## Release train: 4.4.0, 4.5.0, 4.6.0
+
+Decided on 2026-11-06: ship without waiting for CVE IDs. The four CVE requests had no IDs and no
+GitHub activity after 6 days, one finding is already public on drupal.org, and the GHSA IDs alone
+drive `npm audit`, Dependabot and OSV. What waits for the CVEs: scanners that read only NVD, and the
+CVE references in our own docs (Phase 11, step 9).
+
+The local branches are stacked: `phase-10-advisories` (the W1–W4 fixes) is in `phase-12`, which is
+in `phase-13`, which is in `phase-14`. So until the advisories are published:
+
+- Push none of those branches and open no PR from them. Each one reveals the W1–W4 fixes.
+- Public PRs to `main` stay limited to work that names no W1–W4 sink.
+
+The order:
+
+1. **4.4.0** (Phase 11). Done 2026-11-07, and the stacked branches are rebased (backups under
+   `refs/backup/pre-4.4.0/`). Release day as above. Afterwards, rebase `phase-12` on `main` with
+   `git rebase --onto main phase-10-advisories phase-12` if the fix commits were rebased or squashed
+   on the way in, then rebase `phase-13` and `phase-14` the same way onto the new tips.
+2. **Soak 4.4.0 for about a week** (until about 2026-11-14). Watch issues, npm downloads and the CDN builds. A regression goes
+   out as 4.4.1 from `main` before 4.5.0, and `phase-12` rebases on it.
+3. **4.5.0** (Phase 12). Push `phase-12` and open its PR; this is the first CI and CodeQL run for
+   those commits, so leave time for fixes. Run the custom CodeQL query. Bump, tag and publish the
+   same way as 4.4.0, without the advisory steps. Close PR #557 and the issues Phase 12 fixed.
+   Done 2026-11-10 (PR #642, released three days into the 4.4.0 soak with no new issues); #545
+   and #541 closed, #353 left open for 5.0.
+4. **Soak 4.5.0 for a day or two** (decided 2026-11-10: 4.4.0 drew no issues, comments or
+   regressions in its first three days). Release 4.6.0 once 4.5.0 shows no engagement either.
+5. **4.6.0** (Phase 13). `npm test` on `phase-13` runs `suite-webkit`, so the release `verify` job
+   now installs `chromium webkit` with `--with-deps`, as `ci.yml` does. Push `phase-13`; its
+   Firefox, WebKit and end-to-end CI jobs run for the first time. Rehearse `release.yml` with
+   `workflow_dispatch` on the branch before tagging, then release the same way as 4.5.0.
+   - `phase-13` renames the matrix checks to `jQuery <version> on <browser>`, so the required checks
+     on `main` (`jQuery 1.7.2`, `jQuery 3.7.1`, `jQuery 4.0.0`) never report and the PR stays
+     blocked. Update branch protection to the new names (or a subset, such as the Chromium ones)
+     when the PR's first run shows them.
+6. **5.0** (Phase 14) after 4.6.0. Cut `release/4.x` from the 4.6.0 tag first (ADR-0002).
+
+Each release adds its column to `docs/metrics.md` and its section to the GitHub release notes.
 
 ## Phase 12: 4.x cleanup and rearchitecture (no breaking change)
 
@@ -378,7 +456,8 @@ slice is done (`src/submitter.js`; controls named `clk`, `SubmitEvent.submitter`
 GET uploads). The ajaxForm binding slice is done (`src/ajax-form.js`, `delegation: "<selector>"`,
 `ajaxFormUnbind(selector)`, the `delegation: true` warning). The deprecation warnings, the
 `target` sanitizing, trusted-options and iframe-response docs, and the remaining fixes (D-12, D-13,
-D-15, D-19, D-25, the FormData `beforeSend` veto) are done; IFR-122/123 stay `it.fails` for 5.0.
+D-15, D-19, D-25, the FormData `beforeSend` veto) are done; IFR-122/123 were left `it.fails` and
+are fixed in Phase 13.
 Phase 12 shipped as 4.5.0 on 2026-11-10 (PR #642), three days into the 4.4.0 soak with no new
 issues. CodeQL alert 10 (the `target` lookup, moved by the module split) was dismissed as "won't
 fix"; 4.6.0 removes the lookup. The custom CodeQL canary flagged every reopened W1–W4 sink.
@@ -408,8 +487,14 @@ looked like a bug.
 ## Phase 13: 4.x test hardening (no breaking change)
 
 The Phase 12 sweep found about 70 bugs that 100% coverage had not caught. This phase adds kinds of
-tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the same
-local branch as Phase 12.
+tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the local
+`phase-13` branch, which starts after the 4.5.0 cut on `phase-12`.
+
+Status: done, and in the 4.6.0 release PR (#644, branch `release-4.6.0`). All five kinds of tests
+are in place and pass on Chromium, WebKit and Firefox with jQuery 1.7.2, 3.7.1 and 4.0.0; no
+`it.fails` remain. The mutation score went from 91.67% to 94.34%. The new WebKit, Firefox and
+end-to-end CI jobs ran for the first time on the PR and pass. The `release.yml` rehearsal on the
+branch passed on 2026-11-14 (run 43600588779), and the version bump is in.
 
 - Run the suite on Firefox and WebKit as well as Chromium (Vitest browser instances), locally and in
   CI.
@@ -425,6 +510,86 @@ local branch as Phase 12.
   is a contract 5.0 must keep or break on purpose. A test that passes only on Phase 12 must match an
   entry in `docs/research/4x-behavior-changes.md`; otherwise it is reported as a bug or an
   undocumented change.
+
+Fixes in 4.6.0 (each in `docs/research/4x-behavior-changes.md`, Phase 13):
+
+- Lone surrogates become U+FFFD instead of throwing `URIError`: in form fields (`formSerialize`,
+  `fieldSerialize`, urlencoded bodies, the iframe submitter), and in `data` and `extraData` keys and
+  values on every transport.
+- Spaces encode as `+` on every jQuery version.
+- An iframe response that cannot be parsed rejects with `parsererror`, and an error status that
+  also fails to parse reports its `statusText` (IFR-122/123, the last `it.fails`).
+- The iframe upload leaves out a clicked button disabled by its fieldset.
+- Packaging: no `browser` field (bundlers get the module build; `jsdelivr` and `unpkg` name the
+  minified build), `LICENSE-MIT` published, and the CommonJS factory uses the window it is given.
+- Docs: a Deprecations section in `docs/api.md` listing each warning and its replacement.
+- `target` and `iframeTarget` strings are only selectors (`$(document).find()`), never parsed as
+  HTML. Decided on 2026-11-08: alert 7 had been dismissed as "won't fix" under finding 11, but
+  unlike `url` or `iframeSrc` this risk is not inherent, and the fix keeps every selector's result.
+  It goes in 4.6.0, not 4.5.0, in case a consumer relied on an HTML string. Closes CodeQL alert 10,
+  the alert 7 lookup reopened by the 4.5.0 module split (it shows on PR #642).
+- Dev only (not in the published package): an npm `overrides` entry pins `minimatch` to 11.0.4
+  for Dependabot alert 97 (CVE-2026-118764, through eslint, which still requires `minimatch@^10`
+  and has no patched 10.x). Remove the override once eslint allows minimatch 11. The same commit
+  went to `main` early in PR #638, after Dependabot reopened the alert there as alert 98; the
+  `phase-13` rebase drops its copy as already applied.
+
+Docs, README and repository cleanup, with 4.6.0. Decided on 2026-11-10. Everything lands as
+commits on `phase-13` and ships in the 4.6.0 PR, so the stacked branches rebase once. Only the
+`package.json` items change the published package.
+
+README (a landing page; the docs site is the one reference):
+
+- Cut the API, Options and Utility Methods sections and link to the docs site pages instead.
+  Keep overview, installation, quick start, compatibility, security, contributing and license.
+- Add Installation and Usage: `npm install jquery-form`, the module import (it registers the
+  plugin and needs jQuery importable), the CommonJS `(root, jQuery)` factory, and a script tag
+  after jQuery.
+- Point Download at npm, the CDN and the release tag, not at `dist/` on `main`, which will hold
+  5.0 code once Phase 14 lands.
+- Rewrite File Uploads (it says "As of today (March 2012)"): FormData by default, `iframe: true`
+  as the fallback, and fix its XMLHttpRequest Level 2 link (the URL is wrapped in quotes).
+- Compatibility: name the tested browsers (Chromium, Firefox and WebKit), and say that 5.0 will
+  need jQuery 3.5 or later, linking #629.
+- Add a cdnjs snippet back as the alternative to jsDelivr, once cdnjs serves the current version.
+  Check its sha384 against the published `dist/jquery.form.min.js` first.
+- Switch `http://` links that have an `https://` version.
+- Bump the CDN snippets in `README.md` and `docs/index.md` to 4.6.0 with the new SRI hash.
+
+Docs site:
+
+- `docs/_layouts/default.html`: remove the html5shiv script (its Google Code URL is a 404), the
+  IE conditional comment, the `X-UA-Compatible: chrome=1` meta (Chrome Frame), and the Universal
+  Analytics block, which never renders because `_config.yml` sets no `google_analytics`.
+- `docs/index.md`: add npm installation to the Quick Start, next to the CDN snippet.
+- `docs/faq.md`: point "Run unit tests" at `CONTRIBUTING.md` instead of the 3.x test page on
+  malsup.com, and replace the `view-source:` progress demo link.
+- Checked every malsup.com link on 2026-11-10. All serve content except
+  `jquery.malsup.com/form/` (an empty page; `CONTRIBUTORS.md` now links `malsup.com/jquery/form/`).
+  The FAQ comparison and code-sample links and the examples' progress demos point at the docs
+  site instead; the demo endpoints stay, over https, until the 5.0 examples rewrite.
+
+Package metadata (in the 4.6.0 package):
+
+- `license`: `(LGPL-2.1-or-later OR MIT)` instead of the deprecated SPDX `LGPL-2.1+`; the same in
+  `bower.json`, `composer.json` and `form.jquery.json`. Same terms.
+- `homepage`: the docs site, https://jquery-form.github.io/form/.
+
+Repository:
+
+- Replace `.github/issue_template.md` (it asks for a "LoadJSON" version) with an issue form that
+  asks for the plugin, jQuery and browser versions, and a `config.yml` that sends security
+  reports to `SECURITY.md`.
+- Add `.github/dependabot.yml` version updates for GitHub Actions and grouped npm dev
+  dependencies (only alerts are on today).
+- Keep `CODE_OF_CONDUCT.md` at Contributor Covenant 1.4 (decided 2026-11-10, reversing the 2.1
+  update planned the same day). 2.1 needs a private reporting contact, the project has no email
+  address, and GitHub has no private conduct channel to maintainers: private vulnerability
+  reporting is for security issues, and "Report content" goes to GitHub, not to the maintainer.
+  Revisit if the project gets a contact address.
+- Delete the root `_config.yml`; Pages builds from `/docs`. Fix the broken headings in
+  `CONTRIBUTORS.md`.
+- Close #544 at the release: both items it lists are resolved, and #353 tracks the rest.
 
 Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, not 4.5.0. Cut `release/4.x` when 5.0 lands (ADR-0002).
 
@@ -445,6 +610,32 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
   keep-alive workaround). `enable` and `selected` are kept.
 - Move to ES2015+ syntax and revisit Prettier `trailingComma`.
 - Decide whether `formToArray` and the other serializers keep calling an overridable `$.fieldValue`, or use the internal successful-controls module (5.0).
+- Found by the Phase 13 end-to-end tests, left as they are in 4.x:
+  - An empty file input goes through the FormData upload as an empty text field. A native submit
+    sends an empty file part (filename "", `application/octet-stream`), so servers see a form field
+    instead of an empty upload (PHP `$_POST` instead of `$_FILES`).
+  - The iframe upload adds the clicked button's fields after the form's own, where a native
+    submit sends them in tree order.
+- Found by the Phase 13 serialization oracle (spec gaps against `new FormData(form)`), left as they
+  are in 4.x:
+  - `dirname` fields (`name=ltr`) are never sent.
+  - A hidden `_charset_` input sends its own value instead of the encoding (`UTF-8`).
+  - A clicked `<input type=submit>` without a `value` sends `""` instead of the browser's default
+    label ("Submit", or "Submit Query" in Firefox).
+  - A clicked image sends its `name=value` before `name.x`/`name.y`; native sends only the
+    coordinates.
+  - An unnamed clicked image sends nothing; native sends `x` and `y`.
+- Docs examples and FAQ for 5.0:
+  - `docs/examples.md` posts to Mike Alsup's demo scripts on malsup.com (`dummy.php`,
+    `json-echo.php` and others) and loads `submit.gif` from there. Replace them
+    with examples that need no third-party server, or document the expected response instead.
+  - Rewrite the examples for the 5.0 API: jQuery 3.5 or later, `delegation: "<selector>"`,
+    `iframe: true` for uploads without `FormData`, and no deprecated methods.
+  - Replace the retired `docs.jquery.com/Plugins` link in the examples. 4.6.0 replaces every
+    malsup.com documentation link (FAQ comparison, unit tests, code samples, progress demos) with
+    the docs site's own pages, and loads the demo endpoints over https until this rewrite.
+  - README: the pointer to malsup.com docs for 3.51 and older, and the jQuery 4 compatibility
+    notes, which change with the peer dependency.
 - Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
 
 ## 5.x

@@ -664,7 +664,8 @@ describe("form", function () {
 
       it("should set the iframe source as an attribute, not HTML", async function () {
         window.iframePayload = 0;
-        const iframeSrc = 'about:blank"></iframe><img src=x onerror="window.iframePayload=1">';
+        // WebKit's browser process crashes on any other about: URL, so the payload sits in a fragment.
+        const iframeSrc = 'about:blank#"></iframe><img src=x onerror="window.iframePayload=1">';
         const $form = createIframeForm("ajax/iframe-text.html");
 
         const seen = await submitAndAbort($form, { iframeSrc: iframeSrc });
@@ -1545,6 +1546,41 @@ describe("form", function () {
             assert.include(events, "ajaxStop");
           });
 
+          it("should build no elements from an iframeTarget given as an HTML string", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].submit = function () {};
+            window.__frameHtml = 0;
+            $.active = 0;
+
+            try {
+              $form.ajaxSubmit({
+                iframe: true,
+                forceSync: true,
+                iframeTarget: '<img src="data:," onerror="window.__frameHtml = 1">',
+                error: function () {},
+              });
+            } catch {
+              // an iframeTarget that matches nothing throws here
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            assert.strictEqual(window.__frameHtml, 0);
+            assert.strictEqual($.active, 0);
+          });
+
+          it("should find an iframeTarget selector with a tag in an attribute value", function () {
+            const $target = $('<iframe title="<b>"></iframe>').appendTo("#main");
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            $form.ajaxSubmit({
+              iframe: true,
+              iframeTarget: 'iframe[title="<b>"]',
+              beforeSend: () => false,
+            });
+
+            assert.match($target.attr("name"), /^jqFormIO\d+$/);
+          });
+
           describe("when the frame is not in the document", function () {
             const message = "jquery.form: the upload frame is not in the document";
 
@@ -1843,6 +1879,41 @@ describe("form", function () {
             assert.strictEqual($("iframe").length, frames);
           });
 
+          it("should pass the xhr, the settings and canceled to ajaxError when beforeSend vetoes", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let seen;
+            $(document).on("ajaxError.ifrlog", function (event, xhr, settings, reason) {
+              seen = [typeof xhr.abort, settings.iframe, reason];
+            });
+
+            $form.ajaxSubmit({ iframe: true, beforeSend: () => false });
+
+            assert.deepEqual(seen, ["function", true, "canceled"]);
+          });
+
+          it("should fire no global events when beforeSend vetoes with global false", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+
+            $form.ajaxSubmit({ iframe: true, global: false, beforeSend: () => false });
+
+            assert.deepEqual(events, []);
+          });
+
+          it("should ignore an abort after beforeSend vetoed", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            let errors = 0;
+            $form.ajaxSubmit({ iframe: true, beforeSend: () => false, error: () => errors++ });
+            recordGlobalEvents(events);
+
+            $form.data("jqxhr").abort();
+
+            assert.strictEqual(errors, 0);
+            assert.deepEqual(events, []);
+          });
+
           it("should end the global events without ajaxSend when beforeSend vetoes", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const events = [];
@@ -1928,6 +1999,21 @@ describe("form", function () {
             assert.deepEqual(fields, [["choice", "picked"]]);
           });
 
+          it("should post a clicked button's lone surrogate as U+FFFD", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const button = $('<button type="submit">').appendTo($form)[0];
+            button.name = "n\uDBFF";
+            button.value = "\uDC00x";
+            $form[0].clk = button;
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["n�", "�x"]]);
+          });
+
           it("should not post a disabled clicked button", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $(
@@ -1940,6 +2026,82 @@ describe("form", function () {
             });
 
             assert.deepEqual(fields, []);
+          });
+
+          it("should not post a clicked button in a disabled fieldset", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $fieldset = $("<fieldset disabled></fieldset>").appendTo($form);
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $fieldset
+            )[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
+          });
+
+          it("should post a clicked button in the first legend of a disabled fieldset", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $legend = $("<fieldset disabled><legend></legend></fieldset>")
+              .appendTo($form)
+              .children("legend");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $legend
+            )[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["choice", "picked"]]);
+          });
+
+          it("should not post a captured button whose fieldset is disabled before the upload", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $fieldset = $("<fieldset></fieldset>").appendTo($form);
+            const $button = $('<button type="submit" name="choice" value="picked">')
+              .appendTo($fieldset)
+              .on("click", (event) => event.preventDefault());
+            $form.ajaxForm({ iframe: true });
+            $button.trigger("click");
+            $form[0].clk = undefined;
+            $fieldset.prop("disabled", true);
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
+          });
+
+          it("should not post a disabled button passed to requestSubmit", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const $fieldset = $("<fieldset disabled></fieldset>").appendTo($form);
+            const own = $('<button type="submit" name="own" value="o" disabled>').appendTo(
+              $form
+            )[0];
+            const inFieldset = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $fieldset
+            )[0];
+            const fields = [];
+            $form[0].submit = function () {
+              fields.push(hiddenFields(this));
+            };
+            $form.ajaxForm({ iframe: true, forceSync: true, error: function () {} });
+
+            $form[0].requestSubmit(own);
+            pending.push($form.data("jqxhr"));
+            $.removeData($form[0], "jqFormSubmitter");
+            $form[0].clk = undefined;
+            $form[0].requestSubmit(inFieldset);
+            pending.push($form.data("jqxhr"));
+
+            assert.deepEqual(fields, [[], []]);
           });
 
           it("should let the CSRF token override a data field with the param name", function () {
@@ -1980,6 +2142,34 @@ describe("form", function () {
 
               assert.deepEqual(fields, []);
             });
+          });
+
+          it("should post the CSRF token when the type option is POST on a form without a method", function () {
+            const $form = $(
+              '<form action="ajax/iframe-text.html"><input name="upload"></form>'
+            ).appendTo("#main");
+            addCsrfMetas("secret");
+            let fields;
+
+            startStubbedUpload($form, { type: "POST" }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["authenticity_token", "secret"]]);
+          });
+
+          it("should not post the CSRF token when the type option is PUT on a form without a method", function () {
+            const $form = $(
+              '<form action="ajax/iframe-text.html"><input name="upload"></form>'
+            ).appendTo("#main");
+            addCsrfMetas("secret");
+            let fields;
+
+            startStubbedUpload($form, { type: "PUT" }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
           });
 
           it("should post the CSRF param twice when the form already has that field", function () {
@@ -2205,6 +2395,44 @@ describe("form", function () {
               ["a", "1"],
               ["a", "2"],
             ]);
+          });
+
+          it("should post lone surrogates in extraData keys and values as U+FFFD", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let fields;
+
+            startStubbedUpload(
+              $form,
+              {
+                extraData: {
+                  "k\uD800": "v\uDC00",
+                  list: ["a\uDBFF"],
+                  nested: { "n\uDC00": "x" },
+                  pair: { name: "p\uD800", value: "q\uDC00" },
+                },
+              },
+              function (form) {
+                fields = hiddenFields(form);
+              }
+            );
+
+            assert.deepEqual(fields, [
+              ["k\uFFFD", "v\uFFFD"],
+              ["list[]", "a\uFFFD"],
+              ["nested[n\uFFFD]", "x"],
+              ["p\uFFFD", "q\uFFFD"],
+            ]);
+          });
+
+          it("should post a lone surrogate in an object data option as U+FFFD", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let fields;
+
+            startStubbedUpload($form, { data: { "k\uD800": ["v\uDC00"] } }, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [["k\uFFFD[]", "v\uFFFD"]]);
           });
 
           it("should send a query-string data option as its own fields on an iframe upload", function () {
@@ -2539,6 +2767,68 @@ describe("form", function () {
             assert.strictEqual(result.success[2].status, 304);
           });
 
+          it("should treat an emulated 300 as an error", async function () {
+            const result = await submitWithBodyAttributes({ status: "300" }, { dataType: "text" });
+
+            assert.strictEqual(result.error[1], "error");
+          });
+
+          it("should resolve the Deferred with the response text, success and the xhr", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            const result = await submitThroughIframe($form, { dataType: "text" });
+            const resolved = await new Promise((resolve) =>
+              result.xhr.done((...args) => resolve(args))
+            );
+
+            assert.deepEqual([resolved[0].trim(), resolved[1]], ["iframe response", "success"]);
+            assert.strictEqual(resolved[2], result.success[2]);
+          });
+
+          it("should pass the xhr and the settings to ajaxComplete", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let seen;
+            $(document).on("ajaxComplete.ifrlog", function (event, xhr, settings) {
+              seen = [xhr.responseText.trim(), settings.iframe];
+            });
+
+            await submitThroughIframe($form, { dataType: "text" });
+
+            assert.deepEqual(seen, ["iframe response", true]);
+          });
+
+          it("should fire no ajaxError for an error status with global false", async function () {
+            const $form = createIframeForm("ajax/iframe-error.html");
+            const events = [];
+            recordGlobalEvents(events);
+
+            const result = await submitThroughIframe($form, { dataType: "text", global: false });
+
+            assert.strictEqual(result.error[1], "error");
+            assert.deepEqual(events, []);
+          });
+
+          it("should rethrow the error the success callback threw", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const thrown = new Error("success failed");
+
+            const errors = await withWindowErrors(async function (errors) {
+              await new Promise(function (resolve) {
+                $form.ajaxSubmit({
+                  iframe: true,
+                  dataType: "text",
+                  success: function () {
+                    setTimeout(resolve, 20);
+                    throw thrown;
+                  },
+                });
+              });
+              return errors.slice();
+            });
+
+            assert.deepEqual(errors, [thrown]);
+          });
+
           it("should treat an emulated 1xx status as an error", async function () {
             const result = await submitWithBodyAttributes({ status: "102" }, { dataType: "text" });
 
@@ -2645,30 +2935,87 @@ describe("form", function () {
             assert.strictEqual(ajaxErrorReason, "fixture failure");
           });
 
-          it.fails(
-            "should reject with parsererror when the response cannot be parsed",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-text.html");
+          it("should reject with parsererror when the response cannot be parsed", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
 
-              const result = await submitThroughIframe($form, { dataType: "json" });
-              const rejection = await new Promise((resolve) =>
-                result.xhr.fail((...args) => resolve(args))
+            const result = await submitThroughIframe($form, { dataType: "json" });
+            const rejection = await new Promise((resolve) =>
+              result.xhr.fail((...args) => resolve(args))
+            );
+
+            assert.strictEqual(rejection[1], "parsererror");
+          });
+
+          it("should report the statusText when an error-status response also fails to parse", async function () {
+            const $form = createIframeForm("ajax/iframe-error.html");
+
+            const result = await submitThroughIframe($form, { dataType: "json" });
+
+            assert.strictEqual(result.error[2], "fixture failure");
+          });
+
+          // Submits the form with `options` and records what each callback, ajaxError and the
+          // rejection received.
+          function settleOutcome($form, options) {
+            const seen = {};
+            const onAjaxError = function (event, xhr, settings, reason) {
+              seen.ajaxError = reason;
+            };
+            $(document).on("ajaxError.ifrlog", onAjaxError);
+
+            return new Promise(function (resolve) {
+              $form.ajaxSubmit(
+                $.extend({}, options, {
+                  error: (xhr, status, reason) => (seen.error = [status, reason]),
+                  complete: function (xhr, status) {
+                    seen.complete = status;
+                    $(document).off("ajaxError.ifrlog", onAjaxError);
+                    setTimeout(() => resolve(seen));
+                  },
+                })
               );
+              $form
+                .data("jqxhr")
+                .fail((xhr, status, reason) => (seen.rejection = [status, reason]));
+            });
+          }
 
-              assert.strictEqual(rejection[1], "parsererror");
-            }
-          );
+          it("should report a parse error to every callback, ajaxError and the rejection as the XHR transport does", async function () {
+            const iframeForm = createIframeForm("ajax/iframe-text.html");
+            const xhrForm = createIframeForm("ajax/iframe-text.html");
 
-          it.fails(
-            "should report the statusText when an error-status response also fails to parse",
-            async function () {
-              const $form = createIframeForm("ajax/iframe-error.html");
+            const viaIframe = await settleOutcome(iframeForm, { iframe: true, dataType: "json" });
+            const viaXhr = await settleOutcome(xhrForm, { dataType: "json" });
 
-              const result = await submitThroughIframe($form, { dataType: "json" });
+            const shape = (seen) => ({
+              error: seen.error[0],
+              complete: seen.complete,
+              rejection: seen.rejection[0],
+              sameReason: seen.ajaxError === seen.error[1] && seen.rejection[1] === seen.error[1],
+              reasonIsError: seen.error[1] instanceof Error,
+            });
+            assert.deepEqual(shape(viaIframe), shape(viaXhr));
+            assert.deepEqual(shape(viaIframe), {
+              error: "parsererror",
+              complete: "parsererror",
+              rejection: "parsererror",
+              sameReason: true,
+              reasonIsError: true,
+            });
+          });
 
-              assert.strictEqual(result.error[2], "fixture failure");
-            }
-          );
+          it("should report error and the statusText everywhere when an error-status response fails to parse", async function () {
+            const $form = createIframeForm("ajax/iframe-error.html");
+
+            const seen = await settleOutcome($form, { iframe: true, dataType: "json" });
+
+            assert.deepEqual(seen, {
+              error: ["error", "fixture failure"],
+              rejection: ["error", "fixture failure"],
+              ajaxError: "fixture failure",
+              complete: "error",
+            });
+          });
 
           it("should settle the upload and end the global events when success throws", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");
