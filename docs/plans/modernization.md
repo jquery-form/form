@@ -438,6 +438,11 @@ The order:
      on `main` (`jQuery 1.7.2`, `jQuery 3.7.1`, `jQuery 4.0.0`) never report and the PR stays
      blocked. Update branch protection to the new names (or a subset, such as the Chromium ones)
      when the PR's first run shows them.
+   - Done 2026-11-14: `main` requires `test` and the nine `jQuery <version> on <browser>` checks.
+     The end-to-end checks stay optional until they have a few weeks of clean runs (about
+     2026-12-05); then add the nine `e2e on jQuery <version> on <browser>` checks too.
+   - `ubuntu-latest` moved to 26.04 on 2026-11-14 and the Playwright cache restored a 24.04 WebKit
+     that could not load its libraries. The cache keys now include the runner image (`ImageOS`).
 6. **5.0** (Phase 14) after 4.6.0. Cut `release/4.x` from the 4.6.0 tag first (ADR-0002).
 
 Each release adds its column to `docs/metrics.md` and its section to the GitHub release notes.
