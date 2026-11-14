@@ -59,13 +59,16 @@ jobs:
       - name: Get Playwright version
         id: playwright
         if: env.CODE == 'true'
-        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+        # The runner image is in the key: a browser cached on one Ubuntu release can miss libraries on the next.
+        run: |
+          echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=$ImageOS" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         if: env.CODE == 'true'
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium and WebKit
         if: env.CODE == 'true'
         run: |
@@ -164,13 +167,16 @@ jobs:
       - name: Get Playwright version
         id: playwright
         if: env.CODE == 'true'
-        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+        # The runner image is in the key: a browser cached on one Ubuntu release can miss libraries on the next.
+        run: |
+          echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=$ImageOS" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         if: env.CODE == 'true'
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
       - run: npx playwright install --with-deps ${{ matrix.browser }}
         if: env.CODE == 'true'
       - name: Fetch jQuery 1.7.2
@@ -209,12 +215,15 @@ jobs:
       - run: npm ci
       - name: Get Playwright version
         id: playwright
-        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+        # The runner image is in the key: a browser cached on one Ubuntu release can miss libraries on the next.
+        run: |
+          echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=$ImageOS" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}-${{ matrix.browser }}
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Fetch jQuery 1.7.2
         if: matrix.jquery == '1.7.2'
