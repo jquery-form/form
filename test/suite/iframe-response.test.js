@@ -57,6 +57,33 @@ describe("iframe response reader", function () {
       assert.strictEqual(xhr.getResponseHeader("Content-Type"), "xml");
     });
 
+    it("should keep the markup of an HTML response that contains a textarea", function () {
+      const doc = parse("<body><textarea>inner</textarea></body>");
+      const xhr = mockXhr();
+
+      const result = readResponse(doc, xhr, { dataType: "html" }, noRetry);
+
+      assert.strictEqual(result.data, "<textarea>inner</textarea>");
+    });
+
+    it("should keep the body markup with the textarea option when no textarea is found", function () {
+      const doc = parse("<body><b>bold</b></body>");
+      const xhr = mockXhr();
+
+      const result = readResponse(doc, xhr, { dataType: "html", textarea: true }, noRetry);
+
+      assert.strictEqual(result.data, "<b>bold</b>");
+    });
+
+    it("should parse JSON from the body text when there is no pre or textarea", function () {
+      const doc = parse('<body>{"a":"x &amp; y"}</body>');
+      const xhr = mockXhr();
+
+      const result = readResponse(doc, xhr, { dataType: "json" }, noRetry);
+
+      assert.deepEqual(result.data, { a: "x & y" });
+    });
+
     it("should parse JSON embedded in a textarea", function () {
       const doc = parse('<textarea status="202">{"a":1}</textarea>');
       const xhr = mockXhr();

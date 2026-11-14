@@ -8,14 +8,15 @@ const composer = read("composer.json");
 const registry = read("form.jquery.json");
 
 const distFiles = ["dist/jquery.form.js", "dist/jquery.form.mjs", "dist/jquery.form.min.js"];
-const license = "(LGPL-2.1+ OR MIT)";
+const license = "(LGPL-2.1-or-later OR MIT)";
 
 describe("when the package manifests are read", () => {
   it("should point every entry point at a built dist file", () => {
     const entries = [
       pkg.main,
       pkg.module,
-      pkg.browser,
+      pkg.jsdelivr,
+      pkg.unpkg,
       bower.main,
       registry.main,
       registry.browser,
@@ -31,11 +32,20 @@ describe("when the package manifests are read", () => {
   it("should keep the classic build as main and the module build as module", () => {
     expect(pkg.main).toBe("dist/jquery.form.js");
     expect(pkg.module).toBe("dist/jquery.form.mjs");
-    expect(pkg.browser).toBe("dist/jquery.form.min.js");
+  });
+
+  it("should leave bundlers on module and main and serve the minified build from CDNs", () => {
+    expect(pkg).not.toHaveProperty("browser");
+    expect(pkg.jsdelivr).toBe("dist/jquery.form.min.js");
+    expect(pkg.unpkg).toBe("dist/jquery.form.min.js");
   });
 
   it("should publish the entry points through the files list", () => {
     expect(pkg.files).toContain("dist");
+  });
+
+  it("should publish both licenses of the dual license", () => {
+    expect(pkg.files).toContain("LICENSE-MIT");
   });
 
   it("should agree on the version with the registry manifest and every dist banner", () => {
@@ -50,7 +60,7 @@ describe("when the package manifests are read", () => {
     expect(pkg.license).toBe(license);
     expect(bower.license).toBe(license);
     expect(composer.license).toBe(license);
-    expect(registry.licenses.map((entry) => entry.type)).toEqual(["LGPL-2.1+", "MIT"]);
+    expect(registry.licenses.map((entry) => entry.type)).toEqual(["LGPL-2.1-or-later", "MIT"]);
   });
 
   it("should agree on the jQuery dependency range", () => {

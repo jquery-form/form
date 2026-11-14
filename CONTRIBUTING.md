@@ -3,7 +3,7 @@
 Want to contribute to jQuery Form? That's great! Contributions are most welcome!
 Here are a couple of guidelines that will help you contribute. Before we get started: Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
 
-#### Overview
+## Overview
 
 * [Contribution workflow](#contribution-workflow)
 * [Branching and releases](#branching-and-releases)
@@ -16,33 +16,37 @@ Here are a couple of guidelines that will help you contribute. Before we get sta
 ## Contribution workflow
 
 1. Fork the repository in GitHub with the `Fork` button.
-2. Branch from **`main`** into a short-lived topic branch (e.g. `new-feature`):  
-  `git checkout -b new-feature`
+2. Branch from **`main`** into a short-lived topic branch (e.g. `new-feature`):
+
+   ```shell
+   git checkout -b new-feature
+   ```
+
 3. Make your feature addition or bug fix.
-4. After setting up your [testing enviroment](#testing), run the tests:
+4. After setting up your [testing environment](#testing), run the tests:
 
-  ```shell
-  npm test
-  ```
+   ```shell
+   npm test
+   ```
 
-  If the tests all pass, move on to step 5.
+   If the tests all pass, move on to step 5.
 
 5. Open a pull request **against `main`**. Topic branches only—do not PR into long-lived integration branches that no longer exist (`develop`, etc.).
-  * Please make sure all of your commits are atomic (one feature per commit).
-  * Use sensible commit messages.
-    * Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
-    ```shell
-    $ git commit -m "A brief summary of the commit"
-    >
-    > A paragraph describing what changed and its impact."
-    ```
-  * If your PR fixes a separate issue number, include it in the commit message.
+   * Please make sure all of your commits are atomic (one feature per commit).
+   * Use sensible commit messages.
+     * Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
+
+       ```shell
+       git commit -m "A brief summary of the commit" -m "A paragraph describing what changed and its impact."
+       ```
+
+   * If your PR fixes a separate issue number, include it in the commit message.
 
 ### Things to keep in mind
 
 * Smaller PRs are likely to be merged more quickly than bigger changes.
 * Every merge needs maintainer review.
-* This project is using [Semantic Versioning 2.0.0](http://semver.org/)
+* This project is using [Semantic Versioning 2.0.0](https://semver.org/)
 
 ## Branching and releases
 
@@ -60,18 +64,43 @@ jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/)
 1. Install the [Node.js](https://nodejs.org/) version in `.nvmrc` (with nvm: `nvm use`).
 2. Install dependencies and the test browser:
 
-  ```shell
-  npm ci
-  npx playwright install chromium
-  ```
+   ```shell
+   npm ci
+   npx playwright install chromium
+   ```
 
 3. Run lint, the build, and the tests:
 
-  ```shell
-  npm test
-  ```
+   ```shell
+   npm test
+   ```
 
 Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
+
+### End-to-end tests
+
+`npm run test:e2e` runs [Playwright Test](https://playwright.dev/) against the built `dist/jquery.form.js` (run `npm run build` first) on Chromium and WebKit. A small Node server (`test/e2e/server.mjs`) serves the fixture page and records every request the plugin sends, through each transport (urlencoded and FormData XHR, the iframe upload). Each test submits the same form natively and through the plugin, and the two requests must match after parsing, apart from the known differences listed in `test/shared/oracle-forms.js` and `test/e2e/harness.js`. `npm test` does not run them.
+
+It first tests the package as npm would publish it: `scripts/pack-fixture.mjs` runs `npm pack` and installs the tarball into fixture projects under `.pack/` (one per jQuery version, installed from the registry or npm's cache). `test/e2e/published-node.test.mjs` (`node --test`) loads it by name from CommonJS and ES modules in Node, with jsdom as the window, and `test/e2e/published.spec.mjs` loads it in the browser by script tag (plain and minified), RequireJS and an import map, then posts a form over XHR and uploads a file through the iframe. Set `JQUERY_FORM_TARBALL` to test a tarball you packed elsewhere.
+
+Set `JQUERY_FILE` to test another jQuery build, as for the suite. `npm run test:e2e:docker` runs them in Docker on all three browsers, including Firefox.
+
+### Running tests in Docker
+
+Playwright's Firefox build does not start on some macOS versions, and `npm test` covers only Chromium and WebKit. To run the suite on Firefox (or on all three browsers under Linux), use Docker. The scripts use the Playwright image that matches the `playwright` version in `package.json` and leave your local `node_modules` untouched:
+
+```shell
+npm run test:firefox   # the suite on Firefox
+npm run test:docker    # the suite on Chromium, WebKit and Firefox
+```
+
+`scripts/test-docker.sh` passes any arguments on to `vitest run` (or to `playwright test` after `--e2e`). To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=.jquery/jquery-1.7.2.js npm run test:firefox` (fetch it first with `scripts/fetch-jquery.sh 1.7.2`).
+
+Node and `node_modules` are cached in Docker volumes (`jquery-form-node`, and `jquery-form-node-modules-<hash>` for each `package-lock.json`). To clear them:
+
+```shell
+docker volume rm jquery-form-node $(docker volume ls -q --filter name=jquery-form-node-modules-)
+```
 
 ### Git blame
 

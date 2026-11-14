@@ -273,6 +273,27 @@ describe("form", function () {
         assert.strictEqual(calls, 0);
       });
 
+      it("should keep the controls of a nested form when a container is serialized semantically", function () {
+        const $div = $(
+          '<div><input name="loose" value="1"><form><input name="inner" value="2"></form></div>'
+        ).appendTo("#main");
+
+        const names = $div.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["loose", "inner"]);
+      });
+
+      it("should not add controls that name another form when a container with an id is serialized semantically", function () {
+        const $div = $('<div id="semantic-container"><input name="a" value="1"></div>').appendTo(
+          "#main"
+        );
+        $('<input name="elsewhere" value="2" form="another-form">').appendTo("#main");
+
+        const names = $div.formToArray(true).map((field) => field.name);
+
+        assert.deepEqual(names, ["a"]);
+      });
+
       it("should serialize only the first form when the selection holds several forms", function () {
         const $forms = $(
           '<form><input name="first" value="1"></form><form><input name="second" value="2"></form>'
@@ -1125,6 +1146,16 @@ describe("form", function () {
   });
 
   describe("formSerialize", function () {
+    it("should encode a lone surrogate as U+FFFD like a native submission", function () {
+      const $form = $('<form><input name="q"><input name="ok" value="1"></form>');
+      $form.find("[name=q]").val("a\uD800b\uDC00");
+      $form.find("[name=ok]").attr("name", "n\uDBFF");
+
+      const s = $form.formSerialize();
+
+      assert.equal(s, "q=a%EF%BF%BDb%EF%BF%BD&n%EF%BF%BD=1");
+    });
+
     it("should produce one query-string pair per successful field", function () {
       const $form = $("#form1");
 
@@ -1163,14 +1194,12 @@ describe("form", function () {
       assert.strictEqual(serialized, "first=1");
     });
 
-    it("should encode spaces per jQuery version", function () {
+    it("should encode spaces as + on every jQuery version, as a native submission does", function () {
       const $form = $('<form><input name="a" value="x y"></form>');
 
       const serialized = $form.formSerialize();
 
-      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
-      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
-      assert.strictEqual(serialized, `a=x${space}y`);
+      assert.strictEqual(serialized, "a=x+y");
     });
 
     it("should order the clicked image in place only when semantic is true", function () {
@@ -1214,6 +1243,26 @@ describe("form", function () {
         ];
 
         assert.deepEqual(results, ["over", "a=over", ["over"]]);
+      } finally {
+        $.fieldValue = saved;
+      }
+    });
+
+    it("should skip a control for which an overriding $.fieldValue returns undefined", function () {
+      const $form = $('<form><input name="a" value="1"></form>');
+      const saved = $.fieldValue;
+      $.fieldValue = function () {
+        return undefined;
+      };
+
+      try {
+        const results = [
+          $form.formToArray(),
+          $form.find("input").fieldSerialize(),
+          $form.find("input").fieldValue(),
+        ];
+
+        assert.deepEqual(results, [[], "", []]);
       } finally {
         $.fieldValue = saved;
       }
@@ -1421,6 +1470,14 @@ describe("form", function () {
   });
 
   describe("fieldSerialize", function () {
+    it("should encode a lone surrogate as U+FFFD like a native submission", function () {
+      const $input = $('<input name="q">').val("\uDC00x\uD800");
+
+      const s = $input.fieldSerialize();
+
+      assert.equal(s, "q=%EF%BF%BDx%EF%BF%BD");
+    });
+
     // Shared Assert step: the serialized pairs match `expected`, in order.
     function assertPairs(serialized, expected) {
       const result = serialized.split("&");
@@ -1521,9 +1578,7 @@ describe("form", function () {
 
       const result = $fields.fieldSerialize();
 
-      // jQuery before 3.0 encodes a space as "+" in $.param; later versions use "%20".
-      const space = Number($.fn.jquery.split(".")[0]) < 3 ? "+" : "%20";
-      assert.strictEqual(result, `choice=a${space}b&choice=c`);
+      assert.strictEqual(result, "choice=a+b&choice=c");
     });
 
     it("should skip unnamed fields when successful is false", function () {

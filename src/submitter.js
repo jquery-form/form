@@ -1,4 +1,4 @@
-import { closestByTag, formMember } from "./form-members.js";
+import { closestByTag, formMember, isDisabled } from "./form-members.js";
 import jQuery from "jquery";
 
 // The submitter: the button that submitted a form, captured from ajaxForm's clicks. It is kept in
@@ -121,7 +121,8 @@ export function submitterFields(form) {
   var sub = submitterOf(form);
   var el = sub && sub.el;
 
-  if (el && el.name && !el.disabled) {
+  // a disabled button is not sent, also when a disabled fieldset disables it
+  if (el && el.name && !isDisabled(el)) {
     fields[el.name] = el.value;
     if (el.type === "image") {
       fields[el.name + ".x"] = sub.x;

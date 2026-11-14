@@ -1,7 +1,8 @@
-import { callFormMethod, formMember, isElement, tagName } from "./form-members.js";
+import { callFormMethod, formMember, isDisabled, isElement, tagName } from "./form-members.js";
+import { submitterElement, submitterOf } from "./submitter.js";
+import { deprecate } from "./diagnostics.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
-import { submitterOf } from "./submitter.js";
 
 // Successful controls: which controls of a form are sent, and as which name/value fields
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
@@ -12,14 +13,6 @@ var rCR = /\r/g;
 
 // Listed form elements that are never submitted.
 var rUnsubmittable = /^(?:fieldset|object|output)$/;
-
-/**
- * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
- * selector matching, only its own disabled property is read.
- */
-function isDisabled(el) {
-  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
-}
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
@@ -103,13 +96,101 @@ export function valueOf(el) {
 }
 
 /**
+ * The plugin's own $.fieldValue: the value of a control, or null when `successful` is true or
+ * missing and the control is not sent.
+ */
+export function fieldValue(el, successful) {
+  var required = typeof successful === "undefined" || successful;
+
+  if (required && !isSuccessful(el, submitterElement(el.form))) {
+    return null;
+  }
+
+  return valueOf(el);
+}
+
+// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
+// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
+export function deprecateFieldValueOverride() {
+  if (jQuery.fieldValue !== fieldValue) {
+    deprecate(
+      "fieldValue-override",
+      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
+    );
+  }
+}
+
+/**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
+// A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
+var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+
+export function wellFormed(value) {
+  return typeof value === "string"
+    ? value.replace(loneSurrogate, function (match, before) {
+        return (before || "") + "\uFFFD";
+      })
+    : value;
+}
+
+// Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
+function setKey(object, key, value) {
+  Object.defineProperty(object, key, {
+    value: value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Data for $.param (the data option or extraData) with lone surrogates in its keys and string
+ * values made well formed. Arrays and objects are walked as $.param walks them, inherited keys
+ * included; they are copied only when something changes.
+ */
+export function wellFormedData(data) {
+  var isArray = Array.isArray(data);
+
+  if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
+    return wellFormed(data);
+  }
+
+  var copy = isArray ? [] : {};
+  var changed = false;
+
+  if (isArray) {
+    for (var i = 0; i < data.length; i++) {
+      copy[i] = wellFormedData(data[i]);
+      changed = changed || copy[i] !== data[i];
+    }
+  } else {
+    for (var key in data) {
+      var name = wellFormed(key);
+      var value = wellFormedData(data[key]);
+
+      changed = changed || name !== key || value !== data[key];
+      setKey(copy, name, value);
+    }
+  }
+
+  return changed ? copy : data;
+}
+
+// jQuery 3 dropped $.param's "+" for a space; a native submission still sends "+". Only a space
+// encodes as %20, since a literal % encodes as %25.
+export function urlencode(fields, traditional) {
+  return jQuery.param(urlencodedFields(fields), traditional).replace(/%20/g, "+");
+}
+
 export function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    return field.type === "file" && typeof field.value !== "string"
-      ? { name: field.name, value: field.value.name }
-      : field;
+    var value =
+      field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
+    var name = wellFormed(field.name);
+    value = wellFormed(value);
+
+    return name === field.name && value === field.value ? field : { name: name, value: value };
   });
 }
 
@@ -259,6 +340,8 @@ export function createSuccessfulControls(feature) {
     if (!form) {
       return collected;
     }
+
+    deprecateFieldValueOverride();
 
     var els = controlsOf(form, semantic);
 

@@ -1,12 +1,13 @@
 import jQuery from "jquery";
 import { keepContext } from "./options.js";
+import { wellFormedData } from "./successful-controls.js";
 
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
 var $ = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 export function deepSerialize(extraData, traditional) {
-  var param = $.param(extraData, traditional);
+  var param = $.param(wellFormedData(extraData), traditional);
   var serialized = param ? param.split("&") : [];
   var len = serialized.length;
   var result = [];

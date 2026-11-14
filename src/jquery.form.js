@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 4.5.0
+ * version: 4.6.0
  * Requires jQuery v1.7.2 or later
  * Project repository: https://github.com/jquery-form/form
 
@@ -23,9 +23,9 @@ import { ajaxForm, ajaxFormUnbind } from "./ajax-form.js";
 import { callFormMethod, tagName } from "./form-members.js";
 import {
   createSuccessfulControls,
-  isSuccessful,
-  urlencodedFields,
-  valueOf,
+  deprecateFieldValueOverride,
+  fieldValue,
+  urlencode,
 } from "./successful-controls.js";
 import { deprecate, deprecateOldJQuery, log } from "./diagnostics.js";
 import { sendAjax, sendFormData } from "./xhr-transport.js";
@@ -34,7 +34,6 @@ import { createSubmission } from "./submission.js";
 import { formAttribute } from "./form-attributes.js";
 import jQuery from "jquery";
 import { submitOptions } from "./options.js";
-import { submitterElement } from "./submitter.js";
 
 (function ($) {
   "use strict";
@@ -202,7 +201,7 @@ import { submitterElement } from "./submitter.js";
    */
   $.fn.formSerialize = function (semantic) {
     // hand off to jQuery.param for proper encoding
-    return $.param(urlencodedFields(this.formToArray(semantic)));
+    return urlencode(this.formToArray(semantic));
   };
 
   /**
@@ -211,6 +210,8 @@ import { submitterElement } from "./submitter.js";
    */
   $.fn.fieldSerialize = function (successful) {
     var a = [];
+
+    deprecateFieldValueOverride();
 
     this.each(function () {
       var n = this.name;
@@ -232,7 +233,7 @@ import { submitterElement } from "./submitter.js";
     });
 
     // hand off to jQuery.param for proper encoding
-    return $.param(a);
+    return urlencode(a);
   };
 
   /**
@@ -295,15 +296,7 @@ import { submitterElement } from "./submitter.js";
   /**
    * Returns the value of the field element.
    */
-  $.fieldValue = function (el, successful) {
-    var required = typeof successful === "undefined" || successful;
-
-    if (required && !isSuccessful(el, submitterElement(el.form))) {
-      return null;
-    }
-
-    return valueOf(el);
-  };
+  $.fieldValue = fieldValue;
 
   /**
    * Clears the form data. Takes the following actions on the form's input fields:

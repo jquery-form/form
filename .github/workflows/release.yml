@@ -28,13 +28,17 @@ jobs:
       - run: npm ci
       - name: Get Playwright version
         id: playwright
-        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+        # The runner image is in the key: a browser cached on one Ubuntu release can miss libraries on the next.
+        run: |
+          echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=$ImageOS" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - run: npx playwright install chromium
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}
+      # npm test runs the suite in Chromium and WebKit; WebKit needs its system libraries.
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm test
       - name: Check committed dist matches the build
         run: git diff --exit-code -- dist
