@@ -612,7 +612,7 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
 
 ## Phase 14: 5.0 (breaking)
 
-Status (local `phase-14` branch): steps 0-7 are done; step 8 (final verification) remains. Nothing is pushed.
+Status (local `phase-14` branch): steps 0-8 are done, apart from the local CodeQL canary (see step 8 below). Nothing is pushed.
 
 Rebased once onto `main` after the 4.6.0 merge (B3), on 2026-11-26; the old tip is
 `refs/backup/pre-4.6.0-rebase/phase-14`. 47 commits remain: the metrics dedupe commit came out empty,
@@ -621,8 +621,7 @@ behavior they pin: an HTML string passed to `selectorOption` throws a selector s
 matching nothing, and the iframe read-error test stubs `contentDocument` now that `getDoc` reads only
 that. The `.git-blame-ignore-revs` entry for the trailing-comma sweep points at its new SHA.
 After the rebase, `npm test`, the suite on jQuery 3.5.0, 3.7.1 and 4.0.0 in Chromium, WebKit and
-Firefox, and the end-to-end tests pass. Step 8 still has to refresh the 5.0 metrics column (the first
-Vitest run of `npm test` now has 1131 tests, against 1117 recorded).
+Firefox, and the end-to-end tests pass.
 
 Work runs on the local branch `phase-14`, in the worktree `form-phase-14`. The branch is guarded like `phase-13` and is not pushed. After v4.6.0 is tagged and merged to `main`, rebase `phase-14` onto `main` once (B3). The migration guide `docs/migrating-to-5.md` gets an entry for each change, written in the same commit as the change (R3). Release as `5.0.0-beta.N` on the `next` dist-tag, at least two weeks before 5.0.0, and cut `release/4.x` from v4.6.0 just before the merge (R1, R2).
 
@@ -734,7 +733,21 @@ Steps, one sub-agent per step, each reviewed by the main session before the next
 7. Docs and drafts: README, `docs/options.md`, `docs/api.md` (the I6 iframe feedback note, the N11 deliberate quirks), the complete guide, the notes-folder drafts (revised #629 body, I6 texts, 5.0 beta release notes), the "5.0" metrics column and the plan status.
 8. Final verification: all checks on the tip and the W3 run against 4.6.0.
 
-Steps 0-7 are done; step 8 remains.
+Steps 0-8 are done. Step 8 (2026-11-26, on the rebased tip):
+
+- All per-commit checks pass: lint, Prettier, build with `dist` unchanged, both Vitest runs with 100%
+  coverage, the suite on jQuery 3.5.0, 3.7.1 and 4.0.0 in Chromium, WebKit and Firefox, and
+  `npm run test:e2e` on the same nine combinations.
+- W3: the 5.0 suite against the 4.6.0 build (`v4.6.0` source with the 5.0 tests) fails 123 tests,
+  and `diagnostics.test.js` does not load (it imports `requireJQuery35`). The set is the same on all
+  three jQuery versions, and every failure maps to a guide entry. The 70 oracle failures come from
+  the six allowlist classes 5.0 drops (CHARSET, DIRNAME, IMG-VALUE, IMG-UNNAMED, IMG-ORDER, SEM-ORDER)
+  and the removed `semantic` comparison. The other 986 tests pass on both builds: kept contracts.
+- Stryker over `src/*.js` on jQuery 3.7.1: 95.51% (1969 mutants, 88 survived), above the 94.34% floor.
+- The 5.0 metrics column is re-measured.
+- Not run: the local CodeQL canary. The CodeQL CLI and `phase-12-codeql-canary.sh` are no longer in
+  the notes folder. The custom queries in `.github/codeql/jquery-form-queries` run in the CodeQL
+  workflow on the 5.0 PR, or the CLI can be downloaded again to run them before pushing.
 
 Before the 5.0 release:
 
