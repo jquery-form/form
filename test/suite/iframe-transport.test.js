@@ -391,11 +391,30 @@ describe("form", function () {
       it("should clear a pending timeout after a successful response", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
 
-        const result = await submitThroughIframe($form, { dataType: "text", timeout: 1000 });
-        await new Promise((resolve) => setTimeout(resolve, 20));
+        // Far longer than any response takes, so the upload cannot time out on a slow runner.
+        const timeout = 60000;
+        const setSpy = vi.spyOn(window, "setTimeout");
+        const clearSpy = vi.spyOn(window, "clearTimeout");
+
+        let result;
+        let started;
+        let cleared;
+        try {
+          result = await submitThroughIframe($form, { dataType: "text", timeout: timeout });
+          const index = setSpy.mock.calls.findIndex((call) => call[1] === timeout);
+          started = index !== -1;
+          cleared =
+            started &&
+            clearSpy.mock.calls.some((call) => call[0] === setSpy.mock.results[index].value);
+        } finally {
+          setSpy.mockRestore();
+          clearSpy.mockRestore();
+        }
 
         assert.deepEqual(result.events, ["success", "complete"]);
         assert.strictEqual(result.xhr.error, undefined);
+        assert.ok(started, "the upload started its timeout");
+        assert.ok(cleared, "the timeout was cleared");
       });
 
       it("should report emulated HTTP errors and complete once", async function () {
