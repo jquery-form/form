@@ -859,21 +859,27 @@ describe("form", function () {
           const completions = [];
           let request;
 
-          $form.ajaxSubmit({
-            iframe: true,
-            dataType: "text",
-            beforeSend: (xhr) => {
-              request = xhr;
-            },
-            dataFilter: (data) => {
-              request.abort();
-              return data;
-            },
-            complete: (_xhr, status) => completions.push(status),
+          await new Promise((resolve) => {
+            $form.ajaxSubmit({
+              iframe: true,
+              dataType: "text",
+              beforeSend: (xhr) => {
+                request = xhr;
+              },
+              dataFilter: (data) => {
+                request.abort();
+                return data;
+              },
+              complete: (_xhr, status) => {
+                completions.push(status);
+                resolve();
+              },
+            });
           });
-          await new Promise((resolve) => setTimeout(resolve, 150));
+          await new Promise((resolve) => setTimeout(resolve, 20));
 
           assert.deepEqual(completions, ["aborted"]);
+          assert.strictEqual($form.data("jqxhr").state(), "rejected");
         });
 
         it("should prefer an IE XMLDocument island as the XML response", async function () {
