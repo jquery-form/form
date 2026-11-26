@@ -41,6 +41,17 @@ describe("options", function () {
       assert.strictEqual($matched.length, 1);
     });
 
+    it("should look a selector up in the given document, not the page", function () {
+      const other = document.implementation.createHTMLDocument("other");
+      $(other.body).append('<iframe class="other-frame"></iframe>');
+      $('<iframe class="other-frame"></iframe>').appendTo("#main");
+
+      const $matched = selectorOption(".other-frame", other);
+
+      assert.strictEqual($matched.length, 1);
+      assert.strictEqual($matched[0].ownerDocument, other);
+    });
+
     it("should wrap an element as given", function () {
       const frame = document.createElement("iframe");
 
