@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Version updates for the dev tooling only. The jQuery dev dependencies (jquery, jquery4, ...)
+  # are pinned on purpose: the test matrix runs those exact releases.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-type: development
+    ignore:
+      - dependency-name: "jquery*"
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      dev-dependencies:
+        dependency-type: development

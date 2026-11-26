@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in jQuery Form does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search the [open issues](https://github.com/jquery-form/form/issues) first, and see [Reporting a bug](https://github.com/jquery-form/form/blob/main/CONTRIBUTING.md#reporting-a-bug).
+        Do not report security issues here; see the [security policy](https://github.com/jquery-form/form/blob/main/SECURITY.md).
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The form markup, the options you pass to `ajaxForm` or `ajaxSubmit`, and what you do on the page.
+      render: html
+    validations:
+      required: true
+  - type: input
+    id: demo
+    attributes:
+      label: Demonstration
+      description: A link to a minimal example, for instance on [JSFiddle](https://jsfiddle.net/) or [CodePen](https://codepen.io/).
+  - type: input
+    id: plugin-version
+    attributes:
+      label: jQuery Form version
+      placeholder: "4.5.0"
+    validations:
+      required: true
+  - type: input
+    id: jquery-version
+    attributes:
+      label: jQuery version
+      placeholder: "3.7.1"
+    validations:
+      required: true
+  - type: input
+    id: browsers
+    attributes:
+      label: Browsers and versions
+      placeholder: "Firefox 140, Safari 26"
+    validations:
+      required: true

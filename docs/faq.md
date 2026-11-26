@@ -13,7 +13,7 @@ jQuery Form Plugin is compatible with jQuery v1.7.2 and later. `main` is tested 
 
 #### Is jQuery Form Plugin fast? Does it serialize forms accurately?
 
-Yes! See our [comparison page](http://malsup.com/jquery/form/comp/) for a look at how jQuery Form Plugin compares to other libraries (including Prototype and dojo).
+Yes. It follows the HTML rules for which controls are submitted (see [Why aren't all my input values posted?](#why-arent-all-my-input-values-posted)), and the test suite compares what it sends with the browser's own `FormData` on generated forms and with what a server receives from a native submit.
 
 #### What is the easiet way to use jQuery Form Plugin?
 
@@ -28,12 +28,12 @@ There are two main differences between these methods:
 
 #### How can I cancel a form submit?
 
-You can prevent a form from being submitted by adding a 'beforeSubmit' callback function and returning false from that function. See the [Code Samples](http://malsup.com/jquery/form/#ajaxForm) page for an example.
+You can prevent a form from being submitted by adding a 'beforeSubmit' callback function and returning false from that function. See the [validation examples](examples.md#validation).
 
 #### Is there a unit test suite for jQuery Form Plugin?
 
 Yes! jQuery Form Plugin has an extensive set of tests that are used to validate its functionality.  
-[Run unit tests](http://malsup.com/jquery/form/test/)
+See [Testing](https://github.com/jquery-form/form/blob/main/CONTRIBUTING.md#testing) in the contributing guide to run them.
 
 #### Does jQuery Form Plugin support file uploads?
 
@@ -41,8 +41,8 @@ Yes!
 
 #### Why aren't all my input values posted?
 
-jQuery Form serialization adheres closely to the HTML spec. Only [successful controls](https://www.w3.org/TR/html5/forms.html#constructing-form-data-set) are valid for submission.
+jQuery Form serialization adheres closely to the HTML spec. Only [successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set) are valid for submission.
 
 #### How do I display upload progress information?
 
-[Demo](view-source:malsup.com/jquery/form/progress.html)
+Pass an [`uploadProgress`](options.md#uploadprogress) callback. It receives the progress event, the bytes sent, the total and the percentage, as the upload proceeds. The iframe transport (`iframe: true`) cannot report progress.

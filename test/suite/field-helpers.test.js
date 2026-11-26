@@ -1,6 +1,12 @@
 import { assert, describe, it } from "vitest";
 import pluginExport from "../../src/jquery.form.js";
-import { resetFixture, selectFiles, withAjaxStub, withUserAgent } from "./helpers.js";
+import {
+  countHtmlParsed,
+  resetFixture,
+  selectFiles,
+  withAjaxStub,
+  withUserAgent,
+} from "./helpers.js";
 
 // Records the change and input events that reach `root` while `run` executes.
 function recordFieldEvents(root, run) {
@@ -226,6 +232,20 @@ describe("form", function () {
       assert.strictEqual($label.find("input").val(), "nested");
     });
 
+    it("should reset every selected element after a label or a container", function () {
+      const $label = $('<label><input value="in label"></label>').appendTo("#main");
+      const $div = $('<div><input value="in div"></div>').appendTo("#main");
+      const $last = $('<input value="last">').appendTo("#main");
+      $("#main input").val("changed");
+
+      $label.add($div).add($last).resetForm();
+
+      assert.deepEqual(
+        [$label.find("input").val(), $div.find("input").val(), $last.val()],
+        ["in label", "in div", "last"]
+      );
+    });
+
     // #600: the document and text nodes have no tag name.
     it("should reset the fields of a document and skip text nodes", function () {
       const $input = $('<input value="default">').appendTo("#main").val("changed");
@@ -245,9 +265,12 @@ describe("form", function () {
         window.labelPayload = 0;
         const $label = $("<label>").attr("for", value).appendTo("#main");
 
-        $label.resetForm();
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        const parsed = await countHtmlParsed("window.labelPayload", async () => {
+          $label.resetForm();
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
 
+        assert.strictEqual(parsed, 0);
         assert.strictEqual(window.labelPayload, 0);
       });
     });

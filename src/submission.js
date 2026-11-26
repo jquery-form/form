@@ -1,8 +1,8 @@
 import { deprecate, log } from "./diagnostics.js";
+import { keepContext, selectorOption } from "./options.js";
+import { urlencode, wellFormedData } from "./successful-controls.js";
 import { assertRealParent } from "./form-members.js";
 import jQuery from "jquery";
-import { keepContext } from "./options.js";
-import { urlencodedFields } from "./successful-controls.js";
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
 // { form, $form, fields, controls, options, method, traditional }. `options` is the object the
@@ -84,7 +84,7 @@ export function createSubmission(feature, forms, serialization) {
 
     options.extraData = optionsData;
 
-    return $.param(optionsData, traditional);
+    return $.param(wellFormedData(optionsData), traditional);
   }
 
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.
@@ -248,7 +248,7 @@ export function createSubmission(feature, forms, serialization) {
     if (options.requestFormat === "json") {
       jsonBody(options, fields);
     } else {
-      encode(options, $.param(urlencodedFields(fields), traditional), qx);
+      encode(options, urlencode(fields, traditional), qx);
     }
 
     return {
@@ -291,7 +291,7 @@ export function createSubmission(feature, forms, serialization) {
       callbacks.push(function (data, textStatus, jqXHR) {
         var successArguments = arguments,
           fn = options.replaceTarget ? "replaceWith" : "html",
-          $target = $(options.target);
+          $target = selectorOption(options.target);
 
         // Only a string response is inserted. jQuery has already parsed a JSON or XML response,
         // and inserting it would parse each of its strings as HTML.

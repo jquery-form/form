@@ -10,9 +10,9 @@ import {
 import { closestByTag, formMember } from "./form-members.js";
 import { deprecate, log } from "./diagnostics.js";
 import { getDoc, readResponse } from "./iframe-response.js";
+import { keepContext, selectorOption } from "./options.js";
 import { createLifecycle } from "./iframe-lifecycle.js";
 import jQuery from "jquery";
-import { keepContext } from "./options.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // for file uploads without the File API or when the iframe option asks for it.
@@ -56,7 +56,7 @@ export function createIframeTransport(hasProp, forms) {
     var $io, n;
 
     if (s.iframeTarget) {
-      $io = $(s.iframeTarget, ownerDocument);
+      $io = selectorOption(s.iframeTarget, ownerDocument);
       n = $io.attr("name");
       if (!n) {
         $io.attr("name", id);

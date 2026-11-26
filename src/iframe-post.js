@@ -2,6 +2,7 @@ import { callFormMethod } from "./form-members.js";
 import { deepSerialize } from "./xhr-transport.js";
 import jQuery from "jquery";
 import { submitterFields } from "./submitter.js";
+import { wellFormed } from "./successful-controls.js";
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
 // posting and restored after, and the native submit.
@@ -38,7 +39,7 @@ export function addSubmitterFields(s, form) {
 
   for (var n in fields) {
     s.extraData = s.extraData || {};
-    s.extraData[n] = fields[n];
+    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
   }
 }
 
@@ -127,7 +128,7 @@ export function addExtraInputs(form, ownerDocument, extraData, traditional, adde
           hasOwn.call(extraData[n], "name") &&
           hasOwn.call(extraData[n], "value")
         ) {
-          addHiddenInput(extraData[n].name, extraData[n].value);
+          addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
           var single = {};

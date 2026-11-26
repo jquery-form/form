@@ -519,7 +519,7 @@ describe("form", function () {
         const result = submitTransport(upload.$form);
 
         assert.strictEqual(result.transport, "plain");
-        assert.strictEqual(result.settings.data, $.param({ title: "quarterly report" }));
+        assert.strictEqual(result.settings.data, "title=quarterly+report");
       });
 
       it("should use the FormData transport when a descendant file input belongs to another form", function () {
@@ -1047,6 +1047,48 @@ describe("form", function () {
         ]);
       });
 
+      it("should send lone surrogates in extraData keys and values as U+FFFD on an upload", function () {
+        const upload = uploadForm();
+
+        const body = uploadBody(
+          captureAjaxOptions(upload.$form, {
+            extraData: {
+              "k\uD800": "v\uDC00",
+              list: ["a\uDBFF"],
+              nested: { "n\uDC00": "x" },
+              pair: { name: "p\uD800", value: "q" },
+            },
+          })
+        );
+
+        assert.deepEqual(Array.from(body.entries()).slice(2), [
+          ["k\uFFFD", "v\uFFFD"],
+          ["list[]", "a\uFFFD"],
+          ["nested[n\uFFFD]", "x"],
+          ["pair[name]", "p\uFFFD"],
+          ["pair[value]", "q"],
+        ]);
+      });
+
+      it("should send a lone surrogate in an object data option as U+FFFD on an upload", function () {
+        const upload = uploadForm();
+
+        const body = uploadBody(captureAjaxOptions(upload.$form, { data: { "k\uD800": "v" } }));
+
+        assert.deepEqual(Array.from(body.entries()).slice(2), [["k\uFFFD", "v"]]);
+      });
+
+      it("should send inherited extra data properties with a lone surrogate on an upload", function () {
+        const upload = uploadForm();
+        const data = Object.create({ inherited: "a\uD800" });
+        data.own = "1";
+
+        const body = uploadBody(captureAjaxOptions(upload.$form, { data: data }));
+
+        assert.strictEqual(body.get("own"), "1");
+        assert.strictEqual(body.get("inherited"), "a\uFFFD");
+      });
+
       it("should not append extra data when formData is provided", function () {
         const upload = uploadForm();
         const custom = new FormData();
@@ -1217,7 +1259,7 @@ describe("form", function () {
 
         assert.strictEqual(
           settings.url.split("?")[1],
-          $.param({ title: "quarterly report", document: "report.txt" })
+          "title=quarterly+report&document=report.txt"
         );
       });
     });

@@ -5,258 +5,91 @@ The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms
 
 No special markup is needed, just a normal form. Submitting a form with AJAX doesn't get any easier than this!
 
+**Documentation:** [jquery-form.github.io/form](https://jquery-form.github.io/form/), with the [API](https://jquery-form.github.io/form/api/), the [options](https://jquery-form.github.io/form/options/) and [examples](https://jquery-form.github.io/form/examples/).
+
+## Installation
+```sh
+npm install jquery-form
+```
+
+jQuery is a dependency of the package and is installed with it.
+
+## Download
+* **npm:** [jquery-form](https://www.npmjs.com/package/jquery-form). `dist/jquery.form.min.js` is the minified build, `dist/jquery.form.js` the readable one.
+* **GitHub:** each version's built files are in the `dist` folder of its tag, such as [`v4.6.0/dist`](https://github.com/jquery-form/form/tree/v4.6.0/dist); see the [releases](https://github.com/jquery-form/form/releases). The `dist` folder on `main` holds unreleased code.
+
+### CDN
+From jsDelivr:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.6.0/dist/jquery.form.min.js" integrity="sha384-6nWaJ1CxEQhUyWbY8mCCA3pAsWr1hPIee2byhQUP4SN9ydEguzTY7hVQV/NVNgiQ" crossorigin="anonymous"></script>
+```
+
+Or from cdnjs:
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.6.0/jquery.form.min.js" integrity="sha384-6nWaJ1CxEQhUyWbY8mCCA3pAsWr1hPIee2byhQUP4SN9ydEguzTY7hVQV/NVNgiQ" crossorigin="anonymous"></script>
+```
+
+## Usage
+With a script tag, load the plugin after jQuery:
+
+```html
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.6.0/dist/jquery.form.min.js" integrity="sha384-6nWaJ1CxEQhUyWbY8mCCA3pAsWr1hPIee2byhQUP4SN9ydEguzTY7hVQV/NVNgiQ" crossorigin="anonymous"></script>
+```
+
+With a bundler, importing the module registers the plugin on the jQuery that `import "jquery"` resolves to, so `jquery` must be importable:
+
+```javascript
+import $ from "jquery";
+import "jquery-form";
+```
+
+With CommonJS, the package exports a factory that takes the window and jQuery, registers the plugin and returns jQuery:
+
+```javascript
+var $ = require("jquery");
+require("jquery-form")(window, $);
+```
+
+AMD loaders get the plugin as a module that depends on `jquery`.
+
+Then prepare a form, and it is submitted with AJAX:
+
+```javascript
+$(function () {
+  $("#myForm").ajaxForm({
+    target: "#output",
+    success: function () {
+      alert("Thank you for your comment!");
+    },
+  });
+});
+```
+
+`ajaxForm` binds the form so that it submits with AJAX; `ajaxSubmit` submits it now, from your own submit handler. The [API](https://jquery-form.github.io/form/api/) page describes every method, and the [options](https://jquery-form.github.io/form/options/) page every option.
+
+## File Uploads
+A form with a selected file, or a `multipart/form-data` enctype, is sent with [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) over [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest), and the `uploadProgress` option reports progress as the upload proceeds. With `iframe: true`, the form is posted through a hidden iframe instead, which needs the server to return HTML-safe responses; see [`iframe`](https://jquery-form.github.io/form/options/#iframe).
+
+## Compatibility
+* Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0, on Chromium, Firefox and WebKit.
+* jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
+* With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones; use `delegation: "<selector>"` instead. ([issue #353](https://github.com/jquery-form/form/issues/353))
+* **Not** compatible with the jQuery slim builds, which leave out AJAX.
+* 5.0 will need jQuery 3.5 or later. With debug output on (`$.fn.ajaxSubmit.debug = true`), 4.x warns about the features 5.0 removes; see [Deprecations](https://jquery-form.github.io/form/api/#deprecations) and [issue #629](https://github.com/jquery-form/form/issues/629).
+
+## Security
+Please report security issues privately, not in public issues. See [SECURITY](SECURITY.md).
+
+Some options must be trusted input only, and a `target` response is inserted as HTML; see [Trusted options](https://jquery-form.github.io/form/options/#trusted-options) and the [`target`](https://jquery-form.github.io/form/options/#target) sanitizing recipe. Iframe uploads need HTML-safe responses; see [`iframe`](https://jquery-form.github.io/form/options/#iframe).
+
 ## Community
 Want to contribute to jQuery Form? Awesome! See [CONTRIBUTING](CONTRIBUTING.md) for more information.
 
 ### Code of Conduct
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that this project is a welcoming place for **everyone** to contribute to. By participating in this project you agree to abide by its terms.
-
-### Security
-Please report security issues privately, not in public issues. See [SECURITY](SECURITY.md).
-
-Some options must be trusted input only, and a `target` response is inserted as HTML; see [Trusted options](docs/options.md#trusted-options) and the [`target`](docs/options.md#target) sanitizing recipe. Iframe uploads need HTML-safe responses; see [`iframe`](docs/options.md#iframe).
-
-## Compatibility
-* Requires jQuery 1.7.2 or later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0.
-* jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
-* With `delegation: true` on jQuery 3 and later, every form on the page is handled, not only the selected ones; use `delegation: "<selector>"` instead. ([issue #353](https://github.com/jquery-form/form/issues/353))
-* **Not** compatible with the jQuery slim builds, which leave out AJAX.
-
-## Download
-* **Development:** [dist/jquery.form.js
-](https://github.com/jquery-form/form/blob/main/dist/jquery.form.js)
-* **Production/Minified:** [dist/jquery.form.min.js
-](https://github.com/jquery-form/form/blob/main/dist/jquery.form.min.js)
-
-### CDN
-```html
-<script src="https://cdn.jsdelivr.net/npm/jquery-form@4.5.0/dist/jquery.form.min.js" integrity="sha384-bAYSkj1642QKZXFX6ioC3jTHXX/156RH9dx/gagqvP0ldOVz4mUpmdd9xcuOowqd" crossorigin="anonymous"></script>
-```
-
----
-
-## API
-
-### jqXHR
-The jqXHR object is stored in element <em>data</em>-cache with the <code>jqxhr</code> key after each <code>ajaxSubmit</code>
-call. It can be accessed like this:
-
-````javascript
-var form = $('#myForm').ajaxSubmit({ /* options */ });
-var xhr = form.data('jqxhr');
-
-xhr.done(function() {
-...
-});
-````
-
-### ajaxForm( options )
-Prepares a form to be submitted via AJAX by adding all of the necessary event listeners. It does **not** submit the form. Use `ajaxForm` in your document's `ready` function to prepare existing forms for AJAX submission, or with the `delegation` option to handle forms not yet added to the DOM.  
-Use ajaxForm when you want the plugin to manage all the event binding for you.
-
-````javascript
-// prepare all forms for ajax submission
-$('form').ajaxForm({
-    target: '#myResultsDiv'
-});
-````
-
-### ajaxFormUnbind( [selector] )
-Removes the handlers `ajaxForm` bound on the selection, and every delegated binding (`delegation: true` or a selector) the plugin made on the document. With a selector string it removes only that delegated binding and leaves the selection's handlers alone. Calling `ajaxForm` again on a form does not remove delegated bindings.
-
-````javascript
-$('#myForm').ajaxFormUnbind();       // the form's handlers and all delegated bindings
-$(document).ajaxFormUnbind('form.ajax'); // one delegated binding
-````
-
-### ajaxSubmit( options )
-Immediately submits the form via AJAX. In the most common use case this is invoked in response to the user clicking a submit button on the form.
-Use ajaxSubmit if you want to bind your own submit handler to the form.
-
-````javascript
-// bind submit handler to form
-$('form').on('submit', function(e) {
-    e.preventDefault(); // prevent native submit
-    $(this).ajaxSubmit({
-        target: '#myResultsDiv'
-    })
-});
-````
-
----
-
-## Options
-**Note:** All standard [$.ajax](http://api.jquery.com/jQuery.ajax) options can be used.
-
-### beforeSerialize
-Callback function invoked before form serialization. Provides an opportunity to manipulate the form before its values are retrieved. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
-
-````javascript
-beforeSerialize: function($form, options) {
-    // return false to cancel submit
-}
-````
-
-### beforeSubmit
-Callback function invoked before form submission. Returning `false` from the callback will prevent the form from being submitted. The callback is invoked with three arguments: the form data in array format, the jQuery wrapped form object, and the options object.
-
-````javascript
-beforeSubmit: function(arr, $form, options) {
-    // form data array is an array of objects with name and value properties
-    // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
-    // return false to cancel submit
-}
-````
-
-### beforeFormUnbind
-Callback function invoked before form events unbind and bind again. Provides an opportunity to manipulate the form before events will be remounted. The callback is invoked with two arguments: the jQuery wrapped form object and the options object.
-
-````javascript
-beforeFormUnbind: function($form, options) {
-    // your callback code
-}
-````
-
-### filtering
-Callback function invoked before processing fields. This provides a way to filter elements.
-
-````javascript
-filtering: function(el, index) {
-    if ( !$(el).hasClass('ignore') ) {
-        return el;
-    }
-}
-````
-
-### clearForm
-Boolean flag indicating whether the form should be cleared if the submit is successful
-
-### data
-An object containing extra data that should be submitted along with the form.
-
-````
-data: { key1: 'value1', key2: 'value2' }
-````
-
-### dataType
-Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The dataType option provides a means for specifying how the server response should be handled. This maps directly to jQuery's dataType method. The following values are supported:
-
-* 'xml': server response is treated as XML and the 'success' callback method, if specified, will be passed the responseXML value
-* 'json': server response will be evaluated and passed to the 'success' callback, if specified
-* 'script': server response is evaluated in the global context
-
-### delegation
-A selector string, or `true`, to handle forms through a document-level (delegated) binding, so forms added later are handled too.
-*requires jQuery v1.7+*
-
-With a selector, a form is submitted through the plugin when it, or an element around it, matches the selector. The selection `ajaxForm` is called on is ignored. Binding the same selector again replaces its options. An empty string throws an error.
-
-````javascript
-// prepare existing and future forms with class "ajax" for ajax submission
-$(document).ajaxForm({
-    delegation: 'form.ajax'
-});
-````
-
-**Warning:** `delegation: true` uses the selection's selector, which jQuery 3.0 removed. On jQuery 3 and later it binds **every form on the page**, so the options (`data`, `headers`) go with any form's submission. The plugin logs a `console.warn` for each such call, even with `debug` off. Use a selector. jQuery 5.0 support will require one.
-
-### error
-Callback function to be invoked upon error. It is passed the following arguments:
-
-1. `jqXHR`, object (the error response body is in `responseText`)
-2. `textStatus`, string
-3. `errorThrown`, string
-4. `$form` jQuery object containing form element
-
-### forceSync
-Only applicable when explicity using the iframe option or when uploading files on browsers that don't support XHR2.
-Set to `true` to remove the short delay before posting form when uploading files. The delay is used to allow the browser to render DOM updates before performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait..."
-
-### iframe
-Boolean flag indicating whether the form should *always* target the server response to an iframe instead of leveraging XHR when possible.
-
-### iframeSrc
-String value that should be used for the iframe's src attribute when an iframe is used.
-
-### iframeTarget
-Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This option allows you to use an existing iframe if you wish. When using this option the plugin will not attempt handling the response from the server.
-
-### method
-The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').
-
-### replaceTarget
-Optionally used along with the target option. Set to true if the target should be replaced or false if only the target contents should be replaced.
-
-### requestFormat
-Set to `"json"` to send the fields (repeated names as arrays) merged with object `data` as a JSON body, with `contentType: "application/json; charset=UTF-8"`. Throws with a GET method, string `data`, files or the iframe transport. Based on the idea in PR #557 by zhangciwu.
-
-### resetForm
-Boolean flag indicating whether the form should be reset if the submit is successful
-
-### semantic
-Boolean flag indicating whether data must be submitted in strict semantic order (slower). Note that the normal form serialization is done in semantic order except for input elements of `type="image"`. You should only set the semantic option to true if your server has strict semantic requirements and your form contains an input element of `type="image"`.
-
-### success
-Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
-
-1. `data`, formatted according to the dataType parameter or the dataFilter callback function, if specified
-2. `textStatus`, string
-3. `jqXHR`, object
-4. `$form` jQuery object containing form element
-
-### target
-Identifies the element(s) in the page to be updated with the server response. This value may be specified as a jQuery selection string, a jQuery object, or a DOM element.
-
-### type
-The HTTP method to use for the request (e.g. 'POST', 'GET', 'PUT').  
-An alias for `method` option. Overridden by the `method` value if both are present.
-
-### uploadProgress
-Callback function to be invoked with upload progress information (if supported by the browser). The callback is passed the following arguments:
-
-1. event; the browser event
-2. position (integer)
-3. total (integer)
-4. percentComplete (integer)
-
-### url
-URL to which the form data will be submitted.
-
----
-
-## Utility Methods
-### formSerialize
-Serializes the form into a query string. This method will return a string in the format: `name1=value1&name2=value2`
-
-````javascript
-var queryString = $('#myFormId').formSerialize();
-````
-
-### fieldSerialize
-Serializes field elements into a query string. This is handy when you need to serialize only part of a form. This method will return a string in the format: `name1=value1&name2=value2`
-
-````javascript
-var queryString = $('#myFormId .specialFields').fieldSerialize();
-````
-
-### fieldValue
-Returns the value(s) of the element(s) in the matched set in an array. This method always returns an array. If no valid value can be determined the array will be empty, otherwise it will contain one or more values.
-
-### resetForm
-Resets the form to its original state by invoking the form element's native DOM method.
-
-### clearForm
-Clears the form elements. This method empties all of the text inputs, password inputs and textarea elements, clears the selection in any select elements, and unchecks all radio and checkbox inputs. It does *not* clear hidden field values.
-
-### clearFields
-Clears selected field elements. This is handy when you need to clear only a part of the form.
-
----
-
-## File Uploads
-The Form Plugin supports the use of [XMLHttpRequest Level 2]("http://www.w3.org/TR/XMLHttpRequest/") and [FormData](https://developer.mozilla.org/en/XMLHttpRequest/FormData) objects on browsers that support these features. As of today (March 2012) that includes Chrome, Safari, and Firefox. On these browsers (and future Opera and IE10) files uploads will occur seamlessly through the XHR object and progress updates are available as the upload proceeds. For older browsers, a fallback technology is used which involves iframes. [More Info](http://malsup.com/jquery/form/#file-upload)
-
----
 
 ## Contributors
 This project has transferred from [github.com/malsup/form](https://github.com/malsup/form/), courtesy of [Mike Alsup](https://github.com/malsup).  
@@ -268,7 +101,3 @@ This project is dual-licensed under the LGPLv2.1 (or later) or MIT licenses:
 
 * [GNU Lesser General Public License v2.1](LICENSE)
 * [MIT](LICENSE-MIT)
-
----
-
-Additional documentation and examples for version 3.51- at: [http://malsup.com/jquery/form/](http://malsup.com/jquery/form/)

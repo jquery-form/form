@@ -34,7 +34,7 @@ var queryString = $("#myForm :text").fieldSerialize();
     jQuery expression:
     <input id="query" type="text" value=":text">
     <span style="color:#555">(ie: textarea, [@type='hidden'], :radio, :checkbox, etc)</span><br>
-    <input id="successful" type="checkbox" checked="checked"> [Successful controls](https://www.w3.org/TR/html5/forms.html#constructing-form-data-set) only<br>
+    <input id="successful" type="checkbox" checked="checked"> <a href="https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set">Successful controls</a> only<br>
     <input type="submit" value="Test">
   </div>
 </form>
@@ -72,7 +72,7 @@ var queryString = $("#myForm :text").fieldSerialize();
     </table>
 </div></form>
 
-By default, `fieldValue` and `fieldSerialize` only function on '[successful controls](https://www.w3.org/TR/html5/forms.html#constructing-form-data-set)'. This means that if you run the following code on a checkbox that is not checked, the result will be an empty array.
+By default, `fieldValue` and `fieldSerialize` only function on '[successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set)'. This means that if you run the following code on a checkbox that is not checked, the result will be an empty array.
 
 ```javascript
 // value will be an empty array if checkbox is not checked:

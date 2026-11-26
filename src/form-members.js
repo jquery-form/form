@@ -55,6 +55,14 @@ export function tagName(el) {
   return typeof name === "string" ? name.toLowerCase() : "";
 }
 
+/**
+ * Whether a control or option is disabled, also through a disabled fieldset or optgroup. Without
+ * selector matching, only its own disabled property is read.
+ */
+export function isDisabled(el) {
+  return typeof el.matches === "function" ? el.matches(":disabled") : !!el.disabled;
+}
+
 // Elements only: the subject of formToArray may also be the document or a plain object.
 export function isElement(node) {
   return formMember(node, "nodeType") === 1;

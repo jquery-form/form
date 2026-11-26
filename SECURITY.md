@@ -18,4 +18,3 @@ Report them privately through GitHub: open the repository's **Security** tab and
 
 Include the plugin and jQuery versions, the options used, and a minimal reproduction. Reporters
 are credited in the advisory unless they ask not to be.
-
