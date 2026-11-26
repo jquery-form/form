@@ -1062,6 +1062,33 @@ describe("form", function () {
           assert.deepEqual(result.events, ["error", "complete"]);
         });
 
+        it("should report the read error, not the statusText, when an error status fails to read", async function () {
+          const $target = createTarget({
+            contentWindow: {
+              configurable: true,
+              get: function () {
+                const frameDocument = realContentWindow.call(this).document;
+                return {
+                  document: new Proxy(frameDocument, {
+                    get: (target, name) =>
+                      name === "getElementsByTagName" ? denied() : target[name],
+                  }),
+                };
+              },
+            },
+          });
+          const $form = createIframeForm("ajax/iframe-error.html");
+
+          const result = await submitThroughIframe($form, {
+            iframeTarget: $target,
+            dataType: "text",
+          });
+
+          assert.strictEqual(result.error[0].status, 500);
+          assert.strictEqual(result.error[1], "error");
+          assert.strictEqual(result.error[2].message, "Access is denied");
+        });
+
         it("should keep polling while IE reports an uninitialized document", async function () {
           let polls = 0;
           let events;
