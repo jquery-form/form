@@ -198,33 +198,6 @@ export function restoreAjaxState() {
   });
 }
 
-// Runs `run` and returns how many HTML strings containing `marker` jQuery parsed meanwhile. Every
-// HTML string jQuery parses passes through jQuery.htmlPrefilter (3.x, 4.x) or jQuery.clean
-// (1.7.2), so this sees a payload synchronously, without waiting for its onerror to fire.
-export async function countHtmlParsed(marker, run) {
-  const hooks = ["htmlPrefilter", "clean"].filter((name) => typeof $[name] === "function");
-  const originals = hooks.map((name) => $[name]);
-  const holdsMarker = (value) =>
-    [].concat(value).some((item) => typeof item === "string" && item.includes(marker));
-  let parsed = 0;
-  hooks.forEach(function (name, i) {
-    $[name] = function (value) {
-      if (holdsMarker(value)) {
-        parsed++;
-      }
-      return originals[i].apply(this, arguments);
-    };
-  });
-
-  try {
-    await run();
-  } finally {
-    hooks.forEach((name, i) => ($[name] = originals[i]));
-  }
-
-  return parsed;
-}
-
 // Runs `run` while recording uncaught window errors instead of failing the run with them. Resolves
 // with what `run` returned; the errors array is passed to `run` so it can assert on them.
 export async function withWindowErrors(run) {
@@ -262,22 +235,43 @@ export function recordWarnings(debug, run) {
   return warnings;
 }
 
-// Runs `run` while counting the calls of $.parseHTML, through which $() parses an HTML string;
-// returns { count, error } with the error `run` threw, if any.
-export function countParsedHTML(run) {
+// Runs `run` (sync or async) and resolves with how many HTML strings jQuery parsed meanwhile and
+// what `run` threw. Every string jQuery treats as HTML goes through jQuery.parseHTML (`$(html)`) or
+// jQuery.htmlPrefilter (`.html()`, `.append()`); a parse inside parseHTML counts once. With
+// `marker`, only strings containing it count, so markup the plugin builds itself is left out. The
+// error is returned, not thrown: assert `error` is undefined when `run` should not throw.
+export async function countParsedHTML(run, marker) {
   const parseHTML = $.parseHTML;
+  const htmlPrefilter = $.htmlPrefilter;
   const result = { count: 0, error: undefined };
-  $.parseHTML = function () {
-    result.count++;
-    return parseHTML.apply(this, arguments);
+  const counts = (html) =>
+    typeof html === "string" && (marker === undefined || html.includes(marker));
+  let depth = 0;
+  $.parseHTML = function (html) {
+    if (depth === 0 && counts(html)) {
+      result.count++;
+    }
+    depth++;
+    try {
+      return parseHTML.apply(this, arguments);
+    } finally {
+      depth--;
+    }
+  };
+  $.htmlPrefilter = function (html) {
+    if (depth === 0 && counts(html)) {
+      result.count++;
+    }
+    return htmlPrefilter.apply(this, arguments);
   };
 
   try {
-    run();
+    await run();
   } catch (error) {
     result.error = error;
   } finally {
     $.parseHTML = parseHTML;
+    $.htmlPrefilter = htmlPrefilter;
   }
 
   return result;

@@ -5,7 +5,6 @@ import {
   resetFixture,
   submitAndSettle,
   captureAjaxOptions,
-  countHtmlParsed,
   withDocumentUrl,
   withAjaxStub,
   withAjaxSettings,
@@ -524,16 +523,17 @@ describe("form", function () {
           const $form = $('<form action="ajax/json.json"></form>').appendTo("#main");
           const successes = [];
 
-          const parsed = await countHtmlParsed("window.targetPayload", async () => {
+          const parsed = await countParsedHTML(async () => {
             captureAjaxOptions(
               $form,
               { target: $target, success: (response) => successes.push(response) },
               (settings) => settings.success(data, "success", {}),
             );
             await new Promise((resolve) => setTimeout(resolve, 50));
-          });
+          }, "window.targetPayload");
 
-          assert.strictEqual(parsed, 0);
+          assert.strictEqual(parsed.error, undefined);
+          assert.strictEqual(parsed.count, 0);
           assert.strictEqual($target.html(), "kept");
           assert.deepEqual(successes, [data]);
           assert.strictEqual(window.targetPayload, 0);
@@ -2166,14 +2166,14 @@ describe("form", function () {
         assert.strictEqual($late.html(), "<b>late</b>");
       });
 
-      it("should treat an HTML string target as a selector and throw a selector syntax error instead of parsing it", function () {
+      it("should treat an HTML string target as a selector and throw a selector syntax error instead of parsing it", async function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const successes = [];
         const settings = submitWith($form, [
           { target: '<div class="made-target"></div>', success: () => successes.push(1) },
         ]);
 
-        const parsed = countParsedHTML(() => settings.success("<b>x</b>", "success", {}));
+        const parsed = await countParsedHTML(() => settings.success("<b>x</b>", "success", {}));
 
         assert.match(parsed.error.message, /unrecognized expression/);
         assert.strictEqual(parsed.count, 0);

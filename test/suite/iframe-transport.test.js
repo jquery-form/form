@@ -1,6 +1,5 @@
 import { afterEach, assert, describe, it, vi } from "vitest";
 import {
-  countHtmlParsed,
   resetFixture,
   countParsedHTML,
   restoreAjaxState,
@@ -619,11 +618,15 @@ describe("form", function () {
             .attr("src");
         };
 
-        seen.parsed = await countHtmlParsed("window.iframePayload", async () => {
+        const parsed = await countParsedHTML(async () => {
           $form.ajaxSubmit($.extend({ iframe: true, forceSync: true, error: () => {} }, options));
           $form.data("jqxhr").abort();
           await new Promise((resolve) => setTimeout(resolve, 50));
-        });
+        }, "window.iframePayload");
+        if (parsed.error) {
+          throw parsed.error;
+        }
+        seen.parsed = parsed.count;
 
         return seen;
       }
@@ -1415,13 +1418,13 @@ describe("form", function () {
             assert.strictEqual(submittedTarget, "string-target");
           });
 
-          it("should throw a selector syntax error from ajaxSubmit before any event, and create no frame, when iframeTarget is an HTML string", function () {
+          it("should throw a selector syntax error from ajaxSubmit before any event, and create no frame, when iframeTarget is an HTML string", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const events = [];
             recordGlobalEvents(events);
             const frames = $("iframe").length;
 
-            const parsed = countParsedHTML(() =>
+            const parsed = await countParsedHTML(() =>
               $form.ajaxSubmit({
                 iframe: true,
                 forceSync: true,
@@ -1463,7 +1466,7 @@ describe("form", function () {
             window.__frameHtml = 0;
             $.active = 0;
 
-            const parsed = await countHtmlParsed("window.__frameHtml", async () => {
+            const parsed = await countParsedHTML(async () => {
               try {
                 $form.ajaxSubmit({
                   iframe: true,
@@ -1471,13 +1474,14 @@ describe("form", function () {
                   iframeTarget: '<img src="data:," onerror="window.__frameHtml = 1">',
                   error: function () {},
                 });
-              } catch {
-                // an iframeTarget that matches nothing throws here
+              } finally {
+                // the selector syntax error is checked below; let a payload's onerror fire first
+                await new Promise((resolve) => setTimeout(resolve, 100));
               }
-              await new Promise((resolve) => setTimeout(resolve, 100));
-            });
+            }, "window.__frameHtml");
 
-            assert.strictEqual(parsed, 0);
+            assert.match(parsed.error.message, /unrecognized expression/);
+            assert.strictEqual(parsed.count, 0);
             assert.strictEqual(window.__frameHtml, 0);
             assert.strictEqual($.active, 0);
           });

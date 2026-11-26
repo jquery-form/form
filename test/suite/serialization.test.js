@@ -5,7 +5,7 @@ import {
   arrayValue,
   selectFiles,
   buildForm,
-  countHtmlParsed,
+  countParsedHTML,
 } from "./helpers.js";
 
 describe("form", function () {
@@ -238,12 +238,13 @@ describe("form", function () {
         .appendTo("#main");
 
       let formData;
-      const parsed = await countHtmlParsed("window.formIdPayload", async () => {
+      const parsed = await countParsedHTML(async () => {
         formData = $form.formToArray();
         await new Promise((resolve) => setTimeout(resolve, 50));
-      });
+      }, "window.formIdPayload");
 
-      assert.strictEqual(parsed, 0);
+      assert.strictEqual(parsed.error, undefined);
+      assert.strictEqual(parsed.count, 0);
       assert.deepEqual(formData.length, 1);
       assert.strictEqual(window.formIdPayload, 0);
     });

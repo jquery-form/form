@@ -1,24 +1,18 @@
 import { assert, describe, it } from "vitest";
 import { selectorOption } from "../../src/options.js";
-import { countHtmlParsed, resetFixture } from "./helpers.js";
+import { countParsedHTML, resetFixture } from "./helpers.js";
 
 describe("options", function () {
   resetFixture();
 
   describe("selectorOption", function () {
     it("should throw a selector syntax error, not parse HTML, for an HTML string", async function () {
-      let thrown;
+      const parsed = await countParsedHTML(() =>
+        selectorOption('<iframe data-option-html="1"></iframe>'),
+      );
 
-      const parsed = await countHtmlParsed("data-option-html", function () {
-        try {
-          selectorOption('<iframe data-option-html="1"></iframe>');
-        } catch (error) {
-          thrown = error;
-        }
-      });
-
-      assert.match(String(thrown), /syntax error/i);
-      assert.strictEqual(parsed, 0);
+      assert.match(parsed.error.message, /unrecognized expression/);
+      assert.strictEqual(parsed.count, 0);
     });
 
     it("should find a selector string in the given document", function () {

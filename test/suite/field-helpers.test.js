@@ -1,12 +1,6 @@
 import { assert, describe, it } from "vitest";
 import pluginExport from "../../src/jquery.form.js";
-import {
-  countHtmlParsed,
-  countParsedHTML,
-  resetFixture,
-  selectFiles,
-  withAjaxStub,
-} from "./helpers.js";
+import { countParsedHTML, resetFixture, selectFiles, withAjaxStub } from "./helpers.js";
 
 // Records the change and input events that reach `root` while `run` executes.
 function recordFieldEvents(root, run) {
@@ -121,12 +115,13 @@ describe("form", function () {
         window.labelPayload = 0;
         const $label = $("<label>").attr("for", value).appendTo("#main");
 
-        const parsed = await countHtmlParsed("window.labelPayload", async () => {
+        const parsed = await countParsedHTML(async () => {
           $label.resetForm();
           await new Promise((resolve) => setTimeout(resolve, 50));
-        });
+        }, "window.labelPayload");
 
-        assert.strictEqual(parsed, 0);
+        assert.strictEqual(parsed.error, undefined);
+        assert.strictEqual(parsed.count, 0);
         assert.strictEqual(window.labelPayload, 0);
       });
     });
@@ -907,10 +902,12 @@ describe("form", function () {
         assert.deepEqual($fields.map((i, el) => el.value).get(), ["a", "b"]);
       });
 
-      it("should throw a selector syntax error, not parse HTML, when the selector has markup", function () {
+      it("should throw a selector syntax error, not parse HTML, when the selector has markup", async function () {
         const $fields = specialHiddenInputs();
 
-        const parsed = countParsedHTML(() => $fields.clearFields('<img class="made"> :first'));
+        const parsed = await countParsedHTML(() =>
+          $fields.clearFields('<img class="made"> :first'),
+        );
 
         assert.match(parsed.error.message, /unrecognized expression/);
         assert.strictEqual(parsed.count, 0);
