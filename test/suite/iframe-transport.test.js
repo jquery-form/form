@@ -2685,6 +2685,30 @@ describe("form", function () {
             assert.deepEqual(removed, []);
           });
 
+          it("should remove the load listener it added to a supplied iframeTarget after the upload", async function () {
+            const $target = $('<iframe name="reused-frame"></iframe>').appendTo("#main");
+            const added = [];
+            const removed = [];
+            $target[0].addEventListener = function (type, listener, capture) {
+              added.push([type, listener, capture]);
+              return HTMLIFrameElement.prototype.addEventListener.apply(this, arguments);
+            };
+            $target[0].removeEventListener = function (type, listener, capture) {
+              removed.push([type, listener, capture]);
+              return HTMLIFrameElement.prototype.removeEventListener.apply(this, arguments);
+            };
+            const $form = createIframeForm("ajax/iframe-text.html");
+
+            const result = await submitThroughIframe($form, {
+              iframeTarget: $target,
+              dataType: "text",
+            });
+
+            assert.strictEqual(result.success[1], "success");
+            assert.strictEqual(added.length, 1);
+            assert.deepEqual(removed, added);
+          });
+
           it("should return an XML document when no dataType is given and the response is XML", async function () {
             const $form = createIframeForm("ajax/test.xml");
 
