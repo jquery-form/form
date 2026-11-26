@@ -1,4 +1,4 @@
-import { afterEach, assert, beforeEach, describe, it } from "vitest";
+import { afterEach, assert, beforeEach, describe, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import {
   recordDeprecations,
@@ -485,6 +485,32 @@ describe("form", function () {
         assert.strictEqual($form[0].clk_x, null);
         assert.strictEqual($form[0].clk_y, null);
       });
+    });
+
+    // A submit that follows the click later, such as after async validation, still sends it.
+    it("should keep the clicked button for the 100 ms click window, then clear it", function () {
+      const $form = $('<form><button name="b" value="clicked">Send</button></form>').appendTo(
+        "#main"
+      );
+      const button = $form.find("button")[0];
+      $form.on("submit", false);
+      $form.ajaxForm();
+      let withinWindow;
+      let afterWindow;
+
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      try {
+        $(button).trigger("click");
+        vi.advanceTimersByTime(99);
+        withinWindow = $form[0].clk;
+        vi.advanceTimersByTime(1);
+        afterWindow = $form[0].clk;
+      } finally {
+        vi.useRealTimers();
+      }
+
+      assert.strictEqual(withinWindow, button);
+      assert.strictEqual(afterWindow, null);
     });
 
     it("should not send a button clicked before the click window ended", async function () {
