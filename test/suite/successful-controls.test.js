@@ -1,5 +1,5 @@
 import { assert, describe, it } from "vitest";
-import { isSuccessful } from "../../src/successful-controls.js";
+import { isSuccessful, urlencode, wellFormedData } from "../../src/successful-controls.js";
 
 describe("successful controls", function () {
   describe("isSuccessful", function () {
@@ -92,6 +92,36 @@ describe("successful controls", function () {
       const successful = isSuccessful(select, null);
 
       assert.strictEqual(successful, true);
+    });
+  });
+
+  describe("urlencode", function () {
+    // Without the File API a file input's value is its file name, a string.
+    it("should send a file field's string value as it is", function () {
+      const fields = [{ name: "f", value: "C:\\fakepath\\a.txt", type: "file" }];
+
+      const body = urlencode(fields);
+
+      assert.strictEqual(body, "f=C%3A%5Cfakepath%5Ca.txt");
+    });
+
+    it("should send a selected file's name", function () {
+      const fields = [{ name: "f", value: new File(["x"], "a.txt"), type: "file" }];
+
+      const body = urlencode(fields);
+
+      assert.strictEqual(body, "f=a.txt");
+    });
+  });
+
+  describe("wellFormedData", function () {
+    it("should keep an array of fields an array when a value has a lone surrogate", function () {
+      const data = [{ name: "k", value: "a\uD800" }];
+
+      const result = wellFormedData(data);
+
+      assert.ok(Array.isArray(result));
+      assert.strictEqual($.param(result), "k=a%EF%BF%BD");
     });
   });
 });

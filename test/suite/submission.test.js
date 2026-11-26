@@ -1596,6 +1596,14 @@ describe("form", function () {
         assert.strictEqual(settings.data, "k%EF%BF%BD%5B%5D=v%EF%BF%BD");
       });
 
+      it("should send a lone surrogate in an array data option as U+FFFD in a urlencoded body", function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+
+        const settings = submitWith($form, [{ data: [{ name: "k", value: "v\uD800" }] }]);
+
+        assert.strictEqual(settings.data, "k=v%EF%BF%BD");
+      });
+
       it("should pass a string data option with a lone surrogate through unchanged", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
 
