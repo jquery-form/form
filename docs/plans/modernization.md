@@ -754,12 +754,10 @@ Steps 0-8 are done. Step 8 (2026-11-26, on the rebased tip):
 
 Before the 5.0 release:
 
-- Merge the test helpers `countParsedHTML` and `countHtmlParsed` in `test/suite/helpers.js` into one
-  (decided 2026-11-26). Both check that jQuery parsed no HTML: `countParsedHTML` (5.0) spies on
-  `$.parseHTML`, takes a synchronous callback, counts every parse and captures a thrown error;
-  `countHtmlParsed` (4.6.0) hooks `jQuery.htmlPrefilter`, takes an async callback and counts only
-  strings containing a marker. Keep one helper that covers every current use, and update the tests
-  that call the other.
+- ~~Merge the test helpers `countParsedHTML` and `countHtmlParsed`~~ — done 2026-11-26: one async
+  `countParsedHTML(run, marker)` in `test/suite/helpers.js` hooks `jQuery.parseHTML` and
+  `jQuery.htmlPrefilter` (a parse inside `parseHTML` counts once), counts only strings containing
+  `marker` when one is given, and returns `{ count, error }`. Tests that expect no error assert it.
 - An architecture review with the improve-codebase-architecture skill (decided 2026-11-26), after
   step 8 and before the beta. Act on what it finds before the release, or list it for 5.x.
 
