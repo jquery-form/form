@@ -744,6 +744,8 @@ Before the 5.0 release:
   `countHtmlParsed` (4.6.0) hooks `jQuery.htmlPrefilter`, takes an async callback and counts only
   strings containing a marker. Keep one helper that covers every current use, and update the tests
   that call the other.
+- An architecture review with the improve-codebase-architecture skill (decided 2026-11-26), after
+  step 8 and before the beta. Act on what it finds before the release, or list it for 5.x.
 
 Test rules:
 
