@@ -74,7 +74,7 @@ Serialization, against the oracle:
 - Encode spaces as `%20` on every jQuery version.
 - Post a submitter that a disabled fieldset contains.
 
-## Step 3: whole-source run across browsers (does not block the merge)
+## Step 3: whole-source run across browsers (blocks the merge, decided 2026-11-26)
 
 All of `src/*.js`, the same as Phase 13, on the three jQuery versions in Chromium. Then rerun only
 the survivors on WebKit and Firefox (in Docker). That separates "no test covers it" from "only
@@ -100,16 +100,143 @@ those mutants, since a full e2e run per mutant is too slow.
 
 ## Merge checklist for #644
 
-- [ ] Flaky-test fixes committed and pushed; CI green on all nine required checks without a rerun
-- [ ] Step 1: no unexplained survivor on lines changed since v4.5.0
-- [ ] Step 2: every hand-written mutant fails the suite
+- [x] Flaky-test fixes committed and pushed; CI green on all nine required checks without a rerun
+- [x] Step 1: no unexplained survivor on lines changed since v4.5.0
+- [x] Step 2: every hand-written mutant fails the suite, apart from the equivalents below
+- [x] Step 3: every whole-source survivor killed or listed as equivalent
 - [ ] Any fixes from steps 1–2 in `4x-behavior-changes.md`, the release notes and `docs/metrics.md`
 - [ ] User merges #644 and approves the npm environment
 
 ## Equivalent mutants
 
-None recorded yet.
+Each one sends the same request and runs the same callbacks as the real code.
+
+Step 1 (`src/successful-controls.js` unless noted):
+
+- `deprecateFieldValueOverride` with the key `""` instead of `"fieldValue-override"`: no other
+  deprecation uses that key, so it still warns once.
+- `setKey` with `writable: false` or `configurable: false`: the copy goes straight to `$.param`,
+  which only reads it.
+- `wellFormedData` starting its array copy as `["Stryker was here"]`: the loop overwrites index 0,
+  and an empty array is returned unchanged.
+- `wellFormedData` with `changed` forced true (three mutants): it returns a copy where the original
+  would do, and `$.param` serializes both the same.
+- `wellFormedData` with `if (isArray)` forced false: the object branch walks the array with `for…in`
+  into the array copy, so the result is the same array.
+- `urlencodedFields` always building a new `{ name, value }`: `$.param` reads only those two keys.
+
+Step 2:
+
+- The cleanup delay (100 ms) set to 0, and the post delay (10 ms) set to 0. Both still defer to a
+  later task, and callbacks and promise handlers run before either timer. Making them longer is
+  caught.
 
 ## Results
 
-Not run yet.
+Run on 2026-11-26 with Stryker 10.1.1 and `@stryker-mutator/vitest-runner` 10.1.1, installed with
+`npm i --no-save`. The config is the untracked `stryker.config.mjs` and `vitest.stryker.config.mjs`
+(the suite on Chromium, coverage off, `coverageAnalysis: "perTest"`, concurrency 4). Commands:
+
+```sh
+# one file:start-end per added hunk
+git diff -U0 v4.5.0..HEAD -- src | awk '/^\+\+\+ b\//{f=substr($2,3)}
+  /^@@/{split($3,a,","); s=substr(a[1],2); n=(a[2]==""?1:a[2]); if(n>0) print f":"s"-"(s+n-1)}' > ranges.txt
+JQUERY_FILE=<build> MUTATE_RANGES=ranges.txt STRYKER_LABEL=step1-<version> npx stryker run
+```
+
+### Step 1
+
+132 mutants on the changed lines. The first pass left 12 survivors and 5 timeouts on all three jQuery
+versions. The timeouts are hangs (a rejection that never comes, an infinite loop, a throw inside a
+callback), so they count as detected. Three survivors were real gaps and got tests:
+
+| Mutant                                                                                      | Test added                                                             |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `iframe-lifecycle.js`: clear `errMsg` for every error status, not only `parsererror`        | an error status whose document fails to read reports the read error    |
+| `options.js`: `selectorOption` returning a non-empty set for HTML, and an empty log message | `test/suite/options.test.js`                                           |
+| `successful-controls.js`: a file field's string value sent as `undefined`                   | `urlencode` sends the file name a browser without the File API reports |
+
+The second pass leaves only the equivalent mutants above.
+
+### Step 2
+
+21 hand-written mutants, each run on Chromium with jQuery 1.7.2, 3.7.1 and 4.0.0. The first pass
+caught 18. All four W1–W4 sinks and both 4.6.0 `target` mutants fail the suite. Two survivors were
+gaps and got tests:
+
+- The click window cut from 100 ms to 0: a submit inside the window, after a later task, must still
+  send the clicked button (fake timers, so the test does not race).
+- `target` and `iframeTarget` looked up with `$(value)` instead of `.find()` were caught only on
+  jQuery 1.7.2. The lookup must use the form's own document.
+
+With those, 19 of 21 are caught. The other two are the equivalent delays above.
+
+### Step 3
+
+All of `src/*.js` (2223 mutants on jQuery 3.7.1), on Chromium with jQuery 1.7.2, 3.7.1 and 4.0.0.
+Each run took about 11 minutes. Scores, with timeouts counted as detected:
+
+| jQuery | Score  | Killed | Timeout | Survived | No coverage | Errors |
+| ------ | ------ | ------ | ------- | -------- | ----------- | ------ |
+| 3.7.1  | 94.30% | 1959   | 127     | 126      | 0           | 11     |
+| 1.7.2  | 93.26% | 1943   | 120     | 128      | 21          | 11     |
+| 4.0.0  | 94.11% | 1951   | 128     | 130      | 0           | 14     |
+
+The 3.7.1 score matches Phase 13's 94.34%, which was measured on the same version before the 4.6.0
+fixes added mutants. Counting a mutant as detected when any version detects it, and adding the test
+below, the score is 94.50%. Every remaining survivor is listed below.
+
+Timeouts. 108 mutants timed out on all three versions. A rerun with a 3× timeout factor gave 48
+clean kills (slow tests, not hangs) and 60 real hangs: infinite loops (`i--`, `k >= length`) and
+emptied functions that leave an upload that never settles. None of them hides a survivor.
+
+Engines. The 123 mutants that no version detected were rerun on WebKit with jQuery 3.7.1. WebKit
+detected only three, all in `unlisten`, and the test below detects those on Chromium too, so no
+survivor depends on the engine. Firefox was not rerun: it starts only in Docker on this machine,
+and WebKit showed no difference from Chromium.
+
+One gap got a test: after an upload into a supplied `iframeTarget`, the plugin must remove the load
+listener it added. Removing nothing, or removing with the wrong capture flag, survived because the
+`life.done()` guard hides the leaked listener on the next upload into the same frame.
+
+The other 120 survivors:
+
+- 32 change only debug text or a deprecation ID: `log(...)` and `refuse(...)` messages, and the
+  first argument of `deprecate(...)`, where any distinct ID warns once just the same.
+- 26 are in code that only old browsers or old jQuery reach, which 5.0 deletes: the Opera retry, IE
+  `attachEvent`/`detachEvent` and `execCommand("Stop")`, `doc.XMLDocument`, the `MSIE|Trident` and
+  `Edge|Trident` sniffs, `hasProp`, the `Element.prototype.closest` fallback, the form-member
+  prototype list, and the `contentWindow`/`contentDocument` fallbacks.
+- 62 are equivalent:
+  - `.off("")` with a handler, in place of `.off("submit.form-plugin")` and the click type
+    (`ajax-form.js` 77, 78, 113, 114): jQuery treats an empty event type as every type, so the
+    handler is still removed. A stale `delegated` entry is harmless for the same reason.
+  - Guards that a later guard repeats: `start()` returning true after a veto, and the emptied
+    `if (!life.start())` (`post()` checks `life.done()` again); the `life.done()` check in the load
+    callback (`settle` checks `xhr.aborted`); `stopTimer` and `clearTimeout` on a server abort (the
+    timer's `abort` finds the upload done).
+  - Copies that only `$.param` or `jQuery.extend` read: `writable` and `configurable` in `setKey` and
+    `defineKey`, `wellFormedData` copying when nothing changed, `urlencodedFields` always copying, a
+    shallow instead of a deep `$.extend` of the settings, and a seeded `extraInputs` array.
+  - Anchors dropped from regexes that only ever see valid values: input types in `clearFields` and
+    `resetForm`, tag names in `rUnsubmittable`, and `get` in `isGet` and the GET check.
+  - The iframe mock's `content-type` mirrors `dataType`, so the `ct` and `xml` mutants in `httpData`
+    and the `dataType` fallback text in `readResponse` change nothing.
+  - Browser behavior that makes a branch redundant: setting `option.selected` already deselects the
+    other options of a single select (`selected()`), `form.elements` already includes `form=`
+    controls, and an empty `method` attribute is GET.
+  - Values never read: the image point for a non-image submitter, the `tagName` fallback for nodes
+    without one, `submission.controls` being nulled after use, a `complete` callback list built
+    without a callback, `useCapture` on the upload progress listener, `includeHidden` branches that
+    an inner check repeats, `extraData` checked before a `for…in`, and `fieldValue` skipping an empty
+    array that merges to nothing.
+
+### Commands
+
+```sh
+# step 3: the whole source, then the all-version timeouts again with a 3x timeout factor
+JQUERY_FILE=<build> STRYKER_LABEL=step3-<version> npx stryker run
+MUTATE_RANGES=timeouts.txt STRYKER_TIMEOUT_FACTOR=3 STRYKER_LABEL=step3t-<version> npx stryker run
+# survivors on WebKit; ranges are whole lines, since exact-column ranges miss some mutants
+STRYKER_BROWSER=webkit MUTATE_RANGES=survivor-lines.txt STRYKER_LABEL=step3w-3.7.1 npx stryker run
+```
