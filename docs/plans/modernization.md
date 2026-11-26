@@ -104,7 +104,7 @@ Phase 0 is complete. See `docs/research/phase-0-decisions.md` (decisions, branch
 15. 4.4.0 release with the work so far (Phase 11)
 16. ~~4.x cleanup and rearchitecture (Phase 12)~~ — done
 17. ~~4.5.0 release with Phase 12~~ — done (PR #642)
-18. 4.x test hardening (Phase 13), then the 4.6.0 release
+18. ~~4.x test hardening (Phase 13), then the 4.6.0 release~~ — done (PR #644)
 19. 5.0 (Phase 14), then the 5.0 release; 5.x features after
 
 Phase 11 was added on 2026-10-31. The cleanup phase splits `src/jquery.form.js` into modules, which
@@ -443,6 +443,10 @@ The order:
      2026-12-05); then add the nine `e2e on jQuery <version> on <browser>` checks too.
    - `ubuntu-latest` moved to 26.04 on 2026-11-14 and the Playwright cache restored a 24.04 WebKit
      that could not load its libraries. The cache keys now include the runner image (`ImageOS`).
+   - Done 2026-11-26 (PR #644, merge commit a94d7c1, tag `v4.6.0`). The flaky-test fixes and the
+     mutation testing came first; CI passed without a rerun. npm has 4.6.0 with provenance, and
+     jsDelivr, cdnjs and Packagist serve it; the CDN SRI hashes match the published file. #544 is
+     closed.
 6. **5.0** (Phase 14) after 4.6.0. Cut `release/4.x` from the 4.6.0 tag first (ADR-0002).
 
 Each release adds its column to `docs/metrics.md` and its section to the GitHub release notes.
@@ -495,7 +499,7 @@ The Phase 12 sweep found about 70 bugs that 100% coverage had not caught. This p
 tests the suite does not have yet, so that 5.0 starts from a stronger contract. It runs on the local
 `phase-13` branch, which starts after the 4.5.0 cut on `phase-12`.
 
-Status: done, and in the 4.6.0 release PR (#644, branch `release-4.6.0`). All five kinds of tests
+Status: done, and released as 4.6.0 on 2026-11-26 (PR #644). All five kinds of tests
 are in place and pass on Chromium, WebKit and Firefox with jQuery 1.7.2, 3.7.1 and 4.0.0; no
 `it.fails` remain. The mutation score went from 91.67% to 94.34%. The new WebKit, Firefox and
 end-to-end CI jobs ran for the first time on the PR and pass. The `release.yml` rehearsal on the
