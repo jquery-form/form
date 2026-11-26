@@ -612,7 +612,7 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
 
 ## Phase 14: 5.0 (breaking)
 
-Status (local `phase-14` branch): steps 0-8 are done, apart from the local CodeQL canary (see step 8 below). Nothing is pushed.
+Status (local `phase-14` branch): steps 0-8 are done. Nothing is pushed.
 
 Rebased once onto `main` after the 4.6.0 merge (B3), on 2026-11-26; the old tip is
 `refs/backup/pre-4.6.0-rebase/phase-14`. 47 commits remain: the metrics dedupe commit came out empty,
@@ -745,9 +745,12 @@ Steps 0-8 are done. Step 8 (2026-11-26, on the rebased tip):
   and the removed `semantic` comparison. The other 986 tests pass on both builds: kept contracts.
 - Stryker over `src/*.js` on jQuery 3.7.1: 95.51% (1969 mutants, 88 survived), above the 94.34% floor.
 - The 5.0 metrics column is re-measured.
-- Not run: the local CodeQL canary. The CodeQL CLI and `phase-12-codeql-canary.sh` are no longer in
-  the notes folder. The custom queries in `.github/codeql/jquery-form-queries` run in the CodeQL
-  workflow on the 5.0 PR, or the CLI can be downloaded again to run them before pushing.
+- The CodeQL canary (CodeQL 2.27.3, re-downloaded; the canary script was rebuilt because the Phase 12
+  copy was lost) scans `src` as the CodeQL workflow does, with `security-extended` and the repo's
+  query pack. The 5.0 source has no results from either. Each reopened sink is flagged: both W1
+  sinks, W2, W3 (the 4.x form-id selector injected, since 5.0 has no such code), W4, and
+  `selectorOption` parsing HTML (by `security-extended`'s unsafe jQuery plugin query, as alerts 7 and
+  10 were).
 
 Before the 5.0 release:
 
