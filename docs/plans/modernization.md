@@ -736,6 +736,15 @@ Steps, one sub-agent per step, each reviewed by the main session before the next
 
 Steps 0-7 are done; step 8 remains.
 
+Before the 5.0 release:
+
+- Merge the test helpers `countParsedHTML` and `countHtmlParsed` in `test/suite/helpers.js` into one
+  (decided 2026-11-26). Both check that jQuery parsed no HTML: `countParsedHTML` (5.0) spies on
+  `$.parseHTML`, takes a synchronous callback, counts every parse and captures a thrown error;
+  `countHtmlParsed` (4.6.0) hooks `jQuery.htmlPrefilter`, takes an async callback and counts only
+  strings containing a marker. Keep one helper that covers every current use, and update the tests
+  that call the other.
+
 Test rules:
 
 - The oracle drops each allowlist class that an N item changes. CRLF, USV, SUBMIT-LABEL and the N11 quirks stay. E2E runs on jQuery 3.5.0, 3.7.1 and 4.0.0, with IFRAME-SUBMITTER and EMPTY-FILE removed. The published-file tests gain `exports` cases, Node `import` resolving to the `.mjs`, and a failing deep `src` import, and the 1.7.2 cases go. One local Stryker run at step 8 must not score below 94.34%. The ignored probe copies are kept (W2).
