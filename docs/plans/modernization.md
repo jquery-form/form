@@ -501,6 +501,14 @@ are in place and pass on Chromium, WebKit and Firefox with jQuery 1.7.2, 3.7.1 a
 end-to-end CI jobs ran for the first time on the PR and pass. The `release.yml` rehearsal on the
 branch passed on 2026-11-14 (run 43600588779), and the version bump is in.
 
+Before the merge (2026-11-26): the flaky iframe abort test and a timeout test that raced a slow
+response now wait on events, and the XSS tests check that no payload HTML is parsed. The suite
+passed 60 matrix runs in Docker (10 normal and 10 on 1 CPU per jQuery version, 3 browsers each) and
+a run with every fixture delayed 1 s. Mutation testing (`docs/research/mutation-testing-4.6.0.md`)
+covered the lines changed since v4.5.0, 21 hand-written mutants (the W1–W4 sinks, timers, event
+order) and the whole source on three jQuery versions. It added 12 tests; every survivor left is
+debug text, old-browser code or equivalent. CI on #644 is green without a rerun.
+
 - Run the suite on Firefox and WebKit as well as Chromium (Vitest browser instances), locally and in
   CI.
 - Oracle tests for serialization: generate varied forms and compare `formToArray` with the browser's
