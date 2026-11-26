@@ -614,6 +614,16 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
 
 Status (local `phase-14` branch): steps 0-7 are done; step 8 (final verification) remains. Nothing is pushed.
 
+Rebased once onto `main` after the 4.6.0 merge (B3), on 2026-11-26; the old tip is
+`refs/backup/pre-4.6.0-rebase/phase-14`. 47 commits remain: the metrics dedupe commit came out empty,
+since `main`'s table has no duplicate columns. The 4.6.0 tests were adapted where 5.0 changes the
+behavior they pin: an HTML string passed to `selectorOption` throws a selector syntax error instead of
+matching nothing, and the iframe read-error test stubs `contentDocument` now that `getDoc` reads only
+that. The `.git-blame-ignore-revs` entry for the trailing-comma sweep points at its new SHA.
+After the rebase, `npm test`, the suite on jQuery 3.5.0, 3.7.1 and 4.0.0 in Chromium, WebKit and
+Firefox, and the end-to-end tests pass. Step 8 still has to refresh the 5.0 metrics column (the first
+Vitest run of `npm test` now has 1131 tests, against 1117 recorded).
+
 Work runs on the local branch `phase-14`, in the worktree `form-phase-14`. The branch is guarded like `phase-13` and is not pushed. After v4.6.0 is tagged and merged to `main`, rebase `phase-14` onto `main` once (B3). The migration guide `docs/migrating-to-5.md` gets an entry for each change, written in the same commit as the change (R3). Release as `5.0.0-beta.N` on the `next` dist-tag, at least two weeks before 5.0.0, and cut `release/4.x` from v4.6.0 just before the merge (R1, R2).
 
 Platform (P1-P5):
