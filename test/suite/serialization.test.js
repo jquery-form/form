@@ -1,5 +1,12 @@
 import { assert, describe, it } from "vitest";
-import { resetFixture, arrayCount, arrayValue, selectFiles, buildForm } from "./helpers.js";
+import {
+  resetFixture,
+  arrayCount,
+  arrayValue,
+  selectFiles,
+  buildForm,
+  countHtmlParsed,
+} from "./helpers.js";
 
 describe("form", function () {
   resetFixture();
@@ -221,9 +228,13 @@ describe("form", function () {
         .attr("id", 'x"]<img src=x onerror="window.formIdPayload=1">')
         .appendTo("#main");
 
-      const formData = $form.formToArray(true);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      let formData;
+      const parsed = await countHtmlParsed("window.formIdPayload", async () => {
+        formData = $form.formToArray(true);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
 
+      assert.strictEqual(parsed, 0);
       assert.deepEqual(formData.length, 1);
       assert.strictEqual(window.formIdPayload, 0);
     });

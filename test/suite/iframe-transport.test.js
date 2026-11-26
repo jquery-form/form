@@ -1,5 +1,6 @@
 import { afterEach, assert, describe, it, vi } from "vitest";
 import {
+  countHtmlParsed,
   recordDeprecations,
   resetFixture,
   restoreAjaxState,
@@ -628,9 +629,11 @@ describe("form", function () {
             .attr("src");
         };
 
-        $form.ajaxSubmit($.extend({ iframe: true, forceSync: true, error: () => {} }, options));
-        $form.data("jqxhr").abort();
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        seen.parsed = await countHtmlParsed("window.iframePayload", async () => {
+          $form.ajaxSubmit($.extend({ iframe: true, forceSync: true, error: () => {} }, options));
+          $form.data("jqxhr").abort();
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
 
         return seen;
       }
@@ -648,6 +651,7 @@ describe("form", function () {
           const seen = await submitAndAbort($form, options);
 
           assert.deepEqual(seen.hidden, [[payload, "v"]]);
+          assert.strictEqual(seen.parsed, 0);
           assert.strictEqual(window.iframePayload, 0);
         });
       });
@@ -661,6 +665,7 @@ describe("form", function () {
         const seen = await submitAndAbort($form, {});
 
         assert.deepEqual(seen.hidden, [[payload, "v"]]);
+        assert.strictEqual(seen.parsed, 0);
         assert.strictEqual(window.iframePayload, 0);
       });
 
@@ -675,6 +680,7 @@ describe("form", function () {
           const seen = await submitAndAbort($form, {});
 
           assert.deepEqual(seen.hidden, [[payload, "t"]]);
+          assert.strictEqual(seen.parsed, 0);
           assert.strictEqual(window.iframePayload, 0);
         } finally {
           $metas.remove();
@@ -690,6 +696,7 @@ describe("form", function () {
         const seen = await submitAndAbort($form, { iframeSrc: iframeSrc });
 
         assert.strictEqual(seen.iframeSrc, iframeSrc);
+        assert.strictEqual(seen.parsed, 0);
         assert.strictEqual(window.iframePayload, 0);
       });
 
@@ -1577,18 +1584,21 @@ describe("form", function () {
             window.__frameHtml = 0;
             $.active = 0;
 
-            try {
-              $form.ajaxSubmit({
-                iframe: true,
-                forceSync: true,
-                iframeTarget: '<img src="data:," onerror="window.__frameHtml = 1">',
-                error: function () {},
-              });
-            } catch {
-              // an iframeTarget that matches nothing throws here
-            }
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            const parsed = await countHtmlParsed("window.__frameHtml", async () => {
+              try {
+                $form.ajaxSubmit({
+                  iframe: true,
+                  forceSync: true,
+                  iframeTarget: '<img src="data:," onerror="window.__frameHtml = 1">',
+                  error: function () {},
+                });
+              } catch {
+                // an iframeTarget that matches nothing throws here
+              }
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            });
 
+            assert.strictEqual(parsed, 0);
             assert.strictEqual(window.__frameHtml, 0);
             assert.strictEqual($.active, 0);
           });

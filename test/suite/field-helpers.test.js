@@ -1,6 +1,12 @@
 import { assert, describe, it } from "vitest";
 import pluginExport from "../../src/jquery.form.js";
-import { resetFixture, selectFiles, withAjaxStub, withUserAgent } from "./helpers.js";
+import {
+  countHtmlParsed,
+  resetFixture,
+  selectFiles,
+  withAjaxStub,
+  withUserAgent,
+} from "./helpers.js";
 
 // Records the change and input events that reach `root` while `run` executes.
 function recordFieldEvents(root, run) {
@@ -259,9 +265,12 @@ describe("form", function () {
         window.labelPayload = 0;
         const $label = $("<label>").attr("for", value).appendTo("#main");
 
-        $label.resetForm();
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        const parsed = await countHtmlParsed("window.labelPayload", async () => {
+          $label.resetForm();
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
 
+        assert.strictEqual(parsed, 0);
         assert.strictEqual(window.labelPayload, 0);
       });
     });

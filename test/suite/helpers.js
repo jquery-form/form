@@ -209,6 +209,33 @@ export function restoreAjaxState() {
   });
 }
 
+// Runs `run` and returns how many HTML strings containing `marker` jQuery parsed meanwhile. Every
+// HTML string jQuery parses passes through jQuery.htmlPrefilter (3.x, 4.x) or jQuery.clean
+// (1.7.2), so this sees a payload synchronously, without waiting for its onerror to fire.
+export async function countHtmlParsed(marker, run) {
+  const hooks = ["htmlPrefilter", "clean"].filter((name) => typeof $[name] === "function");
+  const originals = hooks.map((name) => $[name]);
+  const holdsMarker = (value) =>
+    [].concat(value).some((item) => typeof item === "string" && item.includes(marker));
+  let parsed = 0;
+  hooks.forEach(function (name, i) {
+    $[name] = function (value) {
+      if (holdsMarker(value)) {
+        parsed++;
+      }
+      return originals[i].apply(this, arguments);
+    };
+  });
+
+  try {
+    await run();
+  } finally {
+    hooks.forEach((name, i) => ($[name] = originals[i]));
+  }
+
+  return parsed;
+}
+
 // Runs `run` while recording uncaught window errors instead of failing the run with them. Resolves
 // with what `run` returned; the errors array is passed to `run` so it can assert on them.
 export async function withWindowErrors(run) {

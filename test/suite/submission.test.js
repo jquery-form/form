@@ -5,6 +5,7 @@ import {
   resetFixture,
   submitAndSettle,
   captureAjaxOptions,
+  countHtmlParsed,
   withUserAgent,
   withDocumentUrl,
   withAjaxStub,
@@ -527,13 +528,16 @@ describe("form", function () {
           const $form = $('<form action="ajax/json.json"></form>').appendTo("#main");
           const successes = [];
 
-          captureAjaxOptions(
-            $form,
-            { target: $target, success: (response) => successes.push(response) },
-            (settings) => settings.success(data, "success", {})
-          );
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          const parsed = await countHtmlParsed("window.targetPayload", async () => {
+            captureAjaxOptions(
+              $form,
+              { target: $target, success: (response) => successes.push(response) },
+              (settings) => settings.success(data, "success", {})
+            );
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          });
 
+          assert.strictEqual(parsed, 0);
           assert.strictEqual($target.html(), "kept");
           assert.deepEqual(successes, [data]);
           assert.strictEqual(window.targetPayload, 0);
@@ -2264,11 +2268,13 @@ describe("form", function () {
         window.__targetHtml = 0;
         let calls = 0;
         const target = '<img src="data:," onerror="window.__targetHtml = 1">';
-        const settings = submitWith($form, [{ target: target, success: () => calls++ }]);
+        const parsed = await countHtmlParsed("window.__targetHtml", async () => {
+          const settings = submitWith($form, [{ target: target, success: () => calls++ }]);
+          settings.success("<b>response</b>", "success", {});
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        });
 
-        settings.success("<b>response</b>", "success", {});
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
+        assert.strictEqual(parsed, 0);
         assert.strictEqual(window.__targetHtml, 0);
         assert.strictEqual(calls, 1);
       });
