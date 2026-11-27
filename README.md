@@ -75,7 +75,7 @@ A form with a selected file, or a `multipart/form-data` enctype, is sent with [F
 
 ## Compatibility
 * Requires jQuery 3.5 or later. `main` is tested against jQuery 3.5.0, 3.7.1 and 4.0.0, on Chromium, Firefox and WebKit.
-* jQuery 4 needs 4.4.0 or later; 4.3.0 uses APIs that jQuery 4 removed.
+* If you stay on 4.x with jQuery 4, use 4.4.0 or later; 4.3.0 and earlier use APIs that jQuery 4 removed.
 * Runs in current Chrome, Edge, Firefox (and Firefox ESR) and Safari. The builds use ES2020 syntax, so they need Chrome or Edge 80, Firefox 78 or Safari 14 or later. Internet Explorer, Opera 12 and earlier, and Edge 18 and earlier are not supported; use 4.x for them.
 * `delegation` takes a selector, such as `delegation: "form.ajax"`; `delegation: true` throws. ([issue #353](https://github.com/jquery-form/form/issues/353))
 * **Not** compatible with the jQuery slim builds, which leave out AJAX.
