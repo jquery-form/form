@@ -55,7 +55,7 @@ Full rationale: [ADR-0002](docs/adr/0002-branching-and-release.md).
 * **`main`** is the only trunk. Work in short-lived branches; open PRs into `main`.
 * **4.x then 5.0** are sequential on `main` (no standing `next` branch). After 5.0, rare 4.x patches use an on-demand `release/4.x` branch cut from the last v4 tag.
 * **npm:** `latest` tracks the current major; after 5.0, 4.x publishes use the `v4` dist-tag.
-* **Releases:** a maintainer bumps the version and pushes a `vX.Y.Z` tag. The [Release workflow](.github/workflows/release.yml) runs `npm test`, checks that the committed `dist/` matches the build, and, once a maintainer approves the `npm` environment, publishes to npm through trusted publishing, with provenance.
+* **Releases:** a maintainer bumps the version and pushes a `vX.Y.Z` tag. The [Release workflow](.github/workflows/release.yml) runs `npm test`, checks that the committed `dist/` matches the build, and, once a maintainer approves the `npm` environment, publishes to npm through trusted publishing, with provenance. It picks the dist-tag from the version: a pre-release such as `5.0.0-beta.1` goes to `next`, a release of an older major (a 4.x fix after 5.0) to `v4`, and any other release to `latest`.
 
 ## Testing
 
