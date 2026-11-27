@@ -13,7 +13,7 @@ import { keepContext, selectorOption } from "./options.js";
 import { createLifecycle } from "./iframe-lifecycle.js";
 import jQuery from "jquery";
 import { log } from "./diagnostics.js";
-import { submitterFields } from "./submitter.js";
+import { submitterFields } from "./successful-controls.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
 // when the iframe option asks for it.

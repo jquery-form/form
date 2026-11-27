@@ -1,4 +1,4 @@
-import { closestByTag, formMember, isDisabled } from "./form-members.js";
+import { closestByTag, formMember } from "./form-members.js";
 import jQuery from "jquery";
 
 // The submitter: the button that submitted a form, captured from ajaxForm's clicks. It is kept in
@@ -120,26 +120,6 @@ export function imageFields(sub) {
     { name: prefix + "x", value: sub.x },
     { name: prefix + "y", value: sub.y },
   ];
-}
-
-/**
- * The submitter and its fields for a post that adds them itself (the iframe upload), as
- * { el, fields: [{ name, value }] }, or null when no submitter is sent.
- */
-export function submitterFields(form) {
-  const sub = submitterOf(form);
-  const el = sub && sub.el;
-
-  // a disabled button is not sent, also when a disabled fieldset disables it
-  if (!el || isDisabled(el)) {
-    return null;
-  }
-
-  if (el.type === "image") {
-    return { el, fields: imageFields(sub) };
-  }
-
-  return el.name ? { el, fields: [{ name: el.name, value: el.value }] } : null;
 }
 
 /**

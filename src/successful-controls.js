@@ -47,6 +47,33 @@ function dirnameField(el) {
   return { name: dirname, value: rtl ? "rtl" : "ltr" };
 }
 
+// A control's own fields, then its dirname field when it has one, as a native submission sends them.
+function withDirname(el, own) {
+  const dir = dirnameField(el);
+
+  return dir ? own.concat([dir]) : own;
+}
+
+/**
+ * The submitter and its fields for a post that adds them itself (the iframe upload), as
+ * { el, fields: [{ name, value }] }, or null when no submitter is sent.
+ */
+export function submitterFields(form) {
+  const sub = submitterOf(form);
+  const el = sub && sub.el;
+
+  // a disabled button is not sent, also when a disabled fieldset disables it
+  if (!el || isDisabled(el)) {
+    return null;
+  }
+
+  if (el.type === "image") {
+    return { el, fields: imageFields(sub) };
+  }
+
+  return el.name ? { el, fields: withDirname(el, [{ name: el.name, value: el.value }]) } : null;
+}
+
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
@@ -312,15 +339,8 @@ export function createSuccessfulControls() {
     const own = fieldsOf(el);
 
     if (own) {
-      const dir = dirnameField(el);
-
       collected.controls.push(el);
-      collected.fields.push.apply(collected.fields, own);
-
-      // right after the control's own field, as a native submission sends it
-      if (dir) {
-        collected.fields.push(dir);
-      }
+      collected.fields.push.apply(collected.fields, withDirname(el, own));
     }
   }
 

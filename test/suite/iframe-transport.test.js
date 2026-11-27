@@ -1940,6 +1940,23 @@ describe("form", function () {
             assert.strictEqual(button.nextSibling, $form.find("[name=upload]")[0]);
           });
 
+          it("should send the direction of a clicked submit input right after its field, as the XHR transport does", function () {
+            const $form = createIframeForm("ajax/iframe-text.html").attr("dir", "rtl");
+            $form[0].clk = $(
+              '<input type="submit" name="go" value="Go" dirname="go.dir">',
+            ).appendTo($form)[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [
+              ["go", "Go"],
+              ["go.dir", "rtl"],
+            ]);
+          });
+
           it("should give the field of a clicked button inside the form no form attribute, so the form posts it", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
