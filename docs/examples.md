@@ -3,597 +3,272 @@
 
 ## Examples
 
+These examples need jQuery 3.5 or later. Each one shows the form markup, the JavaScript, and what the server is expected to send back. The URLs (`/comments`, `/echo`) stand for endpoints on your own server.
+
 ### ajaxForm
 
-The following code controls the HTML form beneath it. It uses `ajaxForm` to bind the form and demonstrates how to use pre- and post-submit callbacks.
+`ajaxForm` binds a form so that submitting it sends an AJAX request instead of loading a new page. It includes the submit button that was clicked, and the click coordinates of an `<input type="image">`. This example adds a callback before and after the request.
+
+```html
+<form id="commentForm" action="/comments" method="post">
+  <input type="hidden" name="postId" value="42" />
+  <label>Name: <input name="name" type="text" /></label>
+  <label>Comment: <textarea name="comment" rows="3"></textarea></label>
+  <button type="submit" name="action" value="save">Save</button>
+  <button type="submit" name="action" value="preview">Preview</button>
+</form>
+
+<div id="commentOutput"></div>
+```
 
 ```javascript
-// prepare the form when the DOM is ready
-$(document).ready(function () {
-  var options = {
-    target: "#output1", // target element(s) to be updated with server response
-    beforeSubmit: showRequest, // pre-submit callback
-    success: showResponse, // post-submit callback
+$(() => {
+  $("#commentForm").ajaxForm({
+    target: "#commentOutput", // element to fill with the server's HTML response
+    beforeSubmit: showRequest,
+    success: showResponse,
 
-    // other available options:
-    //url:       url         // override for form's 'action' attribute
-    //type:      type        // 'get' or 'post', override for form's 'method' attribute
-    //dataType:  null        // 'xml', 'script', or 'json' (expected server response type)
-    //clearForm: true        // clear all form fields after successful submit
-    //resetForm: true        // reset the form after successful submit
-
-    // $.ajax options can be used here too, for example:
-    //timeout:   3000
-  };
-
-  // bind form using 'ajaxForm'
-  $("#myForm1").ajaxForm(options);
+    // Other options include url, method, dataType, clearForm and resetForm;
+    // $.ajax options such as timeout work too. See the Options page.
+  });
 });
 
-// pre-submit callback
-function showRequest(formData, jqForm, options) {
-  // formData is an array; here we use $.param to convert it to a string to display it
-  // but the form plugin does this for you automatically when it submits the data
-  var queryString = $.param(formData);
-
-  // jqForm is a jQuery object encapsulating the form element. To access the
-  // DOM element for the form do this:
-  // var formElement = jqForm[0];
-
-  alert("About to submit: \n\n" + queryString);
-
-  // here we could return false to prevent the form from being submitted;
-  // returning anything other than false will allow the form submit to continue
+// Called before the request; return false to cancel it.
+function showRequest(formData, $form, options) {
+  // formData is an array of { name, value } objects, e.g.
+  // [{ name: "postId", value: "42" }, ..., { name: "action", value: "save" }]
+  console.log("About to send:", $.param(formData));
   return true;
 }
 
-// post-submit callback
-function showResponse(responseText, statusText, xhr, $form) {
-  // for normal html responses, the first argument to the success callback
-  // is the XMLHttpRequest object's responseText property
-
-  // if the ajaxForm method was passed an Options Object with the dataType
-  // property set to 'xml' then the first argument to the success callback
-  // is the XMLHttpRequest object's responseXML property
-
-  // if the ajaxForm method was passed an Options Object with the dataType
-  // property set to 'json' then the first argument to the success callback
-  // is the json data object returned by the server
-
-  alert(
-    "status: " +
-      statusText +
-      "\n\nresponseText: \n" +
-      responseText +
-      "\n\nThe output div should have already been updated with the responseText.",
-  );
+// Called when the request succeeds.
+function showResponse(data, statusText, xhr, $form) {
+  // data is the response text here; with dataType "json" or "xml" it is the
+  // parsed object or document. The target has already been updated.
+  console.log("Status:", statusText);
 }
 ```
 
-<form id="myForm1" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
-  <input type="hidden" name="Hidden" value="hiddenValue">
-  <table>
-  <tr><td>Name:</td><td><input name="Name" type="text" value="MyName1"></td></tr>
-  <tr><td>Password:</td><td><input name="Password" type="password"></td></tr>
-  <tr><td>Multiple:</td><td><select name="Multiple" multiple="multiple">
-    <optgroup label="Group 1">
-      <option value="one" selected="selected">One</option>
-      <option value="two">Two</option>
-      <option value="three">Three</option>
-    </optgroup>
-    <optgroup label="Group 2">
-      <option value="four">Four</option>
-      <option value="five">Five</option>
-      <option value="six">Six</option>
-    </optgroup>
-  </select></td></tr>
-  <tr><td>Single:</td><td><select name="Single">
-    <option value="one" selected="selected">One</option>
-    <option value="two">Two</option>
-    <option value="three">Three</option>
-  </select></td></tr>
-  <tr><td>Single2:</td><td><select name="Single2">
-    <optgroup label="Group 1">
-      <option value="A" selected="selected">A</option>
-      <option value="B">B</option>
-      <option value="C">C</option>
-    </optgroup>
-    <optgroup label="Group 2">
-      <option value="D">D</option>
-      <option value="E">E</option>
-      <option value="F">F</option>
-    </optgroup>
-  </select></td></tr>
-  <tr><td>Check:</td><td>
-    <input type="checkbox" name="Check" value="1">
-    <input type="checkbox" name="Check" value="2">
-    <input type="checkbox" name="Check" value="3">
-  </td></tr>
-  <tr><td>Radio:</td><td>
-    <input type="radio" name="Radio" value="1">
-    <input type="radio" name="Radio" value="2">
-    <input type="radio" name="Radio" value="3">
-  </td></tr>
-  <tr><td>Text:</td><td><textarea name="Text" rows="2" cols="20">This is Form1</textarea></td></tr>
-  </table>
-  <input type="reset"   name="resetButton " value="Reset">
-  <input type="submit"  name="submitButton" value="Submit1">
-  <input type="image"   name="submitButton" value="Submit2" src="https://malsup.com/jquery/form/submit.gif">
-  <input type="image"   name="submitButton" value="Submit3" src="https://malsup.com/jquery/form/submit.gif">
-  <input type="image"   name="submitButton" value="Submit4" src="https://malsup.com/jquery/form/submit.gif">
-  <button type="submit" name="submitButton" value="Submit5"><span>submit 5</span></button>
-</div></form>
+The request contains `postId`, `name`, `comment` and the clicked button's `action`, the same fields a normal submission sends. The server answers with an HTML fragment, such as `<p>Comment saved.</p>`, which replaces the contents of `#commentOutput`.
 
-#### Output Div (#output1):
+#### Forms Added Later
 
-<div id="output1">AJAX response will replace this content.</div>
+To handle forms that are added to the page after it loads, bind by selector with the [`delegation`](options.md#delegation) option. The binding is on the document, so the selection `ajaxForm` is called on does not matter:
+
+```javascript
+$(document).ajaxForm({ delegation: "form.ajax", target: "#commentOutput" });
+```
 
 ---
 
 ### ajaxSubmit
 
-The following code controls the HTML form beneath it. It uses `ajaxSubmit` to submit the form.
+`ajaxSubmit` sends the form once, right away. Call it from your own submit handler when you want to decide each time whether and how to send:
 
 ```javascript
-// prepare the form when the DOM is ready
-$(document).ready(function () {
-  var options = {
-    target: "#output2", // target element(s) to be updated with server response
-    beforeSubmit: showRequest, // pre-submit callback
-    success: showResponse, // post-submit callback
+$(() => {
+  $("#commentForm").on("submit", function (event) {
+    // Stop the browser's own submission and page load
+    event.preventDefault();
 
-    // other available options:
-    //url:       url         // override for form's 'action' attribute
-    //type:      type        // 'get' or 'post', override for form's 'method' attribute
-    //dataType:  null        // 'xml', 'script', or 'json' (expected server response type)
-    //clearForm: true        // clear all form fields after successful submit
-    //resetForm: true        // reset the form after successful submit
-
-    // $.ajax options can be used here too, for example:
-    //timeout:   3000
-  };
-
-  // bind to the form's submit event
-  $("#myForm2").submit(function () {
-    // inside event callbacks 'this' is the DOM element so we first
-    // wrap it in a jQuery object and then invoke ajaxSubmit
-    $(this).ajaxSubmit(options);
-
-    // !!! Important !!!
-    // always return false to prevent standard browser submit and page navigation
-    return false;
+    $(this).ajaxSubmit({
+      target: "#commentOutput",
+      beforeSubmit: showRequest,
+      success: showResponse,
+    });
   });
 });
-
-// pre-submit callback
-function showRequest(formData, jqForm, options) {
-  // formData is an array; here we use $.param to convert it to a string to display it
-  // but the form plugin does this for you automatically when it submits the data
-  var queryString = $.param(formData);
-
-  // jqForm is a jQuery object encapsulating the form element. To access the
-  // DOM element for the form do this:
-  // var formElement = jqForm[0];
-
-  alert("About to submit: \n\n" + queryString);
-
-  // here we could return false to prevent the form from being submitted;
-  // returning anything other than false will allow the form submit to continue
-  return true;
-}
-
-// post-submit callback
-function showResponse(responseText, statusText, xhr, $form) {
-  // for normal html responses, the first argument to the success callback
-  // is the XMLHttpRequest object's responseText property
-
-  // if the ajaxSubmit method was passed an Options Object with the dataType
-  // property set to 'xml' then the first argument to the success callback
-  // is the XMLHttpRequest object's responseXML property
-
-  // if the ajaxSubmit method was passed an Options Object with the dataType
-  // property set to 'json' then the first argument to the success callback
-  // is the json data object returned by the server
-
-  alert(
-    "status: " +
-      statusText +
-      "\n\nresponseText: \n" +
-      responseText +
-      "\n\nThe output div should have already been updated with the responseText.",
-  );
-}
 ```
 
-<form id="myForm2" action="https://malsup.com/jquery/form/dummy2.php" method="post"><div>
-  <input type="hidden" name="Hidden" value="hiddenValue">
-  <table>
-    <tr><td>Name:</td><td><input name="Name" type="text" value="MyName2"></td></tr>
-    <tr><td>Password:</td><td><input name="Password" type="password"></td></tr>
-    <tr><td>Multiple:</td><td><select name="Multiple" multiple="multiple">
-      <optgroup label="Group 1">
-        <option value="one" selected="selected">One</option>
-        <option value="two">Two</option>
-        <option value="three">Three</option>
-      </optgroup>
-      <optgroup label="Group 2">
-        <option value="four">Four</option>
-        <option value="five">Five</option>
-        <option value="six">Six</option>
-      </optgroup>
-    </select></td></tr>
-    <tr><td>Single:</td><td><select name="Single">
-      <option value="one" selected="selected">One</option>
-      <option value="two">Two</option>
-      <option value="three">Three</option>
-    </select></td></tr>
-    <tr><td>Single2:</td><td><select name="Single2">
-      <optgroup label="Group 1">
-        <option value="A" selected="selected">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-      </optgroup>
-      <optgroup label="Group 2">
-        <option value="D">D</option>
-        <option value="E">E</option>
-        <option value="F">F</option>
-      </optgroup>
-    </select></td></tr>
-    <tr><td>Check:</td><td>
-      <input type="checkbox" name="Check" value="1">
-      <input type="checkbox" name="Check" value="2">
-      <input type="checkbox" name="Check" value="3">
-    </td></tr>
-    <tr><td>Radio:</td><td>
-      <input type="radio" name="Radio" value="1">
-      <input type="radio" name="Radio" value="2">
-      <input type="radio" name="Radio" value="3">
-    </td></tr>
-    <tr><td>Text:</td><td><textarea name="Text" rows="2" cols="20">This is Form2</textarea></td></tr>
-  </table>
-  <input type="reset"   name="resetButton " value="Reset">
-  <input type="submit"  name="submitButton" value="Submit1">
-  <input type="image"   name="submitButton" value="Submit2" src="https://malsup.com/jquery/form/submit.gif">
-</div></form>
-
-#### Output Div (#output2):
-
-<div id="output2">AJAX response will replace this content.</div>
+`ajaxSubmit` does not know which button was clicked; only `ajaxForm` records it. If the server needs the button's value, use `ajaxForm`, or add the value with the [`data`](options.md#data) option.
 
 ---
 
 ### Validation
 
-This section gives several examples of how form data can be validated before it is sent to the server. The secret is in the `beforeSubmit` option. If this pre-submit callback returns false, the submit process is aborted.
-
-The following login form is used for each of the examples that follow. Each example will validate that both the _username_ and _password_ fields have been filled in by the user.
-
-#### Form Markup:
+The [`beforeSubmit`](options.md#beforesubmit) callback runs before the request is sent. If it returns `false`, nothing is sent. The examples below each check that both fields of this login form are filled in:
 
 ```html
-<form id="validationForm" action="https://malsup.com/jquery/form/dummy.php" method="post">
-  Username: <input type="text" name="username" /> Password:
-  <input type="password" name="password" />
-  <input type="submit" value="Submit" />
+<form id="loginForm" action="/login" method="post">
+  <label>Username: <input type="text" name="username" /></label>
+  <label>Password: <input type="password" name="password" /></label>
+  <button type="submit">Log in</button>
 </form>
 ```
 
-First, we initialize the form and give it a `beforeSubmit` callback function - this is the validation function.
-
 ```javascript
-// prepare the form when the DOM is ready
-$(document).ready(function () {
-  // bind form using ajaxForm
-  $("#myForm2").ajaxForm({ beforeSubmit: validate });
+$(() => {
+  $("#loginForm").ajaxForm({ beforeSubmit: validate });
 });
 ```
 
 #### Validate Using the `formData` Argument
 
-<form id="validateForm1" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
-    Username: <input type="text" name="username">
-    Password: <input type="password" name="password">
-    <input type="submit" value="Submit">
-</div></form>
-
 ```javascript
-function validate(formData, jqForm, options) {
-  // formData is an array of objects representing the name and value of each field
-  // that will be sent to the server;  it takes the following form:
-  //
-  // [
-  //     { name:  username, value: valueOfUsernameInput },
-  //     { name:  password, value: valueOfPasswordInput }
-  // ]
-  //
-  // To validate, we can examine the contents of this array to see if the
-  // username and password fields have values. If either value evaluates
-  // to false then we return false from this method.
-
-  for (var i = 0; i < formData.length; i++) {
-    if (!formData[i].value) {
-      alert("Please enter a value for both Username and Password");
-      return false;
-    }
+function validate(formData, $form, options) {
+  // formData holds every field that will be sent:
+  // [{ name: "username", value: "..." }, { name: "password", value: "..." }]
+  const empty = formData.some((field) => !field.value);
+  if (empty) {
+    alert("Please enter a username and a password.");
+    return false;
   }
-  alert("Both fields contain values.");
 }
 ```
 
-#### Validate Using the `jqForm` Argument
-
-<form id="validateForm2" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
-    Username: <input type="text" name="username">
-    Password: <input type="password" name="password">
-    <input type="submit" value="Submit">
-</div></form>
+#### Validate Using the `$form` Argument
 
 ```javascript
-function validate(formData, jqForm, options) {
-  // jqForm is a jQuery object which wraps the form DOM element
-  //
-  // To validate, we can access the DOM elements directly and return true
-  // only if the values of both the username and password fields evaluate
-  // to true
-
-  var form = jqForm[0];
+function validate(formData, $form, options) {
+  // $form is a jQuery object wrapping the form element
+  const form = $form[0];
   if (!form.username.value || !form.password.value) {
-    alert("Please enter a value for both Username and Password");
+    alert("Please enter a username and a password.");
     return false;
   }
-  alert("Both fields contain values.");
 }
 ```
 
 #### Validate Using the `fieldValue` Method
 
-<form id="validateForm3" action="https://malsup.com/jquery/form/dummy.php" method="post"><div>
-    Username: <input type="text" name="username">
-    Password: <input type="password" name="password">
-    <input type="submit" value="Submit">
-</div></form>
-
 ```javascript
-function validate(formData, jqForm, options) {
-  // fieldValue is a Form Plugin method that can be invoked to find the
-  // current value of a field
-  //
-  // To validate, we can capture the values of both the username and password
-  // fields and return true only if both evaluate to true
-
-  var usernameValue = $("input[name=username]").fieldValue();
-  var passwordValue = $("input[name=password]").fieldValue();
-
-  // usernameValue and passwordValue are arrays but we can do simple
-  // "not" tests to see if the arrays are empty
-  if (!usernameValue[0] || !passwordValue[0]) {
-    alert("Please enter a value for both Username and Password");
+function validate(formData, $form, options) {
+  // fieldValue returns an array of the values each control would send
+  const username = $form.find("input[name=username]").fieldValue();
+  const password = $form.find("input[name=password]").fieldValue();
+  if (!username[0] || !password[0]) {
+    alert("Please enter a username and a password.");
     return false;
   }
-  alert("Both fields contain values.");
 }
 ```
 
-#### Note
+#### Browser Validation
 
-You can find jQuery plugins that deal specifically with field validation on the [jQuery Plugins Page](http://docs.jquery.com/Plugins#Forms).
+Attributes such as `required`, `pattern` and `type="email"` work with `ajaxForm`. When a user submits a form whose fields are not valid, the browser shows its own messages and does not fire the `submit` event, so no request is sent. `ajaxSubmit` called from your own code does not check them; call `form.reportValidity()` first if you need to.
 
 ---
 
 ### JSON
 
-This page shows how to handle JSON data returned from the server. The form below submits a message to the server and the server echos it back in JSON format.
-
-#### Form markup:
+With `dataType: "json"`, the response is parsed and `success` receives the resulting object.
 
 ```html
-<form id="jsonForm" action="https://malsup.com/jquery/form/json-echo.php" method="post">
-  Message: <input type="text" name="message" value="Hello JSON" />
-  <input type="submit" value="Echo as JSON" />
+<form id="jsonForm" action="/echo" method="post">
+  <label>Message: <input type="text" name="message" value="Hello JSON" /></label>
+  <button type="submit">Echo as JSON</button>
 </form>
 ```
 
-<form id="jsonForm" action="https://malsup.com/jquery/form/json-echo.php" method="post"><div>
-    Message: <input type="text" name="message" value="Hello JSON">
-    <input type="submit" value="Echo as JSON">
-</div></form>
-
-#### Server code in `json-echo.php`:
-
-```php
-<?php  echo '{ "message": "' . $_POST['message'] . '" }';  ?>
-```
-
-#### JavaScript:
-
 ```javascript
-// prepare the form when the DOM is ready
-$(document).ready(function () {
-  // bind form using ajaxForm
+$(() => {
   $("#jsonForm").ajaxForm({
-    // dataType identifies the expected content type of the server response
     dataType: "json",
-
-    // success identifies the function to invoke when the server response
-    // has been received
-    success: processJson,
+    success: (data) => {
+      alert(data.message);
+    },
   });
 });
 ```
 
-#### Callback function
+The server sends `{"message": "Hello JSON"}` with the content type `application/json`. In PHP, `json_encode` takes care of quoting and escaping:
 
-```javascript
-function processJson(data) {
-  // 'data' is the json object returned from the server
-  alert(data.message);
-}
+```php
+<?php
+header('Content-Type: application/json');
+echo json_encode(['message' => $_POST['message'] ?? '']);
 ```
 
 ---
 
 ### XML
 
-This page shows how to handle XML data returned from the server. The form below submits a message to the server and the server echos it back in XML format.
-
-#### Form markup:
-
-```html
-<form id="xmlForm" action="https://malsup.com/jquery/form/xml-echo.php" method="post">
-  Message: <input type="text" name="message" value="Hello XML" />
-  <input type="submit" value="Echo as XML" />
-</form>
-```
-
-<form id="xmlForm" action="https://malsup.com/jquery/form/xml-echo.php" method="post"><div>
-  Message: <input type="text" name="message" value="Hello XML">
-  <input type="submit" value="Echo as XML">
-</div></form>
-
-#### Server code in `xml-echo.php`:
-
-```php
-<?php
-// !!! IMPORTANT !!! - the server must set the content type to XML
-header('Content-type: text/xml');
-echo '<root><message>' . $_POST['message'] . '</message></root>';
-?>
-```
-
-#### JavaScript:
+With `dataType: "xml"`, `success` receives the parsed XML document.
 
 ```javascript
-// prepare the form when the DOM is ready
-$(document).ready(function () {
-  // bind form using ajaxForm
+$(() => {
   $("#xmlForm").ajaxForm({
-    // dataType identifies the expected content type of the server response
     dataType: "xml",
-
-    // success identifies the function to invoke when the server response
-    // has been received
-    success: processXml,
+    success: (responseXML) => {
+      const message = $("message", responseXML).text();
+      alert(message);
+    },
   });
 });
 ```
 
-#### Callback function
+The server sends `<root><message>Hello XML</message></root>` with an XML content type, and escapes the text it puts in the document:
 
-```javascript
-function processXml(responseXML) {
-  // 'responseXML' is the XML document returned by the server; we use
-  // jQuery to extract the content of the message node from the XML doc
-  var message = $("message", responseXML).text();
-  alert(message);
-}
+```php
+<?php
+header('Content-Type: text/xml');
+echo '<root><message>' . htmlspecialchars($_POST['message'] ?? '', ENT_XML1) . '</message></root>';
 ```
 
 ---
 
 ### HTML
 
-This page shows how to handle HTML data returned from the server. The form below submits a message to the server and the server echos it back in an HTML div. The response is added to this page in the `htmlExampleTarget` div below.
-
-#### Form markup:
-
-```html
-<form id="htmlForm" action="https://malsup.com/jquery/form/html-echo.php" method="post">
-  Message: <input type="text" name="message" value="Hello HTML" />
-  <input type="submit" value="Echo as HTML" />
-</form>
-```
-
-<form id="htmlForm" action="https://malsup.com/jquery/form/html-echo.php" method="post"><div>
-  Message: <input type="text" name="message" value="Hello HTML">
-  <input type="submit" value="Echo as HTML">
-</div></form>
-
-#### Server code in `html-echo.php`:
-
-```php
-<?php
-echo '<div style="background-color:#ffa; padding:20px">' . $_POST['message'] . '</div>';
-?>
-```
-
-#### JavaScript:
+With the [`target`](options.md#target) option, the HTML response is inserted into the target element, here `#htmlOutput`:
 
 ```javascript
-// prepare the form when the DOM is ready
-$(document).ready(function () {
-  // bind form using ajaxForm
+$(() => {
   $("#htmlForm").ajaxForm({
-    // target identifies the element(s) to update with the server response
-    target: "#htmlExampleTarget",
-
-    // success identifies the function to invoke when the server response
-    // has been received; here we apply a fade-in effect to the new content
-    success: function () {
-      $("#htmlExampleTarget").fadeIn("slow");
+    target: "#htmlOutput",
+    success: () => {
+      $("#htmlOutput").fadeIn("slow");
     },
   });
 });
 ```
 
-#### htmlExampleTarget (output will be added below):
+The response is inserted as HTML, as `$.fn.load` does, and its scripts run. It must come from your own server, and the server must escape anything a user typed:
 
-<div id="htmlExampleTarget"></div>
+```php
+<?php
+echo '<p class="echo">' . htmlspecialchars($_POST['message'] ?? '') . '</p>';
+```
 
 ---
 
 ### File Upload
 
-This page demonstrates the Form Plugin's file upload capabilities. There is no special coding required to handle file uploads. File input elements are automatically detected and processed for you.
+Forms with file inputs need no special code. Files are sent with [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) over `XMLHttpRequest`, and the [`uploadProgress`](options.md#uploadprogress) callback reports progress as the upload proceeds:
 
-Files are uploaded with [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) over `XMLHttpRequest`, and the `uploadProgress` callback reports progress as the upload proceeds.
+```html
+<form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+  <label>File: <input type="file" name="file" /></label>
+  <button type="submit">Upload</button>
+</form>
+<div id="uploadOutput"></div>
+```
 
-With the `iframe: true` option, the plugin instead submits the form to a hidden iframe, so the server response is written to the iframe. This is fine if the response type is HTML or XML, but doesn't work as well if the response type is script or JSON, both of which often contain characters that need to be represented using entity references when found in HTML markup. To account for this, the Form Plugin allows these responses to be embedded in a `textarea` element, and it is recommended that you do so for these response types when you use the `iframe` option. The [`iframe`](options.md#iframe) option describes how the plugin reads the response.
+```javascript
+$(() => {
+  $("#uploadForm").ajaxForm({
+    uploadProgress: (event, position, total, percentComplete) => {
+      $("#uploadOutput").text(percentComplete + "%");
+    },
+    success: () => {
+      $("#uploadOutput").text("Done");
+    },
+  });
+});
+```
 
-Only requests made with `iframe: true` go through the iframe; every other request, uploads included, uses `XMLHttpRequest`. This puts the burden on your server code to know when to use a textarea and when not to. The recommended solution is to test for the 'X-Requested-With' request header. If the value of that header is 'XMLHttpRequest' then you know that the form was posted via ajax.
+#### Uploading Through an Iframe
 
-The following PHP snippet shows how you can be sure to return content successfully:
+With the [`iframe: true`](options.md#iframe) option, the plugin instead posts the form to a hidden iframe, as a normal form submission. It cannot report progress, and the server's response is loaded as a page in the iframe before the plugin reads it. Send a JSON or script response as `text/plain`, or HTML-escaped inside a `<textarea>`, so that it survives being loaded as a page. The iframe transport is kept in 5.0 and may be removed in 6.0. If you use it, comment on [issue #629](https://github.com/jquery-form/form/issues/629) with your use case.
+
+Iframe uploads do not send the `X-Requested-With: XMLHttpRequest` header that jQuery adds to its own same-origin requests. A server that answers both kinds can use the header to decide whether to wrap its response:
 
 ```php
 <?php
-$xhr = $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
-if (!$xhr)
-  echo '<textarea>';
-?>
-
-// main content of response here
-
-<?php
-if (!$xhr)
-  echo '</textarea>';
-?>
-```
-
-The form below provides an input element of type "file" along with a select element to specify the dataType of the response. The form is submitted to `files.php` which uses the dataType to determine what type of response to return.
-
-<form id="uploadForm" action="https://malsup.com/jquery/form/files.php" method="POST" enctype="multipart/form-data">
-    <input type="hidden" name="MAX_FILE_SIZE" value="100000">
-    File: <input type="file" name="file">
-    Return Type: <select id="uploadResponseType" name="mimetype">
-        <option value="html">html</option>
-        <option value="json">json</option>
-        <option value="script">script</option>
-        <option value="xml">xml</option>
-    </select>
-    <input type="submit" value="Submit 1" name="uploadSubmitter1">
-    <input type="submit" value="Submit 2" name="uploadSubmitter2">
-</form>
-<label>Output:</label>
-<div id="uploadOutput"></div>
-
-To show upload progress, pass an [`uploadProgress`](options.md#uploadprogress) callback. It is called as the upload proceeds, with the progress event, the bytes sent, the total and the percentage. The iframe transport (`iframe: true`) cannot report progress.
-
-```javascript
-$("#uploadForm").ajaxForm({
-  uploadProgress: function (event, position, total, percentComplete) {
-    $("#uploadOutput").text(percentComplete + "%");
-  },
-  success: function () {
-    $("#uploadOutput").text("Done");
-  },
-});
+$json = json_encode(['saved' => true]);
+if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') {
+  header('Content-Type: application/json');
+  echo $json;
+} else {
+  echo '<textarea>' . htmlspecialchars($json) . '</textarea>';
+}
 ```
