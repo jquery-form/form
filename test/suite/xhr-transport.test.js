@@ -865,6 +865,42 @@ describe("form", function () {
       });
     });
 
+    // Drupal's and Backdrop's misc/ajax.js set form.clk to the triggering button themselves, then
+    // call ajaxSubmit from their own handler, without ajaxForm's click capture.
+    describe("a submitter the page sets on form.clk", function () {
+      it("should send the button the page set, at its place, in a urlencoded body", function () {
+        const $form = makeForm(
+          '<form action="ajax/text.html" method="post">' +
+            '<input name="title" value="t">' +
+            '<input type="submit" name="op" value="Save">' +
+            '<input type="submit" name="op" value="Preview">' +
+            '<input name="after" value="a">' +
+            "</form>"
+        );
+        $form[0].clk = $form.find('[value="Preview"]')[0];
+
+        const settings = captureAjaxOptions($form, { data: { _triggering_element_name: "op" } });
+
+        assert.strictEqual(settings.data, "title=t&op=Preview&after=a&_triggering_element_name=op");
+      });
+
+      it("should send the button the page set, at its place, in a FormData upload", function () {
+        const upload = uploadForm();
+        $('<input type="submit" name="upload_button" value="Upload">').insertBefore(
+          upload.$form.find('[type="file"]')
+        );
+        upload.$form[0].clk = upload.$form.find('[name="upload_button"]')[0];
+
+        const body = uploadBody(captureAjaxOptions(upload.$form, {}));
+
+        assert.deepEqual(Array.from(body.entries()), [
+          ["title", "quarterly report"],
+          ["upload_button", "Upload"],
+          ["document", upload.file],
+        ]);
+      });
+    });
+
     describe("callbacks on the FormData transport", function () {
       it("should call callbacks with the given context object on an upload", function () {
         const upload = uploadForm();
