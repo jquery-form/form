@@ -276,6 +276,37 @@ describe("form", function () {
         assert.strictEqual($form.find('input[type="hidden"]').length, 0);
       });
 
+      // Drupal's and Backdrop's misc/ajax.js add these keys in beforeSend, after the data option is
+      // in place, so that an iframe upload posts them as hidden fields.
+      it("should submit extraData keys a beforeSend callback adds, with the data option", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const submitted = {};
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        await submitThroughIframe($form, {
+          data: { _triggering_element_name: "upload_button" },
+          dataType: "text",
+          beforeSend: function (_xhr, options) {
+            options.extraData = options.extraData || {};
+            options.extraData.ajax_iframe_upload = "1";
+            options.extraData.caption = "a pixel";
+          },
+        });
+
+        assert.deepEqual(submitted, {
+          _triggering_element_name: "upload_button",
+          ajax_iframe_upload: "1",
+          caption: "a pixel",
+        });
+        assert.strictEqual($form.find('input[type="hidden"]').length, 0);
+      });
+
       it("should fall back to native submission when a control shadows form.submit", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         $('<input name="submit" value="shadow">').appendTo($form);
