@@ -19,6 +19,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      dist-tag: ${{ steps.dist-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -54,6 +56,31 @@ jobs:
             echo "jquery-form@$version is already on npm."
             exit 1
           fi
+      # A pre-release goes to `next`, an older major (a 4.x fix after 5.0) to `v<major>`, and
+      # anything else to `latest`. A stable version below `latest` in the same major is refused,
+      # so `latest` never moves back.
+      - name: Choose the npm dist-tag
+        id: dist-tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(node -p "require('./package.json').version")
+          latest=$(npm view jquery-form@latest version 2>/dev/null || true)
+          tag=$(VERSION="$version" LATEST="$latest" node -e '
+            const parse = (v) => v.split("-")[0].split(".").map(Number);
+            const { VERSION: version, LATEST: latest } = process.env;
+            if (version.includes("-")) { console.log("next"); process.exit(0); }
+            if (!latest) { console.log("latest"); process.exit(0); }
+            const [a, b] = [parse(version), parse(latest)];
+            if (a[0] < b[0]) { console.log("v" + a[0]); process.exit(0); }
+            const lower = a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2]));
+            console.log(lower ? "" : "latest");
+          ')
+          if [ -z "$tag" ]; then
+            echo "$version is below latest ($latest) in the same major; publish it from a branch with its own dist-tag."
+            exit 1
+          fi
+          echo "jquery-form@$version will be published with the dist-tag $tag (latest is ${latest:-none})."
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       # npm pack lists the same files as npm publish without asking the registry, so a rehearsal from
       # a branch passes even though its version is already published.
       - name: Show the tarball that would be published
@@ -61,6 +88,8 @@ jobs:
 
   publish:
     needs: verify
+    env:
+      DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -78,4 +107,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - run: npm publish
+      - name: Publish with the dist-tag the verify job chose
+        run: |
+          if [ -z "$DIST_TAG" ]; then
+            echo "The verify job chose no dist-tag."
+            exit 1
+          fi
+          npm publish --tag "$DIST_TAG"

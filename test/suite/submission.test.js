@@ -5,16 +5,15 @@ import {
   resetFixture,
   submitAndSettle,
   captureAjaxOptions,
-  countHtmlParsed,
-  withUserAgent,
   withDocumentUrl,
   withAjaxStub,
   withAjaxSettings,
   selectFiles,
   formHidingParentNode,
   buildForm,
-  recordDeprecations,
+  recordWarnings,
   submitTransport,
+  countParsedHTML,
 } from "./helpers.js";
 
 function makeForm(html) {
@@ -35,10 +34,6 @@ function uploadBody(settings) {
   settings.beforeSend({}, received);
 
   return received.data;
-}
-
-function majorVersion() {
-  return Number($.fn.jquery.split(".")[0]);
 }
 
 // Calls ajaxSubmit with `args` through a stubbed $.ajax and returns the settings it received
@@ -84,7 +79,7 @@ describe("form", function () {
 
             assert.strictEqual(result, $empty, "returns the original selection");
             assert.strictEqual(requests, 0, "does not request");
-          }
+          },
         );
       });
 
@@ -106,7 +101,7 @@ describe("form", function () {
 
         assert.strictEqual(
           error.message,
-          "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+          "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax",
         );
         assert.deepEqual(events, []);
       });
@@ -132,7 +127,7 @@ describe("form", function () {
             assert.strictEqual(ajaxOptions.dataType, "text", "dataType");
             assert.ok(ajaxOptions.data.includes("source=shorthand"), "extra data");
             assert.strictEqual(successData, "ok", "success callback");
-          }
+          },
         );
       });
 
@@ -153,7 +148,7 @@ describe("form", function () {
               await Promise.resolve();
 
               assert.ok(ajaxOptions.url.endsWith(expectedUrl), "form action");
-            }
+            },
           );
         });
       });
@@ -182,7 +177,7 @@ describe("form", function () {
 
               assert.strictEqual(serialized, false, "does not serialize");
               assert.strictEqual(requests, 0, "does not request");
-            }
+            },
           );
         } finally {
           $form.formToArray = formToArray;
@@ -211,7 +206,7 @@ describe("form", function () {
 
             assert.strictEqual(callbackForm, $form, "callback form");
             assert.strictEqual(requests, 0, "does not request");
-          }
+          },
         );
       });
 
@@ -235,7 +230,7 @@ describe("form", function () {
 
               assert.ok(Array.isArray(submittedData), "validation receives form data");
               assert.strictEqual(requests, 0, "does not request");
-            }
+            },
           );
         } finally {
           $form.off("form-submit-validate");
@@ -266,7 +261,7 @@ describe("form", function () {
 
               assert.ok(ajaxOptions.data.includes("source=" + label), "serialized extra data");
               assert.deepEqual(ajaxOptions.extraData, { source: label }, "retains extra data");
-            }
+            },
           );
         });
       });
@@ -286,7 +281,7 @@ describe("form", function () {
             assert.ok(ajaxOptions.url.includes("?existing=1&"), "preserves existing query");
             assert.ok(ajaxOptions.url.includes("a="), "appends form data");
             assert.strictEqual(ajaxOptions.data, null, "clears request body");
-          }
+          },
         );
       });
 
@@ -304,7 +299,7 @@ describe("form", function () {
 
             assert.strictEqual(ajaxOptions.type, "post", "request method");
             assert.ok(ajaxOptions.data.includes("a="), "request body");
-          }
+          },
         );
       });
 
@@ -330,7 +325,7 @@ describe("form", function () {
             await Promise.resolve();
 
             assert.deepEqual(seen, [""], "maintenance callbacks precede success");
-          }
+          },
         );
       });
 
@@ -356,7 +351,7 @@ describe("form", function () {
             assert.strictEqual($("#targetDiv").length, 0, "removes old target");
             assert.strictEqual($("#replacement").text(), "new", "inserts response");
             assert.strictEqual(callbackContext.id, "targetDiv", "original target context");
-          }
+          },
         );
       });
 
@@ -388,7 +383,7 @@ describe("form", function () {
             assert.strictEqual(calls[0].context.name, context.name, "first context");
             assert.strictEqual(calls[1].context, calls[0].context, "shared context");
             assert.strictEqual(calls[0].form, $form, "form argument");
-          }
+          },
         );
       });
 
@@ -420,7 +415,7 @@ describe("form", function () {
             assert.deepEqual(seen.error.args, [xhr, "error", "broken", $form], "error arguments");
             assert.strictEqual(seen.complete.context, seen.error.context, "complete context");
             assert.deepEqual(seen.complete.args, [xhr, "error", $form], "complete arguments");
-          }
+          },
         );
       });
 
@@ -446,7 +441,7 @@ describe("form", function () {
               assert.strictEqual(notified.form, $form, "notified form");
               assert.strictEqual(notified.stored, jqXHR, "stores before notify");
               assert.strictEqual(notified.options.type, "post", "notified options");
-            }
+            },
           );
         } finally {
           $form.off("form-submit-notify").removeData("jqxhr");
@@ -528,16 +523,17 @@ describe("form", function () {
           const $form = $('<form action="ajax/json.json"></form>').appendTo("#main");
           const successes = [];
 
-          const parsed = await countHtmlParsed("window.targetPayload", async () => {
+          const parsed = await countParsedHTML(async () => {
             captureAjaxOptions(
               $form,
               { target: $target, success: (response) => successes.push(response) },
-              (settings) => settings.success(data, "success", {})
+              (settings) => settings.success(data, "success", {}),
             );
             await new Promise((resolve) => setTimeout(resolve, 50));
-          });
+          }, "window.targetPayload");
 
-          assert.strictEqual(parsed, 0);
+          assert.strictEqual(parsed.error, undefined);
+          assert.strictEqual(parsed.count, 0);
           assert.strictEqual($target.html(), "kept");
           assert.deepEqual(successes, [data]);
           assert.strictEqual(window.targetPayload, 0);
@@ -548,7 +544,7 @@ describe("form", function () {
     describe("callbacks", function () {
       it("should leave the fields as they are after success without resetForm", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="default"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="default"></form>',
         );
         $form.find("input").val("changed");
 
@@ -567,7 +563,7 @@ describe("form", function () {
         assert.ok(seen.beforeSubmit.$form.jquery, "type check jQuery");
         assert.ok(
           seen.beforeSubmit.$form[0].tagName.toLowerCase() == "form",
-          'jQuery arg == "form": ' + seen.beforeSubmit.$form[0].tagName.toLowerCase()
+          'jQuery arg == "form": ' + seen.beforeSubmit.$form[0].tagName.toLowerCase(),
         );
       });
 
@@ -594,9 +590,9 @@ describe("form", function () {
         assert.ok(called, "callback hit");
       });
 
-      it("should call beforeSubmit with fields in document order when semantic is true", async function () {
+      it("should call beforeSubmit with fields in document order", async function () {
         const testData = ["a", "b", "c", "d", "e", "f"];
-        const opts = { semantic: true };
+        const opts = {};
 
         const seen = await submitAndSettle(opts, () => $("#form2").ajaxSubmit(opts));
 
@@ -781,7 +777,7 @@ describe("form", function () {
 
       it("should build a GET url for a raw action attribute that is only a fragment", function () {
         const $form = $(
-          '<form method="get" action="#fragment"><input name="action" value="x"></form>'
+          '<form method="get" action="#fragment"><input name="action" value="x"></form>',
         );
 
         const settings = captureAjaxOptions($form.appendTo("#main"), {});
@@ -811,28 +807,14 @@ describe("form", function () {
         assert.strictEqual(settings.type, $.ajaxSettings.type);
       });
 
-      [
-        ["an empty user agent", ""],
-        ["IE on a non-HTTPS page", "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0)"],
-      ].forEach(function ([label, userAgent]) {
-        it("should use about:blank as the iframe source for " + label, function () {
-          const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
-
-          const settings = withUserAgent(userAgent, () => captureAjaxOptions($form, {}));
-
-          assert.strictEqual(settings.iframeSrc, "about:blank");
-        });
-      });
-
-      it("should use javascript:false as the iframe source for IE on an HTTPS page", function () {
+      it("should use about:blank as the iframe source on an HTTPS page", function () {
         const $form = $('<form action="ajax/text.html"></form>').appendTo("#main");
-        const userAgent = "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0)";
 
         const settings = withDocumentUrl("https://example.test/form", () =>
-          withUserAgent(userAgent, () => captureAjaxOptions($form, {}))
+          captureAjaxOptions($form, {}),
         );
 
-        assert.strictEqual(settings.iframeSrc, "javascript:false");
+        assert.strictEqual(settings.iframeSrc, "about:blank");
       });
     });
 
@@ -905,7 +887,7 @@ describe("form", function () {
 
         await withAjaxSettings({ success: globalSuccess }, function () {
           submitWith($form, ["ajax/text.html", undefined, undefined, "not a function"], (s) =>
-            s.success("ok", "success", {})
+            s.success("ok", "success", {}),
           );
         });
 
@@ -914,7 +896,7 @@ describe("form", function () {
 
       it("should send no extra data when the shorthand data is undefined", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, ["ajax/other.html"]);
@@ -927,7 +909,7 @@ describe("form", function () {
       [true, 5].forEach(function (value) {
         it("should treat " + value + " as default options", function () {
           const $form = makeForm(
-            '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+            '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
           );
 
           const settings = submitWith($form, [value]);
@@ -940,7 +922,7 @@ describe("form", function () {
 
       it("should ignore the shorthand arguments when options is an object", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
         let called = false;
         const onSuccess = function () {
@@ -948,7 +930,7 @@ describe("form", function () {
         };
 
         const settings = submitWith($form, [{}, { extra: "x" }, "json", onSuccess], (s) =>
-          s.success("ok", "success", {})
+          s.success("ok", "success", {}),
         );
 
         assert.strictEqual(settings.data, "a=1");
@@ -985,7 +967,7 @@ describe("form", function () {
 
       it("should use options.method as the type on the $.ajax path", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ method: "put" }]);
@@ -1028,7 +1010,7 @@ describe("form", function () {
 
       it("should send a body when the method attribute is dialog", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="dialog"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="dialog"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -1039,7 +1021,7 @@ describe("form", function () {
 
       it("should use the raw method attribute when a control named method shadows the form", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="PUT"><input name="method" value="x"></form>'
+          '<form action="ajax/text.html" method="PUT"><input name="method" value="x"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -1059,7 +1041,7 @@ describe("form", function () {
       ["PUT", "DELETE"].forEach(function (type) {
         it("should put the query in the body for " + type, function () {
           const $form = makeForm(
-            '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+            '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
           );
 
           const settings = submitWith($form, [{ type: type }]);
@@ -1071,7 +1053,7 @@ describe("form", function () {
 
       it("should send a GET method option over a POST type in the url", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ method: "GET", type: "POST" }]);
@@ -1083,7 +1065,7 @@ describe("form", function () {
 
       it("should send the method option when method and type conflict", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ method: "POST", type: "GET" }]);
@@ -1130,7 +1112,7 @@ describe("form", function () {
 
       it("should append the GET query to a form action without its fragment", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html#frag"><input name="a" value="1"></form>'
+          '<form method="get" action="ajax/text.html#frag"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -1140,7 +1122,7 @@ describe("form", function () {
 
       it("should trim a raw action attribute when a control named action shadows the form", function () {
         const $form = makeForm(
-          '<form method="post" action="  ajax/text.html  "><input name="action"></form>'
+          '<form method="post" action="  ajax/text.html  "><input name="action"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -1185,16 +1167,16 @@ describe("form", function () {
             method,
           function () {
             const $form = makeForm(
-              '<form method="' + method + '" action="ajax/text.html"><input name="a"></form>'
+              '<form method="' + method + '" action="ajax/text.html"><input name="a"></form>',
             );
 
             const settings = submitWith($form, [url]);
 
             assert.ok(
               String(settings.url).startsWith(absolute("ajax/text.html")),
-              String(settings.url)
+              String(settings.url),
             );
-          }
+          },
         );
       });
 
@@ -1210,7 +1192,7 @@ describe("form", function () {
             assert.strictEqual(settings.url, absolute("ajax/text.html"));
             assert.strictEqual(settings.type, "post");
             assert.strictEqual(options.url, url);
-          }
+          },
         );
       });
 
@@ -1225,7 +1207,7 @@ describe("form", function () {
 
       it("should put the query before the fragment of a url option that is only a fragment", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ url: "#top" }]);
@@ -1235,7 +1217,7 @@ describe("form", function () {
 
       it("should join the query with & to a url option that is only a query", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ url: "?x=1" }]);
@@ -1247,7 +1229,7 @@ describe("form", function () {
     describe("options merge", function () {
       it("should leave the caller's options object unchanged after a submit", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         const success = function () {};
         const error = function () {};
@@ -1337,7 +1319,7 @@ describe("form", function () {
               },
             },
           ],
-          (s) => s.success("ok", "success", {})
+          (s) => s.success("ok", "success", {}),
         );
 
         assert.strictEqual(seen, context);
@@ -1371,7 +1353,7 @@ describe("form", function () {
               settled = resolve;
               $("#form3").ajaxSubmit({ url: "ajax/404.html" });
             });
-          }
+          },
         );
 
         assert.strictEqual(args, 3);
@@ -1438,7 +1420,7 @@ describe("form", function () {
           "form-pre-serialize.bubble form-submit-validate.bubble form-submit-notify.bubble",
           function (event) {
             events.push(event.type);
-          }
+          },
         );
 
         try {
@@ -1511,7 +1493,7 @@ describe("form", function () {
 
       it("should use a type set by beforeSerialize", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         const options = {
           beforeSerialize: function (_form, opts) {
@@ -1552,7 +1534,7 @@ describe("form", function () {
           $form,
           [{ beforeSubmit: () => false }],
           null,
-          (r) => (result = r)
+          (r) => (result = r),
         );
 
         assert.strictEqual(result, $form);
@@ -1562,7 +1544,7 @@ describe("form", function () {
 
       it("should send the fields as beforeSubmit leaves them", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input name="b" value="2"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input name="b" value="2"></form>',
         );
         const options = {
           beforeSubmit: function (a) {
@@ -1579,7 +1561,7 @@ describe("form", function () {
 
       it("should send a lone surrogate as U+FFFD in a urlencoded body", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a"></form>',
         );
         $form.find("input").val("x\uD800");
 
@@ -1668,7 +1650,7 @@ describe("form", function () {
         $form.on("form-pre-serialize", () => steps.push("form-pre-serialize"));
         $form.on("form-submit-validate", () => steps.push("form-submit-validate"));
         $form.on("form-submit-notify", () =>
-          steps.push("form-submit-notify:" + ($form.data("jqxhr") ? "stored" : "missing"))
+          steps.push("form-submit-notify:" + ($form.data("jqxhr") ? "stored" : "missing")),
         );
         const options = {
           beforeSerialize: () => steps.push("beforeSerialize"),
@@ -1731,7 +1713,7 @@ describe("form", function () {
 
       it("should not send a caller extraData on the $.ajax path", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ extraData: { kept: "1" } }]);
@@ -1741,7 +1723,7 @@ describe("form", function () {
 
       it("should ignore a data option changed in beforeSubmit on the $.ajax path", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         const options = {
           data: { x: "1" },
@@ -1755,23 +1737,19 @@ describe("form", function () {
         assert.strictEqual(settings.data, "a=1&x=1");
       });
 
-      it("should handle a data function that returns undefined per jQuery version", function () {
+      it("should send only the fields when a data function returns undefined", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
-        const run = () => submitWith($form, [{ data: () => undefined }]);
+        const settings = submitWith($form, [{ data: () => undefined }]);
 
-        if (majorVersion() < 3) {
-          assert.throws(run, TypeError);
-        } else {
-          assert.strictEqual(run().data, "a=1");
-        }
+        assert.strictEqual(settings.data, "a=1");
       });
 
       it("should append an array of name/value pairs as fields", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         const data = [
           { name: "x", value: "1" },
@@ -1783,21 +1761,17 @@ describe("form", function () {
         assert.strictEqual(settings.data, "a=1&x=1&x=2");
       });
 
-      it("should serialize null extra values per jQuery version", function () {
+      it("should serialize a null extra value as an empty value", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
 
         const settings = submitWith($form, [{ data: { n: null } }]);
 
-        if (majorVersion() < 3) {
-          assert.strictEqual(settings.data, "n=null");
-        } else {
-          assert.strictEqual(settings.data, "n=");
-        }
+        assert.strictEqual(settings.data, "n=");
       });
 
       it("should send only the fields when data is an empty object", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ data: {} }]);
@@ -1811,7 +1785,7 @@ describe("form", function () {
       ].forEach(function ([label, global, traditional, expected]) {
         it("should serialize extra data with " + label + " on the $.ajax path", async function () {
           const $form = makeForm(
-            '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+            '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
           );
           let settings;
 
@@ -1825,7 +1799,7 @@ describe("form", function () {
 
       it("should serialize upload extra data traditionally when the traditional option is set", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
+          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>',
         );
         selectFiles($form.find("input")[0], ["a.txt"]);
 
@@ -1834,20 +1808,20 @@ describe("form", function () {
         assert.deepEqual(uploadBody(settings).getAll("list"), ["x", "y"]);
       });
 
-      it("should send null extra values on the upload transport per jQuery version", function () {
+      it("should send a null extra value as an empty field on the upload transport", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
+          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>',
         );
         selectFiles($form.find("input")[0], ["a.txt"]);
 
         const settings = submitWith($form, [{ data: { n: null } }]);
 
-        assert.strictEqual(uploadBody(settings).get("n"), majorVersion() < 3 ? "null" : "");
+        assert.strictEqual(uploadBody(settings).get("n"), "");
       });
 
       it("should keep a caller contentType while sending a urlencoded body", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ contentType: "application/json", data: { b: 2 } }]);
@@ -1865,7 +1839,7 @@ describe("form", function () {
       });
       it("should append a query-string data option as-is to the fields", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ data: "x=1&y=%20" }]);
@@ -1875,7 +1849,7 @@ describe("form", function () {
 
       it("should append a query-string data option to the url of a GET", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{ data: "x=1" }]);
@@ -1885,7 +1859,7 @@ describe("form", function () {
 
       it("should send a query-string part that starts with = as a field without a name", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
+          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>',
         );
         selectFiles($form.find("input")[0], ["a.txt"]);
 
@@ -1905,7 +1879,7 @@ describe("form", function () {
 
       it("should send the fields as a JSON body with repeated names as arrays", function () {
         const $form = post(
-          '<input name="a" value="1"><input name="t" value="x"><input name="t" value="y"><input name="t" value="z">'
+          '<input name="a" value="1"><input name="t" value="x"><input name="t" value="y"><input name="t" value="z">',
         );
 
         const settings = submitWith($form, [{ requestFormat: "json", contentType: "text/plain" }]);
@@ -1951,7 +1925,7 @@ describe("form", function () {
           async function () {
             $form.ajaxSubmit({ requestFormat: "json" });
             await Promise.resolve();
-          }
+          },
         );
 
         assert.strictEqual(typeof JSON.parse(sent.data), "object");
@@ -1991,7 +1965,7 @@ describe("form", function () {
     describe("request url and body", function () {
       it("should encode spaces in the request body as + on every jQuery version", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="x y"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="x y"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -2001,7 +1975,7 @@ describe("form", function () {
 
       it("should encode spaces in a GET query string as + on every jQuery version", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html"><input name="a" value="x y"></form>'
+          '<form method="get" action="ajax/text.html"><input name="a" value="x y"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -2027,7 +2001,7 @@ describe("form", function () {
 
       it("should pass the GET url with the query to the FormData transport", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html" enctype="multipart/form-data"><input name="a" value="1"></form>'
+          '<form method="get" action="ajax/text.html" enctype="multipart/form-data"><input name="a" value="1"></form>',
         );
 
         const settings = submitWith($form, [{}]);
@@ -2057,7 +2031,6 @@ describe("form", function () {
           target: $target,
           resetForm: true,
           clearForm: true,
-          semantic: true,
           replaceTarget: true,
           data: { x: "1" },
         };
@@ -2067,7 +2040,6 @@ describe("form", function () {
         assert.strictEqual(settings.target, $target);
         assert.strictEqual(settings.resetForm, true);
         assert.strictEqual(settings.clearForm, true);
-        assert.strictEqual(settings.semantic, true);
         assert.strictEqual(settings.replaceTarget, true);
         assert.deepEqual(settings.extraData, { x: "1" });
         assert.strictEqual(settings.iframeSrc, "about:blank");
@@ -2075,22 +2047,33 @@ describe("form", function () {
 
       it("should forward the filtering option", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input name="b" value="2"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"><input name="b" value="2"></form>',
         );
 
         const settings = submitWith($form, [{ filtering: (el) => (el.name === "b" ? el : null) }]);
 
         assert.strictEqual(settings.data, "b=2");
       });
+
+      it("should ignore a semantic option and send the fields in tree order", function () {
+        makeForm('<input name="out" value="o" form="sub-semantic">');
+        const $form = makeForm(
+          '<form id="sub-semantic" method="post" action="ajax/text.html"><input name="a" value="1"></form>',
+        );
+
+        const settings = submitWith($form, [{ semantic: true }]);
+
+        assert.strictEqual(settings.data, "out=o&a=1");
+      });
     });
 
     describe("several selected forms", function () {
       it("should trigger events on every selected form but submit the first form's fields", function () {
         const $first = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         const $second = makeForm(
-          '<form method="post" action="ajax/other.html"><input name="b" value="2"></form>'
+          '<form method="post" action="ajax/other.html"><input name="b" value="2"></form>',
         );
         const $both = $first.add($second);
         const seen = [];
@@ -2116,7 +2099,7 @@ describe("form", function () {
 
       it("should store the jqXHR on every selected form", function () {
         const $both = makeForm(
-          '<form method="post" action="ajax/text.html"></form><form method="post" action="ajax/text.html"></form>'
+          '<form method="post" action="ajax/text.html"></form><form method="post" action="ajax/text.html"></form>',
         );
         const jqXHR = { readyState: 1 };
 
@@ -2130,12 +2113,12 @@ describe("form", function () {
     describe("responses", function () {
       it("should not reset the form when the request fails", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         $form.find("input").val("changed");
 
         submitWith($form, [{ resetForm: true, error: () => {} }], (s) =>
-          s.error({}, "error", "broken")
+          s.error({}, "error", "broken"),
         );
 
         assert.strictEqual($form.find("input").val(), "changed");
@@ -2143,11 +2126,11 @@ describe("form", function () {
 
       it("should forward includeHidden to clearForm", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input type="hidden" name="h" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input type="hidden" name="h" value="1"></form>',
         );
 
         submitWith($form, [{ clearForm: true, includeHidden: true }], (s) =>
-          s.success("ok", "success", {})
+          s.success("ok", "success", {}),
         );
 
         assert.strictEqual($form.find("input").val(), "");
@@ -2183,6 +2166,20 @@ describe("form", function () {
         assert.strictEqual($late.html(), "<b>late</b>");
       });
 
+      it("should treat an HTML string target as a selector and throw a selector syntax error instead of parsing it", async function () {
+        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
+        const successes = [];
+        const settings = submitWith($form, [
+          { target: '<div class="made-target"></div>', success: () => successes.push(1) },
+        ]);
+
+        const parsed = await countParsedHTML(() => settings.success("<b>x</b>", "success", {}));
+
+        assert.match(parsed.error.message, /unrecognized expression/);
+        assert.strictEqual(parsed.count, 0);
+        assert.deepEqual(successes, []);
+      });
+
       it("should not insert an XML document into the target", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         const $target = $("#targetDiv").html("kept");
@@ -2190,7 +2187,7 @@ describe("form", function () {
         const successes = [];
 
         submitWith($form, [{ target: $target, success: (data) => successes.push(data) }], (s) =>
-          s.success(xml, "success", {})
+          s.success(xml, "success", {}),
         );
 
         assert.strictEqual($target.html(), "kept");
@@ -2223,7 +2220,7 @@ describe("form", function () {
 
         const run = () =>
           submitWith($form, [{ success: [function () {}, "not a function"] }], (s) =>
-            s.success("ok", "success", {})
+            s.success("ok", "success", {}),
           );
 
         assert.throws(run, TypeError);
@@ -2265,25 +2262,9 @@ describe("form", function () {
         let calls = 0;
 
         submitWith($form, [{ target: "#no-such-target", success: () => calls++ }], (s) =>
-          s.success("x", "success", {})
+          s.success("x", "success", {}),
         );
 
-        assert.strictEqual(calls, 1);
-      });
-
-      it("should build no elements and insert nothing when target is an HTML string", async function () {
-        const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
-        window.__targetHtml = 0;
-        let calls = 0;
-        const target = '<img src="data:," onerror="window.__targetHtml = 1">';
-        const parsed = await countHtmlParsed("window.__targetHtml", async () => {
-          const settings = submitWith($form, [{ target: target, success: () => calls++ }]);
-          settings.success("<b>response</b>", "success", {});
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        });
-
-        assert.strictEqual(parsed, 0);
-        assert.strictEqual(window.__targetHtml, 0);
         assert.strictEqual(calls, 1);
       });
 
@@ -2325,7 +2306,7 @@ describe("form", function () {
         submitWith(
           $form,
           [{ target: "#targetDiv", success: [() => calls.push(1), () => calls.push(2)] }],
-          (s) => s.success("x", "success", {})
+          (s) => s.success("x", "success", {}),
         );
 
         assert.deepEqual(calls, [1, 2]);
@@ -2336,7 +2317,7 @@ describe("form", function () {
         const calls = [];
 
         submitWith($form, [{ error: [() => calls.push(1), () => calls.push(2)] }], (s) =>
-          s.error({}, "error", "broken")
+          s.error({}, "error", "broken"),
         );
 
         assert.deepEqual(calls, [1, 2]);
@@ -2347,7 +2328,7 @@ describe("form", function () {
         const calls = [];
 
         submitWith($form, [{ complete: [() => calls.push(1), () => calls.push(2)] }], (s) =>
-          s.complete({}, "success")
+          s.complete({}, "success"),
         );
 
         assert.deepEqual(calls, [1, 2]);
@@ -2371,7 +2352,7 @@ describe("form", function () {
 
         assert.deepEqual(
           seen.map(([name]) => name),
-          ["error1", "error2", "complete1", "complete2"]
+          ["error1", "error2", "complete1", "complete2"],
         );
         seen.forEach(([name, $last]) => assert.strictEqual($last[0], $form[0], name));
       });
@@ -2396,7 +2377,7 @@ describe("form", function () {
               ],
             },
           ],
-          (s) => s.success("x", "success", {})
+          (s) => s.success("x", "success", {}),
         );
 
         assert.deepEqual(calls, [
@@ -2411,7 +2392,7 @@ describe("form", function () {
     describe("after the request starts", function () {
       it("should notify with the final url and body", function () {
         const $form = makeForm(
-          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="get" action="ajax/text.html"><input name="a" value="1"></form>',
         );
         let notified;
         $form.on("form-submit-notify", (_event, _form, options) => (notified = options));
@@ -2423,7 +2404,7 @@ describe("form", function () {
         assert.strictEqual(notified.data, null);
       });
 
-      it("should store the beforeSend result per jQuery version and still notify when beforeSend returns false", function () {
+      it("should store the canceled jqXHR and still notify when beforeSend returns false", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         let notified = false;
         $form.on("form-submit-notify", () => (notified = true));
@@ -2431,44 +2412,36 @@ describe("form", function () {
         $form.ajaxSubmit({ beforeSend: () => false });
 
         const stored = $form.data("jqxhr");
-        if (majorVersion() < 3) {
-          assert.strictEqual(stored, false);
-        } else {
-          assert.strictEqual(typeof stored.abort, "function");
-          assert.strictEqual(stored.statusText, "canceled");
-        }
+        assert.strictEqual(typeof stored.abort, "function");
+        assert.strictEqual(stored.statusText, "canceled");
         assert.strictEqual(notified, true);
       });
     });
 
     describe("controls named like form members", function () {
-      // jQuery 1.7.2's selector engine calls getAttribute on the form itself, so it cannot run there.
-      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-        "should submit when a control named getAttribute shadows the form",
-        function () {
-          const $form = $(
-            '<form action="ajax/text.html" method="post"><input name="getAttribute" value="x"></form>'
-          ).appendTo("#main");
+      it("should submit when a control named getAttribute shadows the form", function () {
+        const $form = $(
+          '<form action="ajax/text.html" method="post"><input name="getAttribute" value="x"></form>',
+        ).appendTo("#main");
 
-          const settings = captureAjaxOptions($form, {});
+        const settings = captureAjaxOptions($form, {});
 
-          assert.strictEqual(settings.data, "getAttribute=x");
-          assert.strictEqual(settings.type, "post");
-        }
-      );
+        assert.strictEqual(settings.data, "getAttribute=x");
+        assert.strictEqual(settings.type, "post");
+      });
 
       // jQuery 3's selector engine calls getElementsByTagName on the form for the file input lookup.
       it.skipIf(Number($.fn.jquery.split(".")[0]) === 3)(
-        "should submit semantically when a control named getElementsByTagName shadows the form",
+        "should submit when a control named getElementsByTagName shadows the form",
         function () {
           const $form = $(
-            buildForm('<input name="getElementsByTagName" value="x">', "ajax/text.html")
+            buildForm('<input name="getElementsByTagName" value="x">', "ajax/text.html"),
           );
 
-          const settings = captureAjaxOptions($form, { semantic: true });
+          const settings = captureAjaxOptions($form, {});
 
           assert.match(settings.url, /\?getElementsByTagName=x$/);
-        }
+        },
       );
 
       it("should throw a clear error when a control named parentNode hides the form's parent", function () {
@@ -2485,7 +2458,7 @@ describe("form", function () {
 
       it("should reset the form after success when a control named reset shadows the method", function () {
         const $form = $(
-          '<form action="ajax/text.html"><input name="reset" value="default"></form>'
+          '<form action="ajax/text.html"><input name="reset" value="default"></form>',
         ).appendTo("#main");
         $form.find("input").val("changed");
 
@@ -2499,7 +2472,7 @@ describe("form", function () {
       ["multipart/form-data-x", "x-multipart/form-data"].forEach(function (enctype) {
         it("should send a form with the enctype " + enctype + " as a plain request", function () {
           const $form = makeForm(
-            '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+            '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
           ).attr("enctype", enctype);
 
           const result = submitTransport($form, {});
@@ -2510,13 +2483,13 @@ describe("form", function () {
 
       it("should use the $.ajaxSetup context for an upload without its own", async function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>'
+          '<form method="post" action="ajax/text.html"><input type="file" name="f"></form>',
         );
         selectFiles($form.find("input")[0], ["a.txt"]);
         const context = { name: "setup" };
 
         const settings = await withAjaxSettings({ context: context }, () =>
-          submitWith($form, [{}])
+          submitWith($form, [{}]),
         );
 
         assert.strictEqual(settings.context, context);
@@ -2526,14 +2499,14 @@ describe("form", function () {
     describe("debug logging", function () {
       it("should not warn about the iframe transport for a plain request", function () {
         const $form = makeForm(
-          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>'
+          '<form method="post" action="ajax/text.html"><input name="a" value="1"></form>',
         );
 
-        const warnings = recordDeprecations(true, () => submitWith($form, [{}]));
+        const warnings = recordWarnings(true, () => submitWith($form, [{}]));
 
         assert.deepEqual(
           warnings.filter((text) => text.includes("iframe")),
-          []
+          [],
         );
       });
 
@@ -2582,7 +2555,7 @@ describe("form", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
 
         const count = countLogs(() =>
-          submitWith($form, [{ target: "#targetDiv" }], (s) => s.success({}, "success", {}))
+          submitWith($form, [{ target: "#targetDiv" }], (s) => s.success({}, "success", {})),
         );
 
         assert.strictEqual(count, 0);
@@ -2614,7 +2587,7 @@ describe("form", function () {
         });
       });
 
-      it("should log once before the transport and once for a parsed target response when debug is on", function () {
+      it("should log nothing before the transport and once for a parsed target response when debug is on", function () {
         const $form = makeForm('<form method="post" action="ajax/text.html"></form>');
         $.fn.ajaxSubmit.debug = true;
         let settings;
@@ -2629,7 +2602,7 @@ describe("form", function () {
           $.fn.ajaxSubmit.debug = false;
         }
 
-        assert.deepEqual(counts, [1, 1]);
+        assert.deepEqual(counts, [0, 1]);
       });
     });
   });

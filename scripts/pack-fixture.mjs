@@ -9,7 +9,7 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const packDir = resolve(root, process.env.JQUERY_FORM_PACK_DIR || ".pack");
-const jqueryVersions = ["3.7.1", "4.0.0"];
+const jqueryVersions = ["3.5.0", "3.7.1", "4.0.0"];
 
 function npm(args, cwd) {
   return execFileSync("npm", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
@@ -29,7 +29,7 @@ for (const version of jqueryVersions) {
   mkdirSync(fixture);
   writeFileSync(
     resolve(fixture, "package.json"),
-    JSON.stringify({ name: `fixture-jquery-${version}`, private: true }, null, 2) + "\n"
+    JSON.stringify({ name: `fixture-jquery-${version}`, private: true }, null, 2) + "\n",
   );
   npm(
     [
@@ -41,7 +41,7 @@ for (const version of jqueryVersions) {
       tarball,
       `jquery@${version}`,
     ],
-    fixture
+    fixture,
   );
 }
 console.log(`installed ${tarball} into ${packDir}`);

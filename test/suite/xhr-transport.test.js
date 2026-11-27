@@ -18,7 +18,7 @@ function uploadForm() {
     '<form action="ajax/text.html" method="post">' +
       '<input name="title" value="quarterly report">' +
       '<input type="file" name="document">' +
-      "</form>"
+      "</form>",
   );
   const file = selectFiles($form.find('[type="file"]')[0], ["report.txt"])[0];
 
@@ -135,7 +135,7 @@ async function recordOrder($form, options) {
             order.push("complete");
             setTimeout(resolve, 0);
           },
-        })
+        }),
       );
     });
   } finally {
@@ -170,9 +170,9 @@ async function progressListener($form, options) {
         },
         function () {
           $form.ajaxSubmit(options);
-        }
+        },
       );
-    }
+    },
   );
 
   return listener;
@@ -185,7 +185,7 @@ describe("form", function () {
     describe("FormData uploads", function () {
       it("should default the upload type to POST when a control shadows the method", function () {
         const $form = $(
-          '<form action="ajax/upload" enctype="multipart/form-data"><input name="method"></form>'
+          '<form action="ajax/upload" enctype="multipart/form-data"><input name="method"></form>',
         ).appendTo("#main");
 
         const settings = captureAjaxOptions($form, {});
@@ -199,7 +199,7 @@ describe("form", function () {
           '<form action="ajax/upload" method="post">' +
             '<input name="title" value="quarterly report">' +
             '<input type="file" name="document">' +
-            "</form>"
+            "</form>",
         ).attr(attributes || {});
         const transfer = new DataTransfer();
         const file = new File(["upload contents"], "report.txt", { type: "text/plain" });
@@ -239,7 +239,7 @@ describe("form", function () {
             assert.strictEqual(
               seen.settings.contentType,
               false,
-              "lets the browser set content type"
+              "lets the browser set content type",
             );
             assert.strictEqual(seen.settings.processData, false, "does not process FormData");
             assert.strictEqual(seen.settings.cache, false, "disables request caching");
@@ -249,30 +249,30 @@ describe("form", function () {
             assert.strictEqual(
               seen.data.get("title"),
               "quarterly report",
-              "includes text controls"
+              "includes text controls",
             );
             assert.strictEqual(
               seen.data.get("document"),
               upload.file,
-              "includes the selected File"
+              "includes the selected File",
             );
             assert.strictEqual(
               seen.data.get("metadata[owner]"),
               "Ada Lovelace",
-              "deeply serializes objects"
+              "deeply serializes objects",
             );
             assert.deepEqual(
               seen.data.getAll("labels[]"),
               ["urgent", "external"],
-              "serializes arrays"
+              "serializes arrays",
             );
             assert.strictEqual(seen.beforeSend.context, context, "preserves callback context");
             assert.strictEqual(
               seen.beforeSend.settings.data,
               seen.data,
-              "runs after assigning FormData"
+              "runs after assigning FormData",
             );
-          }
+          },
         );
       });
 
@@ -280,7 +280,7 @@ describe("form", function () {
         const $form = $(
           '<form action="ajax/upload" method="post" enctype="multipart/form-data">' +
             '<input name="title" value="multipart only">' +
-            "</form>"
+            "</form>",
         ).appendTo("#main");
         let settings;
         let body;
@@ -300,7 +300,7 @@ describe("form", function () {
             assert.strictEqual(settings.contentType, false, "selects the upload request settings");
             assert.ok(body instanceof FormData, "builds FormData");
             assert.strictEqual(body.get("title"), "multipart only", "includes form controls");
-          }
+          },
         );
       });
 
@@ -309,7 +309,7 @@ describe("form", function () {
         const $form = $(
           '<form action="ajax/upload" method="post" enctype="multipart/form-data">' +
             '<input name="title" value="t">' +
-            "</form>"
+            "</form>",
         ).appendTo("#main");
         let body;
 
@@ -323,7 +323,7 @@ describe("form", function () {
           async function () {
             $form.ajaxSubmit(options);
             await Promise.resolve();
-          }
+          },
         );
 
         return body;
@@ -368,7 +368,7 @@ describe("form", function () {
             assert.strictEqual(body, customData, "uses the provided object");
             assert.strictEqual(body.get("replacement"), "custom body", "preserves custom contents");
             assert.strictEqual(body.has("document"), false, "does not merge generated contents");
-          }
+          },
         );
       });
 
@@ -409,7 +409,6 @@ describe("form", function () {
 
               progressListener({ lengthComputable: true, loaded: 25, total: 40 });
               progressListener({ lengthComputable: false, loaded: 7, total: 0 });
-              progressListener({ lengthComputable: true, position: 3, total: 4 });
 
               assert.deepEqual(
                 progress.map(function (entry) {
@@ -418,11 +417,10 @@ describe("form", function () {
                 [
                   [25, 40, 63],
                   [7, 0, 0],
-                  [3, 4, 75],
-                ]
+                ],
               );
               assert.strictEqual(progress[0].event.loaded, 25, "passes the native event");
-            }
+            },
           );
         } finally {
           $.ajaxSettings.xhr = originalXhr;
@@ -449,7 +447,7 @@ describe("form", function () {
               await Promise.resolve();
 
               assert.strictEqual(createdXhr, xhr, "returns the configured XHR");
-            }
+            },
           );
         } finally {
           $.ajaxSettings.xhr = originalXhr;
@@ -482,7 +480,7 @@ describe("form", function () {
           },
           function (settings) {
             settings.success("ok", "success");
-          }
+          },
         );
 
         assert.strictEqual(received, $form);
@@ -503,7 +501,7 @@ describe("form", function () {
         const $form = makeForm(
           '<form action="ajax/text.html" method="post">' +
             '<input name="title" value="t"><input type="file" name="document">' +
-            "</form>"
+            "</form>",
         );
 
         const result = submitTransport($form);
@@ -572,7 +570,7 @@ describe("form", function () {
             ];
 
             assert.deepEqual(transports, ["formdata", "plain"]);
-          }
+          },
         );
       });
 
@@ -585,13 +583,13 @@ describe("form", function () {
             const result = submitTransport($form, { iframe: value });
 
             assert.strictEqual(result.transport, "iframe");
-          }
+          },
         );
       });
 
       it("should use the FormData transport when a later form in the selection has a file", function () {
         const $first = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="first" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="first" value="1"></form>',
         );
         const upload = uploadForm();
 
@@ -603,7 +601,7 @@ describe("form", function () {
 
       it("should post a non-form element through FormData only when it contains a selected file", function () {
         const $div = $(
-          '<div><input name="title" value="t"><input type="file" name="document"></div>'
+          '<div><input name="title" value="t"><input type="file" name="document"></div>',
         ).appendTo("#main");
         const before = submitTransport($div, { url: "ajax/text.html" });
         selectFiles($div.find('[type="file"]')[0], ["report.txt"]);
@@ -616,7 +614,7 @@ describe("form", function () {
         assert.strictEqual(after.settings.type, "POST");
         assert.strictEqual(
           after.settings.url,
-          "ajax/text.html?" + $.param({ title: "t", document: "report.txt" })
+          "ajax/text.html?" + $.param({ title: "t", document: "report.txt" }),
         );
       });
 
@@ -650,12 +648,12 @@ describe("form", function () {
       it("should read the enctype attribute when controls are named enctype and encoding", function () {
         const controls = '<input name="enctype" value="x"><input name="encoding" value="y">';
         const $plain = makeForm(
-          '<form action="ajax/text.html" method="post">' + controls + "</form>"
+          '<form action="ajax/text.html" method="post">' + controls + "</form>",
         );
         const $multipart = makeForm(
           '<form action="ajax/text.html" method="post" enctype="multipart/form-data">' +
             controls +
-            "</form>"
+            "</form>",
         );
 
         const transports = [
@@ -668,7 +666,7 @@ describe("form", function () {
 
       it("should use the FormData transport when the enctype is Multipart/Form-Data", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post" enctype="Multipart/Form-Data"></form>'
+          '<form action="ajax/text.html" method="post" enctype="Multipart/Form-Data"></form>',
         );
 
         const result = submitTransport($form);
@@ -678,7 +676,7 @@ describe("form", function () {
 
       it("should use the FormData transport when the enctype has surrounding spaces", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post" enctype=" multipart/form-data "></form>'
+          '<form action="ajax/text.html" method="post" enctype=" multipart/form-data "></form>',
         );
 
         const result = submitTransport($form);
@@ -688,7 +686,7 @@ describe("form", function () {
 
       it("should upload the file when the file input belongs to the form through the form attribute", function () {
         const $form = makeForm(
-          '<form id="xhr-owner" action="ajax/text.html" method="post"><input name="title" value="t"></form>'
+          '<form id="xhr-owner" action="ajax/text.html" method="post"><input name="title" value="t"></form>',
         );
         const $input = $('<input type="file" name="document" form="xhr-owner">').appendTo("#main");
         const files = selectFiles($input[0], ["report.txt"]);
@@ -701,7 +699,7 @@ describe("form", function () {
 
       it("should use the plain transport when the same form is submitted again after an iframe upload", async function () {
         const $form = makeForm(
-          '<form action="ajax/iframe-text.html" method="post"><input name="title" value="t"></form>'
+          '<form action="ajax/iframe-text.html" method="post"><input name="title" value="t"></form>',
         );
         await new Promise(function (resolve) {
           $form.ajaxSubmit({
@@ -719,19 +717,15 @@ describe("form", function () {
     });
 
     describe("controls named like form members", function () {
-      // jQuery 1.7.2's selector engine calls getAttribute on the form itself, so it cannot run there.
-      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-        "should read a multipart enctype when a control named getAttribute shadows the form",
-        function () {
-          const $form = makeForm(
-            '<form enctype="multipart/form-data" action="ajax/text.html" method="post"><input name="getAttribute"></form>'
-          );
+      it("should read a multipart enctype when a control named getAttribute shadows the form", function () {
+        const $form = makeForm(
+          '<form enctype="multipart/form-data" action="ajax/text.html" method="post"><input name="getAttribute"></form>',
+        );
 
-          const result = submitTransport($form, {});
+        const result = submitTransport($form, {});
 
-          assert.strictEqual(result.transport, "formdata");
-        }
-      );
+        assert.strictEqual(result.transport, "formdata");
+      });
     });
 
     describe("plain transport", function () {
@@ -754,7 +748,7 @@ describe("form", function () {
 
       it("should honor a type changed in beforeSubmit", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="get"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="get"><input name="a" value="1"></form>',
         );
 
         const settings = captureAjaxOptions($form, {
@@ -769,7 +763,7 @@ describe("form", function () {
 
       it("should ignore formData, uploadProgress and closeKeepAlive on the plain transport", function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
         const body = new FormData();
         let progressCalls = 0;
@@ -788,7 +782,7 @@ describe("form", function () {
                 progressCalls++;
               },
             });
-          }
+          },
         );
 
         assert.strictEqual(calls.length, 1);
@@ -799,7 +793,7 @@ describe("form", function () {
 
       it("should send jQuery's urlencoded Content-Type and X-Requested-With for a POST", async function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
 
         const request = await recordRequest(function (complete) {
@@ -808,7 +802,7 @@ describe("form", function () {
 
         assert.strictEqual(
           request.headers["Content-Type"],
-          "application/x-www-form-urlencoded; charset=UTF-8"
+          "application/x-www-form-urlencoded; charset=UTF-8",
         );
         assert.strictEqual(request.headers["X-Requested-With"], "XMLHttpRequest");
         assert.strictEqual(request.body, "a=1");
@@ -816,7 +810,7 @@ describe("form", function () {
 
       it("should run hooks, callbacks and global ajax events in order on the plain transport", async function () {
         const $form = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
 
         const order = await recordOrder($form, {});
@@ -838,7 +832,7 @@ describe("form", function () {
             order.filter(function (name) {
               return name.indexOf("ajax") === 0;
             }),
-            []
+            [],
           );
         });
       });
@@ -857,7 +851,7 @@ describe("form", function () {
           },
           function () {
             $form.ajaxSubmit();
-          }
+          },
         );
 
         assert.strictEqual(seen, first);
@@ -875,7 +869,7 @@ describe("form", function () {
             '<input type="submit" name="op" value="Save">' +
             '<input type="submit" name="op" value="Preview">' +
             '<input name="after" value="a">' +
-            "</form>"
+            "</form>",
         );
         $form[0].clk = $form.find('[value="Preview"]')[0];
 
@@ -887,7 +881,7 @@ describe("form", function () {
       it("should send the button the page set, at its place, in a FormData upload", function () {
         const upload = uploadForm();
         $('<input type="submit" name="upload_button" value="Upload">').insertBefore(
-          upload.$form.find('[type="file"]')
+          upload.$form.find('[type="file"]'),
         );
         upload.$form[0].clk = upload.$form.find('[name="upload_button"]')[0];
 
@@ -917,7 +911,7 @@ describe("form", function () {
           },
           function (settings) {
             settings.success("ok", "success", {});
-          }
+          },
         );
 
         assert.strictEqual(received, context);
@@ -941,7 +935,7 @@ describe("form", function () {
           function (settings) {
             settings.beforeSend.call(settings.context, {}, {});
             settings.success("ok", "success", {});
-          }
+          },
         );
 
         assert.strictEqual(seen.beforeSend, seen.success);
@@ -949,23 +943,41 @@ describe("form", function () {
     });
 
     describe("FormData request body", function () {
-      it("should append an empty string when a multipart form has an empty file input", function () {
+      it("should append an empty application/octet-stream file when a multipart form has an empty file input", function () {
         const $form = makeForm(
           '<form action="ajax/text.html" method="post" enctype="multipart/form-data">' +
-            '<input type="file" name="document">' +
-            "</form>"
+            '<input type="file" name="document"><input name="text" value="">' +
+            "</form>",
         );
 
         const body = uploadBody(captureAjaxOptions($form, {}));
+        const file = body.get("document");
 
-        assert.deepEqual(Array.from(body.entries()), [["document", ""]]);
+        assert.deepEqual(Array.from(body.keys()), ["document", "text"]);
+        assert.instanceOf(file, File);
+        assert.deepEqual([file.name, file.size, file.type], ["", 0, "application/octet-stream"]);
+        assert.strictEqual(body.get("text"), "");
+      });
+
+      it("should keep an empty file input as an empty field in formToArray and formSerialize", function () {
+        const $form = makeForm(
+          '<form action="ajax/text.html" method="post" enctype="multipart/form-data">' +
+            '<input type="file" name="document">' +
+            "</form>",
+        );
+
+        const fields = $form.formToArray();
+        const query = $form.formSerialize();
+
+        assert.deepEqual(fields, [{ name: "document", value: "", type: "file" }]);
+        assert.strictEqual(query, "document=");
       });
 
       it("should append each file of a multiple file input", function () {
         const $form = makeForm(
           '<form action="ajax/text.html" method="post">' +
             '<input type="file" name="documents" multiple>' +
-            "</form>"
+            "</form>",
         );
         const files = selectFiles($form.find("input")[0], ["a.txt", "b.txt"]);
 
@@ -983,7 +995,7 @@ describe("form", function () {
               data.splice(0, 1);
               data.push({ name: "added", value: "x" });
             },
-          })
+          }),
         );
 
         assert.deepEqual(Array.from(body.keys()), ["document", "added"]);
@@ -1022,7 +1034,7 @@ describe("form", function () {
             },
             function () {
               upload.$form.ajaxSubmit({ data: { extra: upload.file } });
-            }
+            },
           );
         } catch (e) {
           error = e;
@@ -1044,7 +1056,7 @@ describe("form", function () {
               received = fields.length;
               return { computed: "yes" };
             },
-          })
+          }),
         );
 
         assert.strictEqual(received, 2);
@@ -1074,7 +1086,7 @@ describe("form", function () {
         const upload = uploadForm();
 
         const body = uploadBody(
-          captureAjaxOptions(upload.$form, { data: { pair: { name: "n", value: "v" } } })
+          captureAjaxOptions(upload.$form, { data: { pair: { name: "n", value: "v" } } }),
         );
 
         assert.deepEqual(Array.from(body.entries()).slice(2), [
@@ -1094,7 +1106,7 @@ describe("form", function () {
               nested: { "n\uDC00": "x" },
               pair: { name: "p\uD800", value: "q" },
             },
-          })
+          }),
         );
 
         assert.deepEqual(Array.from(body.entries()).slice(2), [
@@ -1131,7 +1143,7 @@ describe("form", function () {
         custom.append("only", "this");
 
         const body = uploadBody(
-          captureAjaxOptions(upload.$form, { formData: custom, data: { extra: "1" } })
+          captureAjaxOptions(upload.$form, { formData: custom, data: { extra: "1" } }),
         );
 
         assert.strictEqual(body, custom);
@@ -1174,7 +1186,7 @@ describe("form", function () {
         const upload = uploadForm();
 
         const body = uploadBody(
-          captureAjaxOptions(upload.$form, { data: () => "a+b=c%26d&&flag&e=1=2" })
+          captureAjaxOptions(upload.$form, { data: () => "a+b=c%26d&&flag&e=1=2" }),
         );
 
         assert.deepEqual(Array.from(body.entries()).slice(2), [
@@ -1194,7 +1206,7 @@ describe("form", function () {
         assert.throws(
           run,
           Error,
-          'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
+          'jquery.form: requestFormat "json" cannot send files or use the iframe transport',
         );
       });
     });
@@ -1211,7 +1223,7 @@ describe("form", function () {
 
         assert.deepEqual(
           [settings.contentType, settings.processData, settings.cache],
-          [false, false, false]
+          [false, false, false],
         );
       });
 
@@ -1256,7 +1268,7 @@ describe("form", function () {
 
         assert.deepEqual(
           [settings.url, settings.dataType, settings.headers, settings.timeout, settings.xhrFields],
-          ["ajax/json.json", "json", headers, 1234, xhrFields]
+          ["ajax/json.json", "json", headers, 1234, xhrFields],
         );
         assert.strictEqual(settings.global, false);
       });
@@ -1295,7 +1307,7 @@ describe("form", function () {
 
         assert.strictEqual(
           settings.url.split("?")[1],
-          "title=quarterly+report&document=report.txt"
+          "title=quarterly+report&document=report.txt",
         );
       });
     });
@@ -1388,7 +1400,7 @@ describe("form", function () {
           },
           async function () {
             uploadBody(captureAjaxOptions(upload.$form, {}));
-          }
+          },
         );
 
         assert.ok(body instanceof FormData);
@@ -1453,7 +1465,7 @@ describe("form", function () {
       it("should leave the form unchanged and add no iframe after a FormData or plain submit", function () {
         const upload = uploadForm();
         const $plain = makeForm(
-          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>'
+          '<form action="ajax/text.html" method="post"><input name="a" value="1"></form>',
         );
         const before = [upload.$form[0].outerHTML, $plain[0].outerHTML, $("iframe").length];
 
@@ -1462,7 +1474,7 @@ describe("form", function () {
 
         assert.deepEqual(
           [upload.$form[0].outerHTML, $plain[0].outerHTML, $("iframe").length],
-          before
+          before,
         );
       });
 

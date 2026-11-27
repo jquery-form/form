@@ -1,55 +1,78 @@
 import { callFormMethod } from "./form-members.js";
 import { deepSerialize } from "./xhr-transport.js";
 import jQuery from "jquery";
-import { submitterFields } from "./submitter.js";
 import { wellFormed } from "./successful-controls.js";
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
 // posting and restored after, and the native submit.
-var $ = jQuery;
+const $ = jQuery;
 
 // The form attributes an iframe upload changes while it posts.
-var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
+const uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
 
 // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
-var hasOwn = Object.prototype.hasOwnProperty;
+const hasOwn = Object.prototype.hasOwnProperty;
 
 function isGet(method) {
   return /^get$/i.test(method);
 }
 
-// Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
-// apply to both sides of the comparison.
+// Resolves both URLs through anchors, as jQuery does for crossDomain.
 function isSameOrigin(url) {
-  var origin = document.createElement("a");
-  var target = document.createElement("a");
+  const origin = document.createElement("a");
+  const target = document.createElement("a");
 
   origin.href = window.location.href;
   target.href = url;
-  // IE fills in the host of a relative URL only once the resolved href is assigned back
-  target.href = target.href; // eslint-disable-line no-self-assign
 
   return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
 }
 
-/** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
-export function addSubmitterFields(s, form) {
-  // add submitting element to data if we know it
-  var fields = submitterFields(form);
+/**
+ * Inserts a hidden input per submitter field right after the submitter, so the post sends them
+ * in tree order, as a native submission does. A submitter outside the form passes its form
+ * attribute on; one that is in no tree is not sent. Each input is pushed onto `added`.
+ */
+export function addSubmitterInputs(submitter, ownerDocument, added) {
+  const el = submitter && submitter.el;
+  let after = el;
 
-  for (var n in fields) {
-    s.extraData = s.extraData || {};
-    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
+  if (!el || !el.parentNode) {
+    return;
   }
+
+  $.each(submitter.fields, function (i, field) {
+    const input = hiddenInput(ownerDocument, wellFormed(field.name), wellFormed(field.value));
+
+    if (el.hasAttribute("form")) {
+      input.setAttribute("form", el.getAttribute("form"));
+    }
+
+    // through the prototype: the parent may be the form, where a control can shadow insertBefore
+    callFormMethod(el.parentNode, "insertBefore", input, after.nextSibling);
+    added.push(input);
+    after = input;
+  });
+}
+
+// A hidden input built with DOM properties: a name is never parsed as HTML.
+function hiddenInput(ownerDocument, name, value) {
+  const input = ownerDocument.createElement("input");
+
+  input.type = "hidden";
+  input.name = name;
+  $(input).val(value);
+
+  return input;
 }
 
 /** Adds the page's CSRF token to s.extraData when the form is posted to the page's origin. */
 export function addCsrfField(s, form, method, forms) {
   // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
   // only when the form is posted, since a get form would put the token in the url
-  var csrf_token = $("meta[name=csrf-token]").attr("content");
-  var csrf_param = $("meta[name=csrf-param]").attr("content");
-  var posts =
+  const csrf_token = $("meta[name=csrf-token]").attr("content");
+  const csrf_param = $("meta[name=csrf-param]").attr("content");
+  const posts =
     !isGet(method) &&
     (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
 
@@ -65,7 +88,7 @@ function setFormAttribute(form, name, value) {
 
 /** The raw attributes the upload changes, null when absent, to put back exactly (#380). */
 export function saveAttributes(form) {
-  var saved = {};
+  const saved = {};
 
   $.each(uploadAttributes, function (i, name) {
     saved[name] = callFormMethod(form, "hasAttribute", name)
@@ -89,7 +112,7 @@ export function restoreAttributes(form, saved) {
 
 /** Points the form at the frame `target` with the upload's url, method and encoding. */
 export function setUploadAttributes(form, target, method, s, forms) {
-  var mp = "multipart/form-data";
+  const mp = "multipart/form-data";
 
   // update form attrs in IE friendly way
   setFormAttribute(form, "target", target);
@@ -110,17 +133,12 @@ export function setUploadAttributes(form, target, method, s, forms) {
 
 /** Appends a hidden input per extraData field to the form; each input is pushed onto `added`. */
 export function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
-  // Builds the input with DOM properties: a name is never parsed as HTML.
   function addHiddenInput(name, value) {
-    var input = ownerDocument.createElement("input");
-
-    input.type = "hidden";
-    input.name = name;
-    added.push($(input).val(value).appendTo(form)[0]);
+    added.push($(hiddenInput(ownerDocument, name, value)).appendTo(form)[0]);
   }
 
   if (extraData) {
-    for (var n in extraData) {
+    for (const n in extraData) {
       if (hasOwn.call(extraData, n)) {
         // if using the $.param format that allows for multiple values with the same name
         if (
@@ -131,12 +149,12 @@ export function addExtraInputs(form, ownerDocument, extraData, traditional, adde
           addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
-          var single = {};
+          const single = {};
 
           single[n] = extraData[n];
-          var fields = deepSerialize(single, traditional);
+          const fields = deepSerialize(single, traditional);
 
-          for (var f = 0; f < fields.length; f++) {
+          for (let f = 0; f < fields.length; f++) {
             addHiddenInput(fields[f][0], fields[f][1]);
           }
         }

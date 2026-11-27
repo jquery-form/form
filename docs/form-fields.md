@@ -3,87 +3,76 @@
 
 ## Form Fields
 
-This page describes and demonstrates the Form Plugin's `fieldValue` and `fieldSerialize` methods.
+The `fieldValue` and `fieldSerialize` methods read the values of single fields, or of any part of a form. Both follow the HTML rules for which controls a submission sends.
 
 ### fieldValue
 
-`fieldValue` allows you to retrieve the current value of a field. For example, to retrieve the value of the password field in a form with the id of 'myForm' you would write:
+`fieldValue` returns the values of the selected fields, in an array. For example, to read the password field of a form with the id `myForm`:
 
 ```javascript
-var pwd = $("#myForm :password").fieldValue()[0];
+const password = $("#myForm [type=password]").fieldValue()[0];
 ```
 
-This method _always_ returns an array. If no valid value can be determined the array will be empty, otherwise it will contain one or more values.
+It _always_ returns an array: empty when no selected field has a value to send, with one value per field otherwise, and with every selected option of a multiple select.
 
 ### fieldSerialize
 
-`fieldSerialize` allows you to serialize a subset of a form into a query string. This is useful when you need to process only certain fields. For example, to serialize only the text inputs of a form you would write:
+`fieldSerialize` serializes the selected fields into a query string. This is useful when you need to send only some of a form's fields. For example, to serialize only the text inputs:
 
 ```javascript
-var queryString = $("#myForm :text").fieldSerialize();
+const queryString = $("#myForm [type=text]").fieldSerialize();
 ```
 
-<form id="inputForm" action="#">
-  <div>
-    <h4>Demonstration</h4>
-    <p>
-      Enter a jQuery expression into the textbox below and then click 'Test' to see the results
-      of the <code class="inline">fieldValue</code> and <code class="inline">fieldSerialize</code>
-      methods. These methods are run against the test form that follows.
-    </p>
-    jQuery expression:
-    <input id="query" type="text" value=":text">
-    <span style="color:#555">(ie: textarea, [@type='hidden'], :radio, :checkbox, etc)</span><br>
-    <input id="successful" type="checkbox" checked="checked"> <a href="https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set">Successful controls</a> only<br>
-    <input type="submit" value="Test">
-  </div>
+### What They Return
+
+For this form:
+
+```html
+<form id="myForm" action="/profile" method="post">
+  <input type="hidden" name="token" value="abc123" />
+  <input type="text" name="name" value="Ada" />
+  <input type="password" name="password" />
+  <select name="colors" multiple>
+    <option value="red" selected>Red</option>
+    <option value="blue" selected>Blue</option>
+    <option value="green">Green</option>
+  </select>
+  <input type="checkbox" name="news" value="yes" checked />
+  <input type="checkbox" name="terms" value="agree" />
+  <input type="radio" name="size" value="s" />
+  <input type="radio" name="size" value="m" checked />
+  <textarea name="bio"></textarea>
+  <button type="submit" name="save" value="1">Save</button>
 </form>
-
-<form id="test" action="dummy.php" method="post"><div>
-    <strong>Test Form</strong>
-    <table>
-      <tr><td>&lt;input type="hidden" <span class="name">name="Hidden"</span> value="secret"&gt;</td><td><input type="hidden" name="Hidden" value="secret"></td></tr>
-      <tr><td>&lt;input <span class="name">name="Name"</span> type="text" value="MyName1"&gt;</td><td><input name="Name" type="text" value="MyName1"></td></tr>
-      <tr><td>&lt;input <span class="name">name="Password"</span> type="password"&gt;</td><td><input name="Password" type="password" value=""></td></tr>
-      <tr><td>&lt;select <span class="name">name="Multiple"</span> multiple="multiple"&gt;</td><td><select name="Multiple" multiple="multiple">
-          <option value="one" selected="selected">One</option>
-          <option value="two">Two</option>
-          <option value="three">Three</option>
-      </select></td></tr>
-      <tr><td>&lt;select <span class="name">name="Single"</span>&gt;</td><td><select name="Single">
-          <option value="one" selected="selected">One</option>
-          <option value="two">Two</option>
-          <option value="three">Three</option>
-      </select></td></tr>
-      <tr><td>&lt;input type="checkbox" <span class="name">name="Check"</span> value="1"&gt;</td><td><input type="checkbox" name="Check" value="1"></td></tr>
-      <tr><td>&lt;input type="checkbox" <span class="name">name="Check"</span> value="2"&gt;</td><td><input type="checkbox" name="Check" value="2"></td></tr>
-      <tr><td>&lt;input type="checkbox" <span class="name">name="Check"</span> value="3"&gt;</td><td><input type="checkbox" name="Check" value="3"></td></tr>
-      <tr><td>&lt;input type="checkbox" <span class="name">name="Check2"</span> value="4"&gt;</td><td><input type="checkbox" name="Check2" value="4"></td></tr>
-      <tr><td>&lt;input type="checkbox" <span class="name">name="Check2"</span> value="5"&gt;</td><td><input type="checkbox" name="Check2" value="5"></td></tr>
-      <tr><td>&lt;input type="checkbox" <span class="name">name="Check3"</span>&gt;</td><td><input type="checkbox" name="Check3"></td></tr>
-      <tr><td>&lt;input type="radio" <span class="name">name="Radio"</span> value="1"&gt;</td><td><input type="radio" name="Radio" value="1"></td></tr>
-      <tr><td>&lt;input type="radio" <span class="name">name="Radio"</span> value="2"&gt;</td><td><input type="radio" name="Radio" value="2"></td></tr>
-      <tr><td>&lt;input type="radio" <span class="name">name="Radio"</span> value="3"&gt;</td><td><input type="radio" name="Radio" value="3"></td></tr>
-      <tr><td>&lt;input type="radio" <span class="name">name="Radio2"</span> value="4"&gt;</td><td><input type="radio" name="Radio2" value="4"></td></tr>
-      <tr><td>&lt;input type="radio" <span class="name">name="Radio2"</span> value="5"&gt;</td><td><input type="radio" name="Radio2" value="5"></td></tr>
-      <tr><td>&lt;textarea <span class="name">name="Text"</span> rows="2" cols="20"&gt;&lt;/textarea&gt;</td><td><textarea name="Text" rows="2" cols="20"></textarea></td></tr>
-      <tr><td>&lt;input type="reset" <span class="name">name="resetButton"</span> value="Reset"&gt;</td><td><input type="reset" name="resetButton" value="Reset"></td></tr>
-      <tr><td>&lt;input type="submit" <span class="name">name="sub"</span> value="Submit"&gt;</td><td><input type="submit"  name="submitButton" value="Submit"></td></tr>
-    </table>
-</div></form>
-
-By default, `fieldValue` and `fieldSerialize` only function on '[successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set)'. This means that if you run the following code on a checkbox that is not checked, the result will be an empty array.
-
-```javascript
-// value will be an empty array if checkbox is not checked:
-var value = $("#myUncheckedCheckbox").fieldValue();
-// value.length == 0
 ```
 
-However, if you really want to know the 'value' of the checkbox element, even if it's unchecked, you can write this:
+| Call                                                                  | Result                                                                          |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `$("#myForm [name=name]").fieldValue()`                               | `["Ada"]`                                                                       |
+| `$("#myForm [type=password]").fieldValue()`                           | `[""]`: an empty text field is still sent                                       |
+| `$("#myForm select").fieldValue()`                                    | `["red", "blue"]`                                                               |
+| `$("#myForm [type=checkbox]").fieldValue()`                           | `["yes"]`: the unchecked box is not sent                                        |
+| `$("#myForm [type=radio]").fieldValue()`                              | `["m"]`                                                                         |
+| `$("#myForm button").fieldValue()`                                    | `[]`: a submit button is sent only when it submits the form                     |
+| `$("#myForm [type=checkbox], #myForm [type=radio]").fieldSerialize()` | `"news=yes&size=m"`                                                             |
+| `$("#myForm").formSerialize()`                                        | `"token=abc123&name=Ada&password=&colors=red&colors=blue&news=yes&size=m&bio="` |
+
+### Successful Controls
+
+By default, `fieldValue` and `fieldSerialize` read only [successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set), the ones a submission would send. That is why an unchecked checkbox gives an empty array:
 
 ```javascript
-// value will hold the checkbox value even if it's not checked:
-var value = $("#myUncheckedCheckbox").fieldValue(false);
-// value.length == 1
+// an empty array when the checkbox is not checked
+const value = $("#myUncheckedCheckbox").fieldValue();
+// value.length === 0
 ```
+
+To read a field's value whether or not it would be sent, pass `false`:
+
+```javascript
+// the checkbox's value, even when it is not checked
+const value = $("#myUncheckedCheckbox").fieldValue(false);
+// value.length === 1
+```
+
+With `false`, the checkboxes of the form above give `["yes", "agree"]`, and its radio buttons `["s", "m"]`.

@@ -73,7 +73,7 @@ export function generateForm(seed, container) {
   const other = document.createElement("form");
   other.id = formId + "-other";
 
-  // Outside controls get their own names (out-N), so the semantic order class can find them.
+  // Outside controls get their own names (out-N), so a failing seed shows which ones they are.
   function name(outside) {
     if (outside) {
       const outsideName = "out-" + counters.out++;
@@ -258,7 +258,7 @@ export function generateForm(seed, container) {
   // The submitter: one of the form's submit buttons, when it has any.
   const submitters = Array.prototype.filter.call(
     document.querySelectorAll("input, button"),
-    (el) => el.form === form && (el.type === "submit" || el.type === "image")
+    (el) => el.form === form && (el.type === "submit" || el.type === "image"),
   );
   const submitter = submitters.length && rand.chance(0.85) ? rand.pick(submitters) : null;
 
@@ -291,7 +291,7 @@ export function toWellFormed(text) {
     /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
     function (match, lead) {
       return typeof lead === "string" ? lead + "\uFFFD" : "\uFFFD";
-    }
+    },
   );
 }
 
@@ -319,22 +319,7 @@ export const KNOWN_DIFFERENCES = [
     },
   },
   {
-    id: "CHARSET",
-    description: "FormData sends a hidden _charset_ control's value as the document encoding",
-    normalize: (pair) => ({
-      plugin: pair.plugin.map((e) => (e[0] === "_charset_" ? [e[0], e[1], "UTF-8"] : e)),
-      native: pair.native,
-    }),
-  },
-  {
-    id: "DIRNAME",
-    description: "FormData adds a dirname field for text inputs and textareas; the plugin does not",
-    normalize: (pair) => ({
-      plugin: pair.plugin,
-      native: pair.native.filter((e) => !/^dir-\d+$/.test(e[0])),
-    }),
-  },
-  {
+    // Kept in 5.0 (N6): 5.x fixes this with new FormData(form, submitter).
     id: "SUBMIT-LABEL",
     description:
       'FormData sends the default label of an input submitter without a value; the plugin sends ""',
@@ -346,69 +331,9 @@ export const KNOWN_DIFFERENCES = [
       return {
         plugin: pair.plugin,
         native: pair.native.map((e) =>
-          e[0] === sub.name && /^Submit( Query)?$/.test(e[2]) ? [e[0], e[1], ""] : e
+          e[0] === sub.name && /^Submit( Query)?$/.test(e[2]) ? [e[0], e[1], ""] : e,
         ),
       };
-    },
-  },
-  {
-    id: "IMG-VALUE",
-    description: "the plugin sends a clicked image button's name=value before its coordinates",
-    normalize: (pair, ctx) => {
-      if (!isImage(ctx.submitter) || !ctx.submitter.name) {
-        return pair;
-      }
-      const n = ctx.submitter.name;
-      return {
-        plugin: pair.plugin.filter(
-          (e, i) => !(e[0] === n && pair.plugin[i + 1] && pair.plugin[i + 1][0] === n + ".x")
-        ),
-        native: pair.native,
-      };
-    },
-  },
-  {
-    id: "IMG-UNNAMED",
-    description: "FormData sends x and y for an unnamed image submitter; the plugin sends nothing",
-    normalize: (pair, ctx) => {
-      if (!isImage(ctx.submitter) || ctx.submitter.name || ctx.submitter.disabled) {
-        return pair;
-      }
-      return {
-        plugin: pair.plugin,
-        native: pair.native.filter((e) => e[0] !== "x" && e[0] !== "y"),
-      };
-    },
-  },
-  {
-    id: "IMG-ORDER",
-    description: "without semantic, the plugin appends the clicked image's fields last",
-    normalize: (pair, ctx) => {
-      if (ctx.semantic || !isImage(ctx.submitter) || !ctx.submitter.name) {
-        return pair;
-      }
-      const n = ctx.submitter.name;
-      const last = (list) => {
-        const coords = list.filter((e) => e[0] === n + ".x" || e[0] === n + ".y");
-        return list.filter((e) => coords.indexOf(e) < 0).concat(coords);
-      };
-      return { plugin: last(pair.plugin), native: last(pair.native) };
-    },
-  },
-  {
-    id: "SEM-ORDER",
-    description: "with semantic, the plugin sends outside controls (form=id) after the form's own",
-    normalize: (pair, ctx) => {
-      if (!ctx.semantic) {
-        return pair;
-      }
-      const outsideLast = (list) => {
-        const outside = list.filter(
-          (e) => ctx.outsideNames.indexOf(e[0].replace(/\.[xy]$/, "")) >= 0
-        );
-        return list.filter((e) => outside.indexOf(e) < 0).concat(outside);
-      };
-      return { plugin: pair.plugin, native: outsideLast(pair.native) };
     },
   },
 ];

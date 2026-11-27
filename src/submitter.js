@@ -1,11 +1,11 @@
-import { closestByTag, formMember, isDisabled } from "./form-members.js";
+import { closestByTag, formMember } from "./form-members.js";
 import jQuery from "jquery";
 
 // The submitter: the button that submitted a form, captured from ajaxForm's clicks. It is kept in
 // a private store and cleared shortly after the click. The form's clk, clk_x and clk_y properties
 // are still written for pages that read them, and read when the store has none.
 
-var storeKey = "jqFormSubmitter";
+const storeKey = "jqFormSubmitter";
 
 // Writes a property on the form; a control with that name makes it read-only.
 function setExpando(form, name, value) {
@@ -18,15 +18,15 @@ function setExpando(form, name, value) {
 
 // A property the page set on the form, never a control of the form with that name.
 function expando(form, name) {
-  var value = form[name];
-  var els = formMember(form, "elements");
+  const value = form[name];
+  const els = formMember(form, "elements");
 
   return els && value && els.namedItem(name) === value ? undefined : value;
 }
 
 // Records a submitter for a form until the click window ends.
 function record(form, el, x, y) {
-  jQuery.data(form, storeKey, { el: el, x: x, y: y });
+  jQuery.data(form, storeKey, { el, x, y });
   setExpando(form, "clk", el);
 
   if (el.type === "image") {
@@ -49,13 +49,9 @@ function imagePoint(e, target) {
     return [e.offsetX, e.offsetY];
   }
 
-  if (typeof jQuery.fn.offset === "function") {
-    var offset = jQuery(target).offset();
+  const offset = jQuery(target).offset();
 
-    return [e.pageX - offset.left, e.pageY - offset.top];
-  }
-
-  return [e.pageX - target.offsetLeft, e.pageY - target.offsetTop];
+  return [e.pageX - offset.left, e.pageY - offset.top];
 }
 
 /**
@@ -63,21 +59,21 @@ function imagePoint(e, target) {
  */
 export function captureSubmitter(e) {
   // the clicked control, or the button around the clicked content (ex: a span within a button)
-  var target = closestByTag(e.target, ["button", "input"]);
+  const target = closestByTag(e.target, ["button", "input"]);
 
   // the type property, unlike the attribute, is "submit" for a button without a type (#588)
   if (!target || (target.type !== "submit" && target.type !== "image")) {
     return;
   }
 
-  var form = target.form;
+  const form = target.form;
 
   if (!form) {
     // a submit control that belongs to no form
     return;
   }
 
-  var point = target.type === "image" ? imagePoint(e, target) : [];
+  const point = target.type === "image" ? imagePoint(e, target) : [];
 
   record(form, target, point[0], point[1]);
 }
@@ -87,7 +83,7 @@ export function captureSubmitter(e) {
  * An image submitter gets the point 0,0, as native submission sends it without a click.
  */
 export function captureEventSubmitter(e, form) {
-  var el = e.originalEvent && e.originalEvent.submitter;
+  const el = e.originalEvent && e.originalEvent.submitter;
 
   if (el && !submitterOf(form)) {
     record(form, el, 0, 0);
@@ -102,42 +98,35 @@ export function submitterOf(form) {
     return null;
   }
 
-  var stored = jQuery.data(form, storeKey);
+  const stored = jQuery.data(form, storeKey);
 
   if (stored) {
     return stored;
   }
 
-  var el = expando(form, "clk");
+  const el = expando(form, "clk");
 
-  return el ? { el: el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
+  return el ? { el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
 }
 
 /**
- * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
+ * The fields of a clicked image button, as a native submission sends them: only its coordinates,
+ * named name.x and name.y, or x and y when it has no name.
  */
-export function submitterFields(form) {
-  var fields = {};
-  var sub = submitterOf(form);
-  var el = sub && sub.el;
+export function imageFields(sub) {
+  const prefix = sub.el.name ? sub.el.name + "." : "";
 
-  // a disabled button is not sent, also when a disabled fieldset disables it
-  if (el && el.name && !isDisabled(el)) {
-    fields[el.name] = el.value;
-    if (el.type === "image") {
-      fields[el.name + ".x"] = sub.x;
-      fields[el.name + ".y"] = sub.y;
-    }
-  }
-
-  return fields;
+  return [
+    { name: prefix + "x", value: sub.x },
+    { name: prefix + "y", value: sub.y },
+  ];
 }
 
 /**
  * The form's submitter element, or null.
  */
 export function submitterElement(form) {
-  var sub = submitterOf(form);
+  const sub = submitterOf(form);
 
   return sub ? sub.el : null;
 }

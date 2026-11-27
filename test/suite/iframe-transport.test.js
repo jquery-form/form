@@ -1,8 +1,7 @@
 import { afterEach, assert, describe, it, vi } from "vitest";
 import {
-  countHtmlParsed,
-  recordDeprecations,
   resetFixture,
+  countParsedHTML,
   restoreAjaxState,
   selectFiles,
   submitTransport,
@@ -122,7 +121,7 @@ describe("form", function () {
         assert.strictEqual(xhr.aborted, 1);
       });
 
-      it("should submit clicked image values and coordinates as hidden inputs", async function () {
+      it("should submit only the clicked image's coordinates as hidden inputs", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const image = $('<input type="image" name="map" value="go">').appendTo($form)[0];
         const submitted = {};
@@ -139,14 +138,34 @@ describe("form", function () {
 
         await submitThroughIframe($form, { dataType: "text" });
 
-        assert.deepEqual(submitted, { map: "go", "map.x": "12", "map.y": "34" });
+        assert.deepEqual(submitted, { "map.x": "12", "map.y": "34" });
+      });
+
+      it("should submit x and y for a clicked image without a name", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        const image = $('<input type="image" value="go">').appendTo($form)[0];
+        const submitted = {};
+        $form[0].clk = image;
+        $form[0].clk_x = 5;
+        $form[0].clk_y = 6;
+        inspectNativeSubmit($form, function (form) {
+          $(form)
+            .find('input[type="hidden"]')
+            .each(function () {
+              submitted[this.name] = this.value;
+            });
+        });
+
+        await submitThroughIframe($form, { dataType: "text" });
+
+        assert.deepEqual(submitted, { x: "5", y: "6" });
       });
 
       it("should submit CSRF metadata and remove its temporary input", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
         const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
-          document.head
+          document.head,
         );
         let submittedToken;
         inspectNativeSubmit($form, function (form) {
@@ -168,7 +187,7 @@ describe("form", function () {
         const $form = createIframeForm("https://upload.example.invalid/form");
         const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
         const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
-          document.head
+          document.head,
         );
         let submittedTokens;
         $form[0].submit = function () {
@@ -196,7 +215,7 @@ describe("form", function () {
             .appendTo("#main");
           const $token = $('<meta name="csrf-token" content="secret">').appendTo(document.head);
           const $param = $('<meta name="csrf-param" content="authenticity_token">').appendTo(
-            document.head
+            document.head,
           );
           let submittedTokens;
           $form[0].submit = function () {
@@ -222,7 +241,7 @@ describe("form", function () {
         it(`should submit a post form with ${method} and ${tokens} CSRF field when the type option is ${type}`, function () {
           const $form = createIframeForm("ajax/iframe-text.html");
           const $metas = $(
-            '<meta name="csrf-token" content="secret"><meta name="csrf-param" content="authenticity_token">'
+            '<meta name="csrf-token" content="secret"><meta name="csrf-param" content="authenticity_token">',
           ).appendTo(document.head);
           let submitted;
           $form[0].submit = function () {
@@ -324,36 +343,6 @@ describe("form", function () {
         assert.strictEqual($form.attr("target"), "original-target");
       });
 
-      it("should wait for closeKeepAlive before creating the iframe request", async function () {
-        const originalGet = $.get;
-        const $form = createIframeForm("ajax/iframe-text.html");
-        let release;
-        let resolveCompletion;
-        const completed = new Promise((resolve) => {
-          resolveCompletion = resolve;
-        });
-        $.get = function (_url, callback) {
-          release = callback;
-        };
-
-        try {
-          $form.ajaxSubmit({
-            iframe: true,
-            closeKeepAlive: "/close",
-            dataType: "text",
-            complete: resolveCompletion,
-          });
-          const beforeRelease = $form.data("jqxhr");
-
-          release();
-          await completed;
-
-          assert.strictEqual(beforeRelease, undefined);
-        } finally {
-          $.get = originalGet;
-        }
-      });
-
       it("should insert what dataFilter returns into the target on an upload", async function () {
         const $form = createIframeForm("ajax/iframe-text.html");
         const $target = $('<div id="iframe-filter-target">kept</div>').appendTo("#main");
@@ -404,7 +393,7 @@ describe("form", function () {
         assert.strictEqual(result.success[0].documentElement.nodeName, "response");
         assert.strictEqual(
           result.success[0].getElementsByTagName("transport")[0].textContent,
-          "iframe"
+          "iframe",
         );
       });
 
@@ -541,7 +530,7 @@ describe("form", function () {
             beforeSend: (request) => request.abort(),
           });
           const state = await new Promise((resolve) =>
-            $form.data("jqxhr").fail(() => resolve("rejected"))
+            $form.data("jqxhr").fail(() => resolve("rejected")),
           );
 
           assert.strictEqual(state, "rejected");
@@ -660,11 +649,15 @@ describe("form", function () {
             .attr("src");
         };
 
-        seen.parsed = await countHtmlParsed("window.iframePayload", async () => {
+        const parsed = await countParsedHTML(async () => {
           $form.ajaxSubmit($.extend({ iframe: true, forceSync: true, error: () => {} }, options));
           $form.data("jqxhr").abort();
           await new Promise((resolve) => setTimeout(resolve, 50));
-        });
+        }, "window.iframePayload");
+        if (parsed.error) {
+          throw parsed.error;
+        }
+        seen.parsed = parsed.count;
 
         return seen;
       }
@@ -749,26 +742,22 @@ describe("form", function () {
         assert.deepEqual(submitted, { own: "kept" });
       });
 
-      // jQuery 1.7.2's selector engine calls setAttribute on the form itself, so it cannot run there.
-      it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-        "should submit and restore a form whose controls shadow its methods",
-        async function () {
-          const $form = createIframeForm("ajax/iframe-text.html");
-          $(
-            '<input name="setAttribute" value="a"><input name="removeAttribute" value="b">'
-          ).appendTo($form);
+      it("should submit and restore a form whose controls shadow its methods", async function () {
+        const $form = createIframeForm("ajax/iframe-text.html");
+        $('<input name="setAttribute" value="a"><input name="removeAttribute" value="b">').appendTo(
+          $form,
+        );
 
-          const result = await submitThroughIframe($form, { dataType: "text" });
+        const result = await submitThroughIframe($form, { dataType: "text" });
 
-          assert.deepEqual(result.events, ["success", "complete"]);
-          assert.match($form[0].getAttribute("action"), /ajax\/iframe-text\.html$/);
-          assert.strictEqual($form[0].hasAttribute("target"), false);
-        }
-      );
+        assert.deepEqual(result.events, ["success", "complete"]);
+        assert.match($form[0].getAttribute("action"), /ajax\/iframe-text\.html$/);
+        assert.strictEqual($form[0].hasAttribute("target"), false);
+      });
 
       it("should leave a missing action attribute missing when a control is named action", async function () {
         const $form = $('<form method="post"><input name="action" value="save"></form>').appendTo(
-          "#main"
+          "#main",
         );
 
         const result = await submitThroughIframe($form, {
@@ -784,19 +773,15 @@ describe("form", function () {
         ["ownerDocument", "the form's document"],
         ["getAttribute", "the form's attributes"],
       ].forEach(function ([name, member]) {
-        // jQuery 1.7.2's selector engine reads both members on the form itself.
-        it.skipIf(Number($.fn.jquery.split(".")[0]) < 3)(
-          `should upload when a control named ${name} shadows ${member}`,
-          async function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            $(`<input name="${name}" value="x">`).appendTo($form);
+        it(`should upload when a control named ${name} shadows ${member}`, async function () {
+          const $form = createIframeForm("ajax/iframe-text.html");
+          $(`<input name="${name}" value="x">`).appendTo($form);
 
-            const result = await submitThroughIframe($form, { dataType: "text" });
+          const result = await submitThroughIframe($form, { dataType: "text" });
 
-            assert.deepEqual(result.events, ["success", "complete"]);
-            assert.strictEqual(result.success[0].trim(), "iframe response");
-          }
-        );
+          assert.deepEqual(result.events, ["success", "complete"]);
+          assert.strictEqual(result.success[0].trim(), "iframe response");
+        });
       });
 
       it("should submit extraData keys and buttons named hasOwnProperty", async function () {
@@ -841,7 +826,7 @@ describe("form", function () {
 
         $form.ajaxSubmit({ iframe: true, global: false });
         const rejection = await new Promise((resolve) =>
-          $form.data("jqxhr").fail((...args) => resolve(args))
+          $form.data("jqxhr").fail((...args) => resolve(args)),
         );
 
         assert.strictEqual(rejection[0].status, 500);
@@ -939,14 +924,6 @@ describe("form", function () {
           assert.strictEqual($form.data("jqxhr").state(), "rejected");
         });
 
-        it("should prefer an IE XMLDocument island as the XML response", async function () {
-          const $form = createIframeForm("ajax/iframe-xml-island.html");
-
-          const result = await submitThroughIframe($form, { dataType: "xml" });
-
-          assert.strictEqual(result.success[0].documentElement.nodeName, "island");
-        });
-
         it("should report a parsererror document as a parser error", async function () {
           const $form = createIframeForm("ajax/iframe-parsererror.xml");
 
@@ -954,20 +931,6 @@ describe("form", function () {
 
           assert.strictEqual(result.error[1], "parsererror");
           assert.strictEqual(result.error[2].message, "parsererror");
-        });
-
-        it("should return a parsererror document when jQuery has no error helper", async function () {
-          const error = $.error;
-          const $form = createIframeForm("ajax/iframe-parsererror.xml");
-          $.error = undefined;
-
-          try {
-            const result = await submitThroughIframe($form, { dataType: "xml" });
-
-            assert.strictEqual(result.success[0].documentElement.nodeName, "parsererror");
-          } finally {
-            $.error = error;
-          }
         });
 
         it("should return an XML document when jQuery has no parseXML helper", async function () {
@@ -985,102 +948,28 @@ describe("form", function () {
         });
       });
 
-      describe("legacy browser frames", function () {
-        const realContentWindow = Object.getOwnPropertyDescriptor(
-          HTMLIFrameElement.prototype,
-          "contentWindow"
-        ).get;
-        const realContentDocument = Object.getOwnPropertyDescriptor(
-          HTMLIFrameElement.prototype,
-          "contentDocument"
-        ).get;
-
-        function createTarget(properties) {
-          const $target = $('<iframe name="legacy-frame"></iframe>').appendTo("#main");
-          Object.defineProperties($target[0], properties || {});
-          return $target;
-        }
-
-        function denied() {
-          throw new Error("Access is denied");
-        }
-
-        // IE fires onload for the initial blank document before the response arrives.
-        function ieEvents(frame, delay) {
-          const detached = [];
-          return {
-            detached: detached,
-            properties: {
-              attachEvent: {
-                configurable: true,
-                value: function (name, handler) {
-                  if (delay === undefined) {
-                    handler();
-                  }
-                  frame().addEventListener("load", () => setTimeout(handler, delay || 0));
-                },
-              },
-              detachEvent: {
-                configurable: true,
-                value: (name) => detached.push(name),
-              },
-            },
-          };
-        }
-
-        it("should read the document when IE8 denies contentWindow access", async function () {
-          const $target = createTarget({
-            contentWindow: { configurable: true, get: denied },
-            contentDocument: {
-              configurable: true,
-              get: () => realContentDocument.call($target[0]),
-            },
-          });
+      describe("frame documents", function () {
+        it("should wait for the response when the frame loads its blank document first", async function () {
+          const $target = $('<iframe name="blank-first-frame"></iframe>').appendTo("#main");
           const $form = createIframeForm("ajax/iframe-text.html");
+          const nativeSubmit = $form[0].submit;
+          $form[0].submit = function () {
+            $target[0].dispatchEvent(new Event("load"));
+            nativeSubmit.call(this);
+          };
 
           const result = await submitThroughIframe($form, {
             iframeTarget: $target,
             dataType: "text",
           });
 
+          assert.deepEqual(result.events, ["success", "complete"]);
           assert.strictEqual(result.success[0].trim(), "iframe response");
         });
 
-        [
-          ["throws", { get: denied }, { timeout: 1000 }],
-          ["is missing", { value: null }, {}],
-        ].forEach(function ([label, contentDocument, options]) {
-          it("should report a server abort when the frame document " + label, async function () {
-            const $target = createTarget({
-              contentWindow: { configurable: true, value: null },
-              contentDocument: $.extend({ configurable: true }, contentDocument),
-            });
-            const $form = createIframeForm("ajax/iframe-text.html");
-
-            const result = await submitThroughIframe(
-              $form,
-              $.extend({ iframeTarget: $target, dataType: "text" }, options)
-            );
-
-            assert.deepEqual(result.error.slice(1, 3), ["aborted", "server abort"]);
-            assert.strictEqual(result.xhr.state(), "rejected");
-          });
-        });
-
-        it("should report an error when IE8 denies access to the response body", async function () {
-          const $target = createTarget({
-            contentWindow: {
-              configurable: true,
-              get: function () {
-                const frameDocument = realContentWindow.call(this).document;
-                return {
-                  document: new Proxy(frameDocument, {
-                    get: (target, name) => (name === "body" ? denied() : target[name]),
-                  }),
-                };
-              },
-            },
-          });
+        it("should report a server abort when the frame document is missing", async function () {
+          const $target = $('<iframe name="unreadable-frame"></iframe>').appendTo("#main");
+          Object.defineProperty($target[0], "contentDocument", { configurable: true, value: null });
           const $form = createIframeForm("ajax/iframe-text.html");
 
           const result = await submitThroughIframe($form, {
@@ -1088,24 +977,27 @@ describe("form", function () {
             dataType: "text",
           });
 
-          assert.strictEqual(result.error[1], "error");
-          assert.strictEqual(result.error[2].message, "Access is denied");
-          assert.deepEqual(result.events, ["error", "complete"]);
+          assert.deepEqual(result.error.slice(1, 3), ["aborted", "server abort"]);
+          assert.strictEqual(result.xhr.state(), "rejected");
         });
 
         it("should report the read error, not the statusText, when an error status fails to read", async function () {
-          const $target = createTarget({
-            contentWindow: {
-              configurable: true,
-              get: function () {
-                const frameDocument = realContentWindow.call(this).document;
-                return {
-                  document: new Proxy(frameDocument, {
-                    get: (target, name) =>
-                      name === "getElementsByTagName" ? denied() : target[name],
-                  }),
-                };
-              },
+          const $target = $('<iframe name="unreadable-error-frame"></iframe>').appendTo("#main");
+          const readDocument = Object.getOwnPropertyDescriptor(
+            HTMLIFrameElement.prototype,
+            "contentDocument",
+          ).get;
+          Object.defineProperty($target[0], "contentDocument", {
+            configurable: true,
+            get: function () {
+              return new Proxy(readDocument.call(this), {
+                get: function (target, name) {
+                  if (name === "getElementsByTagName") {
+                    throw new Error("Access is denied");
+                  }
+                  return target[name];
+                },
+              });
             },
           });
           const $form = createIframeForm("ajax/iframe-error.html");
@@ -1118,80 +1010,6 @@ describe("form", function () {
           assert.strictEqual(result.error[0].status, 500);
           assert.strictEqual(result.error[1], "error");
           assert.strictEqual(result.error[2].message, "Access is denied");
-        });
-
-        it("should keep polling while IE reports an uninitialized document", async function () {
-          let polls = 0;
-          let events;
-          const $target = createTarget();
-          events = ieEvents(() => $target[0], 100);
-          Object.defineProperties(
-            $target[0],
-            $.extend(events.properties, {
-              contentWindow: {
-                configurable: true,
-                get: function () {
-                  polls++;
-                  return polls <= 2
-                    ? { document: { readyState: "uninitialized" } }
-                    : realContentWindow.call(this);
-                },
-              },
-            })
-          );
-          const $form = createIframeForm("ajax/iframe-text.html");
-
-          const result = await submitThroughIframe($form, {
-            iframeTarget: $target,
-            dataType: "text",
-          });
-
-          assert.ok(polls > 4, "polled again after uninitialized");
-          assert.strictEqual(result.success[0].trim(), "iframe response");
-          assert.deepEqual(events.detached, ["onload"]);
-        });
-
-        it("should ignore the IE onload for the initial blank document", async function () {
-          const $target = createTarget();
-          const events = ieEvents(() => $target[0]);
-          Object.defineProperties($target[0], events.properties);
-          const $form = createIframeForm("ajax/iframe-text.html");
-
-          const result = await submitThroughIframe($form, {
-            iframeTarget: $target,
-            dataType: "text",
-          });
-
-          assert.deepEqual(result.events, ["success", "complete"]);
-          assert.strictEqual(result.success[0].trim(), "iframe response");
-          assert.deepEqual(events.detached, ["onload"]);
-        });
-
-        it("should requeue Opera's empty DOM until its retries run out", async function () {
-          const $target = createTarget();
-          const $form = createIframeForm("ajax/iframe-empty.html");
-          const successes = [];
-          vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-          window.opera = {};
-
-          try {
-            $form.ajaxSubmit({
-              iframe: true,
-              iframeTarget: $target,
-              forceSync: true,
-              dataType: "text",
-              success: (data) => successes.push(data),
-            });
-            await new Promise((resolve) => $target.one("load", resolve));
-            const beforeRetries = successes.length;
-            vi.advanceTimersByTime(250 * 50);
-
-            assert.strictEqual(beforeRetries, 0);
-            assert.deepEqual(successes, [""]);
-          } finally {
-            vi.useRealTimers();
-            delete window.opera;
-          }
         });
       });
 
@@ -1227,7 +1045,7 @@ describe("form", function () {
         const active = $.active;
         const events = [];
         $(document).on("ajaxError.abort ajaxComplete.abort ajaxStop.abort", (event) =>
-          events.push(event.type)
+          events.push(event.type),
         );
 
         try {
@@ -1303,7 +1121,6 @@ describe("form", function () {
         });
 
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-        const majorVersion = Number($.fn.jquery.split(".")[0]);
 
         // Starts an upload whose native post only runs `inspect`, so nothing is sent. The upload
         // stays open until the test aborts it, or until afterEach does.
@@ -1314,7 +1131,7 @@ describe("form", function () {
             }
           };
           $form.ajaxSubmit(
-            $.extend({ iframe: true, forceSync: true, error: function () {} }, options)
+            $.extend({ iframe: true, forceSync: true, error: function () {} }, options),
           );
           const deferred = $form.data("jqxhr");
           if (deferred) {
@@ -1400,7 +1217,7 @@ describe("form", function () {
               },
               function (form) {
                 disabledDuringPost = $(form).find("[name=upload]").prop("disabled");
-              }
+              },
             );
 
             assert.strictEqual(disabledDuringPost, false);
@@ -1436,7 +1253,7 @@ describe("form", function () {
             $form[0].submit = function () {};
 
             const result = await withAjaxSettings({ timeout: 1, global: false }, () =>
-              submitThroughIframe($form, { forceSync: true })
+              submitThroughIframe($form, { forceSync: true }),
             );
 
             assert.strictEqual(result.error[1], "timeout");
@@ -1493,7 +1310,7 @@ describe("form", function () {
           it("should not add the clicked button to the caller's data object", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $form
+              $form,
             )[0];
             const data = { plain: "value" };
 
@@ -1537,7 +1354,7 @@ describe("form", function () {
                   src: frame.getAttribute("src"),
                   style: [frame.style.position, frame.style.top, frame.style.left],
                 };
-              }
+              },
             );
 
             assert.strictEqual(framesAtBeforeSend, framesBefore);
@@ -1615,6 +1432,44 @@ describe("form", function () {
             assert.strictEqual($targets[1].name, $targets[0].name);
           });
 
+          it("should find a string iframeTarget in the form's document", function () {
+            $('<iframe id="string-target" name="string-target"></iframe>').appendTo("#main");
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let submittedTarget;
+
+            const deferred = startStubbedUpload(
+              $form,
+              { iframeTarget: "#string-target" },
+              (form) => {
+                submittedTarget = form.getAttribute("target");
+              },
+            );
+            deferred.abort();
+
+            assert.strictEqual(submittedTarget, "string-target");
+          });
+
+          it("should throw a selector syntax error from ajaxSubmit before any event, and create no frame, when iframeTarget is an HTML string", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const events = [];
+            recordGlobalEvents(events);
+            const frames = $("iframe").length;
+
+            const parsed = await countParsedHTML(() =>
+              $form.ajaxSubmit({
+                iframe: true,
+                forceSync: true,
+                iframeTarget: '<iframe name="made-frame"></iframe>',
+                error: function () {},
+              }),
+            );
+
+            assert.match(parsed.error.message, /unrecognized expression/);
+            assert.strictEqual(parsed.count, 0);
+            assert.deepEqual(events, []);
+            assert.strictEqual($("iframe").length, frames);
+          });
+
           it("should settle the upload and end the global events when iframeTarget matches nothing", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const events = [];
@@ -1642,7 +1497,7 @@ describe("form", function () {
             window.__frameHtml = 0;
             $.active = 0;
 
-            const parsed = await countHtmlParsed("window.__frameHtml", async () => {
+            const parsed = await countParsedHTML(async () => {
               try {
                 $form.ajaxSubmit({
                   iframe: true,
@@ -1650,13 +1505,14 @@ describe("form", function () {
                   iframeTarget: '<img src="data:," onerror="window.__frameHtml = 1">',
                   error: function () {},
                 });
-              } catch {
-                // an iframeTarget that matches nothing throws here
+              } finally {
+                // the selector syntax error is checked below; let a payload's onerror fire first
+                await new Promise((resolve) => setTimeout(resolve, 100));
               }
-              await new Promise((resolve) => setTimeout(resolve, 100));
-            });
+            }, "window.__frameHtml");
 
-            assert.strictEqual(parsed, 0);
+            assert.match(parsed.error.message, /unrecognized expression/);
+            assert.strictEqual(parsed.count, 0);
             assert.strictEqual(window.__frameHtml, 0);
             assert.strictEqual($.active, 0);
           });
@@ -1695,8 +1551,8 @@ describe("form", function () {
                       result.error = Array.from(arguments);
                     },
                   },
-                  options
-                )
+                  options,
+                ),
               );
               const deferred = $form.data("jqxhr");
               deferred.fail(function () {
@@ -1709,7 +1565,7 @@ describe("form", function () {
 
             function formOutsideBody() {
               const $form = $(
-                '<form method="get" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+                '<form method="get" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
               );
               document.documentElement.appendChild($form[0]);
 
@@ -1746,9 +1602,9 @@ describe("form", function () {
 
                 assert.deepEqual(
                   ["method", "target", "enctype", "encoding"].map((name) =>
-                    $form[0].getAttribute(name)
+                    $form[0].getAttribute(name),
                   ),
-                  ["get", null, null, null]
+                  ["get", null, null, null],
                 );
                 assert.strictEqual($form.find("[name=extra]").length, 0);
               } finally {
@@ -1836,7 +1692,7 @@ describe("form", function () {
 
           it("should mark the mock xhr as aborted when the server aborts", async function () {
             const $form = $(
-              '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+              '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
             );
 
             const result = await submitThroughIframe($form, { forceSync: true });
@@ -1889,7 +1745,7 @@ describe("form", function () {
           ].forEach(function ([label, attached, options]) {
             it("should fire no global events when global is false and " + label, async function () {
               const $form = $(
-                '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+                '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
               );
               if (attached) {
                 $form.appendTo("#main");
@@ -1901,7 +1757,7 @@ describe("form", function () {
 
               const result = await submitThroughIframe(
                 $form,
-                $.extend({ forceSync: true, global: false }, options)
+                $.extend({ forceSync: true, global: false }, options),
               );
 
               assert.deepEqual(result.events, ["error", "complete"]);
@@ -1920,8 +1776,7 @@ describe("form", function () {
 
             $form.ajaxSubmit({ iframe: true, context: context, beforeSend: () => false });
 
-            // jQuery 1.7.2 triggers a global event on every element that handles it.
-            assert.deepEqual(onContext, majorVersion < 3 ? ["ajaxComplete"] : []);
+            assert.deepEqual(onContext, []);
             assert.deepEqual(onDocument, ["ajaxComplete"]);
           });
 
@@ -1938,7 +1793,7 @@ describe("form", function () {
               },
               function (form) {
                 action = form.getAttribute("action");
-              }
+              },
             );
 
             assert.strictEqual(action, "ajax/iframe-plain.html");
@@ -2078,10 +1933,10 @@ describe("form", function () {
         });
 
         describe("submitter and CSRF", function () {
-          it("should let the clicked button override a data field with the same name", function () {
+          it("should send both the clicked button and a data field with the same name, as the XHR transport does", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $form
+              $form,
             )[0];
             let fields;
 
@@ -2089,7 +1944,124 @@ describe("form", function () {
               fields = hiddenFields(form);
             });
 
-            assert.deepEqual(fields, [["choice", "picked"]]);
+            assert.deepEqual(fields, [
+              ["choice", "picked"],
+              ["choice", "from data"],
+            ]);
+          });
+
+          it("should put the clicked button's field right after the button, in tree order", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const button = $('<button type="submit" name="choice" value="picked">').prependTo(
+              $form,
+            )[0];
+            $form[0].clk = button;
+            let posted;
+
+            startStubbedUpload($form, {}, function (form) {
+              posted = $(form)
+                .find("input")
+                .map(function () {
+                  return this.name;
+                })
+                .get();
+            });
+
+            assert.deepEqual(posted, ["choice", "upload"]);
+            assert.strictEqual(button.nextSibling, $form.find("[name=upload]")[0]);
+          });
+
+          it("should send the direction of a clicked submit input right after its field, as the XHR transport does", function () {
+            const $form = createIframeForm("ajax/iframe-text.html").attr("dir", "rtl");
+            $form[0].clk = $(
+              '<input type="submit" name="go" value="Go" dirname="go.dir">',
+            ).appendTo($form)[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, [
+              ["go", "Go"],
+              ["go.dir", "rtl"],
+            ]);
+          });
+
+          it("should give the field of a clicked button inside the form no form attribute, so the form posts it", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $form,
+            )[0];
+            let added;
+
+            startStubbedUpload($form, {}, function (form) {
+              const input = $(form).find('input[name="choice"]')[0];
+              added = [input.hasAttribute("form"), input.form === form];
+            });
+
+            assert.deepEqual(added, [false, true]);
+          });
+
+          it("should put the coordinates of a clicked image outside the form after it, with its form attribute", function () {
+            const $form = createIframeForm("ajax/iframe-text.html").attr("id", "ifr-outside");
+            const image = $('<input type="image" name="map" form="ifr-outside">').insertBefore(
+              $form,
+            )[0];
+            $form[0].clk = image;
+            $form[0].clk_x = 3;
+            $form[0].clk_y = 4;
+            let posted;
+
+            startStubbedUpload($form, {}, function (form) {
+              posted = Array.from(form.elements)
+                .filter((el) => el.type === "hidden")
+                .map((el) => [
+                  el.name,
+                  el.value,
+                  el.getAttribute("form"),
+                  el.previousSibling === image ? "image" : el.previousSibling.name,
+                ]);
+            });
+
+            assert.deepEqual(posted, [
+              ["map.x", "3", "ifr-outside", "image"],
+              ["map.y", "4", "ifr-outside", "map.x"],
+            ]);
+            assert.strictEqual(image.nextSibling, $form[0]);
+          });
+
+          it("should not post a clicked button that is in no tree", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">')[0];
+            let fields;
+
+            startStubbedUpload($form, {}, function (form) {
+              fields = hiddenFields(form);
+            });
+
+            assert.deepEqual(fields, []);
+          });
+
+          it("should leave the clicked button out of the extraData the callbacks see", async function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
+              $form,
+            )[0];
+            let seen;
+
+            await new Promise(function (resolve) {
+              $form.ajaxSubmit({
+                iframe: true,
+                data: { a: "1" },
+                complete: function () {
+                  seen = this.extraData;
+                  resolve();
+                },
+              });
+            });
+
+            assert.deepEqual(seen, { a: "1" });
           });
 
           it("should post a clicked button's lone surrogate as U+FFFD", function () {
@@ -2110,7 +2082,7 @@ describe("form", function () {
           it("should not post a disabled clicked button", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $(
-              '<button type="submit" name="choice" value="picked" disabled>'
+              '<button type="submit" name="choice" value="picked" disabled>',
             ).appendTo($form)[0];
             let fields;
 
@@ -2125,7 +2097,7 @@ describe("form", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const $fieldset = $("<fieldset disabled></fieldset>").appendTo($form);
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $fieldset
+              $fieldset,
             )[0];
             let fields;
 
@@ -2142,7 +2114,7 @@ describe("form", function () {
               .appendTo($form)
               .children("legend");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $legend
+              $legend,
             )[0];
             let fields;
 
@@ -2176,10 +2148,10 @@ describe("form", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const $fieldset = $("<fieldset disabled></fieldset>").appendTo($form);
             const own = $('<button type="submit" name="own" value="o" disabled>').appendTo(
-              $form
+              $form,
             )[0];
             const inFieldset = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $fieldset
+              $fieldset,
             )[0];
             const fields = [];
             $form[0].submit = function () {
@@ -2207,7 +2179,7 @@ describe("form", function () {
               { data: { authenticity_token: "from data" } },
               function (form) {
                 fields = hiddenFields(form);
-              }
+              },
             );
 
             assert.deepEqual(fields, [["authenticity_token", "secret"]]);
@@ -2239,7 +2211,7 @@ describe("form", function () {
 
           it("should post the CSRF token when the type option is POST on a form without a method", function () {
             const $form = $(
-              '<form action="ajax/iframe-text.html"><input name="upload"></form>'
+              '<form action="ajax/iframe-text.html"><input name="upload"></form>',
             ).appendTo("#main");
             addCsrfMetas("secret");
             let fields;
@@ -2253,7 +2225,7 @@ describe("form", function () {
 
           it("should not post the CSRF token when the type option is PUT on a form without a method", function () {
             const $form = $(
-              '<form action="ajax/iframe-text.html"><input name="upload"></form>'
+              '<form action="ajax/iframe-text.html"><input name="upload"></form>',
             ).appendTo("#main");
             addCsrfMetas("secret");
             let fields;
@@ -2332,7 +2304,7 @@ describe("form", function () {
 
           it("should post with GET and no encoding when the form has no method and no type", function () {
             const $form = $(
-              '<form action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+              '<form action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
             ).appendTo("#main");
             let posted;
 
@@ -2393,10 +2365,10 @@ describe("form", function () {
             assert.deepEqual(log, ["post", "timeout"]);
           });
 
-          it("should append the data, the clicked button and the CSRF field at the end of the form", function () {
+          it("should put the clicked button's field after it and append the data and the CSRF field", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             const button = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $form
+              $form,
             )[0];
             $form[0].clk = button;
             addCsrfMetas("secret");
@@ -2412,12 +2384,12 @@ describe("form", function () {
 
             assert.deepEqual(posted, {
               fields: [
+                ["choice", "picked"],
                 ["b", "2"],
                 ["a", "1"],
-                ["choice", "picked"],
                 ["authenticity_token", "secret"],
               ],
-              afterButton: "b",
+              afterButton: "choice",
               last: "authenticity_token",
             });
           });
@@ -2431,7 +2403,7 @@ describe("form", function () {
               { data: { tags: ["a", "b"] }, traditional: true },
               function (form) {
                 fields = hiddenFields(form);
-              }
+              },
             );
 
             assert.deepEqual(fields, [
@@ -2456,12 +2428,11 @@ describe("form", function () {
               },
               function (form) {
                 fields = hiddenFields(form);
-              }
+              },
             );
 
-            // jQuery 1.7.2's $.param writes null as "null".
             assert.deepEqual(fields, [
-              ["empty", majorVersion < 3 ? "null" : ""],
+              ["empty", ""],
               ["computed", "called"],
               ["named", ""],
             ]);
@@ -2481,7 +2452,7 @@ describe("form", function () {
               },
               function (form) {
                 fields = hiddenFields(form);
-              }
+              },
             );
 
             assert.deepEqual(fields, [
@@ -2506,7 +2477,7 @@ describe("form", function () {
               },
               function (form) {
                 fields = hiddenFields(form);
-              }
+              },
             );
 
             assert.deepEqual(fields, [
@@ -2542,7 +2513,7 @@ describe("form", function () {
           it("should not throw when data is a string and a submitter is clicked", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $form
+              $form,
             )[0];
 
             const start = () => startStubbedUpload($form, { data: "x=1" });
@@ -2553,7 +2524,7 @@ describe("form", function () {
           it("should send a query-string data option and the submitter as fields on an iframe upload", function () {
             const $form = createIframeForm("ajax/iframe-text.html");
             $form[0].clk = $('<button type="submit" name="choice" value="picked">').appendTo(
-              $form
+              $form,
             )[0];
             let fields;
 
@@ -2562,9 +2533,9 @@ describe("form", function () {
             });
 
             assert.deepEqual(fields, [
+              ["choice", "picked"],
               ["x", "1"],
               ["y", "a b"],
-              ["choice", "picked"],
             ]);
           });
 
@@ -2592,15 +2563,38 @@ describe("form", function () {
               },
               function (form) {
                 added = $(form).find("[name=added]").length;
-              }
+              },
             );
 
             assert.strictEqual(added, 0);
           });
 
+          it("should post the form's own controls, also those the filtering option leaves out", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const filtered = [];
+            let posted;
+
+            startStubbedUpload(
+              $form,
+              {
+                filtering: function (el) {
+                  filtered.push(el.name);
+
+                  return null;
+                },
+              },
+              function (form) {
+                posted = $(form).find("[name=upload]:enabled").length;
+              },
+            );
+
+            assert.deepEqual(filtered, ["upload"]);
+            assert.strictEqual(posted, 1);
+          });
+
           it("should report a server abort when the form is not in the document", async function () {
             const $form = $(
-              '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+              '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
             );
 
             const result = await submitThroughIframe($form, { forceSync: true });
@@ -2666,7 +2660,7 @@ describe("form", function () {
 
             assert.deepEqual(
               ["method", "enctype", "encoding"].map((name) => $div[0].getAttribute(name)),
-              [null, null, null]
+              [null, null, null],
             );
           });
 
@@ -2763,7 +2757,7 @@ describe("form", function () {
 
             assert.strictEqual(
               result.success[2].responseText,
-              result.success[0].documentElement.innerHTML
+              result.success[0].documentElement.innerHTML,
             );
             assert.include(result.success[2].responseText, "test");
           });
@@ -2776,7 +2770,7 @@ describe("form", function () {
             assert.strictEqual(result.success[2].responseXML.nodeType, 9);
             assert.strictEqual(
               result.success[2].responseXML.body.textContent.trim(),
-              "iframe response"
+              "iframe response",
             );
           });
 
@@ -2845,7 +2839,7 @@ describe("form", function () {
             assert.deepEqual(result.success[0], { filtered: true });
           });
 
-          it("should report a script that does not parse by jQuery version", async function () {
+          it("should report success and send the error to the window for a script that does not parse", async function () {
             const $form = createIframeForm("ajax/iframe-plain.html");
 
             const outcome = await withWindowErrors(async function (errors) {
@@ -2856,14 +2850,8 @@ describe("form", function () {
               return { status: (result.success || result.error)[1], errors: errors.length };
             });
 
-            // jQuery 1.7.2 evaluates with eval; later versions insert a script element, whose
-            // error goes to the window instead.
-            assert.deepEqual(
-              outcome,
-              majorVersion < 3
-                ? { status: "parsererror", errors: 0 }
-                : { status: "success", errors: 1 }
-            );
+            // jQuery inserts a script element, whose error goes to the window
+            assert.deepEqual(outcome, { status: "success", errors: 1 });
           });
 
           it("should report success with status 0 when the response has no status attribute", async function () {
@@ -2890,15 +2878,16 @@ describe("form", function () {
             assert.strictEqual(result.error[1], "error");
           });
 
-          it("should resolve the Deferred with the response text, success and the xhr", async function () {
+          it("should resolve the Deferred with the data, success and the xhr that success receives", async function () {
             const $form = createIframeForm("ajax/iframe-text.html");
 
             const result = await submitThroughIframe($form, { dataType: "text" });
             const resolved = await new Promise((resolve) =>
-              result.xhr.done((...args) => resolve(args))
+              result.xhr.done((...args) => resolve(args)),
             );
 
             assert.deepEqual([resolved[0].trim(), resolved[1]], ["iframe response", "success"]);
+            assert.strictEqual(resolved[0], result.success[0]);
             assert.strictEqual(resolved[2], result.success[2]);
           });
 
@@ -2975,7 +2964,7 @@ describe("form", function () {
 
             assert.deepEqual(
               log.filter((name) => ["success", "done", "ajaxSuccess"].includes(name)),
-              ["success", "done", "ajaxSuccess"]
+              ["success", "done", "ajaxSuccess"],
             );
           });
 
@@ -2998,20 +2987,26 @@ describe("form", function () {
 
             assert.deepEqual(
               log.filter((name) => ["complete", "ajaxComplete", "ajaxStop"].includes(name)),
-              ["complete", "ajaxComplete", "ajaxStop"]
+              ["complete", "ajaxComplete", "ajaxStop"],
             );
           });
 
-          it("should resolve the Deferred with the response text, not the parsed data", async function () {
+          it("should resolve .done and .then with the parsed data that success receives, not the response text", async function () {
             const $form = createIframeForm("ajax/iframe-json.html");
-            let resolvedWith;
+            const resolvedWith = {};
 
             const resultPromise = submitThroughIframe($form, { dataType: "json" });
-            $form.data("jqxhr").done((data) => (resolvedWith = data));
+            const jqxhr = $form.data("jqxhr");
+            jqxhr.done((...args) => (resolvedWith.done = args));
+            const then = jqxhr.then((...args) => (resolvedWith.then = args));
             const result = await resultPromise;
+            await then;
 
             assert.deepEqual(result.success[0], { transport: "iframe" });
-            assert.strictEqual(resolvedWith, '{"transport":"iframe"}');
+            assert.deepEqual(resolvedWith.done.slice(0, 2), [{ transport: "iframe" }, "success"]);
+            assert.strictEqual(resolvedWith.done[0], result.success[0]);
+            assert.strictEqual(resolvedWith.done[2], result.success[2]);
+            assert.deepEqual(resolvedWith.then, resolvedWith.done);
           });
 
           it("should pass the data to ajaxSuccess handlers", async function () {
@@ -3047,7 +3042,7 @@ describe("form", function () {
 
             assert.deepEqual(
               log.filter((name) => name !== "ajaxStart" && name !== "ajaxSend"),
-              ["error", "ajaxError", "ajaxComplete", "ajaxStop"]
+              ["error", "ajaxError", "ajaxComplete", "ajaxStop"],
             );
             assert.strictEqual(ajaxErrorReason, "fixture failure");
           });
@@ -3057,7 +3052,7 @@ describe("form", function () {
 
             const result = await submitThroughIframe($form, { dataType: "json" });
             const rejection = await new Promise((resolve) =>
-              result.xhr.fail((...args) => resolve(args))
+              result.xhr.fail((...args) => resolve(args)),
             );
 
             assert.strictEqual(rejection[1], "parsererror");
@@ -3089,7 +3084,7 @@ describe("form", function () {
                     $(document).off("ajaxError.ifrlog", onAjaxError);
                     setTimeout(() => resolve(seen));
                   },
-                })
+                }),
               );
               $form
                 .data("jqxhr")
@@ -3169,7 +3164,7 @@ describe("form", function () {
 
             const result = await submitThroughIframe($form, { forceSync: true, timeout: 1 });
             const rejection = await new Promise((resolve) =>
-              result.xhr.fail((...args) => resolve(args))
+              result.xhr.fail((...args) => resolve(args)),
             );
 
             assert.deepEqual(result.error.slice(1, 3), ["timeout", "timeout"]);
@@ -3179,7 +3174,7 @@ describe("form", function () {
 
           it("should reject with error and server abort and report aborted to ajaxError when the server aborts", async function () {
             const $form = $(
-              '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+              '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
             );
             let ajaxErrorReason;
             $(document).on("ajaxError.ifrlog", function (event, xhr, settings, reason) {
@@ -3188,7 +3183,7 @@ describe("form", function () {
 
             const result = await submitThroughIframe($form, { forceSync: true });
             const rejection = await new Promise((resolve) =>
-              result.xhr.fail((...args) => resolve(args))
+              result.xhr.fail((...args) => resolve(args)),
             );
 
             assert.deepEqual(rejection.slice(1), ["error", "server abort"]);
@@ -3269,7 +3264,7 @@ describe("form", function () {
               "should reset a supplied frame to iframeSrc at once when aborted " + label,
               function () {
                 const $target = $(
-                  '<iframe name="reset-frame" src="ajax/iframe-plain.html"></iframe>'
+                  '<iframe name="reset-frame" src="ajax/iframe-plain.html"></iframe>',
                 ).appendTo("#main");
                 const $form = createIframeForm("ajax/iframe-text.html");
 
@@ -3280,7 +3275,7 @@ describe("form", function () {
                 deferred.abort();
 
                 assert.strictEqual($target.attr("src"), "about:blank");
-              }
+              },
             );
           });
 
@@ -3309,14 +3304,14 @@ describe("form", function () {
             assert.strictEqual($form.find('input[type="hidden"]').length, 0);
             assert.strictEqual(
               $("iframe").filter((i, frame) => frame.name === frameName).length,
-              0
+              0,
             );
           });
 
           // #380: the attributes the upload changes should be put back exactly as they were.
           function uploadWithoutAttributes(options) {
             const $form = $(
-              '<form action="ajax/iframe-text.html"><input name="upload" value="yes"></form>'
+              '<form action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
             ).appendTo("#main");
 
             startStubbedUpload($form, $.extend({ type: "POST" }, options));
@@ -3364,7 +3359,7 @@ describe("form", function () {
 
             assert.deepEqual(
               Object.keys(attributes).map((name) => $form[0].getAttribute(name)),
-              Object.values(attributes)
+              Object.values(attributes),
             );
           });
 
@@ -3376,170 +3371,33 @@ describe("form", function () {
         });
 
         describe("closeKeepAlive", function () {
-          // A delayed upload cannot be aborted, so let its server-abort check run before
-          // afterEach removes its frame.
-          afterEach(function () {
-            return wait(30);
-          });
-
-          // Replaces $.get so the keep-alive request finishes only when the test releases it.
-          function holdKeepAlive(run) {
+          it("should start the upload at once without a keep-alive request", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            let gets = 0;
+            let posted = false;
             const get = $.get;
-            let release;
-            $.get = function (url, callback) {
-              release = callback;
-            };
+            $.get = () => gets++;
 
+            let deferred;
             try {
-              return run(() => release());
+              deferred = startStubbedUpload(
+                $form,
+                { closeKeepAlive: "ajax/text.html" },
+                () => (posted = true),
+              );
             } finally {
               $.get = get;
             }
-          }
 
-          function keepAliveWarnings(debug) {
-            const $form = createIframeForm("ajax/iframe-text.html");
-
-            const warnings = recordDeprecations(debug, function () {
-              holdKeepAlive(function () {
-                startStubbedUpload($form, { closeKeepAlive: "ajax/text.html" });
-                startStubbedUpload($form, { closeKeepAlive: "ajax/text.html" });
-              });
-            });
-
-            return warnings.filter((text) => text.includes("closeKeepAlive"));
-          }
-
-          it("should warn once that closeKeepAlive is deprecated under debug", function () {
-            const warnings = keepAliveWarnings(true);
-
-            assert.strictEqual(warnings.length, 1);
-            assert.include(warnings[0], "Safari");
-            assert.include(warnings[0], "removed in 5.0");
-          });
-
-          it("should stay silent about closeKeepAlive with debug off", function () {
-            const warnings = keepAliveWarnings(false);
-
-            assert.deepEqual(warnings, []);
-          });
-
-          it("should leave the stored jqxhr undefined after the delayed upload starts", function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            let started = false;
-
-            holdKeepAlive(function (release) {
-              startStubbedUpload(
-                $form,
-                { closeKeepAlive: "ajax/text.html" },
-                () => (started = true)
-              );
-              release();
-            });
-
-            assert.strictEqual(started, true);
-            assert.strictEqual($form.data("jqxhr"), undefined);
-          });
-
-          it("should notify before the delayed upload starts", function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            const log = [];
-            recordGlobalEvents(log);
-            $form.on("form-submit-notify", () => log.push("notify"));
-            $.active = 0;
-
-            holdKeepAlive(function (release) {
-              startStubbedUpload($form, {
-                closeKeepAlive: "ajax/text.html",
-                beforeSend: () => log.push("beforeSend"),
-              });
-              log.push("released");
-              release();
-            });
-
-            assert.deepEqual(log, ["notify", "released", "ajaxStart", "beforeSend", "ajaxSend"]);
-          });
-
-          it("should wrap the upload's start in the keep-alive request's global events", async function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            const log = [];
-            recordGlobalEvents(log);
-            $form.on("form-submit-notify", () => log.push("notify"));
-            $.active = 0;
-
-            await new Promise(function (resolve) {
-              $form.ajaxSubmit({
-                iframe: true,
-                dataType: "text",
-                closeKeepAlive: "ajax/text.html",
-                beforeSend: () => log.push("beforeSend"),
-                complete: function () {
-                  log.push("complete");
-                  resolve();
-                },
-              });
-            });
-
-            assert.deepEqual(log, [
-              "ajaxStart",
-              "ajaxSend",
-              "notify",
-              "beforeSend",
-              "ajaxSend",
-              "ajaxSuccess",
-              "ajaxComplete",
-              "ajaxSuccess",
-              "complete",
-              "ajaxComplete",
-              "ajaxStop",
-            ]);
-          });
-
-          it("should never call back when the keep-alive request fails", async function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            const calls = [];
-
-            await new Promise(function (resolve) {
-              $(document).on("ajaxComplete.ifrlog", () => setTimeout(resolve, 30));
-              $form.ajaxSubmit({
-                iframe: true,
-                closeKeepAlive: "ajax/missing-keep-alive.html",
-                success: () => calls.push("success"),
-                error: () => calls.push("error"),
-                complete: () => calls.push("complete"),
-              });
-            });
-
-            assert.deepEqual(calls, []);
-            assert.strictEqual($form.data("jqxhr"), undefined);
-          });
-
-          it("should post a control disabled in beforeSubmit when closeKeepAlive delays the upload", function () {
-            const $form = createIframeForm("ajax/iframe-text.html");
-            let disabledDuringPost;
-
-            holdKeepAlive(function (release) {
-              startStubbedUpload(
-                $form,
-                {
-                  closeKeepAlive: "ajax/text.html",
-                  beforeSubmit: function (a, $submitted) {
-                    $submitted.find("[name=upload]").prop("disabled", true);
-                  },
-                },
-                function (form) {
-                  disabledDuringPost = $(form).find("[name=upload]").prop("disabled");
-                }
-              );
-              release();
-            });
-
-            assert.strictEqual(disabledDuringPost, false);
+            assert.strictEqual(gets, 0);
+            assert.strictEqual(posted, true);
+            assert.strictEqual($form.data("jqxhr"), deferred);
+            assert.strictEqual(typeof deferred.abort, "function");
           });
 
           it("should ignore closeKeepAlive on the FormData transport", function () {
             const $form = $(
-              '<form method="post" action="ajax/text.html"><input type="file" name="up"></form>'
+              '<form method="post" action="ajax/text.html"><input type="file" name="up"></form>',
             ).appendTo("#main");
             selectFiles($form.find("input")[0], ["a.txt"]);
             let gets = 0;

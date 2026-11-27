@@ -13,7 +13,7 @@ async function submit(page, request, testInfo, response, options) {
   const id = requestId(testInfo);
   await page.evaluate(
     ([html, action]) => window.e2e.build(html, { action: action }, null),
-    [FORM, `/r/${id}/${response}`]
+    [FORM, `/r/${id}/${response}`],
   );
   const result = await page.evaluate((o) => window.e2e.pluginSubmit(o), options);
   await requests(request, id, 1);

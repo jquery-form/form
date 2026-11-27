@@ -1,7 +1,7 @@
 /*!
  * jQuery Form Plugin
- * version: 4.6.0
- * Requires jQuery v1.7.2 or later
+ * version: 5.0.0-beta.1
+ * Requires jQuery v3.5 or later
  * Project repository: https://github.com/jquery-form/form
 
  * Copyright 2017 Kevin Morris
@@ -50,39 +50,32 @@
 }(function (jQuery, root) {
 	'use strict';
 	var window = root;
-	var document = window.document, navigator = window.navigator;
+	var document = window.document;
 	var Element = window.Element, FormData = window.FormData;
 // Form members: the properties and methods the plugin reads or calls on a form. A control named
 // like a member (elements, setAttribute) shadows that member on the form itself, so members are
 // read through the DOM prototypes, which a control cannot shadow.
 
-// The prototype chain of a form, nearest first. Looked up on every call: old browsers have no
-// DOM prototypes, and tests remove them.
-var owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
+// The prototype chain of a form, nearest first, looked up on every call.
+const owners = ["HTMLFormElement", "HTMLElement", "Element", "Node"];
 
-// A form no control can shadow, for methods when the DOM has no prototypes to read them from.
-var plainForm = document.createElement("form");
-
+// The descriptor on the nearest prototype that has the member, or undefined.
 function findDescriptor(name) {
-  for (var i = 0; i < owners.length; i++) {
-    var owner = window[owners[i]];
-    var descriptor = owner && Object.getOwnPropertyDescriptor(owner.prototype, name);
+  let descriptor;
 
-    if (descriptor) {
-      return descriptor;
-    }
+  for (let i = 0; i < owners.length && !descriptor; i++) {
+    descriptor = Object.getOwnPropertyDescriptor(window[owners[i]].prototype, name);
   }
 
-  return null;
+  return descriptor;
 }
 
 /**
- * Reads a member of a form through its prototype getter.
- * Falls back to the plain property without DOM prototypes, or on an element the getter does not
- * accept (such as a fieldset for `elements`).
+ * Reads a member of a form through its prototype getter. Falls back to the plain property on an
+ * element the getter does not accept (such as a fieldset for `elements`).
  */
 function formMember(form, name) {
-  var descriptor = findDescriptor(name);
+  const descriptor = findDescriptor(name);
 
   try {
     return descriptor.get.call(form);
@@ -92,19 +85,15 @@ function formMember(form, name) {
 }
 
 /**
- * Calls a method of a form through its prototype, or through an unshadowed form without DOM
- * prototypes.
+ * Calls a method of a form through its prototype.
  */
 function callFormMethod(form, name) {
-  var descriptor = findDescriptor(name);
-  var method = descriptor ? descriptor.value : plainForm[name];
-
-  return method.apply(form, Array.prototype.slice.call(arguments, 2));
+  return findDescriptor(name).value.apply(form, Array.prototype.slice.call(arguments, 2));
 }
 
 // Nodes such as the document and text nodes have no tag name (#600).
 function tagName(el) {
-  var name = formMember(el, "tagName");
+  const name = formMember(el, "tagName");
 
   return typeof name === "string" ? name.toLowerCase() : "";
 }
@@ -127,14 +116,14 @@ function isElement(node) {
 function assertRealParent(el) {
   if (el.parentNode !== formMember(el, "parentNode")) {
     throw new Error(
-      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control'
+      'jquery.form: a form control named "parentNode" hides the form\'s parentNode; rename the control',
     );
   }
 }
 
 // The element itself or its nearest ancestor with one of the tag names, through the real tree.
 function closestByTag(el, names) {
-  for (var node = el; node; node = formMember(node, "parentNode")) {
+  for (let node = el; node; node = formMember(node, "parentNode")) {
     if (names.indexOf(tagName(node)) >= 0) {
       return node;
     }
@@ -147,7 +136,7 @@ function closestByTag(el, names) {
 // a private store and cleared shortly after the click. The form's clk, clk_x and clk_y properties
 // are still written for pages that read them, and read when the store has none.
 
-var storeKey = "jqFormSubmitter";
+const storeKey = "jqFormSubmitter";
 
 // Writes a property on the form; a control with that name makes it read-only.
 function setExpando(form, name, value) {
@@ -160,15 +149,15 @@ function setExpando(form, name, value) {
 
 // A property the page set on the form, never a control of the form with that name.
 function expando(form, name) {
-  var value = form[name];
-  var els = formMember(form, "elements");
+  const value = form[name];
+  const els = formMember(form, "elements");
 
   return els && value && els.namedItem(name) === value ? undefined : value;
 }
 
 // Records a submitter for a form until the click window ends.
 function record(form, el, x, y) {
-  jQuery.data(form, storeKey, { el: el, x: x, y: y });
+  jQuery.data(form, storeKey, { el, x, y });
   setExpando(form, "clk", el);
 
   if (el.type === "image") {
@@ -191,13 +180,9 @@ function imagePoint(e, target) {
     return [e.offsetX, e.offsetY];
   }
 
-  if (typeof jQuery.fn.offset === "function") {
-    var offset = jQuery(target).offset();
+  const offset = jQuery(target).offset();
 
-    return [e.pageX - offset.left, e.pageY - offset.top];
-  }
-
-  return [e.pageX - target.offsetLeft, e.pageY - target.offsetTop];
+  return [e.pageX - offset.left, e.pageY - offset.top];
 }
 
 /**
@@ -205,21 +190,21 @@ function imagePoint(e, target) {
  */
 function captureSubmitter(e) {
   // the clicked control, or the button around the clicked content (ex: a span within a button)
-  var target = closestByTag(e.target, ["button", "input"]);
+  const target = closestByTag(e.target, ["button", "input"]);
 
   // the type property, unlike the attribute, is "submit" for a button without a type (#588)
   if (!target || (target.type !== "submit" && target.type !== "image")) {
     return;
   }
 
-  var form = target.form;
+  const form = target.form;
 
   if (!form) {
     // a submit control that belongs to no form
     return;
   }
 
-  var point = target.type === "image" ? imagePoint(e, target) : [];
+  const point = target.type === "image" ? imagePoint(e, target) : [];
 
   record(form, target, point[0], point[1]);
 }
@@ -229,7 +214,7 @@ function captureSubmitter(e) {
  * An image submitter gets the point 0,0, as native submission sends it without a click.
  */
 function captureEventSubmitter(e, form) {
-  var el = e.originalEvent && e.originalEvent.submitter;
+  const el = e.originalEvent && e.originalEvent.submitter;
 
   if (el && !submitterOf(form)) {
     record(form, el, 0, 0);
@@ -244,42 +229,35 @@ function submitterOf(form) {
     return null;
   }
 
-  var stored = jQuery.data(form, storeKey);
+  const stored = jQuery.data(form, storeKey);
 
   if (stored) {
     return stored;
   }
 
-  var el = expando(form, "clk");
+  const el = expando(form, "clk");
 
-  return el ? { el: el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
+  return el ? { el, x: expando(form, "clk_x"), y: expando(form, "clk_y") } : null;
 }
 
 /**
- * The submitter's fields for a post that adds them itself (the iframe upload), as name → value.
+ * The fields of a clicked image button, as a native submission sends them: only its coordinates,
+ * named name.x and name.y, or x and y when it has no name.
  */
-function submitterFields(form) {
-  var fields = {};
-  var sub = submitterOf(form);
-  var el = sub && sub.el;
+function imageFields(sub) {
+  const prefix = sub.el.name ? sub.el.name + "." : "";
 
-  // a disabled button is not sent, also when a disabled fieldset disables it
-  if (el && el.name && !isDisabled(el)) {
-    fields[el.name] = el.value;
-    if (el.type === "image") {
-      fields[el.name + ".x"] = sub.x;
-      fields[el.name + ".y"] = sub.y;
-    }
-  }
-
-  return fields;
+  return [
+    { name: prefix + "x", value: sub.x },
+    { name: prefix + "y", value: sub.y },
+  ];
 }
 
 /**
  * The form's submitter element, or null.
  */
 function submitterElement(form) {
-  var sub = submitterOf(form);
+  const sub = submitterOf(form);
 
   return sub ? sub.el : null;
 }
@@ -291,52 +269,31 @@ function log() {
     return;
   }
 
-  var msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
+  const msg = "[jquery.form] " + Array.prototype.join.call(arguments, "");
 
-  if (window.console && window.console.log) {
-    window.console.log(msg);
-  } else if (window.opera && window.opera.postError) {
-    window.opera.postError(msg);
-  }
-}
-
-var warned = {};
-
-/**
- * A deprecation warning: console.warn, only while debug is on, once per id per page. The message
- * names the replacement; the warning adds that the feature is removed in 5.0.
- */
-function deprecate(id, message) {
-  if (!jQuery.fn.ajaxSubmit.debug || warned[id]) {
-    return;
-  }
-
-  warned[id] = true;
-
-  if (window.console && typeof window.console.warn === "function") {
-    window.console.warn("[jquery.form] " + message + " (removed in 5.0)");
-  }
+  window.console.log(msg);
 }
 
 // True for a jQuery version string older than 3.5.
 function beforeJQuery35(version) {
-  var parts = String(version).split(".");
-  var major = Number(parts[0]);
+  const parts = String(version).split(".");
+  const major = Number(parts[0]);
 
   return major < 3 || (major === 3 && Number(parts[1]) < 5);
 }
 
-// 5.0 needs jQuery 3.5 or later: warned on the first ajaxSubmit or ajaxForm, given jQuery's version.
-function deprecateOldJQuery(version) {
+/**
+ * 5.0 needs jQuery 3.5 or later: ajaxSubmit and ajaxForm throw on an older version before any
+ * event or callback. Nothing checks at load, so the plugin can still be installed on the page.
+ */
+function requireJQuery35(version) {
   if (beforeJQuery35(version)) {
-    deprecate(
-      "jquery",
-      "support for jQuery " + version + " is deprecated, 5.0 needs jQuery 3.5 or later"
-    );
+    throw new Error("jquery.form 5 needs jQuery 3.5 or later; this is " + version);
   }
 }
 
-// The arguments ajaxSubmit and ajaxForm accept in place of an options object.
+// The arguments ajaxSubmit and ajaxForm accept in place of an options object, and the options
+// that name elements.
 
 /**
  * Turns the (url, data, dataType, success) shorthand into options. A url of false is kept as
@@ -347,7 +304,7 @@ function shorthandOptions(options, data, dataType, onSuccess) {
     return options;
   }
 
-  var result = { url: options, data: data, dataType: dataType };
+  const result = { url: options, data, dataType };
 
   if (typeof onSuccess === "function") {
     result.success = onSuccess;
@@ -358,9 +315,9 @@ function shorthandOptions(options, data, dataType, onSuccess) {
 
 // A copy of options without its url, so the form action is used.
 function withoutUrl(options) {
-  var result = {};
+  const result = {};
 
-  for (var key in options) {
+  for (const key in options) {
     if (key !== "url" && Object.prototype.hasOwnProperty.call(options, key)) {
       result[key] = options[key];
     }
@@ -392,7 +349,7 @@ function submitOptions(options, data, dataType, onSuccess) {
  * caller's own object from the last source that has one, so `this` in callbacks is that object.
  */
 function keepContext(settings, sources) {
-  for (var i = 0; i < sources.length; i++) {
+  for (let i = 0; i < sources.length; i++) {
     if (sources[i].context !== undefined) {
       settings.context = sources[i].context;
     }
@@ -402,22 +359,12 @@ function keepContext(settings, sources) {
 }
 
 /**
- * The elements a selector option (target, iframeTarget) names. A string is only ever a selector,
- * looked up in the document, so jQuery never builds elements from it; a string starting with "<"
- * is HTML, not a selector, and matches nothing. Elements and jQuery objects are used as given.
+ * A selector option (target, iframeTarget) as a jQuery set. A string is only a selector, matched
+ * in `context` (the document when it is missing) and never parsed as HTML; an element or a jQuery
+ * set passes through.
  */
-function selectorOption(value, ownerDocument) {
-  if (typeof value !== "string") {
-    return jQuery(value);
-  }
-
-  if (/^\s*</.test(value)) {
-    log("ignoring HTML given as a selector: ", value);
-
-    return jQuery([]);
-  }
-
-  return jQuery(ownerDocument || document).find(value);
+function selectorOption(value, context) {
+  return typeof value === "string" ? jQuery(jQuery.find(value, context)) : jQuery(value);
 }
 
 // ajaxForm binding: the submit and click handlers that send a form through ajaxSubmit. The
@@ -429,7 +376,7 @@ function submitWith(e, options) {
     // if event has been canceled, don't proceed
     e.preventDefault();
     // the form is found through the real tree: a control named nodeType misleads jQuery's closest
-    var form = closestByTag(e.target, ["form"]);
+    const form = closestByTag(e.target, ["form"]);
 
     // a button outside the form (form attribute), or requestSubmit(button), sends no click here
     captureEventSubmitter(e, form);
@@ -447,82 +394,30 @@ function captureSubmittingElement(e) {
   captureSubmitter(e);
 }
 
-// An empty selection: queued until the DOM is ready (old jQuery keeps the selector), or dropped.
-function bindLater($sel, options) {
-  var o = { s: $sel.selector, c: $sel.context };
-
-  if (!jQuery.isReady && o.s) {
-    log("DOM not ready, queuing ajaxForm");
-    deprecate(
-      "queue",
-      "queuing ajaxForm until the DOM is ready is deprecated, call ajaxForm inside $(fn) " +
-        'or use delegation: "<selector>"'
-    );
-    jQuery(function () {
-      jQuery(o.s, o.c).ajaxForm(options);
-    });
-
-    return $sel;
-  }
-
+// An empty selection binds nothing. A page that runs ajaxForm before the forms exist calls it
+// inside $(fn), or uses a delegation selector.
+function bindNothing($sel) {
   // is your DOM ready?  http://docs.jquery.com/Tutorials:Introducing_$(document).ready()
   log("terminating; zero elements found by selector" + (jQuery.isReady ? "" : " (DOM not ready)"));
 
   return $sel;
 }
 
-// delegation: true on jQuery 3 and later, where the selection has no selector: always warned,
-// debug or not, once per ajaxForm call.
-function warnUnscoped() {
-  var console = window.console || {};
-
-  if (typeof console.warn === "function") {
-    console.warn(
-      "[jquery.form] delegation: true binds every form on the page on jQuery 3 and later; " +
-        'pass a selector instead, e.g. delegation: "form.ajax"'
-    );
-  }
-}
-
-function bindDelegated($sel, options) {
-  if ($sel.selector === undefined) {
-    warnUnscoped();
-  }
-
-  jQuery(document)
-    .off("submit.form-plugin", $sel.selector, doAjaxSubmit)
-    .off("click.form-plugin", $sel.selector, captureSubmittingElement)
-    .on("submit.form-plugin", $sel.selector, options, doAjaxSubmit)
-    .on("click.form-plugin", $sel.selector, options, captureSubmittingElement);
-
-  return $sel;
-}
-
-// The element itself or its nearest ancestor that matches the selector. The walk never reads a
-// parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
+// The element itself or its nearest ancestor that matches the selector. Element.closest never
+// reads a parentNode a control can hide (jQuery's delegated walk does, and cycles on such a form).
 function closestMatch(el, selector) {
   if (!isElement(el)) {
     return null;
   }
 
-  if (window.Element && Element.prototype.closest) {
-    return Element.prototype.closest.call(el, selector);
-  }
-
-  for (var node = el; node && isElement(node); node = formMember(node, "parentNode")) {
-    if (jQuery(node).is(selector)) {
-      return node;
-    }
-  }
-
-  return null;
+  return Element.prototype.closest.call(el, selector);
 }
 
 // The document handlers bound for each delegation selector, keyed by "s" + selector.
-var delegated = {};
+let delegated = {};
 
 function unbindSelector(selector) {
-  var handlers = delegated["s" + selector];
+  const handlers = delegated["s" + selector];
 
   if (handlers) {
     jQuery(document)
@@ -534,17 +429,13 @@ function unbindSelector(selector) {
 
 // delegation: "<selector>": one handler pair on the document, scoped to the selector.
 function bindSelector($sel, selector, options) {
-  if (!selector) {
-    throw new Error("jquery.form: delegation needs a selector, or true");
-  }
-
-  var handlers = {
-    submit: function (e) {
+  const handlers = {
+    submit(e) {
       if (closestMatch(e.target, selector)) {
         submitWith(e, options);
       }
     },
-    click: function (e) {
+    click(e) {
       if (closestMatch(e.target, selector)) {
         captureSubmitter(e);
       }
@@ -561,28 +452,34 @@ function bindSelector($sel, selector, options) {
 }
 
 // Passed by ajaxForm's own rebind: unbind the selection only, never the document handlers.
-var selectionOnly = {};
+const selectionOnly = {};
 
 /**
  * ajaxForm() binds the selected forms so a submit is sent with ajaxSubmit, with the clicked
  * submit button (and image coordinates) included. The options work as for ajaxSubmit.
  */
 function ajaxForm(options, data, dataType, onSuccess) {
-  deprecateOldJQuery(jQuery.fn.jquery);
+  requireJQuery35(jQuery.fn.jquery);
   options = shorthandOptions(options, data, dataType, onSuccess) || {};
 
-  if (typeof options.delegation === "string") {
-    return bindSelector(this, options.delegation, options);
+  const delegation = options.delegation;
+
+  if (typeof delegation === "string" && delegation) {
+    return bindSelector(this, delegation, options);
   }
 
-  options.delegation = options.delegation && typeof jQuery.fn.on === "function";
-
-  if (!options.delegation && this.length === 0) {
-    return bindLater(this, options);
+  // delegation: true scoped to the selection's selector, which jQuery 3 removed; 5.0 needs one
+  if (delegation || delegation === "") {
+    throw new Error(
+      'jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"',
+    );
   }
 
-  if (options.delegation) {
-    return bindDelegated(this, options);
+  // written back as in 4.x, so options that cannot take a property (true, a frozen object) throw
+  options.delegation = delegation;
+
+  if (this.length === 0) {
+    return bindNothing(this);
   }
 
   if (options.beforeFormUnbind) {
@@ -613,36 +510,84 @@ function ajaxFormUnbind(selector) {
   return this.off("submit.form-plugin click.form-plugin");
 }
 
-/**
- * An attribute of a form, or undefined when it is absent, as jQuery's attr returns it. The
- * subject may also be the document or a plain object, read through jQuery.
- */
-function formAttribute(form, name) {
-  if (!isElement(form)) {
-    return jQuery(form).attr(name);
-  }
-
-  var value = callFormMethod(form, "getAttribute", name);
-
-  return value === null ? undefined : value;
-}
-
 // Successful controls: which controls of a form are sent, and as which name/value fields
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
 
 // Line breaks, sent as CRLF
-var rLineBreak = /\r\n|\r|\n/g;
-var rCR = /\r/g;
+const rLineBreak = /\r\n|\r|\n/g;
+const rCR = /\r/g;
 
-// Listed form elements that are never submitted.
-var rUnsubmittable = /^(?:fieldset|object|output)$/;
+// The submittable elements: the only ones a form submission sends.
+const submittable = "button, input, select, textarea";
+const rSubmittable = /^(?:button|input|select|textarea)$/;
+
+function isSubmittable(el) {
+  return rSubmittable.test(tagName(el));
+}
+
+// The name of the hidden control that sends the encoding, matched ASCII case-insensitively.
+const rCharset = /^_charset_$/i;
+
+// The input types that, with textarea, send a dirname field (the auto-directionality
+// form-associated elements).
+const rDirnameTypes = /^(?:hidden|text|search|tel|url|email|password|submit|reset|button)$/;
+
+// The dirname field of a control, or null: dirname=ltr or dirname=rtl, from its directionality.
+function dirnameField(el) {
+  const tag = tagName(el);
+  const dirname = el.getAttribute("dirname");
+  const applies = tag === "textarea" || (tag === "input" && rDirnameTypes.test(el.type));
+
+  if (!dirname || !applies) {
+    return null;
+  }
+
+  let rtl;
+
+  try {
+    rtl = el.matches(":dir(rtl)");
+  } catch (e) {
+    // a browser without :dir() (before Chrome 120 and Safari 16.4); a detached control has no
+    // computed direction and counts as ltr
+    rtl = window.getComputedStyle(el).direction === "rtl";
+  }
+
+  return { name: dirname, value: rtl ? "rtl" : "ltr" };
+}
+
+// A control's own fields, then its dirname field when it has one, as a native submission sends them.
+function withDirname(el, own) {
+  const dir = dirnameField(el);
+
+  return dir ? own.concat([dir]) : own;
+}
+
+/**
+ * The submitter and its fields for a post that adds them itself (the iframe upload), as
+ * { el, fields: [{ name, value }] }, or null when no submitter is sent.
+ */
+function submitterFields(form) {
+  const sub = submitterOf(form);
+  const el = sub && sub.el;
+
+  // a disabled button is not sent, also when a disabled fieldset disables it
+  if (!el || isDisabled(el)) {
+    return null;
+  }
+
+  if (el.type === "image") {
+    return { el, fields: imageFields(sub) };
+  }
+
+  return el.name ? { el, fields: withDirname(el, [{ name: el.name, value: el.value }]) } : null;
+}
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
  */
 function isSuccessful(el, submitter) {
-  var t = el.type;
+  const t = el.type;
 
   if (!el.name || isDisabled(el) || t === "reset" || t === "button") {
     return false;
@@ -661,30 +606,22 @@ function isSuccessful(el, submitter) {
 
 // The value of a select: the selected option's value for one, a list for several.
 function selectValue(el) {
-  var index = el.selectedIndex;
+  const index = el.selectedIndex;
 
   if (index < 0) {
     return null;
   }
 
-  var a = [],
+  const a = [],
     ops = el.options;
-  var one = el.type === "select-one";
-  var max = one ? index + 1 : ops.length;
+  const one = el.type === "select-one";
+  const max = one ? index + 1 : ops.length;
 
-  for (var i = one ? index : 0; i < max; i++) {
-    var op = ops[i];
+  for (let i = one ? index : 0; i < max; i++) {
+    const op = ops[i];
 
     if (op.selected && !isDisabled(op)) {
-      var v = op.value;
-
-      if (!v) {
-        // extra pain for IE...
-        v =
-          op.attributes && op.attributes.value && !op.attributes.value.specified
-            ? op.text
-            : op.value;
-      }
+      const v = op.value;
 
       if (one) {
         return v;
@@ -707,8 +644,8 @@ function valueOf(el) {
     return selectValue(el);
   }
 
-  var v = jQuery(el).val();
-  var raw = el.value;
+  let v = jQuery(el).val();
+  const raw = el.value;
 
   // jQuery before 4.0 drops carriage returns from .val(); read them from the value itself
   if (typeof raw === "string" && raw.replace(rCR, "") === v) {
@@ -723,7 +660,7 @@ function valueOf(el) {
  * missing and the control is not sent.
  */
 function fieldValue(el, successful) {
-  var required = typeof successful === "undefined" || successful;
+  const required = typeof successful === "undefined" || successful;
 
   if (required && !isSuccessful(el, submitterElement(el.form))) {
     return null;
@@ -732,22 +669,11 @@ function fieldValue(el, successful) {
   return valueOf(el);
 }
 
-// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
-// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
-function deprecateFieldValueOverride() {
-  if (jQuery.fieldValue !== fieldValue) {
-    deprecate(
-      "fieldValue-override",
-      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
-    );
-  }
-}
-
 /**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
 // A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
-var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
 
 function wellFormed(value) {
   return typeof value === "string"
@@ -760,7 +686,7 @@ function wellFormed(value) {
 // Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
 function setKey(object, key, value) {
   Object.defineProperty(object, key, {
-    value: value,
+    value,
     enumerable: true,
     writable: true,
     configurable: true,
@@ -773,24 +699,24 @@ function setKey(object, key, value) {
  * included; they are copied only when something changes.
  */
 function wellFormedData(data) {
-  var isArray = Array.isArray(data);
+  const isArray = Array.isArray(data);
 
   if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
     return wellFormed(data);
   }
 
-  var copy = isArray ? [] : {};
-  var changed = false;
+  const copy = isArray ? [] : {};
+  let changed = false;
 
   if (isArray) {
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       copy[i] = wellFormedData(data[i]);
       changed = changed || copy[i] !== data[i];
     }
   } else {
-    for (var key in data) {
-      var name = wellFormed(key);
-      var value = wellFormedData(data[key]);
+    for (const key in data) {
+      const name = wellFormed(key);
+      const value = wellFormedData(data[key]);
 
       changed = changed || name !== key || value !== data[key];
       setKey(copy, name, value);
@@ -808,89 +734,76 @@ function urlencode(fields, traditional) {
 
 function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    var value =
+    let value =
       field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
-    var name = wellFormed(field.name);
+    const name = wellFormed(field.name);
     value = wellFormed(value);
 
-    return name === field.name && value === field.value ? field : { name: name, value: value };
+    return name === field.name && value === field.value ? field : { name, value };
   });
 }
 
 /**
- * The serialization steps. `feature` holds what the entry detected at load (fileapi).
+ * The serialization steps.
  */
-function createSuccessfulControls(feature) {
-  var $ = jQuery;
+function createSuccessfulControls() {
+  const $ = jQuery;
 
-  // #386; inputs that name the form in their form attribute, other than the candidates found.
-  // A form only gets the ones it owns.
-  function outsideControls(formId, els, owner) {
-    // hat tip @thet; the id is compared, never built into a selector
-    return $(":input[form]")
-      .filter(function () {
-        return (
-          this.getAttribute("form") === formId &&
-          (!owner || this.form === owner) &&
-          $.inArray(this, els) < 0
-        );
-      })
-      .get();
-  }
+  // The submittable elements below a root (a document, a shadow root or an element), in tree
+  // order. Read through the root's prototype, since a control can shadow a form's or the
+  // document's querySelectorAll.
+  // Interface names, read from the window on each call: the classic build may run against a
+  // window that is not the global object.
+  const rootOwners = { 9: "Document", 11: "DocumentFragment" };
 
-  // A descendant of a form is a candidate unless it is a control another form owns.
-  function ownedBy(els, owner) {
-    return $.grep(els, function (el) {
-      return typeof el.form === "undefined" || el.form === owner;
-    });
+  function submittableIn(root) {
+    const owner = window[rootOwners[formMember(root, "nodeType")] || "Element"];
+
+    return owner.prototype.querySelectorAll.call(root, submittable);
   }
 
   /**
-   * The candidate controls of a form, in order: its elements, or every descendant it owns in
-   * semantic mode, then the outside controls it owns that name it.
+   * The candidate controls of a subject, in tree order: for a form, the submittable elements it
+   * owns, outside controls (form=id) and image buttons included; for a fieldset, the document or
+   * another container, its submittable descendants; for a plain object, its elements list.
    */
-  function controlsOf(form, semantic) {
-    var formId = formAttribute(form, "id");
-    var els = formMember(form, "elements");
-
-    if (semantic || typeof els === "undefined") {
-      // the document is not an element; it has its own getElementsByTagName
-      els = isElement(form)
-        ? callFormMethod(form, "getElementsByTagName", "*")
-        : form.getElementsByTagName("*");
+  function controlsOf(form) {
+    if (tagName(form) === "form") {
+      // #386: the form's tree holds every control it owns, also those outside it
+      return $.grep(submittableIn(callFormMethod(form, "getRootNode")), function (el) {
+        return el.form === form;
+      });
     }
 
-    els = $.makeArray(els);
+    const type = formMember(form, "nodeType");
 
-    // the subject may also be a fieldset, the document or another container
-    var owner = tagName(form) === "form" ? form : null;
-
-    if (semantic && owner) {
-      els = ownedBy(els, owner);
+    if (type === 1 || type === 9) {
+      return $.makeArray(submittableIn(form));
     }
 
-    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
-    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      els = els.concat(outsideControls(formId, els, owner));
-    }
+    // a plain object with an elements list; a text node or the window throws a TypeError
+    const listed = form.elements;
 
-    return els;
+    return $.grep(
+      $.makeArray(typeof listed === "undefined" ? form.querySelectorAll(submittable) : listed),
+      isSubmittable,
+    );
   }
 
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
-    var n = el.name;
-    // read at call time, so a page that replaces $.fieldValue changes what is sent
-    var v = $.fieldValue(el, true);
+    const n = el.name;
+    // the plugin's own reader: a page that replaces $.fieldValue does not change what is sent
+    const v = fieldValue(el, true);
 
     if (v && v.constructor === Array) {
       return $.map(v, function (value) {
-        return { name: n, value: value };
+        return { name: n, value };
       });
     }
 
-    if (feature.fileapi && el.type === "file") {
-      var files = el.files;
+    if (el.type === "file") {
+      const files = el.files;
 
       // #180: an empty field when no file is selected
       return files.length
@@ -904,106 +817,350 @@ function createSuccessfulControls(feature) {
       return null;
     }
 
-    return [{ name: n, value: v, type: el.type, required: el.required }];
-  }
+    // a hidden _charset_ sends the request's encoding, which is always UTF-8 here
+    const value = el.type === "hidden" && rCharset.test(n) ? "UTF-8" : v;
 
-  // The clicked image's value and coordinates.
-  function imageFields(sub, input, type) {
-    var n = input.name;
-    var value = { name: n, value: $(input).val() };
-
-    if (type) {
-      value.type = type;
-    }
-
-    return [value, { name: n + ".x", value: sub.x }, { name: n + ".y", value: sub.y }];
+    return [{ name: n, value, type: el.type, required: el.required }];
   }
 
   // Adds one candidate control's fields, and the control when it has a value to send.
-  function addCandidate(collected, form, el, semantic) {
-    if (!el.name || isDisabled(el) || rUnsubmittable.test(tagName(el))) {
+  function addCandidate(collected, form, el) {
+    if (isDisabled(el) || !isSubmittable(el)) {
       return;
     }
 
-    var sub = semantic && el.type === "image" && submitterOf(form);
+    const sub = el.type === "image" && submitterOf(form);
 
     if (sub) {
-      // handle image inputs on the fly when semantic == true
+      // the clicked image at its place in tree order; other image buttons are not sent
       if (sub.el === el) {
-        collected.fields.push.apply(collected.fields, imageFields(sub, el, el.type));
+        collected.fields.push.apply(collected.fields, imageFields(sub));
       }
 
       return;
     }
 
-    var own = fieldsOf(el);
+    if (!el.name) {
+      return;
+    }
+
+    const own = fieldsOf(el);
 
     if (own) {
       collected.controls.push(el);
-      collected.fields.push.apply(collected.fields, own);
-    }
-  }
-
-  // input type=='image' are not found in elements array! handle it here
-  function addClickedImage(collected, form) {
-    var sub = submitterOf(form);
-    var input = sub && $(sub.el)[0];
-
-    if (input && input.name && !isDisabled(input) && input.type === "image") {
-      collected.fields.push.apply(collected.fields, imageFields(sub, input));
+      collected.fields.push.apply(collected.fields, withDirname(el, own));
     }
   }
 
   /**
    * The fields of a form, as formToArray returns them, and the controls they came from.
    */
-  function collect(form, semantic, filtering) {
-    var collected = { fields: [], controls: [] };
+  function collect(form, filtering) {
+    const collected = { fields: [], controls: [] };
 
     if (!form) {
       return collected;
     }
 
-    deprecateFieldValueOverride();
-
-    var els = controlsOf(form, semantic);
+    let els = controlsOf(form);
 
     if (typeof filtering === "function") {
       els = $.map(els, filtering);
     }
 
-    for (var i = 0; i < els.length; i++) {
-      addCandidate(collected, form, els[i], semantic);
-    }
-
-    if (!semantic) {
-      addClickedImage(collected, form);
+    for (let i = 0; i < els.length; i++) {
+      addCandidate(collected, form, els[i]);
     }
 
     return collected;
   }
 
   return {
-    controlsOf: controlsOf,
-    fieldsOf: fieldsOf,
-    collect: collect,
+    controlsOf,
+    fieldsOf,
+    collect,
   };
 }
 
+// The field helpers: $.fn methods that read, clear, reset, enable or select single fields. They
+// are registered on $.fn by the entry, and call each other through $.fn, so a replaced method
+// is used.
+const $$5 = jQuery;
+
+/**
+ * Serializes all field elements in the jQuery object into a query string.
+ * This method will return a string in the format: name1=value1&amp;name2=value2
+ */
+function fieldSerialize(successful) {
+  const a = [];
+
+  this.each(function () {
+    const n = this.name;
+
+    // a form is not a field, though it may have a name
+    if (!n || tagName(this) === "form") {
+      return;
+    }
+
+    // the plugin's own reader, not a replaced $.fieldValue
+    const v = fieldValue(this, successful);
+
+    if (v && v.constructor === Array) {
+      for (let i = 0, max = v.length; i < max; i++) {
+        a.push({ name: n, value: v[i] });
+      }
+    } else if (v !== null && typeof v !== "undefined") {
+      a.push({ name: this.name, value: v });
+    }
+  });
+
+  // hand off to jQuery.param for proper encoding
+  return urlencode(a);
+}
+
+/**
+ * Returns the value(s) of the element in the matched set. For example, consider the following form:
+ *
+ *	<form><fieldset>
+ *		<input name="A" type="text">
+ *		<input name="A" type="text">
+ *		<input name="B" type="checkbox" value="B1">
+ *		<input name="B" type="checkbox" value="B2">
+ *		<input name="C" type="radio" value="C1">
+ *		<input name="C" type="radio" value="C2">
+ *	</fieldset></form>
+ *
+ *	var v = $('input[type=text]').fieldValue();
+ *	// if no values are entered into the text inputs
+ *	v === ['','']
+ *	// if values entered into the text inputs are 'foo' and 'bar'
+ *	v === ['foo','bar']
+ *
+ *	var v = $('input[type=checkbox]').fieldValue();
+ *	// if neither checkbox is checked
+ *	v === undefined
+ *	// if both checkboxes are checked
+ *	v === ['B1', 'B2']
+ *
+ *	var v = $('input[type=radio]').fieldValue();
+ *	// if neither radio is checked
+ *	v === undefined
+ *	// if first radio is checked
+ *	v === ['C1']
+ *
+ * The successful argument controls whether or not the field element must be 'successful'
+ * (per http://www.w3.org/TR/html4/interact/forms.html#successful-controls).
+ * The default value of the successful argument is true. If this value is false the value(s)
+ * for each element is returned.
+ *
+ * Note: This method *always* returns an array. If no valid value can be determined the
+ *	array will be empty, otherwise it will contain one or more values.
+ */
+function fieldValues(successful) {
+  const val = [];
+
+  for (let i = 0, max = this.length; i < max; i++) {
+    const el = this[i];
+    const v = $$5.fieldValue(el, successful);
+
+    if (v === null || typeof v === "undefined" || (v.constructor === Array && !v.length)) {
+      continue;
+    }
+
+    if (v.constructor === Array) {
+      $$5.merge(val, v);
+    } else {
+      val.push(v);
+    }
+  }
+
+  return val;
+}
+
+/**
+ * Clears the form data. Takes the following actions on the form's input fields:
+ *  - input text fields will have their 'value' property set to the empty string
+ *  - select elements will have their 'selectedIndex' property set to -1
+ *  - checkbox and radio inputs will have their 'checked' property set to false
+ *  - inputs of type submit, button, reset, and hidden will *not* be effected
+ *  - button elements will *not* be effected
+ */
+function clearForm(includeHidden) {
+  return this.each(function () {
+    $$5("input,select,textarea", this).clearFields(includeHidden);
+  });
+}
+
+/**
+ * Clears the selected form elements.
+ */
+function clearFields(includeHidden) {
+  const re =
+    /^(?:color|date|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
+
+  return this.each(function () {
+    const t = this.type,
+      tag = tagName(this);
+
+    if (re.test(t) || tag === "textarea") {
+      this.value = "";
+    } else if (t === "checkbox" || t === "radio") {
+      this.checked = false;
+    } else if (tag === "select") {
+      this.selectedIndex = -1;
+    } else if (t === "file") {
+      $$5(this).val("");
+    } else if (includeHidden) {
+      // includeHidden can be the value true, or it can be a selector string
+      // indicating a special test; for example:
+      // $('#myForm').clearForm('.special:hidden')
+      // the above would clean hidden inputs that have the class of 'special'.
+      // The selector tests the element alone and is never parsed as HTML.
+      if (
+        (includeHidden === true && /hidden/.test(t)) ||
+        (typeof includeHidden === "string" && $$5.filter(includeHidden, [this]).length)
+      ) {
+        this.value = "";
+      }
+    }
+  });
+}
+
+/**
+ * Resets the form data or individual elements. Takes the following actions
+ * on the selected tags:
+ * - all fields within form elements will be reset to their original value
+ * - input / textarea / select fields will be reset to their original value
+ * - option / optgroup fields (for multi-selects) will defaulted individually
+ * - non-multiple options will find the right select to default
+ * - label elements will be searched against its 'for' attribute
+ * - all others will be searched for appropriate children to default
+ */
+function resetForm() {
+  return this.each(function () {
+    const el = $$5(this);
+    const tag = tagName(this);
+
+    switch (tag) {
+      case "input":
+        this.checked = this.defaultChecked;
+
+        // as the native reset: types whose value is the value attribute keep it
+        if (this.type === "file") {
+          // a file input cannot take its value attribute; the native reset empties it
+          this.value = "";
+        } else if (!/^(?:checkbox|radio|hidden|submit|reset|button|image)$/.test(this.type)) {
+          this.value = this.defaultValue;
+        }
+
+        return true;
+
+      case "textarea":
+        this.value = this.defaultValue;
+
+        return true;
+
+      case "option":
+      case "optgroup": {
+        const select = el.parents("select");
+
+        if (select.length && select[0].multiple) {
+          if (tag === "option") {
+            this.selected = this.defaultSelected;
+          } else {
+            el.find("option").resetForm();
+          }
+        } else {
+          select.resetForm();
+        }
+
+        return true;
+      }
+
+      case "select":
+        // in order, as the native reset: of several default options, a single select keeps the last
+        el.find("option").each(function () {
+          this.selected = this.defaultSelected;
+        });
+
+        return true;
+
+      case "label": {
+        // The control whose id the for attribute names, and the controls inside the label. The
+        // filter keeps a for that names an ancestor from resetting the label again.
+        const forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
+
+        el.find("input,select,textarea").add(forEl).filter("input,select,textarea").resetForm();
+
+        return true;
+      }
+
+      case "form":
+        // through the prototype: a control named reset shadows the method
+        callFormMethod(this, "reset");
+
+        return true;
+
+      default:
+        el.find("form,input,label,select,textarea").resetForm();
+
+        return true;
+    }
+  });
+}
+
+/**
+ * Enables or disables any matching elements.
+ */
+function enable(b) {
+  if (typeof b === "undefined") {
+    b = true;
+  }
+
+  return this.each(function () {
+    this.disabled = !b;
+  });
+}
+
+/**
+ * Checks/unchecks any matching checkboxes or radio buttons and
+ * selects/deselects and matching option elements.
+ */
+function selected(select) {
+  if (typeof select === "undefined") {
+    select = true;
+  }
+
+  return this.each(function () {
+    const t = this.type;
+
+    if (t === "checkbox" || t === "radio") {
+      this.checked = select;
+    } else if (tagName(this) === "option") {
+      const $sel = $$5(this).parent("select");
+
+      if (select && $sel[0] && $sel[0].type === "select-one") {
+        // deselect all other options
+        $sel.find("option").selected(false);
+      }
+
+      this.selected = select;
+    }
+  });
+}
+
 // The XMLHttpRequest transports: $.ajax with the encoded fields, or FormData for file uploads.
-var $$4 = jQuery;
+const $$4 = jQuery;
 
 // utility fn for deep serialization: [name, value] pairs, as $.param encodes them
 function deepSerialize(extraData, traditional) {
-  var param = $$4.param(wellFormedData(extraData), traditional);
-  var serialized = param ? param.split("&") : [];
-  var len = serialized.length;
-  var result = [];
-  var i, part;
+  const param = $$4.param(wellFormedData(extraData), traditional);
+  const serialized = param ? param.split("&") : [];
+  const len = serialized.length;
+  const result = [];
+  let i, part;
 
   for (i = 0; i < len; i++) {
-    // #252; undo param space replacement
-    serialized[i] = serialized[i].replace(/\+/g, " ");
     part = serialized[i].split("=");
     // #278; use array instead of object storage, favoring array serializations
     result.push([decodeURIComponent(part[0]), decodeURIComponent(part[1])]);
@@ -1013,30 +1170,36 @@ function deepSerialize(extraData, traditional) {
 }
 
 /**
- * Posts the fields and extraData as FormData, for files with the File API.
+ * Posts the fields and extraData as FormData, for files or a multipart form.
  * XMLHttpRequest Level 2 file uploads (big hat tip to francois2metz)
  */
 function sendFormData(submission) {
-  var options = submission.options;
-  var a = submission.fields;
+  const options = submission.options;
+  const a = submission.fields;
 
-  var formdata = new FormData();
+  const formdata = new FormData();
 
-  for (var i = 0; i < a.length; i++) {
-    formdata.append(a[i].name, a[i].value);
+  for (let i = 0; i < a.length; i++) {
+    // a file input without a file: an empty file, as a native multipart submission sends it
+    const empty = a[i].type === "file" && a[i].value === "";
+
+    formdata.append(
+      a[i].name,
+      empty ? new window.File([], "", { type: "application/octet-stream" }) : a[i].value,
+    );
   }
 
   if (options.extraData) {
-    var serializedData = deepSerialize(options.extraData, submission.traditional);
+    const serializedData = deepSerialize(options.extraData, submission.traditional);
 
-    for (i = 0; i < serializedData.length; i++) {
+    for (let i = 0; i < serializedData.length; i++) {
       formdata.append(serializedData[i][0], serializedData[i][1]);
     }
   }
 
   options.data = null;
 
-  var s = $$4.extend(true, {}, $$4.ajaxSettings, options, {
+  const s = $$4.extend(true, {}, $$4.ajaxSettings, options, {
     contentType: false,
     processData: false,
     cache: false,
@@ -1048,19 +1211,18 @@ function sendFormData(submission) {
   if (options.uploadProgress) {
     // workaround because jqXHR does not expose upload property: wraps the xhr factory, the
     // caller's or jQuery's
-    var createXhr = s.xhr;
+    const createXhr = s.xhr;
 
     s.xhr = function () {
-      var xhr = createXhr.call(this);
+      const xhr = createXhr.call(this);
 
       if (xhr.upload) {
         xhr.upload.addEventListener(
           "progress",
           function (event) {
-            var percent = 0;
-            // event.position is the deprecated name, read only when loaded is missing
-            var position = event.loaded !== undefined ? event.loaded : event.position;
-            var total = event.total;
+            let percent = 0;
+            const position = event.loaded;
+            const total = event.total;
 
             if (event.lengthComputable) {
               percent = Math.ceil((position / total) * 100);
@@ -1068,7 +1230,7 @@ function sendFormData(submission) {
 
             options.uploadProgress(event, position, total, percent);
           },
-          false
+          false,
         );
       }
 
@@ -1078,7 +1240,7 @@ function sendFormData(submission) {
 
   s.data = null;
 
-  var beforeSend = s.beforeSend;
+  const beforeSend = s.beforeSend;
 
   s.beforeSend = function (xhr, o) {
     // Send FormData() provided by user
@@ -1104,50 +1266,74 @@ function sendAjax(submission) {
 
 // The iframe form post: the extra fields (submitter, CSRF, data), the form attributes set while
 // posting and restored after, and the native submit.
-var $$3 = jQuery;
+const $$3 = jQuery;
 
 // The form attributes an iframe upload changes while it posts.
-var uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
+const uploadAttributes = ["action", "target", "method", "enctype", "encoding"];
 
 // Called through the prototype: an extraData key or a form field may be named hasOwnProperty.
-var hasOwn = Object.prototype.hasOwnProperty;
+const hasOwn = Object.prototype.hasOwnProperty;
 
 function isGet(method) {
   return /^get$/i.test(method);
 }
 
-// Resolves both URLs through anchors, as jQuery does for crossDomain, so IE's anchor quirks
-// apply to both sides of the comparison.
+// Resolves both URLs through anchors, as jQuery does for crossDomain.
 function isSameOrigin(url) {
-  var origin = document.createElement("a");
-  var target = document.createElement("a");
+  const origin = document.createElement("a");
+  const target = document.createElement("a");
 
   origin.href = window.location.href;
   target.href = url;
-  // IE fills in the host of a relative URL only once the resolved href is assigned back
-  target.href = target.href; // eslint-disable-line no-self-assign
 
   return origin.protocol + "//" + origin.host === target.protocol + "//" + target.host;
 }
 
-/** Adds the clicked submitter (and an image's coordinates) to s.extraData. */
-function addSubmitterFields(s, form) {
-  // add submitting element to data if we know it
-  var fields = submitterFields(form);
+/**
+ * Inserts a hidden input per submitter field right after the submitter, so the post sends them
+ * in tree order, as a native submission does. A submitter outside the form passes its form
+ * attribute on; one that is in no tree is not sent. Each input is pushed onto `added`.
+ */
+function addSubmitterInputs(submitter, ownerDocument, added) {
+  const el = submitter && submitter.el;
+  let after = el;
 
-  for (var n in fields) {
-    s.extraData = s.extraData || {};
-    s.extraData[wellFormed(n)] = wellFormed(fields[n]);
+  if (!el || !el.parentNode) {
+    return;
   }
+
+  $$3.each(submitter.fields, function (i, field) {
+    const input = hiddenInput(ownerDocument, wellFormed(field.name), wellFormed(field.value));
+
+    if (el.hasAttribute("form")) {
+      input.setAttribute("form", el.getAttribute("form"));
+    }
+
+    // through the prototype: the parent may be the form, where a control can shadow insertBefore
+    callFormMethod(el.parentNode, "insertBefore", input, after.nextSibling);
+    added.push(input);
+    after = input;
+  });
+}
+
+// A hidden input built with DOM properties: a name is never parsed as HTML.
+function hiddenInput(ownerDocument, name, value) {
+  const input = ownerDocument.createElement("input");
+
+  input.type = "hidden";
+  input.name = name;
+  $$3(input).val(value);
+
+  return input;
 }
 
 /** Adds the page's CSRF token to s.extraData when the form is posted to the page's origin. */
 function addCsrfField(s, form, method, forms) {
   // Rails CSRF hack (thanks to Yvan Barthelemy); like jquery-ujs, only for the page's origin and
   // only when the form is posted, since a get form would put the token in the url
-  var csrf_token = $$3("meta[name=csrf-token]").attr("content");
-  var csrf_param = $$3("meta[name=csrf-param]").attr("content");
-  var posts =
+  const csrf_token = $$3("meta[name=csrf-token]").attr("content");
+  const csrf_param = $$3("meta[name=csrf-param]").attr("content");
+  const posts =
     !isGet(method) &&
     (!method || /post/i.test(method) || /post/i.test(forms.property(form, "method")));
 
@@ -1163,7 +1349,7 @@ function setFormAttribute(form, name, value) {
 
 /** The raw attributes the upload changes, null when absent, to put back exactly (#380). */
 function saveAttributes(form) {
-  var saved = {};
+  const saved = {};
 
   $$3.each(uploadAttributes, function (i, name) {
     saved[name] = callFormMethod(form, "hasAttribute", name)
@@ -1187,7 +1373,7 @@ function restoreAttributes(form, saved) {
 
 /** Points the form at the frame `target` with the upload's url, method and encoding. */
 function setUploadAttributes(form, target, method, s, forms) {
-  var mp = "multipart/form-data";
+  const mp = "multipart/form-data";
 
   // update form attrs in IE friendly way
   setFormAttribute(form, "target", target);
@@ -1208,17 +1394,12 @@ function setUploadAttributes(form, target, method, s, forms) {
 
 /** Appends a hidden input per extraData field to the form; each input is pushed onto `added`. */
 function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
-  // Builds the input with DOM properties: a name is never parsed as HTML.
   function addHiddenInput(name, value) {
-    var input = ownerDocument.createElement("input");
-
-    input.type = "hidden";
-    input.name = name;
-    added.push($$3(input).val(value).appendTo(form)[0]);
+    added.push($$3(hiddenInput(ownerDocument, name, value)).appendTo(form)[0]);
   }
 
   if (extraData) {
-    for (var n in extraData) {
+    for (const n in extraData) {
       if (hasOwn.call(extraData, n)) {
         // if using the $.param format that allows for multiple values with the same name
         if (
@@ -1229,12 +1410,12 @@ function addExtraInputs(form, ownerDocument, extraData, traditional, added) {
           addHiddenInput(wellFormed(extraData[n].name), wellFormed(extraData[n].value));
         } else {
           // arrays and objects become one field per value, as $.param sends them (#597)
-          var single = {};
+          const single = {};
 
           single[n] = extraData[n];
-          var fields = deepSerialize(single, traditional);
+          const fields = deepSerialize(single, traditional);
 
-          for (var f = 0; f < fields.length; f++) {
+          for (let f = 0; f < fields.length; f++) {
             addHiddenInput(fields[f][0], fields[f][1]);
           }
         }
@@ -1255,58 +1436,23 @@ function submitForm(form) {
 
 // The iframe response reader: turns the frame's document into the mock xhr's text, XML, status
 // and dataType, then parses it as $.ajax would (dataFilter, JSON, script).
-var $$2 = jQuery;
+const $$2 = jQuery;
 
-/** The frame's document, or null when the browser denies access to it. */
+/** The frame's document, or null when the same-origin policy denies access to it. */
 function getDoc(frame) {
-  /* it looks like contentWindow or contentDocument do not
-   * carry the protocol property in ie8, when running under ssl
-   * frame.document is the only valid response document, since
-   * the protocol is know but not on the other two objects. strange?
-   * "Same origin policy" http://en.wikipedia.org/wiki/Same_origin_policy
-   */
-
-  var doc = null;
-
-  // IE8 cascading access check
-  try {
-    if (frame.contentWindow) {
-      doc = frame.contentWindow.document;
-    }
-  } catch (err) {
-    // IE8 access denied under ssl & missing protocol
-    log("cannot get iframe.contentWindow document: " + err);
-  }
-
-  if (doc) {
-    // successful getting content
-    return doc;
-  }
-
-  try {
-    // simply checking may throw in ie8 under ssl or mismatched protocol
-    doc = frame.contentDocument ? frame.contentDocument : frame.document;
-  } catch (err) {
-    // last attempt
-    log("cannot get iframe.contentDocument: " + err);
-    doc = frame.document;
-  }
-
-  return doc;
+  return frame.contentDocument;
 }
 
 /** Parses the response text or XML for the given (lowercase) dataType. */
 function httpData(xhr, type, s) {
   // mostly lifted from jq1.4.4
 
-  var ct = xhr.getResponseHeader("content-type") || "",
-    xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0,
-    data = xml ? xhr.responseXML : xhr.responseText;
+  const ct = xhr.getResponseHeader("content-type") || "";
+  const xml = (type === "xml" || !type) && ct.indexOf("xml") >= 0;
+  let data = xml ? xhr.responseXML : xhr.responseText;
 
   if (xml && data.documentElement.nodeName === "parsererror") {
-    if ($$2.error) {
-      $$2.error("parsererror");
-    }
+    $$2.error("parsererror");
   }
   if (s && s.dataFilter) {
     data = s.dataFilter(data, type);
@@ -1331,16 +1477,16 @@ function readStatus(xhr, el) {
 
 // Fills the mock xhr from the document itself.
 function readDocument(doc, xhr, s, isXml) {
-  var docRoot = doc.body ? doc.body : doc.documentElement;
+  const docRoot = doc.body ? doc.body : doc.documentElement;
 
   xhr.responseText = docRoot ? docRoot.innerHTML : null;
-  xhr.responseXML = doc.XMLDocument ? doc.XMLDocument : doc;
+  xhr.responseXML = doc;
   if (isXml) {
     s.dataType = "xml";
   }
   xhr.getResponseHeader = function (header) {
     // the dataType in lowercase, as $.ajax reads it
-    var headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
+    const headers = { "content-type": s.dataType && s.dataType.toLowerCase() };
 
     return headers[header.toLowerCase()];
   };
@@ -1351,56 +1497,45 @@ function readDocument(doc, xhr, s, isXml) {
 
 // A response embedded in a textarea, or text wrapped in pre or body, replaces responseText.
 function readEmbedded(doc, xhr, dt, s) {
-  var scr = /(json|script|text)/.test(dt);
+  const scr = /(json|script|text)/.test(dt);
 
   if (!scr && !s.textarea) {
     return;
   }
   // see if user embedded response in textarea
-  var ta = doc.getElementsByTagName("textarea")[0];
+  const ta = doc.getElementsByTagName("textarea")[0];
 
   if (ta) {
     xhr.responseText = ta.value;
     readStatus(xhr, ta);
   } else if (scr) {
     // account for browsers injecting pre around json response
-    var pre = doc.getElementsByTagName("pre")[0];
-    var b = doc.getElementsByTagName("body")[0];
+    const pre = doc.getElementsByTagName("pre")[0];
+    const b = doc.getElementsByTagName("body")[0];
 
     if (pre) {
-      xhr.responseText = pre.textContent ? pre.textContent : pre.innerText;
+      xhr.responseText = pre.textContent;
     } else if (b) {
-      xhr.responseText = b.textContent ? b.textContent : b.innerText;
+      xhr.responseText = b.textContent;
     }
   }
 }
 
 /**
- * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}, or
- * null when `retry()` asks to read the document again later (Opera's untraversable DOM).
+ * Reads and parses the response document into the mock xhr. Returns {status, data, errMsg}.
  */
-function readResponse(doc, xhr, s, retry) {
-  var status = "success",
+function readResponse(doc, xhr, s) {
+  let status = "success",
     data,
     errMsg;
 
   try {
-    var isXml = /^xml$/i.test(s.dataType) || doc.XMLDocument || $$2.isXMLDoc(doc);
+    const isXml = /^xml$/i.test(s.dataType) || $$2.isXMLDoc(doc);
 
     log("isXml=" + isXml);
-
-    if (!isXml && window.opera && (doc.body === null || !doc.body.innerHTML)) {
-      // in some browsers (Opera) the iframe DOM is not always traversable when
-      // the onload callback fires, so we loop a bit to accommodate
-      if (retry()) {
-        return null;
-      }
-      // let this fall through because server response could be an empty document
-    }
-
     readDocument(doc, xhr, s, isXml);
 
-    var dt = (s.dataType || "").toLowerCase();
+    const dt = (s.dataType || "").toLowerCase();
 
     readEmbedded(doc, xhr, dt, s);
 
@@ -1416,34 +1551,34 @@ function readResponse(doc, xhr, s, retry) {
     xhr.error = errMsg = err;
   }
 
-  return { status: status, data: data, errMsg: errMsg };
+  return { status, data, errMsg };
 }
 
 // The iframe upload's lifecycle: the mock xhr and the Deferred, the global ajax events, the
 // beforeSend veto, the timeout, abort and settling.
-var $$1 = jQuery;
+const $$1 = jQuery;
 
 /**
  * Creates the lifecycle of one upload with the merged settings `s`. `frame.stop()` stops the
  * frame's load and `frame.release()` removes or resets the frame after the upload.
  */
 function createLifecycle(s, frame) {
-  var g,
-    timeoutHandle,
-    callbackProcessed,
-    deferred = $$1.Deferred();
+  let g;
+  let timeoutHandle;
+  let callbackProcessed;
+  const deferred = $$1.Deferred();
 
-  var xhr = {
+  const xhr = {
     // mock object
     aborted: 0,
     responseText: null,
     responseXML: null,
     status: 0,
     statusText: "n/a",
-    getAllResponseHeaders: function () {},
-    getResponseHeader: function () {},
-    setRequestHeader: function () {},
-    abort: function (status) {
+    getAllResponseHeaders() {},
+    getResponseHeader() {},
+    setRequestHeader() {},
+    abort(status) {
       abort(status, [xhr, "aborted", status]);
     },
   };
@@ -1460,7 +1595,7 @@ function createLifecycle(s, frame) {
   // Completes an aborted upload once and rejects the Deferred with `rejection`.
   // `textStatus` replaces the default "timeout"/"aborted" text status.
   function abort(status, rejection, textStatus) {
-    var e = textStatus || (status === "timeout" ? "timeout" : "aborted");
+    const e = textStatus || (status === "timeout" ? "timeout" : "aborted");
 
     if (done()) {
       return;
@@ -1551,9 +1686,10 @@ function createLifecycle(s, frame) {
     return !xhr.aborted;
   }
 
-  // Resolves the upload; returns {error} when the success callback threw.
+  // Resolves the upload with the parsed data, as $.ajax does; returns {error} when the success
+  // callback threw.
   function succeed(data) {
-    var failure;
+    let failure;
 
     try {
       s.success.call(s.context, data, "success", xhr);
@@ -1561,7 +1697,7 @@ function createLifecycle(s, frame) {
       failure = { error: err };
     }
 
-    deferred.resolve(xhr.responseText, "success", xhr);
+    deferred.resolve(data, "success", xhr);
 
     if (g) {
       $$1.event.trigger("ajaxSuccess", [xhr, s, data]);
@@ -1572,7 +1708,7 @@ function createLifecycle(s, frame) {
 
   // Settles the upload with the response reader's {status, data, errMsg}.
   function settle(result) {
-    var status = result.status,
+    let status = result.status,
       errMsg = result.errMsg;
 
     if (xhr.aborted) {
@@ -1595,7 +1731,7 @@ function createLifecycle(s, frame) {
 
     // ordering of these callbacks/triggers is odd, but that's how $.ajax does it
     if (status === "success") {
-      var failure = succeed(result.data);
+      const failure = succeed(result.data);
 
       complete(status);
       if (failure) {
@@ -1621,23 +1757,23 @@ function createLifecycle(s, frame) {
   }
 
   return {
-    xhr: xhr,
-    deferred: deferred,
-    start: start,
-    done: done,
-    abort: abort,
-    settle: settle,
+    xhr,
+    deferred,
+    start,
+    done,
+    abort,
+    settle,
     // Settles an upload that failed with an exception (ignored once aborted).
-    fail: function (err) {
+    fail(err) {
       settle({ status: "error", errMsg: err });
     },
     // Runs `onTimeout` after s.timeout, when set.
-    startTimer: function (onTimeout) {
+    startTimer(onTimeout) {
       if (s.timeout) {
         timeoutHandle = setTimeout(onTimeout, s.timeout);
       }
     },
-    stopTimer: function () {
+    stopTimer() {
       clearTimeout(timeoutHandle);
       timeoutHandle = undefined;
     },
@@ -1645,29 +1781,23 @@ function createLifecycle(s, frame) {
 }
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
-// for file uploads without the File API or when the iframe option asks for it.
-var $ = jQuery;
+// when the iframe option asks for it.
+const $ = jQuery;
 
 /**
- * The iframe send step. `hasProp` is what the entry detected at load; `forms.property` reads a
- * form property as attr2 does.
+ * The iframe send step. `forms.property` reads a form property, or the attribute when a control
+ * shadows it.
  */
-function createIframeTransport(hasProp, forms) {
-  var CLIENT_TIMEOUT_ABORT = 1;
-  var SERVER_ABORT = 2;
+function createIframeTransport(forms) {
+  const CLIENT_TIMEOUT_ABORT = 1;
+  const SERVER_ABORT = 2;
   // tells apart the frames of uploads that start in the same millisecond
-  var frameCount = 0;
+  let frameCount = 0;
 
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
-    for (var i = 0; i < elements.length; i++) {
-      var el = $(elements[i]);
-
-      if (hasProp) {
-        el.prop("disabled", false);
-      } else {
-        el.removeAttr("disabled");
-      }
+    for (let i = 0; i < elements.length; i++) {
+      $(elements[i]).prop("disabled", false);
     }
   }
 
@@ -1683,7 +1813,7 @@ function createIframeTransport(hasProp, forms) {
   // The frame the form posts into: the iframeTarget, named `id` when it has no name, or a new
   // hidden frame named `id`. Returns the frame and the name the form targets.
   function createFrame(s, id, ownerDocument) {
-    var $io, n;
+    let $io, n;
 
     if (s.iframeTarget) {
       $io = selectorOption(s.iframeTarget, ownerDocument);
@@ -1698,7 +1828,7 @@ function createIframeTransport(hasProp, forms) {
         id = n;
       }
     } else {
-      var io = ownerDocument.createElement("iframe");
+      const io = ownerDocument.createElement("iframe");
 
       io.setAttribute("name", id);
       io.setAttribute("src", s.iframeSrc);
@@ -1706,23 +1836,16 @@ function createIframeTransport(hasProp, forms) {
       $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
     }
 
-    return { $io: $io, id: id };
+    return { $io, id };
   }
 
   // The frame hooks the lifecycle calls: stop a load in progress, and release after the upload.
   function frameHooks(s, $io) {
     return {
-      stop: function () {
-        try {
-          // #214, #257
-          if ($io[0].contentWindow.document.execCommand) {
-            $io[0].contentWindow.document.execCommand("Stop");
-          }
-        } catch (ignore) {}
-
+      stop() {
         $io.attr("src", s.iframeSrc); // abort op in progress
       },
-      release: function () {
+      release() {
         if (!s.iframeTarget) {
           $io.remove();
         } else {
@@ -1733,57 +1856,39 @@ function createIframeTransport(hasProp, forms) {
     };
   }
 
-  function listen(io, cb) {
-    if (io.attachEvent) {
-      io.attachEvent("onload", cb);
-    } else {
-      io.addEventListener("load", cb, false);
-    }
-  }
-
-  function unlisten(io, cb) {
-    if (io.detachEvent) {
-      io.detachEvent("onload", cb);
-    } else {
-      io.removeEventListener("load", cb, false);
-    }
-  }
-
   // private function for handling file uploads (hat tip to YAHOO!)
   function fileUploadIframe(submission) {
-    var form = submission.form,
+    const form = submission.form,
       method = submission.method;
 
-    var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
+    enableControls(submission.controls);
+
+    const s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
       submission.options,
     ]);
 
     s.context = s.context || s;
-    var ownerDocument = formMember(form, "ownerDocument");
-    var $body = $(closestByTag(form, ["body"]));
-    var frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
-    var $io = frame.$io,
+    const ownerDocument = formMember(form, "ownerDocument");
+    const $body = $(closestByTag(form, ["body"]));
+    const frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
+    const $io = frame.$io,
       io = $io[0];
-    var life = createLifecycle(s, frameHooks(s, $io));
-    var domCheckCount = 50;
+    const life = createLifecycle(s, frameHooks(s, $io));
 
     if (!life.start()) {
       return life.deferred;
     }
 
-    addSubmitterFields(s, form);
+    // read now: the submitter is forgotten shortly after the click
+    const submitter = submitterFields(form);
+
     addCsrfField(s, form, method, forms);
 
     // look for server aborts
     function checkState() {
       try {
-        var state = getDoc(io).readyState;
-
-        log("state = " + state);
-        if (state && state.toLowerCase() === "uninitialized") {
-          setTimeout(checkState, 50);
-        }
+        log("state = " + getDoc(io).readyState);
       } catch (e) {
         log("Server abort: ", e, " (", e.name, ")");
         cb(SERVER_ABORT);
@@ -1793,7 +1898,7 @@ function createIframeTransport(hasProp, forms) {
 
     // take a breath so that pending repaints get some cpu time before the upload starts
     function doSubmit() {
-      var saved = saveAttributes(form);
+      const saved = saveAttributes(form);
 
       setUploadAttributes(form, frame.id, method, s, forms);
 
@@ -1803,9 +1908,10 @@ function createIframeTransport(hasProp, forms) {
       });
 
       // add "extra" data to form if provided in options
-      var extraInputs = [];
+      const extraInputs = [];
 
       try {
+        addSubmitterInputs(submitter, ownerDocument, extraInputs);
         addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
 
         if (!s.iframeTarget) {
@@ -1814,17 +1920,17 @@ function createIframeTransport(hasProp, forms) {
         }
 
         // A connected form posting into a frame outside the document opens a new window.
-        var root = ownerDocument.documentElement;
+        const root = ownerDocument.documentElement;
 
         if (io && $.contains(root, form) && !$.contains(root, io)) {
-          var notInDocument = "jquery.form: the upload frame is not in the document";
+          const notInDocument = "jquery.form: the upload frame is not in the document";
 
           life.abort(notInDocument, [life.xhr, "error", notInDocument], "error");
 
           return;
         }
 
-        listen(io, cb);
+        io.addEventListener("load", cb, false);
         setTimeout(checkState, 15);
         submitForm(form);
       } finally {
@@ -1834,24 +1940,12 @@ function createIframeTransport(hasProp, forms) {
       }
     }
 
-    // Reads the next document by Opera's rules: false once the retries are used up.
-    function retry() {
-      if (--domCheckCount) {
-        log("requeing onLoad callback, DOM not available");
-        setTimeout(cb, 250);
-
-        return true;
-      }
-
-      return false;
-    }
-
     function cb(e) {
       if (life.done()) {
         return;
       }
 
-      var doc = getDoc(io);
+      const doc = getDoc(io);
 
       if (!doc) {
         log("cannot access response document");
@@ -1873,13 +1967,8 @@ function createIframeTransport(hasProp, forms) {
         return;
       }
 
-      unlisten(io, cb);
-
-      var result = readResponse(doc, life.xhr, s, retry);
-
-      if (result) {
-        life.settle(result);
-      }
+      io.removeEventListener("load", cb, false);
+      life.settle(readResponse(doc, life.xhr, s));
     }
 
     // An exception while posting settles the upload with "error" and the exception.
@@ -1906,26 +1995,7 @@ function createIframeTransport(hasProp, forms) {
     return life.deferred;
   }
 
-  return function sendIframe(submission) {
-    var jqxhr;
-
-    // now, while the controls are still listed: ajaxSubmit clears the list when it returns,
-    // before a closeKeepAlive request completes
-    enableControls(submission.controls);
-
-    // hack to fix Safari hang (thanks to Tim Molendijk for this)
-    // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-    if (submission.options.closeKeepAlive) {
-      deprecate("closeKeepAlive", "closeKeepAlive works around a Safari 3/4 bug and is deprecated");
-      $.get(submission.options.closeKeepAlive, function () {
-        jqxhr = fileUploadIframe(submission);
-      });
-    } else {
-      jqxhr = fileUploadIframe(submission);
-    }
-
-    return jqxhr;
-  };
+  return fileUploadIframe;
 }
 
 // A Submission is one ajaxSubmit call once its vetoes have passed:
@@ -1933,12 +2003,11 @@ function createIframeTransport(hasProp, forms) {
 // callbacks and events receive; later steps change it in place.
 
 /**
- * The submission steps. `feature` holds what the entry detected at load (fileapi, formdata), and
- * `forms` reads form attributes and attr2-style properties (attribute, property), and
- * `serialization` collects the form's fields and controls.
+ * The submission steps. `forms` reads form attributes and string properties (attribute,
+ * property), and `serialization` collects the form's fields and controls.
  */
-function createSubmission(feature, forms, serialization) {
-  var $ = jQuery;
+function createSubmission(forms, serialization) {
+  const $ = jQuery;
 
   function refuse(message) {
     log(message);
@@ -1948,25 +2017,21 @@ function createSubmission(feature, forms, serialization) {
 
   // The options merged over the form's action, the method, and the ajax defaults.
   function withDefaults(form, options, method) {
-    var action = options.url || forms.property(form, "action");
-    var url = typeof action === "string" ? action.trim() : "";
+    const action = options.url || forms.property(form, "action");
+    let url = typeof action === "string" ? action.trim() : "";
 
     // clean url (don't include hash value); an action that is only a fragment means this page
     url = url.split("#")[0] || window.location.href.split("#")[0];
-    // IE requires javascript:false in https, but this breaks chrome >83 and goes against spec.
-    // Instead of using javascript:false always, let's only apply it for IE.
-    var isMsie = /(MSIE|Trident)/.test(navigator.userAgent || "");
-    var iframeSrc = isMsie && /^https/i.test(document.URL) ? "javascript:false" : "about:blank"; // eslint-disable-line no-script-url
 
-    var merged = $.extend(
+    const merged = $.extend(
       true,
       {
-        url: url,
+        url,
         success: $.ajaxSettings.success,
         type: method || $.ajaxSettings.type,
-        iframeSrc: iframeSrc,
+        iframeSrc: "about:blank",
       },
-      options
+      options,
     );
 
     return keepContext(merged, [options]);
@@ -1978,7 +2043,7 @@ function createSubmission(feature, forms, serialization) {
    * its own default.
    */
   function resolveMethod(options, defaultType) {
-    var resolved = options.method || options.type;
+    const resolved = options.method || options.type;
 
     options.type = resolved;
 
@@ -1991,12 +2056,12 @@ function createSubmission(feature, forms, serialization) {
       return undefined;
     }
 
-    var optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
+    const optionsData = typeof options.data === "function" ? options.data(fields) : options.data;
 
     if (typeof optionsData === "string") {
       if (options.requestFormat === "json") {
         throw new Error(
-          'jquery.form: requestFormat "json" needs object data; a string data option is a query string'
+          'jquery.form: requestFormat "json" needs object data; a string data option is a query string',
         );
       }
 
@@ -2014,7 +2079,7 @@ function createSubmission(feature, forms, serialization) {
   // Sets a key as an own data property, so a name like __proto__ is an ordinary key.
   function defineKey(object, key, value) {
     Object.defineProperty(object, key, {
-      value: value,
+      value,
       enumerable: true,
       writable: true,
       configurable: true,
@@ -2030,11 +2095,11 @@ function createSubmission(feature, forms, serialization) {
       throw new Error('jquery.form: requestFormat "json" needs a method with a body, such as POST');
     }
 
-    var body = {};
-    var own = Object.prototype.hasOwnProperty;
+    const body = {};
+    const own = Object.prototype.hasOwnProperty;
 
-    for (var i = 0; i < fields.length; i++) {
-      var name = fields[i].name;
+    for (let i = 0; i < fields.length; i++) {
+      const name = fields[i].name;
 
       if (!own.call(body, name)) {
         defineKey(body, name, fields[i].value);
@@ -2045,9 +2110,9 @@ function createSubmission(feature, forms, serialization) {
       }
     }
 
-    var extra = options.extraData;
+    const extra = options.extraData;
 
-    for (var key in extra) {
+    for (const key in extra) {
       if (own.call(extra, key)) {
         defineKey(body, key, extra[key]);
       }
@@ -2059,14 +2124,14 @@ function createSubmission(feature, forms, serialization) {
 
   // The fields of a query string, as the { name, value } list $.param takes.
   function queryPairs(query) {
-    var pairs = [];
-    var parts = query.split("&");
+    const pairs = [];
+    const parts = query.split("&");
 
-    for (var i = 0; i < parts.length; i++) {
+    for (let i = 0; i < parts.length; i++) {
       if (parts[i]) {
-        var at = parts[i].indexOf("=");
-        var name = at < 0 ? parts[i] : parts[i].slice(0, at);
-        var value = at < 0 ? "" : parts[i].slice(at + 1);
+        const at = parts[i].indexOf("=");
+        const name = at < 0 ? parts[i] : parts[i].slice(0, at);
+        const value = at < 0 ? "" : parts[i].slice(at + 1);
 
         pairs.push({ name: decodeQuery(name), value: decodeQuery(value) });
       }
@@ -2087,8 +2152,8 @@ function createSubmission(feature, forms, serialization) {
 
     if (options.type.toUpperCase() === "GET") {
       // the query goes before any fragment in the url option
-      var hashAt = options.url.indexOf("#");
-      var base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
+      const hashAt = options.url.indexOf("#");
+      const base = hashAt < 0 ? options.url : options.url.slice(0, hashAt);
 
       options.url =
         base + (base.indexOf("?") >= 0 ? "&" : "?") + q + options.url.slice(base.length);
@@ -2109,7 +2174,7 @@ function createSubmission(feature, forms, serialization) {
 
   // Calls each callback in order with the same this and arguments.
   function callEach(callbacks, context, args) {
-    for (var i = 0; i < callbacks.length; i++) {
+    for (let i = 0; i < callbacks.length; i++) {
       callbacks[i].apply(context, args);
     }
   }
@@ -2123,17 +2188,17 @@ function createSubmission(feature, forms, serialization) {
       assertRealParent(this);
     });
 
-    var form = $set[0];
-    var method = options.method || options.type || forms.property(form, "method");
+    const form = $set[0];
+    let method = options.method || options.type || forms.property(form, "method");
 
     options = withDefaults(form, options, method);
 
     // the ajax default type, when neither the caller nor the form gave a method
-    var defaultType = method ? undefined : options.type;
+    const defaultType = method ? undefined : options.type;
 
     // hook for manipulating the form data before it is extracted;
     // convenient for use with rich editors like tinyMCE or FCKEditor
-    var veto = {};
+    const veto = {};
 
     $set.trigger("form-pre-serialize", [$set, options, veto]);
     if (veto.veto) {
@@ -2145,16 +2210,16 @@ function createSubmission(feature, forms, serialization) {
       return refuse("ajaxSubmit: submit aborted via beforeSerialize callback");
     }
 
-    var traditional = options.traditional;
+    let traditional = options.traditional;
 
     if (typeof traditional === "undefined") {
       traditional = $.ajaxSettings.traditional;
     }
 
-    var collected = serialization.collect($set[0], options.semantic, options.filtering);
-    var fields = collected.fields;
-    var controls = collected.controls;
-    var qx = extraQuery(fields, options, traditional);
+    const collected = serialization.collect($set[0], options.filtering);
+    const fields = collected.fields;
+    const controls = collected.controls;
+    const qx = extraQuery(fields, options, traditional);
 
     // give pre-submit callback an opportunity to abort the submit
     if (options.beforeSubmit && options.beforeSubmit(fields, $set, options) === false) {
@@ -2176,13 +2241,13 @@ function createSubmission(feature, forms, serialization) {
     }
 
     return {
-      form: form,
+      form,
       $form: $set,
-      fields: fields,
-      controls: controls,
-      options: options,
-      method: method,
-      traditional: traditional,
+      fields,
+      controls,
+      options,
+      method,
+      traditional,
     };
   }
 
@@ -2192,9 +2257,9 @@ function createSubmission(feature, forms, serialization) {
    * clearForm and target steps before the success callbacks.
    */
   function deliver(submission) {
-    var $set = submission.$form;
-    var options = submission.options;
-    var callbacks = [];
+    const $set = submission.$form;
+    const options = submission.options;
+    const callbacks = [];
 
     if (options.resetForm) {
       callbacks.push(function () {
@@ -2210,10 +2275,10 @@ function createSubmission(feature, forms, serialization) {
 
     // perform a load on the target only if dataType is not provided
     if (!options.dataType && options.target) {
-      var successes = callbackList(options.success);
+      const successes = callbackList(options.success);
 
       callbacks.push(function (data, textStatus, jqXHR) {
-        var successArguments = arguments,
+        const successArguments = arguments,
           fn = options.replaceTarget ? "replaceWith" : "html",
           $target = selectorOption(options.target);
 
@@ -2240,15 +2305,15 @@ function createSubmission(feature, forms, serialization) {
 
     options.success = function (data, status, xhr) {
       // jQuery 1.4+ passes xhr as 3rd arg
-      var context = options.context || this; // jQuery 1.4+ supports scope context
+      const context = options.context || this; // jQuery 1.4+ supports scope context
 
-      for (var i = 0, max = callbacks.length; i < max; i++) {
+      for (let i = 0, max = callbacks.length; i < max; i++) {
         callbacks[i].apply(context, [data, status, xhr || $set, $set]);
       }
     };
 
     if (options.error) {
-      var errors = callbackList(options.error);
+      const errors = callbackList(options.error);
 
       options.error = function (xhr, status, error) {
         callEach(errors, options.context || this, [xhr, status, error, $set]);
@@ -2256,7 +2321,7 @@ function createSubmission(feature, forms, serialization) {
     }
 
     if (options.complete) {
-      var completes = callbackList(options.complete);
+      const completes = callbackList(options.complete);
 
       options.complete = function (xhr, status) {
         callEach(completes, options.context || this, [xhr, status, $set]);
@@ -2265,57 +2330,57 @@ function createSubmission(feature, forms, serialization) {
   }
 
   /**
-   * The transport for a submission: "iframe" for files without the File API or when forced,
-   * "formdata" for files with it, "ajax" otherwise.
+   * The transport for a submission: "iframe" only when the iframe option asks for it, "formdata"
+   * for files or a multipart form, "ajax" otherwise.
    */
   function chooseTransport(submission) {
-    var $set = submission.$form;
-    var options = submission.options;
+    const $set = submission.$form;
+    const options = submission.options;
 
     // [value] (issue #113), also see comment:
     // https://github.com/malsup/form/commit/588306aedba1de01388032d5f42a60159eea9228#commitcomment-2180219
     // and the file inputs outside the form that belong to it through their form attribute
-    var fileInputs = $("input[type=file]:enabled", $set)
+    const fileInputs = $("input[type=file]:enabled", $set)
       .add($(submission.controls).filter("input[type=file]"))
       .filter(function () {
         return $(this).val() !== "";
       });
-    var hasFileInputs = fileInputs.length > 0;
+    const hasFileInputs = fileInputs.length > 0;
     // compared as the browser does: ASCII case-insensitive, without surrounding whitespace
-    var mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
-    var multipart =
+    const mp = /^[\t\n\f\r ]*multipart\/form-data[\t\n\f\r ]*$/i;
+    const multipart =
       mp.test(forms.attribute($set[0], "enctype")) || mp.test(forms.attribute($set[0], "encoding"));
-    var fileAPI = feature.fileapi && feature.formdata;
+    let transport = hasFileInputs || multipart ? "formdata" : "ajax";
 
-    log("fileAPI :" + fileAPI);
-
-    var shouldUseFrame = (hasFileInputs || multipart) && !fileAPI;
-
-    var transport = (hasFileInputs || multipart) && fileAPI ? "formdata" : "ajax";
-
-    // options.iframe allows user to force iframe mode
-    // 06-NOV-09: now defaulting to iframe mode if file input is detected
-    if (options.iframe !== false && (options.iframe || shouldUseFrame)) {
+    // a truthy iframe option asks for the iframe transport
+    if (options.iframe) {
       transport = "iframe";
-    }
-
-    if (transport === "iframe" && !options.iframe) {
-      deprecate(
-        "iframe",
-        "choosing the iframe transport automatically without FormData is deprecated, set iframe: true"
-      );
     }
 
     if (transport !== "ajax" && options.requestFormat === "json") {
       throw new Error(
-        'jquery.form: requestFormat "json" cannot send files or use the iframe transport'
+        'jquery.form: requestFormat "json" cannot send files or use the iframe transport',
       );
     }
 
     return transport;
   }
 
-  return { prepare: prepare, deliver: deliver, chooseTransport: chooseTransport };
+  return { prepare, deliver, chooseTransport };
+}
+
+/**
+ * An attribute of a form, or undefined when it is absent, as jQuery's attr returns it. The
+ * subject may also be the document or a plain object, read through jQuery.
+ */
+function formAttribute(form, name) {
+  if (!isElement(form)) {
+    return jQuery(form).attr(name);
+  }
+
+  const value = callFormMethod(form, "getAttribute", name);
+
+  return value === null ? undefined : value;
 }
 
 (function ($) {
@@ -2345,11 +2410,11 @@ function createSubmission(feature, forms, serialization) {
 			});
 		});
 
-		You can also use ajaxForm with delegation (requires jQuery v1.7+), so the
+		You can also use ajaxForm with delegation, so the
 		form does not have to exist when you invoke ajaxForm:
 
-		$('#myForm').ajaxForm({
-			delegation: true,
+		$(document).ajaxForm({
+			delegation: '#myForm',
 			target: '#output'
 		});
 
@@ -2357,51 +2422,21 @@ function createSubmission(feature, forms, serialization) {
 		at the appropriate time.
 	*/
 
-  /**
-   * Feature detection
-   */
-  var feature = {};
-
-  feature.fileapi = $('<input type="file">').get(0).files !== undefined;
-  feature.formdata = typeof window.FormData !== "undefined";
-
-  var hasProp = !!$.fn.prop;
-  // What attr2 returns for a form: the property when it is a string, otherwise the attribute. The
-  // property is read plainly on purpose: a control named like it shadows it, and then the raw
-  // attribute is used.
+  // A form property when it is a string, otherwise the attribute. The property is read plainly on
+  // purpose: a control named like it shadows it, and then the raw attribute is used.
   function formProperty(form, name) {
-    var value = hasProp ? form[name] : undefined;
+    const value = form[name];
 
     return typeof value === "string" ? value : formAttribute(form, name);
   }
 
-  var forms = { attribute: formAttribute, property: formProperty };
-  var serialization = createSuccessfulControls(feature);
-  var steps = createSubmission(feature, forms, serialization);
-  var transports = {
-    iframe: createIframeTransport(hasProp, forms),
+  const forms = { attribute: formAttribute, property: formProperty };
+  const serialization = createSuccessfulControls();
+  const steps = createSubmission(forms, serialization);
+  const transports = {
+    iframe: createIframeTransport(forms),
     formdata: sendFormData,
     ajax: sendAjax,
-  };
-
-  // attr2 uses prop when it can but checks the return type for
-  // an expected string. This accounts for the case where a form
-  // contains inputs with names like "action" or "method"; in those
-  // cases "prop" returns the element
-  $.fn.attr2 = function () {
-    deprecate("attr2", "attr2 is deprecated, use .prop() or .attr()");
-
-    if (!hasProp) {
-      return this.attr.apply(this, arguments);
-    }
-
-    var val = this.prop.apply(this, arguments);
-
-    if ((val && val.jquery) || typeof val === "string") {
-      return val;
-    }
-
-    return this.attr.apply(this, arguments);
   };
 
   /**
@@ -2414,7 +2449,7 @@ function createSubmission(feature, forms, serialization) {
    * @param	{function}		onSuccess	ajax success callback function
    */
   $.fn.ajaxSubmit = function (options, data, dataType, onSuccess) {
-    deprecateOldJQuery($.fn.jquery);
+    requireJQuery35($.fn.jquery);
 
     // fast fail if nothing selected (http://dev.jquery.com/ticket/2752)
     if (!this.length) {
@@ -2426,11 +2461,11 @@ function createSubmission(feature, forms, serialization) {
     // #541: jQuery's slim build has no $.ajax
     if (!$.ajax) {
       throw new Error(
-        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax"
+        "jquery.form: ajaxSubmit needs the full jQuery build; this jQuery has no $.ajax",
       );
     }
 
-    var submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
+    const submission = steps.prepare(this, submitOptions(options, data, dataType, onSuccess));
 
     if (!submission) {
       return this;
@@ -2438,12 +2473,12 @@ function createSubmission(feature, forms, serialization) {
 
     steps.deliver(submission);
 
-    var jqxhr = transports[steps.chooseTransport(submission)](submission);
+    const jqxhr = transports[steps.chooseTransport(submission)](submission);
 
     this.removeData("jqxhr").data("jqxhr", jqxhr);
 
     // clear element array
-    for (var k = 0; k < submission.controls.length; k++) {
+    for (let k = 0; k < submission.controls.length; k++) {
       submission.controls[k] = null;
     }
 
@@ -2466,9 +2501,12 @@ function createSubmission(feature, forms, serialization) {
    *
    * It is this array that is passed to pre-submit callback functions provided to the
    * ajaxSubmit() and ajaxForm() methods.
+   *
+   * The fields are in tree order, as a native submission sends them. The first argument (the
+   * semantic flag before 5.0) is ignored.
    */
-  $.fn.formToArray = function (semantic, elements, filtering) {
-    var collected = serialization.collect(this[0], semantic, filtering);
+  $.fn.formToArray = function (ignored, elements, filtering) {
+    const collected = serialization.collect(this[0], filtering);
 
     if (elements) {
       elements.push.apply(elements, collected.controls);
@@ -2481,283 +2519,23 @@ function createSubmission(feature, forms, serialization) {
    * Serializes form data into a 'submittable' string. This method will return a string
    * in the format: name1=value1&amp;name2=value2
    */
-  $.fn.formSerialize = function (semantic) {
+  $.fn.formSerialize = function () {
     // hand off to jQuery.param for proper encoding
-    return urlencode(this.formToArray(semantic));
+    return urlencode(this.formToArray());
   };
 
-  /**
-   * Serializes all field elements in the jQuery object into a query string.
-   * This method will return a string in the format: name1=value1&amp;name2=value2
-   */
-  $.fn.fieldSerialize = function (successful) {
-    var a = [];
-
-    deprecateFieldValueOverride();
-
-    this.each(function () {
-      var n = this.name;
-
-      // a form is not a field, though it may have a name
-      if (!n || tagName(this) === "form") {
-        return;
-      }
-
-      var v = $.fieldValue(this, successful);
-
-      if (v && v.constructor === Array) {
-        for (var i = 0, max = v.length; i < max; i++) {
-          a.push({ name: n, value: v[i] });
-        }
-      } else if (v !== null && typeof v !== "undefined") {
-        a.push({ name: this.name, value: v });
-      }
-    });
-
-    // hand off to jQuery.param for proper encoding
-    return urlencode(a);
-  };
-
-  /**
-   * Returns the value(s) of the element in the matched set. For example, consider the following form:
-   *
-   *	<form><fieldset>
-   *		<input name="A" type="text">
-   *		<input name="A" type="text">
-   *		<input name="B" type="checkbox" value="B1">
-   *		<input name="B" type="checkbox" value="B2">
-   *		<input name="C" type="radio" value="C1">
-   *		<input name="C" type="radio" value="C2">
-   *	</fieldset></form>
-   *
-   *	var v = $('input[type=text]').fieldValue();
-   *	// if no values are entered into the text inputs
-   *	v === ['','']
-   *	// if values entered into the text inputs are 'foo' and 'bar'
-   *	v === ['foo','bar']
-   *
-   *	var v = $('input[type=checkbox]').fieldValue();
-   *	// if neither checkbox is checked
-   *	v === undefined
-   *	// if both checkboxes are checked
-   *	v === ['B1', 'B2']
-   *
-   *	var v = $('input[type=radio]').fieldValue();
-   *	// if neither radio is checked
-   *	v === undefined
-   *	// if first radio is checked
-   *	v === ['C1']
-   *
-   * The successful argument controls whether or not the field element must be 'successful'
-   * (per http://www.w3.org/TR/html4/interact/forms.html#successful-controls).
-   * The default value of the successful argument is true. If this value is false the value(s)
-   * for each element is returned.
-   *
-   * Note: This method *always* returns an array. If no valid value can be determined the
-   *	array will be empty, otherwise it will contain one or more values.
-   */
-  $.fn.fieldValue = function (successful) {
-    for (var val = [], i = 0, max = this.length; i < max; i++) {
-      var el = this[i];
-      var v = $.fieldValue(el, successful);
-
-      if (v === null || typeof v === "undefined" || (v.constructor === Array && !v.length)) {
-        continue;
-      }
-
-      if (v.constructor === Array) {
-        $.merge(val, v);
-      } else {
-        val.push(v);
-      }
-    }
-
-    return val;
-  };
+  $.fn.fieldSerialize = fieldSerialize;
+  $.fn.fieldValue = fieldValues;
+  $.fn.clearForm = clearForm;
+  $.fn.clearFields = clearFields;
+  $.fn.resetForm = resetForm;
+  $.fn.enable = enable;
+  $.fn.selected = selected;
 
   /**
    * Returns the value of the field element.
    */
   $.fieldValue = fieldValue;
-
-  /**
-   * Clears the form data. Takes the following actions on the form's input fields:
-   *  - input text fields will have their 'value' property set to the empty string
-   *  - select elements will have their 'selectedIndex' property set to -1
-   *  - checkbox and radio inputs will have their 'checked' property set to false
-   *  - inputs of type submit, button, reset, and hidden will *not* be effected
-   *  - button elements will *not* be effected
-   */
-  $.fn.clearForm = function (includeHidden) {
-    return this.each(function () {
-      $("input,select,textarea", this).clearFields(includeHidden);
-    });
-  };
-
-  /**
-   * Clears the selected form elements.
-   */
-  $.fn.clearInputs = function (includeHidden) {
-    deprecate("clearInputs", "clearInputs is deprecated, use clearFields");
-
-    return this.clearFields(includeHidden);
-  };
-
-  $.fn.clearFields = function (includeHidden) {
-    var re =
-      /^(?:color|date|datetime|datetime-local|email|month|number|password|range|search|tel|text|time|url|week)$/i; // 'hidden' is not in this list
-
-    return this.each(function () {
-      var t = this.type,
-        tag = tagName(this);
-
-      if (re.test(t) || tag === "textarea") {
-        this.value = "";
-      } else if (t === "checkbox" || t === "radio") {
-        this.checked = false;
-      } else if (tag === "select") {
-        this.selectedIndex = -1;
-      } else if (t === "file") {
-        if (/MSIE/.test(navigator.userAgent)) {
-          $(this).replaceWith($(this).clone(true));
-        } else {
-          $(this).val("");
-        }
-      } else if (includeHidden) {
-        // includeHidden can be the value true, or it can be a selector string
-        // indicating a special test; for example:
-        // $('#myForm').clearForm('.special:hidden')
-        // the above would clean hidden inputs that have the class of 'special'
-        if (
-          (includeHidden === true && /hidden/.test(t)) ||
-          (typeof includeHidden === "string" && $(this).is(includeHidden))
-        ) {
-          this.value = "";
-        }
-      }
-    });
-  };
-
-  /**
-   * Resets the form data or individual elements. Takes the following actions
-   * on the selected tags:
-   * - all fields within form elements will be reset to their original value
-   * - input / textarea / select fields will be reset to their original value
-   * - option / optgroup fields (for multi-selects) will defaulted individually
-   * - non-multiple options will find the right select to default
-   * - label elements will be searched against its 'for' attribute
-   * - all others will be searched for appropriate children to default
-   */
-  $.fn.resetForm = function () {
-    return this.each(function () {
-      var el = $(this);
-      var tag = tagName(this);
-
-      switch (tag) {
-        case "input":
-          this.checked = this.defaultChecked;
-
-          // as the native reset: types whose value is the value attribute keep it
-          if (this.type === "file") {
-            // a file input cannot take its value attribute; the native reset empties it
-            this.value = "";
-          } else if (!/^(?:checkbox|radio|hidden|submit|reset|button|image)$/.test(this.type)) {
-            this.value = this.defaultValue;
-          }
-
-          return true;
-
-        case "textarea":
-          this.value = this.defaultValue;
-
-          return true;
-
-        case "option":
-        case "optgroup":
-          var select = el.parents("select");
-
-          if (select.length && select[0].multiple) {
-            if (tag === "option") {
-              this.selected = this.defaultSelected;
-            } else {
-              el.find("option").resetForm();
-            }
-          } else {
-            select.resetForm();
-          }
-
-          return true;
-
-        case "select":
-          // in order, as the native reset: of several default options, a single select keeps the last
-          el.find("option").each(function () {
-            this.selected = this.defaultSelected;
-          });
-
-          return true;
-
-        case "label":
-          // The control whose id the for attribute names, and the controls inside the label. The
-          // filter keeps a for that names an ancestor from resetting the label again.
-          var forEl = this.htmlFor && this.ownerDocument.getElementById(this.htmlFor);
-
-          el.find("input,select,textarea").add(forEl).filter("input,select,textarea").resetForm();
-
-          return true;
-
-        case "form":
-          // through the prototype: a control named reset shadows the method
-          callFormMethod(this, "reset");
-
-          return true;
-
-        default:
-          el.find("form,input,label,select,textarea").resetForm();
-
-          return true;
-      }
-    });
-  };
-
-  /**
-   * Enables or disables any matching elements.
-   */
-  $.fn.enable = function (b) {
-    if (typeof b === "undefined") {
-      b = true;
-    }
-
-    return this.each(function () {
-      this.disabled = !b;
-    });
-  };
-
-  /**
-   * Checks/unchecks any matching checkboxes or radio buttons and
-   * selects/deselects and matching option elements.
-   */
-  $.fn.selected = function (select) {
-    if (typeof select === "undefined") {
-      select = true;
-    }
-
-    return this.each(function () {
-      var t = this.type;
-
-      if (t === "checkbox" || t === "radio") {
-        this.checked = select;
-      } else if (tagName(this) === "option") {
-        var $sel = $(this).parent("select");
-
-        if (select && $sel[0] && $sel[0].type === "select-one") {
-          // deselect all other options
-          $sel.find("option").selected(false);
-        }
-
-        this.selected = select;
-      }
-    });
-  };
 
   // expose debug var
   $.fn.ajaxSubmit.debug = false;

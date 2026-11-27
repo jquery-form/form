@@ -1,43 +1,38 @@
 import {
   addCsrfField,
   addExtraInputs,
-  addSubmitterFields,
+  addSubmitterInputs,
   restoreAttributes,
   saveAttributes,
   setUploadAttributes,
   submitForm,
 } from "./iframe-post.js";
 import { closestByTag, formMember } from "./form-members.js";
-import { deprecate, log } from "./diagnostics.js";
 import { getDoc, readResponse } from "./iframe-response.js";
 import { keepContext, selectorOption } from "./options.js";
 import { createLifecycle } from "./iframe-lifecycle.js";
 import jQuery from "jquery";
+import { log } from "./diagnostics.js";
+import { submitterFields } from "./successful-controls.js";
 
 // The iframe transport: posts the form itself into a hidden frame and reads the response from it,
-// for file uploads without the File API or when the iframe option asks for it.
-var $ = jQuery;
+// when the iframe option asks for it.
+const $ = jQuery;
 
 /**
- * The iframe send step. `hasProp` is what the entry detected at load; `forms.property` reads a
- * form property as attr2 does.
+ * The iframe send step. `forms.property` reads a form property, or the attribute when a control
+ * shadows it.
  */
-export function createIframeTransport(hasProp, forms) {
-  var CLIENT_TIMEOUT_ABORT = 1;
-  var SERVER_ABORT = 2;
+export function createIframeTransport(forms) {
+  const CLIENT_TIMEOUT_ABORT = 1;
+  const SERVER_ABORT = 2;
   // tells apart the frames of uploads that start in the same millisecond
-  var frameCount = 0;
+  let frameCount = 0;
 
   // ensure that every serialized input is still enabled
   function enableControls(elements) {
-    for (var i = 0; i < elements.length; i++) {
-      var el = $(elements[i]);
-
-      if (hasProp) {
-        el.prop("disabled", false);
-      } else {
-        el.removeAttr("disabled");
-      }
+    for (let i = 0; i < elements.length; i++) {
+      $(elements[i]).prop("disabled", false);
     }
   }
 
@@ -53,7 +48,7 @@ export function createIframeTransport(hasProp, forms) {
   // The frame the form posts into: the iframeTarget, named `id` when it has no name, or a new
   // hidden frame named `id`. Returns the frame and the name the form targets.
   function createFrame(s, id, ownerDocument) {
-    var $io, n;
+    let $io, n;
 
     if (s.iframeTarget) {
       $io = selectorOption(s.iframeTarget, ownerDocument);
@@ -68,7 +63,7 @@ export function createIframeTransport(hasProp, forms) {
         id = n;
       }
     } else {
-      var io = ownerDocument.createElement("iframe");
+      const io = ownerDocument.createElement("iframe");
 
       io.setAttribute("name", id);
       io.setAttribute("src", s.iframeSrc);
@@ -76,23 +71,16 @@ export function createIframeTransport(hasProp, forms) {
       $io.css({ position: "absolute", top: "-1000px", left: "-1000px" });
     }
 
-    return { $io: $io, id: id };
+    return { $io, id };
   }
 
   // The frame hooks the lifecycle calls: stop a load in progress, and release after the upload.
   function frameHooks(s, $io) {
     return {
-      stop: function () {
-        try {
-          // #214, #257
-          if ($io[0].contentWindow.document.execCommand) {
-            $io[0].contentWindow.document.execCommand("Stop");
-          }
-        } catch (ignore) {}
-
+      stop() {
         $io.attr("src", s.iframeSrc); // abort op in progress
       },
-      release: function () {
+      release() {
         if (!s.iframeTarget) {
           $io.remove();
         } else {
@@ -103,57 +91,39 @@ export function createIframeTransport(hasProp, forms) {
     };
   }
 
-  function listen(io, cb) {
-    if (io.attachEvent) {
-      io.attachEvent("onload", cb);
-    } else {
-      io.addEventListener("load", cb, false);
-    }
-  }
-
-  function unlisten(io, cb) {
-    if (io.detachEvent) {
-      io.detachEvent("onload", cb);
-    } else {
-      io.removeEventListener("load", cb, false);
-    }
-  }
-
   // private function for handling file uploads (hat tip to YAHOO!)
   function fileUploadIframe(submission) {
-    var form = submission.form,
+    const form = submission.form,
       method = submission.method;
 
-    var s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
+    enableControls(submission.controls);
+
+    const s = keepContext($.extend(true, {}, $.ajaxSettings, submission.options), [
       $.ajaxSettings,
       submission.options,
     ]);
 
     s.context = s.context || s;
-    var ownerDocument = formMember(form, "ownerDocument");
-    var $body = $(closestByTag(form, ["body"]));
-    var frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
-    var $io = frame.$io,
+    const ownerDocument = formMember(form, "ownerDocument");
+    const $body = $(closestByTag(form, ["body"]));
+    const frame = createFrame(s, "jqFormIO" + new Date().getTime() + frameCount++, ownerDocument);
+    const $io = frame.$io,
       io = $io[0];
-    var life = createLifecycle(s, frameHooks(s, $io));
-    var domCheckCount = 50;
+    const life = createLifecycle(s, frameHooks(s, $io));
 
     if (!life.start()) {
       return life.deferred;
     }
 
-    addSubmitterFields(s, form);
+    // read now: the submitter is forgotten shortly after the click
+    const submitter = submitterFields(form);
+
     addCsrfField(s, form, method, forms);
 
     // look for server aborts
     function checkState() {
       try {
-        var state = getDoc(io).readyState;
-
-        log("state = " + state);
-        if (state && state.toLowerCase() === "uninitialized") {
-          setTimeout(checkState, 50);
-        }
+        log("state = " + getDoc(io).readyState);
       } catch (e) {
         log("Server abort: ", e, " (", e.name, ")");
         cb(SERVER_ABORT);
@@ -163,7 +133,7 @@ export function createIframeTransport(hasProp, forms) {
 
     // take a breath so that pending repaints get some cpu time before the upload starts
     function doSubmit() {
-      var saved = saveAttributes(form);
+      const saved = saveAttributes(form);
 
       setUploadAttributes(form, frame.id, method, s, forms);
 
@@ -173,9 +143,10 @@ export function createIframeTransport(hasProp, forms) {
       });
 
       // add "extra" data to form if provided in options
-      var extraInputs = [];
+      const extraInputs = [];
 
       try {
+        addSubmitterInputs(submitter, ownerDocument, extraInputs);
         addExtraInputs(form, ownerDocument, s.extraData, submission.traditional, extraInputs);
 
         if (!s.iframeTarget) {
@@ -184,17 +155,17 @@ export function createIframeTransport(hasProp, forms) {
         }
 
         // A connected form posting into a frame outside the document opens a new window.
-        var root = ownerDocument.documentElement;
+        const root = ownerDocument.documentElement;
 
         if (io && $.contains(root, form) && !$.contains(root, io)) {
-          var notInDocument = "jquery.form: the upload frame is not in the document";
+          const notInDocument = "jquery.form: the upload frame is not in the document";
 
           life.abort(notInDocument, [life.xhr, "error", notInDocument], "error");
 
           return;
         }
 
-        listen(io, cb);
+        io.addEventListener("load", cb, false);
         setTimeout(checkState, 15);
         submitForm(form);
       } finally {
@@ -204,24 +175,12 @@ export function createIframeTransport(hasProp, forms) {
       }
     }
 
-    // Reads the next document by Opera's rules: false once the retries are used up.
-    function retry() {
-      if (--domCheckCount) {
-        log("requeing onLoad callback, DOM not available");
-        setTimeout(cb, 250);
-
-        return true;
-      }
-
-      return false;
-    }
-
     function cb(e) {
       if (life.done()) {
         return;
       }
 
-      var doc = getDoc(io);
+      const doc = getDoc(io);
 
       if (!doc) {
         log("cannot access response document");
@@ -243,13 +202,8 @@ export function createIframeTransport(hasProp, forms) {
         return;
       }
 
-      unlisten(io, cb);
-
-      var result = readResponse(doc, life.xhr, s, retry);
-
-      if (result) {
-        life.settle(result);
-      }
+      io.removeEventListener("load", cb, false);
+      life.settle(readResponse(doc, life.xhr, s));
     }
 
     // An exception while posting settles the upload with "error" and the exception.
@@ -276,24 +230,5 @@ export function createIframeTransport(hasProp, forms) {
     return life.deferred;
   }
 
-  return function sendIframe(submission) {
-    var jqxhr;
-
-    // now, while the controls are still listed: ajaxSubmit clears the list when it returns,
-    // before a closeKeepAlive request completes
-    enableControls(submission.controls);
-
-    // hack to fix Safari hang (thanks to Tim Molendijk for this)
-    // see: http://groups.google.com/group/jquery-dev/browse_thread/thread/36395b7ab510dd5d
-    if (submission.options.closeKeepAlive) {
-      deprecate("closeKeepAlive", "closeKeepAlive works around a Safari 3/4 bug and is deprecated");
-      $.get(submission.options.closeKeepAlive, function () {
-        jqxhr = fileUploadIframe(submission);
-      });
-    } else {
-      jqxhr = fileUploadIframe(submission);
-    }
-
-    return jqxhr;
-  };
+  return fileUploadIframe;
 }

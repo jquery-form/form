@@ -9,10 +9,10 @@ import { requestId, requests } from "./helpers.mjs";
 const jqueryFile = resolve(
   import.meta.dirname,
   "../..",
-  process.env.JQUERY_FILE || "node_modules/jquery/dist/jquery.js"
+  process.env.JQUERY_FILE || "node_modules/jquery/dist/jquery.js",
 );
 const jqueryVersion = readFileSync(jqueryFile, "utf8").match(
-  /jQuery JavaScript Library v([\w.-]+)/
+  /jQuery JavaScript Library v([\w.-]+)/,
 )[1];
 const hasModuleBuild = /^[4-9]\./.test(jqueryVersion);
 

@@ -25,7 +25,7 @@
     "issues": "https://github.com/jquery-form/form/issues"
   },
   "require": {
-    "components/jquery": ">=1.7.2"
+    "components/jquery": ">=3.5.0"
   },
   "extra": {
     "component": {

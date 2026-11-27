@@ -5,7 +5,6 @@ const read = (file) => JSON.parse(readFileSync(new URL(`../../${file}`, import.m
 const pkg = read("package.json");
 const bower = read("bower.json");
 const composer = read("composer.json");
-const registry = read("form.jquery.json");
 
 const distFiles = ["dist/jquery.form.js", "dist/jquery.form.mjs", "dist/jquery.form.min.js"];
 const license = "(LGPL-2.1-or-later OR MIT)";
@@ -18,8 +17,6 @@ describe("when the package manifests are read", () => {
       pkg.jsdelivr,
       pkg.unpkg,
       bower.main,
-      registry.main,
-      registry.browser,
       ...composer.extra.component.scripts,
     ];
 
@@ -40,16 +37,50 @@ describe("when the package manifests are read", () => {
     expect(pkg.unpkg).toBe("dist/jquery.form.min.js");
   });
 
+  it("should export the module build to bundlers and import, the classic build otherwise, and only dist and package.json by path", () => {
+    expect(pkg.exports).toEqual({
+      ".": {
+        module: "./dist/jquery.form.mjs",
+        import: "./dist/jquery.form.mjs",
+        default: "./dist/jquery.form.js",
+      },
+      "./dist/*": "./dist/*",
+      "./package.json": "./package.json",
+    });
+  });
+
+  it("should list the module condition first, since resolvers take the first condition they match", () => {
+    expect(Object.keys(pkg.exports["."])).toEqual(["module", "import", "default"]);
+  });
+
+  it("should point every exports target at a path the package publishes", () => {
+    // A "./dist/*" target is checked as the directory its pattern matches in.
+    const targets = Object.values(pkg.exports).flatMap((target) =>
+      typeof target === "string" ? [target] : Object.values(target),
+    );
+
+    const paths = targets.map((target) => target.replace(/^\.\//, "").replace(/\/\*$/, ""));
+
+    // npm always publishes package.json; every other path must be under the files list.
+    for (const path of paths) {
+      expect(existsSync(new URL(`../../${path}`, import.meta.url)), path).toBe(true);
+      expect(path === "package.json" || pkg.files.includes(path.split("/")[0]), path).toBe(true);
+    }
+  });
+
   it("should publish the entry points through the files list", () => {
     expect(pkg.files).toContain("dist");
+  });
+
+  it("should publish the dist build and not the source", () => {
+    expect(pkg.files).toEqual(["dist", "LICENSE-MIT"]);
   });
 
   it("should publish both licenses of the dual license", () => {
     expect(pkg.files).toContain("LICENSE-MIT");
   });
 
-  it("should agree on the version with the registry manifest and every dist banner", () => {
-    expect(registry.version).toBe(pkg.version);
+  it("should agree on the version with every dist banner", () => {
     for (const file of distFiles) {
       const banner = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8").slice(0, 400);
       expect(banner).toContain(`version: ${pkg.version}`);
@@ -60,15 +91,22 @@ describe("when the package manifests are read", () => {
     expect(pkg.license).toBe(license);
     expect(bower.license).toBe(license);
     expect(composer.license).toBe(license);
-    expect(registry.licenses.map((entry) => entry.type)).toEqual(["LGPL-2.1-or-later", "MIT"]);
+  });
+
+  it("should declare jQuery 3.5.0 or later as a peer dependency only", () => {
+    expect(pkg.peerDependencies).toEqual({ jquery: ">=3.5.0" });
+    expect(pkg).not.toHaveProperty("dependencies");
   });
 
   it("should agree on the jQuery dependency range", () => {
-    const range = pkg.dependencies.jquery;
+    const range = pkg.peerDependencies.jquery;
 
     expect(bower.dependencies.jquery).toBe(range);
-    expect(registry.dependencies.jquery).toBe(range);
     expect(composer.require["components/jquery"]).toBe(range);
+  });
+
+  it("should leave out the old plugins.jquery.com manifest", () => {
+    expect(existsSync(new URL("../../form.jquery.json", import.meta.url))).toBe(false);
   });
 });
 
@@ -78,7 +116,7 @@ describe("when the dist files are read", () => {
     const builds = ["dist/jquery.form.js", "dist/jquery.form.mjs"];
 
     const sources = builds.map((file) =>
-      readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+      readFileSync(new URL(`../../${file}`, import.meta.url), "utf8"),
     );
 
     for (const source of sources) {

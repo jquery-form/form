@@ -3,7 +3,7 @@
 // ES module, with jsdom as the window. Each case runs in its own process, so globals and module
 // caches never leak between cases.
 import { after, before, describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { createServer } from "node:http";
@@ -16,9 +16,9 @@ const root = resolve(import.meta.dirname, "../..");
 const packDir = resolve(root, process.env.JQUERY_FORM_PACK_DIR || ".pack");
 const jqueryFile = resolve(root, process.env.JQUERY_FILE || "node_modules/jquery/dist/jquery.js");
 const jqueryVersion = readFileSync(jqueryFile, "utf8").match(
-  /jQuery JavaScript Library v([\w.-]+)/
+  /jQuery JavaScript Library v([\w.-]+)/,
 )[1];
-const FIXTURE_VERSIONS = ["3.7.1", "4.0.0"];
+const FIXTURE_VERSIONS = ["3.5.0", "3.7.1", "4.0.0"];
 
 let server;
 let origin;
@@ -72,7 +72,7 @@ function smoke($, value) {
 
 // Runs a case in a fresh Node process in `cwd`; resolves the JSON it prints last. Asynchronous,
 // so this process keeps answering the case's requests.
-async function run(cwd, code, type = "commonjs") {
+async function run(cwd, code, type = "commonjs", flags = []) {
   const source =
     type === "module"
       ? `import { createRequire } from "node:module";
@@ -82,13 +82,13 @@ async function run(cwd, code, type = "commonjs") {
       : `${PRELUDE}\n(async () => { ${code} })();`;
   const { stdout } = await promisify(execFile)(
     process.execPath,
-    [`--input-type=${type}`, "-e", source],
+    [...flags, `--input-type=${type}`, "-e", source],
     {
       cwd,
       encoding: "utf8",
       timeout: 20000,
       env: { ...process.env, JSDOM_PATH: require.resolve("jsdom"), ORIGIN: origin },
-    }
+    },
   );
   return JSON.parse(stdout.trim().split("\n").pop());
 }
@@ -111,13 +111,22 @@ describe("when the packed package is installed", () => {
     // Arrange
     const manifest = JSON.parse(readFileSync(resolve(installed, "package.json"), "utf8"));
 
-    // Act
-    const entries = [manifest.main, manifest.module, manifest.jsdelivr, manifest.unpkg];
+    // Act: every exports target that names a file, as well as the classic fields.
+    const targets = Object.values(manifest.exports ?? {}).flatMap((target) =>
+      typeof target === "string" ? [target] : Object.values(target),
+    );
+    const entries = [
+      manifest.main,
+      manifest.module,
+      manifest.jsdelivr,
+      manifest.unpkg,
+      ...targets.filter((target) => !target.includes("*")),
+    ];
 
     // Assert
     assert.deepEqual(
       entries.filter((entry) => !existsSync(resolve(installed, entry))),
-      []
+      [],
     );
   });
 
@@ -130,6 +139,127 @@ describe("when the packed package is installed", () => {
 
     // Assert
     assert.deepEqual(missing, []);
+  });
+});
+
+// Resolves each specifier from the fixture, as CommonJS (require.resolve) and as an ES module
+// (import.meta.resolve), to the path inside the installed package or the error code it threw.
+async function resolveFrom(fixture, specifiers, flags = []) {
+  const code = `const where = (resolve) => (specifier) => {
+      try {
+        return resolve(specifier).split("/node_modules/jquery-form/")[1];
+      } catch (error) {
+        return error.code;
+      }
+    };
+    const specifiers = ${JSON.stringify(specifiers)};
+    report({
+      require: specifiers.map(where(require.resolve)),
+      import: specifiers.map(where(import.meta.resolve)),
+    });`;
+  return run(fixture, code, "module", flags);
+}
+
+describe("when the packed package is resolved by name", () => {
+  const fixture = resolve(packDir, "jquery-3.7.1");
+
+  it("should resolve import to the module build and require to the classic build", async () => {
+    // Arrange
+    const specifiers = ["jquery-form"];
+
+    // Act
+    const result = await resolveFrom(fixture, specifiers);
+
+    // Assert
+    assert.deepEqual(result, {
+      require: ["dist/jquery.form.js"],
+      import: ["dist/jquery.form.mjs"],
+    });
+  });
+
+  it("should resolve import and require to the module build under the bundlers' module condition", async () => {
+    // Arrange: webpack, Rollup, Rolldown and esbuild match "module"; Node matches it only when asked.
+    const specifiers = ["jquery-form"];
+
+    // Act
+    const result = await resolveFrom(fixture, specifiers, ["--conditions=module"]);
+
+    // Assert
+    assert.deepEqual(result, {
+      require: ["dist/jquery.form.mjs"],
+      import: ["dist/jquery.form.mjs"],
+    });
+  });
+
+  it("should resolve every dist file and package.json by its path", async () => {
+    // Arrange
+    const paths = [
+      "dist/jquery.form.js",
+      "dist/jquery.form.mjs",
+      "dist/jquery.form.min.js",
+      "dist/jquery.form.min.js.map",
+      "package.json",
+    ];
+
+    // Act
+    const result = await resolveFrom(
+      fixture,
+      paths.map((path) => `jquery-form/${path}`),
+    );
+
+    // Assert
+    assert.deepEqual(result, { require: paths, import: paths });
+  });
+
+  it("should refuse a path outside the exports map, such as the source", async () => {
+    // Arrange
+    const specifiers = ["jquery-form/src/jquery.form.js", "jquery-form/LICENSE-MIT"];
+
+    // Act
+    const result = await resolveFrom(fixture, specifiers);
+
+    // Assert
+    const refused = specifiers.map(() => "ERR_PACKAGE_PATH_NOT_EXPORTED");
+    assert.deepEqual(result, { require: refused, import: refused });
+  });
+});
+
+describe("when the packed package is unpacked", () => {
+  const installed = resolve(packDir, "jquery-3.7.1/node_modules/jquery-form");
+
+  it("should hold the dist build, the licenses, the readme and package.json, and no source", () => {
+    // Arrange
+    const expectedFiles = [
+      "LICENSE",
+      "LICENSE-MIT",
+      "README.md",
+      "dist/jquery.form.js",
+      "dist/jquery.form.min.js",
+      "dist/jquery.form.min.js.map",
+      "dist/jquery.form.mjs",
+      "package.json",
+    ];
+
+    // Act
+    const files = readdirSync(installed, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => resolve(entry.parentPath, entry.name).slice(installed.length + 1))
+      .sort();
+
+    // Assert
+    assert.deepEqual(files, expectedFiles);
+  });
+
+  it("should embed every source file in the source map, since the source is not shipped", () => {
+    // Arrange
+    const map = JSON.parse(readFileSync(resolve(installed, "dist/jquery.form.min.js.map"), "utf8"));
+
+    // Act
+    const embedded = map.sources.filter((source, i) => typeof map.sourcesContent?.[i] === "string");
+
+    // Assert
+    assert.ok(map.sources.length > 0);
+    assert.deepEqual(embedded, map.sources);
   });
 });
 
@@ -150,7 +280,7 @@ describe("when the packed package is required from CommonJS", () => {
     // Act
     const result = await run(
       fixture,
-      `${code} report({ type: typeof factory, length: factory.length });`
+      `${code} report({ type: typeof factory, length: factory.length });`,
     );
 
     // Assert
@@ -191,7 +321,7 @@ describe("when the packed package is required from CommonJS", () => {
       // Act
       const result = await run(
         resolve(packDir, `jquery-${version}`),
-        `${code} report(await smoke($, $));`
+        `${code} report(await smoke($, $));`,
       );
 
       // Assert
@@ -205,12 +335,12 @@ describe("when the packed package is required from CommonJS", () => {
       // Act
       const result = await run(
         resolve(packDir, `jquery-${version}`),
-        settle(`${code} report(await smoke($, $));`)
+        settle(`${code} report(await smoke($, $));`),
       );
 
       // Assert: jQuery 4 throws when required without a global window instead of returning a
       // factory, so require('jquery')(root) never runs (a jQuery limit, not the plugin's).
-      if (version === "3.7.1") {
+      if (version.startsWith("3.")) {
         assert.deepEqual(result, expected(version, "jQuery"));
       } else {
         assert.match(result.thrown, /^jQuery requires a window with a document$/);
@@ -221,17 +351,18 @@ describe("when the packed package is required from CommonJS", () => {
 
 describe("when the packed package is imported as an ES module", () => {
   for (const version of FIXTURE_VERSIONS) {
-    it(`should resolve its name to the CommonJS factory (jQuery ${version})`, async () => {
-      // Arrange: Node ignores the "module" field, and the package has no "exports" map.
+    it(`should install the module build on the installed jQuery ${version} when imported by name`, async () => {
+      // Arrange: the "import" condition of the exports map names the module build, which reads
+      // the DOM at import time, so the window must be global.
       const code = `${GLOBALS}
-        const { default: factory } = await import("jquery-form");
+        const { default: value } = await import("jquery-form");
         const { default: $ } = await import("jquery");`;
 
       // Act
       const result = await run(
         resolve(packDir, `jquery-${version}`),
-        `${code} const value = factory(dom.window); report(await smoke($, value));`,
-        "module"
+        `${code} report(await smoke($, value));`,
+        "module",
       );
 
       // Assert
@@ -248,7 +379,7 @@ describe("when the packed package is imported as an ES module", () => {
       const result = await run(
         resolve(packDir, `jquery-${version}`),
         `${code} report(await smoke($, value));`,
-        "module"
+        "module",
       );
 
       // Assert

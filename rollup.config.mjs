@@ -37,7 +37,7 @@ const umdHeader = `(function (factory) {
 // passes, so a CommonJS factory called with a root works where that root is not the global window.
 const rootGlobals =
   "\tvar window = root;\n" +
-  "\tvar document = window.document, navigator = window.navigator;\n" +
+  "\tvar document = window.document;\n" +
   "\tvar Element = window.Element, FormData = window.FormData;\n";
 
 const moduleLines =

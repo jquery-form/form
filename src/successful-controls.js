@@ -1,25 +1,85 @@
-import { callFormMethod, formMember, isDisabled, isElement, tagName } from "./form-members.js";
-import { submitterElement, submitterOf } from "./submitter.js";
-import { deprecate } from "./diagnostics.js";
-import { formAttribute } from "./form-attributes.js";
+import { callFormMethod, formMember, isDisabled, tagName } from "./form-members.js";
+import { imageFields, submitterElement, submitterOf } from "./submitter.js";
 import jQuery from "jquery";
 
 // Successful controls: which controls of a form are sent, and as which name/value fields
 // (https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set).
 
 // Line breaks, sent as CRLF
-var rLineBreak = /\r\n|\r|\n/g;
-var rCR = /\r/g;
+const rLineBreak = /\r\n|\r|\n/g;
+const rCR = /\r/g;
 
-// Listed form elements that are never submitted.
-var rUnsubmittable = /^(?:fieldset|object|output)$/;
+// The submittable elements: the only ones a form submission sends.
+const submittable = "button, input, select, textarea";
+const rSubmittable = /^(?:button|input|select|textarea)$/;
+
+function isSubmittable(el) {
+  return rSubmittable.test(tagName(el));
+}
+
+// The name of the hidden control that sends the encoding, matched ASCII case-insensitively.
+const rCharset = /^_charset_$/i;
+
+// The input types that, with textarea, send a dirname field (the auto-directionality
+// form-associated elements).
+const rDirnameTypes = /^(?:hidden|text|search|tel|url|email|password|submit|reset|button)$/;
+
+// The dirname field of a control, or null: dirname=ltr or dirname=rtl, from its directionality.
+function dirnameField(el) {
+  const tag = tagName(el);
+  const dirname = el.getAttribute("dirname");
+  const applies = tag === "textarea" || (tag === "input" && rDirnameTypes.test(el.type));
+
+  if (!dirname || !applies) {
+    return null;
+  }
+
+  let rtl;
+
+  try {
+    rtl = el.matches(":dir(rtl)");
+  } catch (e) {
+    // a browser without :dir() (before Chrome 120 and Safari 16.4); a detached control has no
+    // computed direction and counts as ltr
+    rtl = window.getComputedStyle(el).direction === "rtl";
+  }
+
+  return { name: dirname, value: rtl ? "rtl" : "ltr" };
+}
+
+// A control's own fields, then its dirname field when it has one, as a native submission sends them.
+function withDirname(el, own) {
+  const dir = dirnameField(el);
+
+  return dir ? own.concat([dir]) : own;
+}
+
+/**
+ * The submitter and its fields for a post that adds them itself (the iframe upload), as
+ * { el, fields: [{ name, value }] }, or null when no submitter is sent.
+ */
+export function submitterFields(form) {
+  const sub = submitterOf(form);
+  const el = sub && sub.el;
+
+  // a disabled button is not sent, also when a disabled fieldset disables it
+  if (!el || isDisabled(el)) {
+    return null;
+  }
+
+  if (el.type === "image") {
+    return { el, fields: imageFields(sub) };
+  }
+
+  return el.name ? { el, fields: withDirname(el, [{ name: el.name, value: el.value }]) } : null;
+}
 
 /**
  * The successful-control rule: whether a control is sent. `submitter` is the button that
  * submitted the control's form; other submit and image buttons of a form are not sent.
  */
 export function isSuccessful(el, submitter) {
-  var t = el.type;
+  const t = el.type;
 
   if (!el.name || isDisabled(el) || t === "reset" || t === "button") {
     return false;
@@ -38,30 +98,22 @@ export function isSuccessful(el, submitter) {
 
 // The value of a select: the selected option's value for one, a list for several.
 function selectValue(el) {
-  var index = el.selectedIndex;
+  const index = el.selectedIndex;
 
   if (index < 0) {
     return null;
   }
 
-  var a = [],
+  const a = [],
     ops = el.options;
-  var one = el.type === "select-one";
-  var max = one ? index + 1 : ops.length;
+  const one = el.type === "select-one";
+  const max = one ? index + 1 : ops.length;
 
-  for (var i = one ? index : 0; i < max; i++) {
-    var op = ops[i];
+  for (let i = one ? index : 0; i < max; i++) {
+    const op = ops[i];
 
     if (op.selected && !isDisabled(op)) {
-      var v = op.value;
-
-      if (!v) {
-        // extra pain for IE...
-        v =
-          op.attributes && op.attributes.value && !op.attributes.value.specified
-            ? op.text
-            : op.value;
-      }
+      const v = op.value;
 
       if (one) {
         return v;
@@ -84,8 +136,8 @@ export function valueOf(el) {
     return selectValue(el);
   }
 
-  var v = jQuery(el).val();
-  var raw = el.value;
+  let v = jQuery(el).val();
+  const raw = el.value;
 
   // jQuery before 4.0 drops carriage returns from .val(); read them from the value itself
   if (typeof raw === "string" && raw.replace(rCR, "") === v) {
@@ -100,7 +152,7 @@ export function valueOf(el) {
  * missing and the control is not sent.
  */
 export function fieldValue(el, successful) {
-  var required = typeof successful === "undefined" || successful;
+  const required = typeof successful === "undefined" || successful;
 
   if (required && !isSuccessful(el, submitterElement(el.form))) {
     return null;
@@ -109,22 +161,11 @@ export function fieldValue(el, successful) {
   return valueOf(el);
 }
 
-// 5.0 serializes without $.fieldValue, so a page that replaces it is warned (under debug) when
-// formToArray, formSerialize, fieldSerialize or ajaxSubmit reads values through the replacement.
-export function deprecateFieldValueOverride() {
-  if (jQuery.fieldValue !== fieldValue) {
-    deprecate(
-      "fieldValue-override",
-      "replacing $.fieldValue to change what is serialized is deprecated, use jQuery valHooks"
-    );
-  }
-}
-
 /**
  * The fields as a urlencoded body sends them: a selected file as its name.
  */
 // A lone surrogate becomes U+FFFD, as in a native submission; jQuery.param would throw.
-var loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
+const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g;
 
 export function wellFormed(value) {
   return typeof value === "string"
@@ -137,7 +178,7 @@ export function wellFormed(value) {
 // Sets an own enumerable key, so a key like __proto__ stays an ordinary key.
 function setKey(object, key, value) {
   Object.defineProperty(object, key, {
-    value: value,
+    value,
     enumerable: true,
     writable: true,
     configurable: true,
@@ -150,24 +191,24 @@ function setKey(object, key, value) {
  * included; they are copied only when something changes.
  */
 export function wellFormedData(data) {
-  var isArray = Array.isArray(data);
+  const isArray = Array.isArray(data);
 
   if (!isArray && Object.prototype.toString.call(data) !== "[object Object]") {
     return wellFormed(data);
   }
 
-  var copy = isArray ? [] : {};
-  var changed = false;
+  const copy = isArray ? [] : {};
+  let changed = false;
 
   if (isArray) {
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       copy[i] = wellFormedData(data[i]);
       changed = changed || copy[i] !== data[i];
     }
   } else {
-    for (var key in data) {
-      var name = wellFormed(key);
-      var value = wellFormedData(data[key]);
+    for (const key in data) {
+      const name = wellFormed(key);
+      const value = wellFormedData(data[key]);
 
       changed = changed || name !== key || value !== data[key];
       setKey(copy, name, value);
@@ -185,89 +226,76 @@ export function urlencode(fields, traditional) {
 
 export function urlencodedFields(fields) {
   return jQuery.map(fields, function (field) {
-    var value =
+    let value =
       field.type === "file" && typeof field.value !== "string" ? field.value.name : field.value;
-    var name = wellFormed(field.name);
+    const name = wellFormed(field.name);
     value = wellFormed(value);
 
-    return name === field.name && value === field.value ? field : { name: name, value: value };
+    return name === field.name && value === field.value ? field : { name, value };
   });
 }
 
 /**
- * The serialization steps. `feature` holds what the entry detected at load (fileapi).
+ * The serialization steps.
  */
-export function createSuccessfulControls(feature) {
-  var $ = jQuery;
+export function createSuccessfulControls() {
+  const $ = jQuery;
 
-  // #386; inputs that name the form in their form attribute, other than the candidates found.
-  // A form only gets the ones it owns.
-  function outsideControls(formId, els, owner) {
-    // hat tip @thet; the id is compared, never built into a selector
-    return $(":input[form]")
-      .filter(function () {
-        return (
-          this.getAttribute("form") === formId &&
-          (!owner || this.form === owner) &&
-          $.inArray(this, els) < 0
-        );
-      })
-      .get();
-  }
+  // The submittable elements below a root (a document, a shadow root or an element), in tree
+  // order. Read through the root's prototype, since a control can shadow a form's or the
+  // document's querySelectorAll.
+  // Interface names, read from the window on each call: the classic build may run against a
+  // window that is not the global object.
+  const rootOwners = { 9: "Document", 11: "DocumentFragment" };
 
-  // A descendant of a form is a candidate unless it is a control another form owns.
-  function ownedBy(els, owner) {
-    return $.grep(els, function (el) {
-      return typeof el.form === "undefined" || el.form === owner;
-    });
+  function submittableIn(root) {
+    const owner = window[rootOwners[formMember(root, "nodeType")] || "Element"];
+
+    return owner.prototype.querySelectorAll.call(root, submittable);
   }
 
   /**
-   * The candidate controls of a form, in order: its elements, or every descendant it owns in
-   * semantic mode, then the outside controls it owns that name it.
+   * The candidate controls of a subject, in tree order: for a form, the submittable elements it
+   * owns, outside controls (form=id) and image buttons included; for a fieldset, the document or
+   * another container, its submittable descendants; for a plain object, its elements list.
    */
-  function controlsOf(form, semantic) {
-    var formId = formAttribute(form, "id");
-    var els = formMember(form, "elements");
-
-    if (semantic || typeof els === "undefined") {
-      // the document is not an element; it has its own getElementsByTagName
-      els = isElement(form)
-        ? callFormMethod(form, "getElementsByTagName", "*")
-        : form.getElementsByTagName("*");
+  function controlsOf(form) {
+    if (tagName(form) === "form") {
+      // #386: the form's tree holds every control it owns, also those outside it
+      return $.grep(submittableIn(callFormMethod(form, "getRootNode")), function (el) {
+        return el.form === form;
+      });
     }
 
-    els = $.makeArray(els);
+    const type = formMember(form, "nodeType");
 
-    // the subject may also be a fieldset, the document or another container
-    var owner = tagName(form) === "form" ? form : null;
-
-    if (semantic && owner) {
-      els = ownedBy(els, owner);
+    if (type === 1 || type === 9) {
+      return $.makeArray(submittableIn(form));
     }
 
-    // FinesseRus: in non-IE browsers outside fields are already included in form.elements.
-    if (formId && (semantic || /(Edge|Trident)\//.test(navigator.userAgent))) {
-      els = els.concat(outsideControls(formId, els, owner));
-    }
+    // a plain object with an elements list; a text node or the window throws a TypeError
+    const listed = form.elements;
 
-    return els;
+    return $.grep(
+      $.makeArray(typeof listed === "undefined" ? form.querySelectorAll(submittable) : listed),
+      isSubmittable,
+    );
   }
 
   // The fields of a control's value, or null when the control is not sent.
   function fieldsOf(el) {
-    var n = el.name;
-    // read at call time, so a page that replaces $.fieldValue changes what is sent
-    var v = $.fieldValue(el, true);
+    const n = el.name;
+    // the plugin's own reader: a page that replaces $.fieldValue does not change what is sent
+    const v = fieldValue(el, true);
 
     if (v && v.constructor === Array) {
       return $.map(v, function (value) {
-        return { name: n, value: value };
+        return { name: n, value };
       });
     }
 
-    if (feature.fileapi && el.type === "file") {
-      var files = el.files;
+    if (el.type === "file") {
+      const files = el.files;
 
       // #180: an empty field when no file is selected
       return files.length
@@ -281,88 +309,67 @@ export function createSuccessfulControls(feature) {
       return null;
     }
 
-    return [{ name: n, value: v, type: el.type, required: el.required }];
-  }
+    // a hidden _charset_ sends the request's encoding, which is always UTF-8 here
+    const value = el.type === "hidden" && rCharset.test(n) ? "UTF-8" : v;
 
-  // The clicked image's value and coordinates.
-  function imageFields(sub, input, type) {
-    var n = input.name;
-    var value = { name: n, value: $(input).val() };
-
-    if (type) {
-      value.type = type;
-    }
-
-    return [value, { name: n + ".x", value: sub.x }, { name: n + ".y", value: sub.y }];
+    return [{ name: n, value, type: el.type, required: el.required }];
   }
 
   // Adds one candidate control's fields, and the control when it has a value to send.
-  function addCandidate(collected, form, el, semantic) {
-    if (!el.name || isDisabled(el) || rUnsubmittable.test(tagName(el))) {
+  function addCandidate(collected, form, el) {
+    if (isDisabled(el) || !isSubmittable(el)) {
       return;
     }
 
-    var sub = semantic && el.type === "image" && submitterOf(form);
+    const sub = el.type === "image" && submitterOf(form);
 
     if (sub) {
-      // handle image inputs on the fly when semantic == true
+      // the clicked image at its place in tree order; other image buttons are not sent
       if (sub.el === el) {
-        collected.fields.push.apply(collected.fields, imageFields(sub, el, el.type));
+        collected.fields.push.apply(collected.fields, imageFields(sub));
       }
 
       return;
     }
 
-    var own = fieldsOf(el);
+    if (!el.name) {
+      return;
+    }
+
+    const own = fieldsOf(el);
 
     if (own) {
       collected.controls.push(el);
-      collected.fields.push.apply(collected.fields, own);
-    }
-  }
-
-  // input type=='image' are not found in elements array! handle it here
-  function addClickedImage(collected, form) {
-    var sub = submitterOf(form);
-    var input = sub && $(sub.el)[0];
-
-    if (input && input.name && !isDisabled(input) && input.type === "image") {
-      collected.fields.push.apply(collected.fields, imageFields(sub, input));
+      collected.fields.push.apply(collected.fields, withDirname(el, own));
     }
   }
 
   /**
    * The fields of a form, as formToArray returns them, and the controls they came from.
    */
-  function collect(form, semantic, filtering) {
-    var collected = { fields: [], controls: [] };
+  function collect(form, filtering) {
+    const collected = { fields: [], controls: [] };
 
     if (!form) {
       return collected;
     }
 
-    deprecateFieldValueOverride();
-
-    var els = controlsOf(form, semantic);
+    let els = controlsOf(form);
 
     if (typeof filtering === "function") {
       els = $.map(els, filtering);
     }
 
-    for (var i = 0; i < els.length; i++) {
-      addCandidate(collected, form, els[i], semantic);
-    }
-
-    if (!semantic) {
-      addClickedImage(collected, form);
+    for (let i = 0; i < els.length; i++) {
+      addCandidate(collected, form, els[i]);
     }
 
     return collected;
   }
 
   return {
-    controlsOf: controlsOf,
-    fieldsOf: fieldsOf,
-    collect: collect,
+    controlsOf,
+    fieldsOf,
+    collect,
   };
 }

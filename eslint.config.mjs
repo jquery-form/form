@@ -23,7 +23,7 @@ const sourceRules = {
   "no-duplicate-imports": "error",
   "no-else-return": ["error", { allowElseIf: false }],
   "no-empty": ["error", { allowEmptyCatch: true }],
-  "no-empty-function": ["error", { allow: ["functions"] }],
+  "no-empty-function": ["error", { allow: ["functions", "methods"] }],
   "no-eq-null": "error",
   "no-eval": ["error", { allowIndirect: true }],
   "no-extend-native": "error",
@@ -52,6 +52,7 @@ const sourceRules = {
   "no-shadow-restricted-names": "error",
   "no-template-curly-in-string": "error",
   "no-undef-init": "error",
+  "no-var": "error",
   "no-underscore-dangle": "error",
   "no-unmodified-loop-condition": "error",
   "no-unneeded-ternary": "error",
@@ -67,6 +68,7 @@ const sourceRules = {
   "no-useless-return": "error",
   "no-void": "error",
   "no-with": "error",
+  "object-shorthand": ["error", "always"],
   "operator-assignment": ["error", "always"],
   "prefer-const": "error",
   "prefer-promise-reject-errors": "error",
@@ -80,8 +82,7 @@ const sourceRules = {
 export default [
   {
     ignores: [
-      ".jquery/**",
-      "dist/**",
+      "dist/**/*.map",
       "coverage/**",
       "test/ajax/**",
       "test-results/**",
@@ -89,10 +90,13 @@ export default [
       ".pack/**",
     ],
   },
-  js.configs.recommended,
+  // dist is linted by its own block below, with no rules.
+  { ...js.configs.recommended, ignores: ["dist/**"] },
   {
     files: ["src/**/*.js"],
     languageOptions: {
+      // The syntax floor of the browsers 5.0 supports (Chrome/Edge 80, Firefox 78, Safari 14).
+      ecmaVersion: 2020,
       sourceType: "module",
       globals: { ...globals.browser },
     },
@@ -131,6 +135,16 @@ export default [
       "test/surfaces/manifests.test.js",
     ],
     languageOptions: { globals: globals.node },
+  },
+  {
+    // The built files ship as written, so they must parse as ES2020. Parsing is the whole check:
+    // no rules run, so only syntax beyond ES2020 fails.
+    files: ["dist/jquery.form.js", "dist/jquery.form.min.js"],
+    languageOptions: { ecmaVersion: 2020, sourceType: "script" },
+  },
+  {
+    files: ["dist/jquery.form.mjs"],
+    languageOptions: { ecmaVersion: 2020, sourceType: "module" },
   },
   prettier,
 ];

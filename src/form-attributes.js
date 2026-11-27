@@ -10,7 +10,7 @@ export function formAttribute(form, name) {
     return jQuery(form).attr(name);
   }
 
-  var value = callFormMethod(form, "getAttribute", name);
+  const value = callFormMethod(form, "getAttribute", name);
 
   return value === null ? undefined : value;
 }

@@ -55,18 +55,18 @@ Full rationale: [ADR-0002](docs/adr/0002-branching-and-release.md).
 * **`main`** is the only trunk. Work in short-lived branches; open PRs into `main`.
 * **4.x then 5.0** are sequential on `main` (no standing `next` branch). After 5.0, rare 4.x patches use an on-demand `release/4.x` branch cut from the last v4 tag.
 * **npm:** `latest` tracks the current major; after 5.0, 4.x publishes use the `v4` dist-tag.
-* **Releases:** maintainers bump the version, tag `vX.Y.Z`, and publish to npm manually. CI verifies; it does not publish.
+* **Releases:** a maintainer bumps the version and pushes a `vX.Y.Z` tag. The [Release workflow](.github/workflows/release.yml) runs `npm test`, checks that the committed `dist/` matches the build, and, once a maintainer approves the `npm` environment, publishes to npm through trusted publishing, with provenance. It picks the dist-tag from the version: a pre-release such as `5.0.0-beta.1` goes to `next`, a release of an older major (a 4.x fix after 5.0) to `v4`, and any other release to `latest`.
 
 ## Testing
 
 jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/), [ESLint](https://eslint.org/), [Prettier](https://prettier.io/), and [Vitest](https://vitest.dev/) browser mode to build and validate the source. Here is how to set that up:
 
 1. Install the [Node.js](https://nodejs.org/) version in `.nvmrc` (with nvm: `nvm use`).
-2. Install dependencies and the test browser:
+2. Install dependencies and the test browsers (`npm test` runs the suite in Chromium and WebKit):
 
    ```shell
    npm ci
-   npx playwright install chromium
+   npx playwright install chromium webkit
    ```
 
 3. Run lint, the build, and the tests:
@@ -75,7 +75,7 @@ jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/)
    npm test
    ```
 
-Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
+Edit the ES modules in `src/`, never `dist/`. `src/jquery.form.js` is the entry point that registers the plugin's methods; the other modules hold the serialization, the transports and the helpers it uses. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
 
 ### End-to-end tests
 
@@ -94,7 +94,7 @@ npm run test:firefox   # the suite on Firefox
 npm run test:docker    # the suite on Chromium, WebKit and Firefox
 ```
 
-`scripts/test-docker.sh` passes any arguments on to `vitest run` (or to `playwright test` after `--e2e`). To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=.jquery/jquery-1.7.2.js npm run test:firefox` (fetch it first with `scripts/fetch-jquery.sh 1.7.2`).
+`scripts/test-docker.sh` passes any arguments on to `vitest run` (or to `playwright test` after `--e2e`). To test another jQuery build, set `JQUERY_FILE`, e.g. `JQUERY_FILE=node_modules/jquery35/dist/jquery.js npm run test:firefox`. CI runs the suite and the end-to-end tests on jQuery 3.5.0 (the supported floor, `node_modules/jquery35`), 3.7.1 (the default, `node_modules/jquery`) and 4.0.0 (`node_modules/jquery4`); the two extra versions are npm aliases pinned by `package-lock.json`.
 
 Node and `node_modules` are cached in Docker volumes (`jquery-form-node`, and `jquery-form-node-modules-<hash>` for each `package-lock.json`). To clear them:
 

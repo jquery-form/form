@@ -10,20 +10,8 @@ describe("iframe response reader", function () {
     return { status: 0, statusText: "n/a", responseText: null, responseXML: null };
   }
 
-  function noRetry() {
-    return false;
-  }
-
   describe("getDoc", function () {
-    it("should return the content window's document", function () {
-      const doc = parse("<p>hi</p>");
-
-      const result = getDoc({ contentWindow: { document: doc } });
-
-      assert.strictEqual(result, doc);
-    });
-
-    it("should fall back to contentDocument without a content window", function () {
+    it("should return the frame's content document", function () {
       const doc = parse("<p>hi</p>");
 
       const result = getDoc({ contentDocument: doc });
@@ -37,7 +25,7 @@ describe("iframe response reader", function () {
       const doc = parse('<body status="201" statusText="Created"><b>ok</b></body>');
       const xhr = mockXhr();
 
-      const result = readResponse(doc, xhr, {}, noRetry);
+      const result = readResponse(doc, xhr, {});
 
       assert.deepEqual(result, { status: "success", data: "<b>ok</b>", errMsg: undefined });
       assert.strictEqual(xhr.status, 201);
@@ -50,7 +38,7 @@ describe("iframe response reader", function () {
       const xhr = mockXhr();
       const s = {};
 
-      const result = readResponse(doc, xhr, s, noRetry);
+      const result = readResponse(doc, xhr, s);
 
       assert.strictEqual(result.data, doc);
       assert.strictEqual(s.dataType, "xml");
@@ -61,7 +49,7 @@ describe("iframe response reader", function () {
       const doc = parse("<body><textarea>inner</textarea></body>");
       const xhr = mockXhr();
 
-      const result = readResponse(doc, xhr, { dataType: "html" }, noRetry);
+      const result = readResponse(doc, xhr, { dataType: "html" });
 
       assert.strictEqual(result.data, "<textarea>inner</textarea>");
     });
@@ -70,7 +58,7 @@ describe("iframe response reader", function () {
       const doc = parse("<body><b>bold</b></body>");
       const xhr = mockXhr();
 
-      const result = readResponse(doc, xhr, { dataType: "html", textarea: true }, noRetry);
+      const result = readResponse(doc, xhr, { dataType: "html", textarea: true });
 
       assert.strictEqual(result.data, "<b>bold</b>");
     });
@@ -79,7 +67,7 @@ describe("iframe response reader", function () {
       const doc = parse('<body>{"a":"x &amp; y"}</body>');
       const xhr = mockXhr();
 
-      const result = readResponse(doc, xhr, { dataType: "json" }, noRetry);
+      const result = readResponse(doc, xhr, { dataType: "json" });
 
       assert.deepEqual(result.data, { a: "x & y" });
     });
@@ -88,7 +76,7 @@ describe("iframe response reader", function () {
       const doc = parse('<textarea status="202">{"a":1}</textarea>');
       const xhr = mockXhr();
 
-      const result = readResponse(doc, xhr, { dataType: "json" }, noRetry);
+      const result = readResponse(doc, xhr, { dataType: "json" });
 
       assert.strictEqual(xhr.responseText, '{"a":1}');
       assert.strictEqual(xhr.status, 202);
@@ -99,7 +87,7 @@ describe("iframe response reader", function () {
       const doc = parse('<pre>{"a":1}</pre>');
       const xhr = mockXhr();
 
-      readResponse(doc, xhr, { dataType: "json" }, noRetry);
+      readResponse(doc, xhr, { dataType: "json" });
 
       assert.strictEqual(xhr.responseText, '{"a":1}');
     });
@@ -114,10 +102,29 @@ describe("iframe response reader", function () {
         },
       };
 
-      const result = readResponse(doc, xhr, s, noRetry);
+      const result = readResponse(doc, xhr, s);
 
       assert.strictEqual(result.status, "parsererror");
       assert.strictEqual(result.errMsg, failure);
+      assert.strictEqual(xhr.error, failure);
+    });
+
+    it("should report an error when reading the document throws", function () {
+      const failure = new Error("unreadable");
+      const doc = new Proxy(parse("<p>x</p>"), {
+        get: (target, name) => {
+          if (name === "body") {
+            throw failure;
+          }
+          const value = Reflect.get(target, name);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+      const xhr = mockXhr();
+
+      const result = readResponse(doc, xhr, { dataType: "text" });
+
+      assert.deepEqual(result, { status: "error", data: undefined, errMsg: failure });
       assert.strictEqual(xhr.error, failure);
     });
   });

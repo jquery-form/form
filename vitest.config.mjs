@@ -31,7 +31,7 @@ function serveFiles(name, pattern, toPath, headers = {}) {
 const ajaxFixtures = serveFiles(
   "ajax-fixtures",
   /\/ajax\/([\w.-]+)/,
-  (file) => `test/ajax/${file}`
+  (file) => `test/ajax/${file}`,
 );
 
 // Iframe documents are only parsed as XML when served with an XML content type.
@@ -39,15 +39,15 @@ const ajaxXmlFixtures = serveFiles(
   "ajax-xml-fixtures",
   /\/ajax\/([\w.-]+\.xml)$/,
   (file) => `test/ajax/${file}`,
-  { "Content-Type": "application/xml" }
+  { "Content-Type": "application/xml" },
 );
 
-// A real server labels HTML (iframe fixtures stay unlabeled so the browser sniffs them); without it jQuery 1.7.2 hands back an XMLDocument for the response.
+// A real server labels HTML (iframe fixtures stay unlabeled so the browser sniffs them).
 const ajaxHtmlFixtures = serveFiles(
   "ajax-html-fixtures",
   /\/ajax\/((?!iframe-)[\w.-]+\.html)(\?.*)?$/,
   (file) => `test/ajax/${file}`,
-  { "Content-Type": "text/html" }
+  { "Content-Type": "text/html" },
 );
 
 // Surface pages must load files as consumers would, without Vite rewriting bare imports.
@@ -55,17 +55,18 @@ const rawFiles = serveFiles(
   "raw-files",
   /^\/raw\/((?:dist|node_modules)\/[\w./@-]+\.m?js)$/,
   (file) => file,
-  { "Content-Type": "text/javascript" }
+  { "Content-Type": "text/javascript" },
 );
 
 const jqueryEsm = new URL("./test/jquery-esm.js", import.meta.url);
 
-// The matrix points JQUERY_FILE at another classic jQuery build (see scripts/fetch-jquery.sh).
+// The matrix points JQUERY_FILE at another classic jQuery build, such as node_modules/jquery35 or
+// node_modules/jquery4 (npm aliases pinned by the lockfile).
 const jqueryFile = fileURLToPath(
   new URL(
     process.env.JQUERY_FILE || "./node_modules/jquery/dist/jquery.js",
-    `file://${process.cwd()}/`
-  )
+    `file://${process.cwd()}/`,
+  ),
 );
 
 // jQuery builds are classic scripts that set window.jQuery. Appending an export gives the suite a

@@ -66,7 +66,7 @@ content: "Phase 13: 4.x test hardening (cross-browser suite, serialization oracl
 status: in_progress
 - id: breaking-5
 content: "Phase 14: 5.0 with a jQuery >=3.5 peer, exports map, no jQuery <3 or IE/Opera shims, explicit iframe transport and delegation selector"
-status: pending
+status: in_progress
 
 ---
 
@@ -137,24 +137,24 @@ showed how much untested behavior the suite had missed. 5.0 moved to Phase 14.
 
 Each remaining step gets the cheapest model that fits it: a strong reasoner where a mistake breaks consumers or hides bugs, and a fast or long-context model where the work is mechanical or mostly reading.
 
-| Step                                            | Model             | Why                                                                                                                                                                          |
-| ----------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Baseline (Phase 1)                              | Composer 2.5      | Run commands and record output; little judgement needed.                                                                                                                     |
-| Grill: Prettier (Phase 2)                       | Claude Sonnet 5.5 | Conversational trade-off discussion; moderate depth, many turns.                                                                                                             |
-| Architecture/CI group (Phase 3)                 | Claude Opus 5.5   | Multi-part toolchain work: converting `src` to ESM, keeping the ADR-0001 contract (CommonJS factory, AMD, script tag) in the build, and CI. A mistake here breaks consumers. |
-| CI instrumentation (Phase 3B)                   | Claude Sonnet 5.5 | Workflow edits, a timing script, and recording numbers; the analysis is already in `docs/research/ci-first-run.md`.                                                          |
-| Prettier sweep (Phase 4A)                       | Composer 2.5      | Mechanical: run the formatter, verify, commit.                                                                                                                               |
-| Test rewrite (Phase 4B)                         | Claude Sonnet 5.5 | Many similar edits; converting fire-and-forget async tests to promises needs care but follows a repeated pattern.                                                            |
-| Coverage to 100% (Phase 5)                      | GPT-5.6 Sol       | Deep branch-by-branch reasoning, simulating legacy browsers and old jQuery, iframe transport edge cases.                                                                     |
-| Dependency modernization (Phase 6)              | Claude Sonnet 5.5 | Routine upgrades plus a version matrix; moderate judgement on breaking changes.                                                                                              |
-| Issue triage (Phase 7)                          | Gemini 4 Argon    | Long-context reading of many issues and PRs; classification more than deep reasoning.                                                                                        |
-| Architecture and vulnerability review (Phase 8) | Claude Opus 5.5   | Security analysis (XSS, script eval, iframe parsing, prototype pollution) where missed findings are costly.                                                                  |
-| Coverage to 100% (Phase 9)                      | GPT-5.6 Sol       | Same branch-by-branch reasoning as Phase 5; each deletion must be proven dead on every supported jQuery and browser.                                                         |
-| Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes on a local branch until release; a weak fix reopens an XSS.                                                                                                   |
-| 4.4.0 release (Phase 11)                        | Claude Opus 5.5   | Disclosure order and publishing can't be undone; the merge, tag, npm publish and advisories must land in one sitting.                                                        |
-| 4.x cleanup and rearchitecture (Phase 12)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                    |
-| 4.x test hardening (Phase 13)                   | Claude Opus 5.5   | Test design across browsers, an oracle against native `FormData`, and a real server; findings must be told apart from deliberate Phase 12 changes.                           |
-| 5.0 (Phase 14)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions.                                                                                       |
+| Step                                            | Model             | Why                                                                                                                                                                                                       |
+| ----------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline (Phase 1)                              | Composer 2.5      | Run commands and record output; little judgement needed.                                                                                                                                                  |
+| Grill: Prettier (Phase 2)                       | Claude Sonnet 5.5 | Conversational trade-off discussion; moderate depth, many turns.                                                                                                                                          |
+| Architecture/CI group (Phase 3)                 | Claude Opus 5.5   | Multi-part toolchain work: converting `src` to ESM, keeping the ADR-0001 contract (CommonJS factory, AMD, script tag) in the build, and CI. A mistake here breaks consumers.                              |
+| CI instrumentation (Phase 3B)                   | Claude Sonnet 5.5 | Workflow edits, a timing script, and recording numbers; the analysis is already in `docs/research/ci-first-run.md`.                                                                                       |
+| Prettier sweep (Phase 4A)                       | Composer 2.5      | Mechanical: run the formatter, verify, commit.                                                                                                                                                            |
+| Test rewrite (Phase 4B)                         | Claude Sonnet 5.5 | Many similar edits; converting fire-and-forget async tests to promises needs care but follows a repeated pattern.                                                                                         |
+| Coverage to 100% (Phase 5)                      | GPT-5.6 Sol       | Deep branch-by-branch reasoning, simulating legacy browsers and old jQuery, iframe transport edge cases.                                                                                                  |
+| Dependency modernization (Phase 6)              | Claude Sonnet 5.5 | Routine upgrades plus a version matrix; moderate judgement on breaking changes.                                                                                                                           |
+| Issue triage (Phase 7)                          | Gemini 4 Argon    | Long-context reading of many issues and PRs; classification more than deep reasoning.                                                                                                                     |
+| Architecture and vulnerability review (Phase 8) | Claude Opus 5.5   | Security analysis (XSS, script eval, iframe parsing, prototype pollution) where missed findings are costly.                                                                                               |
+| Coverage to 100% (Phase 9)                      | GPT-5.6 Sol       | Same branch-by-branch reasoning as Phase 5; each deletion must be proven dead on every supported jQuery and browser.                                                                                      |
+| Security and bug fixes (Phase 10)               | Claude Opus 5.5   | Security fixes on a local branch until release; a weak fix reopens an XSS.                                                                                                                                |
+| 4.4.0 release (Phase 11)                        | Claude Opus 5.5   | Disclosure order and publishing can't be undone; the merge, tag, npm publish and advisories must land in one sitting.                                                                                     |
+| 4.x cleanup and rearchitecture (Phase 12)       | Claude Opus 5.5   | Module split under the ADR-0001 build contract; behavior must not change.                                                                                                                                 |
+| 4.x test hardening (Phase 13)                   | Claude Opus 5.5   | Test design across browsers, an oracle against native `FormData`, and a real server; findings must be told apart from deliberate Phase 12 changes.                                                        |
+| 5.0 (Phase 14)                                  | Claude Opus 5.5   | Breaking changes, `exports` map and peer dependency; consumer-facing design decisions. Steps 0 and 4 use Claude Sonnet 5.5 (docs, and the mechanical formatter and syntax sweep); the rest use Opus (W6). |
 
 ## Commit grouping principle
 
@@ -612,55 +612,252 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
 
 ## Phase 14: 5.0 (breaking)
 
-- jQuery becomes a peer dependency, `>=3.5.0`. Add the `exports` map from `security-review.md`.
-- Remove the jQuery < 3 paths: `attr2`/`hasProp`, the `.selector`/`.context` delegation and DOM-ready queue, and the `$.fn.on` and `$.fn.offset` checks.
-- Remove the IE, Opera and Edge shims:
-  - `attachEvent`/`detachEvent`
-  - `ActiveXObject`
-  - `window.opera`
-  - user-agent sniffing and `javascript:false`
-  - `execCommand("Stop")`
-  - the IE8 `getDoc` fallbacks
-  - the option-value and file-clone shims
-- The iframe transport runs only with `iframe: true`, and FormData detection is removed. Delegation requires a selector.
-- Remove the deprecated API: `clearInputs`, `$.fn.attr2` and `closeKeepAlive` (a Safari 3/4
-  keep-alive workaround). `enable` and `selected` are kept.
-- Move to ES2015+ syntax and revisit Prettier `trailingComma`.
-- Decide whether `formToArray` and the other serializers keep calling an overridable `$.fieldValue`, or use the internal successful-controls module (5.0).
-- Found by the Phase 13 end-to-end tests, left as they are in 4.x:
-  - An empty file input goes through the FormData upload as an empty text field. A native submit
-    sends an empty file part (filename "", `application/octet-stream`), so servers see a form field
-    instead of an empty upload (PHP `$_POST` instead of `$_FILES`).
-  - The iframe upload adds the clicked button's fields after the form's own, where a native
-    submit sends them in tree order.
-- Found by the Phase 13 serialization oracle (spec gaps against `new FormData(form)`), left as they
-  are in 4.x:
-  - `dirname` fields (`name=ltr`) are never sent.
-  - A hidden `_charset_` input sends its own value instead of the encoding (`UTF-8`).
-  - A clicked `<input type=submit>` without a `value` sends `""` instead of the browser's default
-    label ("Submit", or "Submit Query" in Firefox).
-  - A clicked image sends its `name=value` before `name.x`/`name.y`; native sends only the
-    coordinates.
-  - An unnamed clicked image sends nothing; native sends `x` and `y`.
-- Docs examples and FAQ for 5.0:
-  - `docs/examples.md` posts to Mike Alsup's demo scripts on malsup.com (`dummy.php`,
-    `json-echo.php` and others) and loads `submit.gif` from there. Replace them
-    with examples that need no third-party server, or document the expected response instead.
-  - Rewrite the examples for the 5.0 API: jQuery 3.5 or later, `delegation: "<selector>"`,
-    `iframe: true` for uploads without `FormData`, and no deprecated methods.
-  - Replace the retired `docs.jquery.com/Plugins` link in the examples. 4.6.0 replaces every
-    malsup.com documentation link (FAQ comparison, unit tests, code samples, progress demos) with
-    the docs site's own pages, and loads the demo endpoints over https until this rewrite.
-  - README: the pointer to malsup.com docs for 3.51 and older, and the jQuery 4 compatibility
-    notes, which change with the peer dependency.
-- Serialize in native order (D-17): `form=` controls in tree order rather than appended last, and semantic mode limited to submittable elements. 4.x keeps the current order.
+Status: steps 0-8 are done. `5.0.0-beta.1` is on npm on `next` (2026-11-27, release run 45936197202,
+with provenance; `latest` stays 4.6.0), from the `v5.0.0-beta.1` tag on the tip of PR #646
+(`5349abd`). The PR stays open until 5.0.0, at least two weeks later; merge it with a merge commit
+so the beta tag's commit stays in `main`'s history.
+
+Rebased once onto `main` after the 4.6.0 merge (B3), on 2026-11-26; the old tip is
+`refs/backup/pre-4.6.0-rebase/phase-14`. 47 commits remain: the metrics dedupe commit came out empty,
+since `main`'s table has no duplicate columns. The 4.6.0 tests were adapted where 5.0 changes the
+behavior they pin: an HTML string passed to `selectorOption` throws a selector syntax error instead of
+matching nothing, and the iframe read-error test stubs `contentDocument` now that `getDoc` reads only
+that. The `.git-blame-ignore-revs` entry for the trailing-comma sweep points at its new SHA.
+After the rebase, `npm test`, the suite on jQuery 3.5.0, 3.7.1 and 4.0.0 in Chromium, WebKit and
+Firefox, and the end-to-end tests pass.
+
+Work runs on the local branch `phase-14`, in the worktree `form-phase-14`. The branch is guarded like `phase-13` and is not pushed. After v4.6.0 is tagged and merged to `main`, rebase `phase-14` onto `main` once (B3). The migration guide `docs/migrating-to-5.md` gets an entry for each change, written in the same commit as the change (R3). Release as `5.0.0-beta.N` on the `next` dist-tag, at least two weeks before 5.0.0, and cut `release/4.x` from v4.6.0 just before the merge (R1, R2).
+
+Platform (P1-P5):
+
+- jQuery moves from `dependencies` to `peerDependencies: { "jquery": ">=3.5.0" }`, with no upper bound. `bower.json` and `composer.json` get the same range.
+- The jQuery matrix is 3.5.0 (the floor, the devDependency alias `jquery35` = `npm:jquery@3.5.0`, like `jquery4`), 3.7.1 and 4.0.0. 1.7.2 leaves.
+- On jQuery < 3.5, `ajaxSubmit` and `ajaxForm` throw `jquery.form 5 needs jQuery 3.5 or later; this is <version>` before any event. Nothing throws at load (X2).
+- The browser floor follows jQuery 4: current Chrome, Edge, Firefox (and ESR) and Safari. Syntax is ES2020 (Chrome/Edge 80+, Firefox 78+, Safari 14+), enforced by `ecmaVersion: 2020` in the ESLint `src` block and a lint pass over `dist/`. `SubmitEvent.submitter` stays feature-detected.
+- No transpile: `dist` is the source as written, wrapped. Prettier drops `trailingComma: "es5"` for the default `"all"`. The format sweep is its own `style:` commit, added to `.git-blame-ignore-revs`, and `docs/agents/coding-standards.md` loses "revisit for v5".
+- Syntax modernization comes after the removals, as one mechanical `refactor:` commit (`no-var`, `prefer-const`, safe `object-shorthand`). No arrow conversion where `this` or `arguments` is used, no module restructuring, no behavior change, the rules stay on for `src`.
+- CI browsers (current Playwright Chromium, WebKit and Firefox) are newer than the floor. The syntax lint guarantees the floor and the README names it. No old-browser CI and no `engines` field.
+
+Packaging (K1-K5, ADR-0003):
+
+- The `exports` map is:
+
+  ```json
+  {
+    ".": {
+      "module": "./dist/jquery.form.mjs",
+      "import": "./dist/jquery.form.mjs",
+      "default": "./dist/jquery.form.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  }
+  ```
+
+  `main`, `module`, `jsdelivr` and `unpkg` stay. Node `import "jquery-form"` now loads the `.mjs` (it needs a DOM at import) instead of the CommonJS factory, so the dual-package hazard applies. `manifests.test.js` checks that every key resolves.
+
+- The `module` condition comes first, so bundlers that read `exports` resolve both `import` and `require` to the module build, as `module` did in 4.x. Node ignores it (`require` gets the `.js`, `import` the `.mjs`), so the hazard is limited to Node projects. A test resolves with `--conditions=module` (K1a, decided at the step 5 review).
+
+- `src` is no longer published: there is no `./src/*` key, and `src` leaves `files` (the source map embeds `sourcesContent`). Deep `jquery-form/src/...` imports move to `dist/jquery.form.mjs`.
+- Every classic surface stays as it is (ADR-0001 holds): the script-tag global, anonymous AMD with no value, and the CommonJS `(root, jQuery)` factory including its `require('jquery')(root)` branch. The files are `jquery.form.js`, `jquery.form.min.js` with its map, and `jquery.form.mjs`.
+- New ADR-0003 "5.0 package surface": peer `>=3.5.0`; the `exports` allowlist (adding a key is minor, removing one is major); `src` unpublished; no transpile and an ES2020 floor; the dual-package hazard is accepted and documented. It extends ADR-0001 and lands with the packaging commit.
+- Keep `bower.json` and `composer.json`, changing only the jQuery range. Delete `form.jquery.json` (plugins.jquery.com has been read-only since 2014).
+
+Removals (X1-X6):
+
+- jQuery < 3 paths (X1): `hasProp` (and `createIframeTransport`'s `hasProp` parameter), `$.fn.attr2`, `$sel.selector` and `.context` and the DOM-not-ready queue in `ajaxForm`, the `typeof jQuery.fn.on` and `typeof jQuery.fn.offset` checks, `deprecateOldJQuery`, and the `legacy-jquery` suite file (`?without-prop` reload). The internal `forms.property` reader stays, for form-member shadowing.
+- IE, Opera and EdgeHTML shims (X3): `attachEvent`/`detachEvent`, `execCommand("Stop")`, the `javascript:false` iframe src and its `MSIE|Trident` sniff, the `MSIE` file-input clone in `clearFields`, the option `attributes.value.specified` shim, the `Edge|Trident` sniff in successful-controls, `window.opera.postError` in `log`, the Opera empty-body retry in the iframe response, and the IE8 fallbacks in `getDoc` (keep one path). `navigator` leaves the classic root shadowing if nothing else uses it. One grouped guide entry.
+- Deprecated API (X4): delete `$.fn.clearInputs` and `$.fn.attr2`. The `closeKeepAlive` option is ignored like any unknown `$.ajax` option. The dead `datetime` leaves the `clearFields` type list (no guide entry). Each guide entry points at the replacement in the `docs/api.md` Deprecations section.
+- `enable` and `selected` stay, unchanged and not deprecated (X5).
+- Remove `deprecate()` and its tests once nothing calls it. Reintroduce it in 5.x if needed (X6).
+
+Iframe transport (I1-I3, I6):
+
+- The iframe transport stays in 5.0 as an explicit opt-in (`iframe: true`). Removal is decided for 6.0 with real feedback (I1).
+- It runs only with `iframe: true`. The `fileapi`/`formdata` detection is deleted, so files and multipart always use FormData. `iframe: false` is the default and a no-op. The "chosen automatically" deprecation goes (I2).
+- Iframe `.done` and `.then` receive `(data, "success", xhr)` with the parsed data, like `success`, `ajaxSuccess` and `$.ajax`. They used to receive `responseText` (I3).
+- The iframe rejection arguments stay as in 4.x and are documented in `docs/options.md`: an abort rejects `(xhr, "aborted", status)` where `$.ajax` gives `(jqXHR, "canceled", …)`, and a `beforeSend` veto rejects with no arguments (I4a).
+- Feedback on a possible 6.0 removal goes through issue #629, the migration guide, `docs/options.md`, the beta and release notes, and the Phase 14 PR description. Each says: "the iframe transport is kept in 5.0 and may be removed in 6.0; if you use `iframe: true`, comment on #629 with your use case" (I6). The user posts anything on GitHub.
+
+Delegation (L1-L3):
+
+- `delegation: true` throws from `ajaxForm`: `jquery.form: delegation needs a selector in 5.0, e.g. delegation: "form.ajax"`. It does not warn and fall back to native submits (L1).
+- A non-empty string is the selector, as before. `""` and any truthy non-string throw. Other falsy values mean no delegation (L2).
+- Remove `bindDelegated`, the always-on `warnUnscoped` warning and the `closestMatch` fallback walk. `ajaxFormUnbind()` and `ajaxFormUnbind(selector)` are unchanged, and the selection is still ignored when a selector is given. The docs example is `$(document).ajaxForm({ delegation: "form.ajax" })`, noting that any selection works (L3).
+
+Serialization and spec gaps (N1-N11). Every "match native" item deletes its class from the oracle and e2e allowlists and lands with a test that fails on 4.6.0 and a guide entry:
+
+- Native tree order in every mode: `form=` controls outside the form sit at their document position (D-17, SEM-ORDER), and a clicked image's coordinates sit at the image's position (IMG-ORDER) (N1).
+- Candidates are submittable elements only (`button`, `input`, `select`, `textarea`), and a form owns what the HTML spec says. Non-form subjects (fieldset, div, document) still collect submittable descendants in tree order (N2).
+- Remove the `semantic` option fully (code, `docs/options.md`, README). Passing it is ignored like any unknown option, with no error. The guide says 5.0 always serializes in native tree order, which `semantic: true` approximated (N3).
+- A clicked image sends only `name.x` and `name.y`; the `name=value` pair is dropped (IMG-VALUE, N4). An unnamed clicked image sends `x` and `y` (IMG-UNNAMED, N5).
+- `input` and `textarea` with `dirname="x"` send `x=ltr` or `x=rtl`, from `el.matches(":dir(rtl)")` where supported, else `getComputedStyle(el).direction` (N7).
+- A hidden `_charset_` input sends `"UTF-8"` (N8).
+- FormData uploads send an empty file input as `new File([], "", { type: "application/octet-stream" })`. `formSerialize` and urlencoded bodies keep `name=`. PHP sees an empty `$_FILES` entry (error 4) instead of a `$_POST` field (N9).
+- Iframe submitter fields are in tree order: the hidden input goes right after the submitter, with the submitter's `form` attribute when it is outside the form. The e2e IFRAME-SUBMITTER normalization goes (N10). Two side effects are accepted and named in the guide: a `data` or `extraData` key named like the submitter now sends both fields, as XHR does, and `extraData` seen by ajax events and callbacks no longer holds the submitter field (N10a).
+- A non-form subject (a `div` or the document) keeps 4.x for an image button that was not clicked: it still sends `name=value`. A kept-contract test pins it (N2a).
+- Kept as in 4.x:
+  - SUBMIT-LABEL: a clicked `<input type=submit>` without a `value` still sends `""` until 5.x, because the native label is localized and cannot be read from script. `new FormData(form, submitter)` fixes it in 5.x. The oracle keeps the class with a 5.x note (N6).
+  - FILES-MULTIPART (a file input makes the body multipart without `enctype`) and the GET action's query being kept. Both stay allowlisted and pinned, and `docs/options.md` names them as deliberate (N11).
+- No 4.x warnings for these changes. The guide gets one "What your server receives" section with before and after request bodies (N12).
+
+Field values and selector options (F1, F3):
+
+- `formToArray`, `formSerialize`, `fieldSerialize` and `ajaxSubmit` use the internal successful-controls module. `$.fieldValue` and `$.fn.fieldValue` stay public readers with the same results, but replacing `$.fieldValue` no longer changes what is sent. The extension point is jQuery `valHooks`. The guide has a `valHooks` example. 4.6.0 warns about the override under `debug` (F2).
+- Selector options never parse HTML. A string `target` goes through `jQuery.find(target)`, a string `iframeTarget` through `jQuery.find(iframeTarget, ownerDocument)`, and a string `includeHidden` through `jQuery.filter(includeHidden, [el]).length`. Elements and jQuery objects pass through. Positional pseudos in `includeHidden` test the element alone. This removes the HTML parsing of selector options that `security-review.md` finding 11 describes, including the `iframeTarget` lookup behind CodeQL alert 7, and the trusted-options note for finding 11 narrows to `url`, `action` and `iframeSrc`.
+
+Docs examples and FAQ (added 2026-11-10, after the 4.5.0 release). Done 2026-11-26, before the beta:
+`docs/examples.md` is rewritten for the 5.0 API with no demo server (each example names the
+response it expects, and the PHP snippets escape their output), and `CONTRIBUTING.md` describes
+`release.yml`, the `src` modules and the WebKit install. Step 7 updated the README for the peer dependency; its jQuery 4 line now names 4.x users.
+
+- `docs/examples.md` posts to Mike Alsup's demo scripts on malsup.com (`dummy.php`,
+  `json-echo.php` and others) and loads `submit.gif` from there. Replace them
+  with examples that need no third-party server, or document the expected response instead.
+- Rewrite the examples for the 5.0 API: jQuery 3.5 or later, `delegation: "<selector>"`,
+  `iframe: true` for uploads without `FormData`, and no deprecated methods.
+- Replace the retired `docs.jquery.com/Plugins` link in the examples. 4.6.0 replaces every
+  malsup.com documentation link (FAQ comparison, unit tests, code samples, progress demos) with
+  the docs site's own pages, drops the README pointer to the malsup.com docs for 3.51 and older,
+  and loads the demo endpoints over https until this rewrite.
+- README: the jQuery 4 compatibility notes, which change with the peer dependency.
+- `CONTRIBUTING.md` (deferred from 4.6.0 by the user, with or after 5.0 as part of a larger docs
+  revamp): the Releases section still says maintainers publish by hand and CI does not publish
+  (`release.yml` publishes from a tag with provenance), the workflow says to edit
+  `src/jquery.form.js` (now split into modules), and setup installs only Chromium although
+  `npm test` also runs WebKit.
+
+Steps, one sub-agent per step, each reviewed by the main session before the next (W1):
+
+0. Plan and guide skeleton on `phase-14` (docs): this section and `docs/migrating-to-5.md` with its table header.
+1. F2 on `phase-13` (4.6.0): the `$.fieldValue` override warning, docs and the 4.6.0 release-notes draft. Then rebase `phase-14` onto it.
+2. Platform floor: peer `>=3.5.0`, the K5 ranges, delete `form.jquery.json`, the 3.5.0/3.7.1/4.0.0 matrix (CI, `scripts/fetch-jquery.sh`, Docker), and the X2 version error.
+3. Removals: X1, X3, X4 with X6, L1-L3 and I2, one commit per group, each with its guide entry.
+4. Syntax: the Prettier sweep (P3), the `refactor:` commit (P4), and `ecmaVersion: 2020` on `src` and `dist` (P2).
+5. Packaging: K1-K4 (`exports`, `src` unpublished, ADR-0003) and the published-file tests (each `exports` key, Node `import` resolves to the `.mjs`).
+6. Behavior changes, one commit each: I3, F1, F3, N1 with N2 and N3, N4 with N5, N7, N8, N9, N10.
+7. Docs and drafts: README, `docs/options.md`, `docs/api.md` (the I6 iframe feedback note, the N11 deliberate quirks), the complete guide, the notes-folder drafts (revised #629 body, I6 texts, 5.0 beta release notes), the "5.0" metrics column and the plan status.
+8. Final verification: all checks on the tip and the W3 run against 4.6.0.
+
+Steps 0-8 are done. Step 8 (2026-11-26, on the rebased tip):
+
+- All per-commit checks pass: lint, Prettier, build with `dist` unchanged, both Vitest runs with 100%
+  coverage, the suite on jQuery 3.5.0, 3.7.1 and 4.0.0 in Chromium, WebKit and Firefox, and
+  `npm run test:e2e` on the same nine combinations.
+- W3: the 5.0 suite against the 4.6.0 build (`v4.6.0` source with the 5.0 tests) fails 123 tests,
+  and `diagnostics.test.js` does not load (it imports `requireJQuery35`). The set is the same on all
+  three jQuery versions, and every failure maps to a guide entry. The 70 oracle failures come from
+  the six allowlist classes 5.0 drops (CHARSET, DIRNAME, IMG-VALUE, IMG-UNNAMED, IMG-ORDER, SEM-ORDER)
+  and the removed `semantic` comparison. The other 986 tests pass on both builds: kept contracts.
+- Stryker over `src/*.js` on jQuery 3.7.1: 95.51% (1969 mutants, 88 survived), above the 94.34% floor. After the architecture review changes: 95.51% again (1967 mutants, 88 survived, none in the new code), and the floor is raised to 95.0%.
+- The 5.0 metrics column is re-measured.
+- The CodeQL canary (CodeQL 2.27.6, the version CI uses; the canary script was rebuilt because the
+  Phase 12 copy was lost) scans `src` as the CodeQL workflow does, with `security-extended` and the repo's
+  query pack. The 5.0 source has no results from either. Each reopened sink is flagged: both W1
+  sinks, W2, W3 (the 4.x form-id selector injected, since 5.0 has no such code), W4, and
+  `selectorOption` parsing HTML (by `security-extended`'s unsafe jQuery plugin query, as alerts 7 and
+  10 were).
+
+Before the 5.0 release:
+
+- ~~Merge the test helpers `countParsedHTML` and `countHtmlParsed`~~ — done 2026-11-26: one async
+  `countParsedHTML(run, marker)` in `test/suite/helpers.js` hooks `jQuery.parseHTML` and
+  `jQuery.htmlPrefilter` (a parse inside `parseHTML` counts once), counts only strings containing
+  `marker` when one is given, and returns `{ count, error }`. Tests that expect no error assert it.
+- ~~An architecture review with the improve-codebase-architecture skill~~ — done 2026-11-26. It
+  ranked seven candidates. Because `src` is no longer published (K3), the module layout is internal:
+  a restructure can land in any 5.x minor without a guide entry, so only a change to what is sent
+  had to be settled before the beta. Done before the beta:
+  - The submitter's `dirname` field comes from the same rule on both wires. `submitterFields`
+    moved from `submitter.js` to `successful-controls.js`, and it and `addCandidate` share
+    `withDirname`. Before this, an `iframe: true` upload dropped a clicked submit input's
+    direction, which the XHR transport sent (an N7 gap). A test fails on 4.6.0, and the guide's
+    `dirname` entry names the iframe case.
+  - `filtering` on an iframe upload: pinned by a kept-contract test (the browser posts the form's
+    own controls, as in 4.x) and documented in `docs/options.md` under `filtering` and `iframe`,
+    with the `beforeSubmit` fields-array case that was already pinned.
+  - The field helpers (`fieldSerialize`, `fieldValue`, `clearForm`, `clearFields`, `resetForm`,
+    `enable`, `selected`) moved from `jquery.form.js` to `src/field-helpers.js`. The entry still
+    registers them on `$.fn` in the same order, and they still call each other through `$.fn`.
+    The `dist` wrappers and exports are unchanged; only the code order inside changed.
+
+  Deferred to 5.x (listed under 5.x below, with reasons).
+
+- ~~A polish pass over the public docs~~ — done 2026-11-26 (user's request). README: a "New in
+  5.0" section, current copy and code style, 4.x pointers in one Compatibility bullet. Site: the
+  migration guide is in the menu; the API page documents `formToArray`, `enable`, `selected`,
+  `$.fieldValue` and debug output; Form Fields replaces the dead demo with a results table
+  (computed with the built plugin); the FAQ and Getting Started are rewritten; `options.md` gains
+  `includeHidden`, describes `dataType` as parsing, not evaluating, and drops the internal
+  `extraData` from Trusted options. `SECURITY.md`: 5.x supported, 4.x "best effort" with no set
+  period (user's decision, no concrete guarantee), and the guide says the same.
+- ~~Publish betas on `next`~~ — done 2026-11-26. `release.yml` picks the dist-tag in the verify
+  job: a pre-release goes to `next`, a stable version of a lower major than `latest` to
+  `v<major>`, anything else to `latest`; a stable version below `latest` in the same major fails
+  the job. The publish job runs `npm publish --tag`. Checked on eight version pairs locally; the
+  first real run is the beta. The version is `5.0.0-beta.1` (`package.json`, the lockfile, the
+  `src` banner and `dist`).
+- When `release/4.x` is cut from `v4.6.0` (R2), cherry-pick the `release.yml` dist-tag commit onto
+  it first. Its copy publishes with a plain `npm publish`, which would move `latest` back to 4.x.
+- ~~Beta release~~ — `5.0.0-beta.1` published 2026-11-27; checked: dist-tags, the `>=3.5.0` peer
+  dependency, the SLSA provenance attestation, and the published `dist` byte-for-byte against the tag.
+  Left: post the #629 body and the release notes (drafts at the root of the `form` checkout).
+  Steps as done, by the user unless noted: remove the `do-not-push` guard, push `phase-14` and
+  open the Phase 14 PR with the I6 text (Claude can do these on the user's word); post the
+  revised #629 body and the beta notes; push the `v5.0.0-beta.1` tag on the PR tip and approve
+  the `npm` environment. Then `npm dist-tag ls jquery-form` must show `latest: 4.6.0` and
+  `next: 5.0.0-beta.1`. Later betas bump to `5.0.0-beta.N` the same way.
+- At the 5.0.0 release (not the beta): point the README and `docs/index.md` CDN snippets at
+  5.0.0, with SRI hashes checked against the published `dist/jquery.form.min.js`.
+
+Test rules:
+
+- The oracle drops each allowlist class that an N item changes. CRLF, USV, SUBMIT-LABEL and the N11 quirks stay. E2E runs on jQuery 3.5.0, 3.7.1 and 4.0.0, with IFRAME-SUBMITTER and EMPTY-FILE removed. The published-file tests gain `exports` cases, Node `import` resolving to the `.mjs`, and a failing deep `src` import, and the 1.7.2 cases go. One local Stryker run at step 8 must not score below 94.34%. From the architecture review on, a local Stryker run over `src/*.js` on the Chromium suite with jQuery 3.7.1 must not score below 95.0% before a release, and a run over the changed `src` lines (`MUTATE_RANGES`, as in `docs/research/mutation-testing-4.6.0.md`) leaves no survivor that is not killed by a new test or listed as equivalent. The ignored probe copies are kept (W2).
+- This replaces the Phase 13 rule that every new test passes on both builds. Every behavior change has at least one test that fails on the 4.6.0 build (the `phase-13` tip, in a detached worktree removed afterwards) and a guide entry. At step 8 the whole 5.0 suite runs against that build. Every failure maps to a guide entry. A test that passes on both is a kept contract. Removed or edited tests are named in commit bodies (W3, R4).
+
+Per-commit checks (W4):
+
+- Lint and Prettier (probes excluded), build, both Vitest runs, the jQuery matrix (3.5.0 and 4.0.0 through `JQUERY_FILE`), and the CodeQL canary.
+- Per step: `npm run test:e2e` and Docker Firefox.
+- Metrics: a "5.0" column in `docs/metrics.md` at step 7, measured the same way. The supported jQuery row reads 3.5.0-4.0.0.
+
+Out of 5.0 (W5): `SubmitEvent.submitter`, `new FormData(form, submitter)`, type declarations and the promise API stay in 5.x.
 
 ## 5.x
 
 - Use `SubmitEvent.submitter` instead of the click-capture `clk` properties. It replaces the capture that #588 fixed in 4.4.0.
-- Use `new FormData(form, submitter)`.
+- Use `new FormData(form, submitter)`. It also gives the browser's default submit label for a clicked `<input type=submit>` without a `value` (N6).
 - Ship type declarations generated from JSDoc, and keep the source in plain JS.
 - Add a promise-friendly API alongside chaining.
+
+Architecture, from the 2026-11-26 review (none of these changes what is sent, so none blocks 5.0):
+
+- Capture the submitter once in `prepare` and carry it in the Submission, so serialization and
+  both transports take it as an argument instead of reading the 100 ms store. Do it with
+  `SubmitEvent.submitter`, which needs the same seam. The iframe path still reads the submitter's
+  value as `el.value`, while XHR reads it through `valueOf` (`valHooks`); settle that here.
+- A request-encoding module: the fields, `data` and the submitter go in, and one wire comes out
+  (urlencoded body or URL query, JSON, FormData, the iframe's hidden inputs). Today four modules
+  each build a wire (`submission.js` `extraQuery`/`queryPairs`/`jsonBody`/`encode`,
+  `successful-controls.js` `urlencode`, `xhr-transport.js` `deepSerialize`/`sendFormData`,
+  `iframe-post.js`), `wellFormed` is called at five sites, and `defineKey` duplicates `setKey`.
+  The oracle could then check every wire. Deferred because `new FormData(form, submitter)`
+  reshapes this module; doing it first would mean doing it twice.
+- A transport seam with two adapters, XHR and iframe: settings merged once (written three times
+  now), a payload from the encoding module, and `chooseTransport` reading the collected fields
+  instead of querying the DOM again. `sendAjax` goes. Depends on the encoding module. Risk: the
+  `options` object `form-submit-notify` receives shows the transports' writes (the FormData path
+  sets `options.data = null`), so a change there is observable and needs a guide entry. The
+  promise API would sit at this seam.
+- Remove the one-adapter seams: `createSubmission(forms, serialization)`,
+  `createIframeTransport(forms)` and `createSuccessfulControls()` each have one adapter, and no test
+  substitutes them. Fold `formAttribute` and `formProperty` into `form-members.js` (X1 keeps the
+  property reader) and import directly. Low risk, low value; a companion to the field-helpers move.
+- Only if 6.0 keeps the iframe transport (I1): deepen `iframe-post.js` (seven exports, one caller
+  that runs the save, set, add, submit and restore sequence) into one post operation.
+- Not planned: separating the derived request from the caller's `options` object. `prepare`,
+  `deliver` and the transports write to it, and `beforeSubmit`, the events and
+  `submission.test.js` observe those writes. It would break callers for little gain.
 
 ## Metrics (throughout)
 

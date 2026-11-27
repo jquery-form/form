@@ -1,12 +1,6 @@
 import { assert, describe, it } from "vitest";
 import pluginExport from "../../src/jquery.form.js";
-import {
-  countHtmlParsed,
-  resetFixture,
-  selectFiles,
-  withAjaxStub,
-  withUserAgent,
-} from "./helpers.js";
+import { countParsedHTML, resetFixture, selectFiles, withAjaxStub } from "./helpers.js";
 
 // Records the change and input events that reach `root` while `run` executes.
 function recordFieldEvents(root, run) {
@@ -37,14 +31,6 @@ describe("form", function () {
   resetFixture();
 
   describe("plugin installation", function () {
-    it("should clear fields through clearInputs as clearFields does", function () {
-      const $input = $('<input type="text" value="x">');
-
-      const result = $input.clearInputs();
-
-      assert.strictEqual(result.val(), "");
-    });
-
     it("should turn debug logging off when the plugin loads", function () {
       const debug = $.fn.ajaxSubmit.debug;
 
@@ -81,147 +67,11 @@ describe("form", function () {
     });
   });
 
-  describe("attr2", function () {
-    it("should return the resolved absolute URL when the form has a relative action", function () {
-      const $form = $('<form action="relative.html"></form>');
-
-      const action = $form.attr2("action");
-
-      assert.strictEqual(action, new URL("relative.html", document.baseURI).href);
-    });
-
-    it("should return the document URL when the form has no action attribute", function () {
-      const $form = $("<form></form>");
-
-      const action = $form.attr2("action");
-
-      assert.strictEqual(action, document.URL);
-    });
-
-    it("should return the lowercased method when the attribute is uppercase", function () {
-      const $form = $('<form method="POST"></form>');
-
-      const method = $form.attr2("method");
-
-      assert.strictEqual(method, "post");
-    });
-
-    it("should return get when the form has no method or an unknown method", function () {
-      const $forms = [
-        $("<form></form>"),
-        $('<form method="PUT"></form>'),
-        $('<form method="DELETE"></form>'),
-      ];
-
-      const methods = $forms.map(($form) => $form.attr2("method"));
-
-      assert.deepEqual(methods, ["get", "get", "get"]);
-    });
-
-    it("should return an empty string when the form has no target", function () {
-      const $form = $("<form></form>");
-
-      const target = $form.attr2("target");
-
-      assert.strictEqual(target, "");
-    });
-
-    [
-      ["action", "relative.html"],
-      ["method", "PUT"],
-      ["target", "frame"],
-    ].forEach(function ([name, raw]) {
-      it(
-        "should return the raw attribute when one or more controls are named " + name,
-        function () {
-          const attributes = 'action="relative.html" method="PUT" target="frame"';
-          const $one = $("<form " + attributes + '><input name="' + name + '"></form>');
-          const $two = $(
-            "<form " + attributes + '><input name="' + name + '"><input name="' + name + '"></form>'
-          );
-          const $missing = $('<form><input name="' + name + '"></form>');
-
-          const values = [$one.attr2(name), $two.attr2(name), $missing.attr2(name)];
-
-          assert.deepEqual(values, [raw, raw, undefined]);
-        }
-      );
-    });
-
-    it("should fall back to attr when the property is not a string", function () {
-      const $input = $('<input data-x="one" disabled tabindex="3">');
-      const major = Number($.fn.jquery.split(".")[0]);
-
-      const values = [
-        $input.attr2("data-x"),
-        $input.attr2("data-missing"),
-        $input.attr2("disabled"),
-        $input.attr2("tabIndex"),
-      ];
-
-      if (major < 3) {
-        assert.deepEqual(values, ["one", undefined, "disabled", 3]);
-      } else if (major < 4) {
-        assert.deepEqual(values, ["one", undefined, "disabled", "3"]);
-      } else {
-        assert.deepEqual(values, ["one", undefined, "", "3"]);
-      }
-    });
-
-    it("should return undefined when the set is empty and read the first element otherwise", function () {
-      const $forms = $('<form action="first.html"></form><form action="second.html"></form>');
-
-      const values = [$().attr2("action"), $forms.attr2("action")];
-
-      assert.deepEqual(values, [undefined, new URL("first.html", document.baseURI).href]);
-    });
-
-    it("should return a jQuery object held by the property as is", function () {
-      const $form = $("<form></form>");
-      const $held = $("<div></div>");
-      $form[0].held = $held;
-
-      const value = $form.attr2("held");
-
-      assert.strictEqual(value, $held);
-    });
-
-    it("should return an empty string property without falling back to attr", function () {
-      const $iframe = $("<iframe></iframe>");
-
-      const name = $iframe.attr2("name");
-
-      assert.strictEqual(name, "");
-    });
-
-    it("should set the property and return the set when used as a setter", function () {
-      const $form = $("<form></form>");
-
-      const expando = $form.attr2("data-y", "v");
-      const reflected = $form.attr2("name", "n");
-
-      assert.strictEqual(expando, $form);
-      assert.strictEqual(reflected, $form);
-      assert.strictEqual($form[0]["data-y"], "v");
-      assert.isFalse($form[0].hasAttribute("data-y"));
-      assert.strictEqual($form[0].getAttribute("name"), "n");
-    });
-
-    it("should set the action attribute when a control named action shadows it", function () {
-      const $form = $('<form><input name="action"></form>');
-
-      const result = $form.attr2("action", "next.html");
-
-      assert.strictEqual(result, $form);
-      assert.strictEqual($form[0].getAttribute("action"), "next.html");
-    });
-  });
-
   describe("resetForm", function () {
     it("should reset the control a label targets and its nested fields", function () {
       const $target = $('<input id="label-target" value="default">').appendTo("#main");
       const $label = $('<label for="label-target"><input value="nested"></label>').appendTo(
-        "#main"
+        "#main",
       );
       $target.val("changed");
       $label.find("input").val("changed");
@@ -242,7 +92,7 @@ describe("form", function () {
 
       assert.deepEqual(
         [$label.find("input").val(), $div.find("input").val(), $last.val()],
-        ["in label", "in div", "last"]
+        ["in label", "in div", "last"],
       );
     });
 
@@ -265,19 +115,20 @@ describe("form", function () {
         window.labelPayload = 0;
         const $label = $("<label>").attr("for", value).appendTo("#main");
 
-        const parsed = await countHtmlParsed("window.labelPayload", async () => {
+        const parsed = await countParsedHTML(async () => {
           $label.resetForm();
           await new Promise((resolve) => setTimeout(resolve, 50));
-        });
+        }, "window.labelPayload");
 
-        assert.strictEqual(parsed, 0);
+        assert.strictEqual(parsed.error, undefined);
+        assert.strictEqual(parsed.count, 0);
         assert.strictEqual(window.labelPayload, 0);
       });
     });
 
     it("should ignore a for attribute that names no element", function () {
       const $label = $('<label for="no-such-control"><input value="nested"></label>').appendTo(
-        "#main"
+        "#main",
       );
       $label.find("input").val("changed");
 
@@ -288,7 +139,7 @@ describe("form", function () {
 
     it("should not reset a label again when its for attribute names an ancestor", function () {
       const $outer = $('<div id="label-owner"><label for="label-owner">L</label></div>').appendTo(
-        "#main"
+        "#main",
       );
 
       const reset = () => $outer.find("label").resetForm();
@@ -307,7 +158,7 @@ describe("form", function () {
 
     it("should reset the parent single select when one of its options is reset", function () {
       const $select = $(
-        "<select><option>a</option><option selected>b</option><option>c</option></select>"
+        "<select><option>a</option><option selected>b</option><option>c</option></select>",
       ).appendTo("#main");
       $select.val("c");
 
@@ -382,7 +233,7 @@ describe("form", function () {
 
     it("should restore individual inputs and textareas to their defaults", function () {
       const $fields = $(
-        '<div><input type="checkbox" checked><input value="original"><textarea>original</textarea></div>'
+        '<div><input type="checkbox" checked><input value="original"><textarea>original</textarea></div>',
       ).find(":input");
       $fields.eq(0).prop("checked", false);
       $fields.eq(1).val("changed");
@@ -397,7 +248,7 @@ describe("form", function () {
 
     it("should restore a multiple select when resetting an optgroup", function () {
       const $select = $(
-        "<select multiple><optgroup><option selected>one</option><option>two</option></optgroup></select>"
+        "<select multiple><optgroup><option selected>one</option><option>two</option></optgroup></select>",
       );
       const $options = $select.find("option");
       $options.eq(0).prop("selected", false);
@@ -411,13 +262,13 @@ describe("form", function () {
             return this.selected;
           })
           .get(),
-        [true, false]
+        [true, false],
       );
     });
 
     it("should reset form controls found inside a container", function () {
       const $container = $(
-        '<div><input value="original"><select><option selected>one</option><option>two</option></select></div>'
+        '<div><input value="original"><select><option selected>one</option><option>two</option></select></div>',
       );
       $container.find("input").val("changed");
       $container.find("select").val("two");
@@ -451,7 +302,7 @@ describe("form", function () {
 
     it("should restore checked and value when an input is reset directly", function () {
       const $inputs = $(
-        '<div><input type="checkbox" value="a" checked><input type="radio" value="b"></div>'
+        '<div><input type="checkbox" value="a" checked><input type="radio" value="b"></div>',
       ).find("input");
       $inputs.eq(0).prop("checked", false);
       $inputs.eq(1).prop("checked", true);
@@ -508,7 +359,7 @@ describe("form", function () {
 
     it("should restore only that option when an option of a multiple select is reset", function () {
       const $options = $(
-        "<select multiple><option selected>a</option><option>b</option></select>"
+        "<select multiple><option selected>a</option><option>b</option></select>",
       ).find("option");
       $options.eq(0).prop("selected", false);
       $options.eq(1).prop("selected", true);
@@ -520,7 +371,7 @@ describe("form", function () {
 
     it("should reset the parent single select when an optgroup is reset", function () {
       const $select = $(
-        "<select><optgroup><option>a</option><option selected>b</option></optgroup><option>c</option></select>"
+        "<select><optgroup><option>a</option><option selected>b</option></optgroup><option>c</option></select>",
       );
       $select.val("c");
 
@@ -540,7 +391,7 @@ describe("form", function () {
 
     it("should select the last default option when a single select with two default options is reset", function () {
       const $select = $(
-        "<select><option selected>a</option><option selected>b</option><option>c</option></select>"
+        "<select><option selected>a</option><option selected>b</option><option>c</option></select>",
       );
       $select.val("c");
 
@@ -563,7 +414,7 @@ describe("form", function () {
 
     it("should restore every option when a multiple select is reset directly", function () {
       const $select = $(
-        "<select multiple><option selected>a</option><option>b</option><option selected>c</option></select>"
+        "<select multiple><option selected>a</option><option>b</option><option selected>c</option></select>",
       );
       const $options = $select.find("option");
       $options.prop("selected", false);
@@ -597,7 +448,7 @@ describe("form", function () {
     it("should reset a control outside the container when a label inside names it", function () {
       const $outside = $('<input id="outside-label-target" value="default">').appendTo("#main");
       const $container = $('<div><label for="outside-label-target"></label></div>').appendTo(
-        "#main"
+        "#main",
       );
       $outside.val("changed");
 
@@ -608,7 +459,7 @@ describe("form", function () {
 
     it("should reset a control associated by the form attribute when its form is reset", function () {
       $('<form id="native-owner"></form><input form="native-owner" value="default">').appendTo(
-        "#main"
+        "#main",
       );
       const $outside = $("#main input[form=native-owner]").val("changed");
 
@@ -619,7 +470,7 @@ describe("form", function () {
 
     it("should reset the form when two controls named reset shadow the method", function () {
       const $form = $(
-        '<form><input name="reset" value="a"><input name="reset" value="b"></form>'
+        '<form><input name="reset" value="a"><input name="reset" value="b"></form>',
       ).appendTo("#main");
       $form.find("input").eq(0).val("changed");
 
@@ -631,7 +482,7 @@ describe("form", function () {
 
     it("should reset natively when a control named tagName shadows the form's tag name", function () {
       $(
-        '<form id="tag-owner"><input name="tagName"></form><input form="tag-owner" value="default">'
+        '<form id="tag-owner"><input name="tagName"></form><input form="tag-owner" value="default">',
       ).appendTo("#main");
       const $form = $("#tag-owner");
       const $outside = $("#main input[form=tag-owner]").val("changed");
@@ -676,7 +527,7 @@ describe("form", function () {
 
     it("should not fire change or input events when resetting fields individually", function () {
       const $container = $(
-        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option><option>b</option></select><textarea>t</textarea></div>'
+        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option><option>b</option></select><textarea>t</textarea></div>',
       ).appendTo("#main");
       $container.find("input").eq(0).val("changed");
       $container.find("input").eq(1).prop("checked", false);
@@ -691,7 +542,7 @@ describe("form", function () {
 
     it("should reset disabled and readonly fields", function () {
       const $fields = $('<div><input disabled value="a"><input readonly value="b"></div>').find(
-        "input"
+        "input",
       );
       $fields.val("changed");
 
@@ -759,7 +610,7 @@ describe("form", function () {
 
     it("should clear hidden inputs only when explicitly included", function () {
       const $fields = $(
-        '<div><input type="hidden" value="plain"><input type="hidden" class="special" value="special"></div>'
+        '<div><input type="hidden" value="plain"><input type="hidden" class="special" value="special"></div>',
       ).find("input");
 
       $fields.clearFields(".special:hidden");
@@ -795,29 +646,6 @@ describe("form", function () {
       assert.strictEqual($file.val(), "");
     });
 
-    it("should replace a file input when simulating legacy MSIE", function () {
-      const userAgent = Object.getOwnPropertyDescriptor(navigator, "userAgent");
-      const $container = $('<div><input type="file" name="upload"></div>');
-      const file = $container.find("input")[0];
-      Object.defineProperty(navigator, "userAgent", {
-        configurable: true,
-        value: "MSIE 10.0",
-      });
-
-      try {
-        $(file).clearFields();
-
-        assert.notStrictEqual($container.find("input")[0], file);
-        assert.strictEqual($container.find("input").attr("name"), "upload");
-      } finally {
-        if (userAgent) {
-          Object.defineProperty(navigator, "userAgent", userAgent);
-        } else {
-          delete navigator.userAgent;
-        }
-      }
-    });
-
     it("should return the original set when clearing forms, containers, inputs or empty sets", function () {
       const sets = [$("<form><input></form>"), $("<div><input></div>"), $("<input>"), $()];
 
@@ -828,7 +656,7 @@ describe("form", function () {
 
     it("should clear fields inside a non-form container", function () {
       const $container = $(
-        '<div><input value="text"><textarea>text</textarea><input type="checkbox" checked></div>'
+        '<div><input value="text"><textarea>text</textarea><input type="checkbox" checked></div>',
       );
 
       $container.clearForm();
@@ -841,7 +669,7 @@ describe("form", function () {
     it("should clear hidden inputs when clearForm is passed true or a selector", function () {
       const $all = $('<form><input type="hidden" value="a"></form>');
       const $some = $(
-        '<form><input type="hidden" class="special" value="b"><input type="hidden" value="c"></form>'
+        '<form><input type="hidden" class="special" value="b"><input type="hidden" value="c"></form>',
       );
 
       $all.clearForm(true);
@@ -862,7 +690,7 @@ describe("form", function () {
 
     it("should leave a control associated by the form attribute unchanged when its form is cleared", function () {
       $('<form id="clear-owner"></form><input form="clear-owner" value="outside">').appendTo(
-        "#main"
+        "#main",
       );
 
       $("#clear-owner").clearForm();
@@ -891,7 +719,7 @@ describe("form", function () {
 
     it("should pass includeHidden to clearForm when ajaxSubmit clears the form", async function () {
       const $form = $(
-        '<form action="ajax/text.html"><input type="hidden" value="h"></form>'
+        '<form action="ajax/text.html"><input type="hidden" value="h"></form>',
       ).appendTo("#main");
 
       await withAjaxStub(
@@ -902,7 +730,7 @@ describe("form", function () {
         async function () {
           $form.ajaxSubmit({ clearForm: true, includeHidden: true });
           await Promise.resolve();
-        }
+        },
       );
 
       assert.strictEqual($form.find("input").val(), "");
@@ -966,49 +794,22 @@ describe("form", function () {
 
     it("should deselect every option when a multiple select is cleared", function () {
       const $select = $(
-        "<select multiple><option selected>a</option><option selected>b</option></select>"
+        "<select multiple><option selected>a</option><option selected>b</option></select>",
       );
 
       $select.clearFields();
 
       assert.strictEqual($select[0].selectedIndex, -1);
-      assert.deepEqual($select.val(), Number($.fn.jquery.split(".")[0]) < 3 ? null : []);
+      assert.deepEqual($select.val(), []);
     });
 
-    it("should clear a selected file when the user agent is not MSIE", function () {
+    it("should clear a selected file", function () {
       const input = $('<input type="file">')[0];
       selectFiles(input, ["a.txt"]);
 
       $(input).clearFields();
 
       assert.strictEqual(input.files.length, 0);
-    });
-
-    it("should carry data and handlers to the replacement and return the old element when simulating MSIE", function () {
-      const $container = $('<div><input type="file" name="upload"></div>');
-      const $file = $container.find("input");
-      let handled = 0;
-      $file.data("key", "kept");
-      $file.on("custom", () => handled++);
-
-      const result = withUserAgent("MSIE 10.0", () => $file.clearFields());
-
-      const $replacement = $container.find("input");
-      $replacement.trigger("custom");
-      assert.strictEqual(result[0], $file[0]);
-      assert.notStrictEqual($replacement[0], $file[0]);
-      assert.strictEqual($replacement.data("key"), "kept");
-      assert.strictEqual(handled, 1);
-    });
-
-    it("should leave a detached file input unchanged when simulating MSIE", function () {
-      const input = $('<input type="file">')[0];
-      selectFiles(input, ["a.txt"]);
-
-      const result = withUserAgent("MSIE 10.0", () => $(input).clearFields());
-
-      assert.strictEqual(result[0], input);
-      assert.strictEqual(input.files.length, 1);
     });
 
     const buttonsAndHidden =
@@ -1039,7 +840,7 @@ describe("form", function () {
           $fields.clearFields(includeHidden);
 
           assert.deepEqual(fieldValues($fields), ["h", "b", "r", "i", "s", "bb"]);
-        }
+        },
       );
     });
 
@@ -1076,16 +877,50 @@ describe("form", function () {
       });
     });
 
-    it("should throw a selector syntax error on jQuery 3 and later when includeHidden is not a valid selector", function () {
+    describe("when includeHidden has a positional pseudo-class", function () {
+      function specialHiddenInputs() {
+        return $(
+          '<div><input type="hidden" class="special" value="a"><input type="hidden" class="special" value="b"></div>',
+        )
+          .appendTo("#main")
+          .find("input");
+      }
+
+      it("should test each element alone, so :first matches every element", function () {
+        const $fields = specialHiddenInputs();
+
+        $fields.clearFields(".special:first");
+
+        assert.deepEqual($fields.map((i, el) => el.value).get(), ["", ""]);
+      });
+
+      it("should test each element alone, so :eq(1) matches none", function () {
+        const $fields = specialHiddenInputs();
+
+        $fields.clearFields(".special:eq(1)");
+
+        assert.deepEqual($fields.map((i, el) => el.value).get(), ["a", "b"]);
+      });
+
+      it("should throw a selector syntax error, not parse HTML, when the selector has markup", async function () {
+        const $fields = specialHiddenInputs();
+
+        const parsed = await countParsedHTML(() =>
+          $fields.clearFields('<img class="made"> :first'),
+        );
+
+        assert.match(parsed.error.message, /unrecognized expression/);
+        assert.strictEqual(parsed.count, 0);
+        assert.deepEqual($fields.map((i, el) => el.value).get(), ["a", "b"]);
+      });
+    });
+
+    it("should throw a selector syntax error when includeHidden is not a valid selector", function () {
       const $hidden = $('<input type="hidden" value="h">');
 
       const clear = () => $hidden.clearFields("[");
 
-      if (Number($.fn.jquery.split(".")[0]) < 3) {
-        assert.doesNotThrow(clear);
-      } else {
-        assert.throws(clear, /unrecognized expression/);
-      }
+      assert.throws(clear, /unrecognized expression/);
     });
 
     it("should set a value expando on a non-control that matches the includeHidden selector", function () {
@@ -1098,7 +933,7 @@ describe("form", function () {
 
     it("should not fire change or input events when clearing", function () {
       const $container = $(
-        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option></select><textarea>t</textarea></div>'
+        '<div><input value="a"><input type="checkbox" checked><select><option selected>a</option></select><textarea>t</textarea></div>',
       ).appendTo("#main");
 
       const events = recordFieldEvents($container[0], () => $container.clearForm());
@@ -1109,7 +944,7 @@ describe("form", function () {
 
     it("should clear disabled and readonly fields", function () {
       const $fields = $('<div><input disabled value="a"><input readonly value="b"></div>').find(
-        "input"
+        "input",
       );
 
       $fields.clearFields();
@@ -1168,7 +1003,7 @@ describe("form", function () {
             return this.checked;
           })
           .get(),
-        [false, false]
+        [false, false],
       );
     });
 
@@ -1185,7 +1020,7 @@ describe("form", function () {
 
     it("should independently select options in a multiple select", function () {
       const $options = $(
-        "<select multiple><option selected>one</option><option>two</option></select>"
+        "<select multiple><option selected>one</option><option>two</option></select>",
       ).find("option");
 
       $options.eq(1).selected();
@@ -1196,7 +1031,7 @@ describe("form", function () {
             return this.selected;
           })
           .get(),
-        [true, true]
+        [true, true],
       );
     });
 
@@ -1213,7 +1048,7 @@ describe("form", function () {
 
     it("should toggle the disabled attribute on controls and only set an expando on a div", function () {
       const $controls = $(
-        "<div><input><fieldset></fieldset><select><optgroup><option></option></optgroup></select></div>"
+        "<div><input><fieldset></fieldset><select><optgroup><option></option></optgroup></select></div>",
       ).find("input,fieldset,optgroup,option");
       const $div = $("<div></div>");
 
@@ -1262,7 +1097,7 @@ describe("form", function () {
 
     it("should leave the last radio of a group checked when several are selected", function () {
       const $radios = $(
-        '<div><input type="radio" name="fld-group"><input type="radio" name="fld-group"></div>'
+        '<div><input type="radio" name="fld-group"><input type="radio" name="fld-group"></div>',
       )
         .appendTo("#main")
         .find("input");
@@ -1275,13 +1110,13 @@ describe("form", function () {
             return this.checked;
           })
           .get(),
-        [false, true]
+        [false, true],
       );
     });
 
     it("should leave only the chosen option selected when it is inside an optgroup of a single select", function () {
       const $options = $(
-        "<select><optgroup><option selected>a</option><option>b</option></optgroup></select>"
+        "<select><optgroup><option selected>a</option><option>b</option></optgroup></select>",
       ).find("option");
 
       $options.eq(1).selected();
@@ -1291,7 +1126,7 @@ describe("form", function () {
 
     it("should fall back to the first option when the selected option of a dropdown is deselected", function () {
       const $options = $("<select><option>a</option><option selected>b</option></select>").find(
-        "option"
+        "option",
       );
 
       $options.eq(1).selected(false);
@@ -1312,7 +1147,7 @@ describe("form", function () {
 
     it("should not fire change events when selecting", function () {
       const $container = $(
-        '<div><input type="checkbox"><select><option>a</option><option>b</option></select></div>'
+        '<div><input type="checkbox"><select><option>a</option><option>b</option></select></div>',
       ).appendTo("#main");
 
       const events = recordFieldEvents($container[0], function () {

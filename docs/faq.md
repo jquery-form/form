@@ -3,46 +3,55 @@
 
 ## Frequently Asked Questions
 
-#### Does jQuery Form Plugin have any dependencies?
+#### Does the plugin have any dependencies?
 
-The only dependency is jQuery itself.
+Only jQuery, which is a peer dependency: npm 7 and later install it with the plugin, unless your project already has jQuery 3.5 or later.
 
-#### Which versions of jQuery is jQuery Form Plugin compatible with?
+#### Which versions of jQuery does it work with?
 
-jQuery Form Plugin is compatible with jQuery v1.7.2 and later. `main` is tested against jQuery 1.7.2, 3.7.1 and 4.0.0; jQuery 4 needs 4.4.0 or later. The jQuery slim builds are not supported because they leave out AJAX.
+jQuery 3.5 and later. 5.0 is tested against jQuery 3.5.0, 3.7.1 and 4.0.0. The jQuery slim builds are not supported, because they leave out AJAX. For older jQuery versions, use the latest 4.x.
 
-#### Is jQuery Form Plugin fast? Does it serialize forms accurately?
+#### I use 4.x. How do I upgrade to 5.0?
 
-Yes. It follows the HTML rules for which controls are submitted (see [Why aren't all my input values posted?](#why-arent-all-my-input-values-posted)), and the test suite compares what it sends with the browser's own `FormData` on generated forms and with what a server receives from a native submit.
+Read the [migration guide](migrating-to-5.md). It lists every change, who is affected and what to do, with before and after code. Its summary table shows quickly which changes affect you.
 
-#### What is the easiet way to use jQuery Form Plugin?
+#### Does it serialize forms accurately?
 
-The `ajaxForm` method provides the simplest way to enable your HTML form to use AJAX. It's the one-stop-shopping method for preparing forms.
+Yes. It follows the HTML rules for which controls are submitted and in what order (see [Why aren't all my input values posted?](#why-arent-all-my-input-values-posted)). The test suite compares what it sends with the browser's own `FormData` on generated forms, and with what a server receives from a native submission. The [Options](options.md#differences-from-a-native-submission) page lists the few deliberate differences.
+
+#### Is it fast and small?
+
+The minified build is about 24 kB, or 9 kB gzipped. Apart from `iframe: true` uploads, each request is an ordinary `$.ajax` call, so it costs what any jQuery AJAX request costs.
+
+#### What is the easiest way to use it?
+
+Call [`ajaxForm`](api.md#ajaxform) on your form when the page is ready. It does everything needed to send the form with AJAX when the user submits it.
 
 #### What is the difference between `ajaxForm` and `ajaxSubmit`?
 
-There are two main differences between these methods:
+1. `ajaxSubmit` submits the form, `ajaxForm` does not. When you call `ajaxSubmit`, it serializes the form and sends it to the server right away. When you call `ajaxForm`, it adds the event listeners that detect when the user submits the form, and then calls `ajaxSubmit` for you.
+2. With `ajaxForm`, the request includes the name and value of the button that submitted the form (or its click coordinates, for an image button). `ajaxSubmit` called from your own code cannot know which button was clicked.
 
-1. `ajaxSubmit` submits the form, `ajaxForm` does not. When you invoke `ajaxSubmit` it immediately serializes the form data and sends it to the server. When you invoke `ajaxForm` it adds the necessary event listeners to the form so that it can detect when the form is submitted by the user. When this occurs `ajaxSubmit` is called for you.
-2. When using `ajaxForm` the submitted data will include the name and value of the submitting element (or its click coordinates if the submitting element is an image).
+#### How can I cancel a form submission?
 
-#### How can I cancel a form submit?
+Return `false` from a [`beforeSubmit`](options.md#beforesubmit) callback. See the [validation examples](examples.md#validation).
 
-You can prevent a form from being submitted by adding a 'beforeSubmit' callback function and returning false from that function. See the [validation examples](examples.md#validation).
+#### Can I use it with a bundler or as an ES module?
 
-#### Is there a unit test suite for jQuery Form Plugin?
+Yes. `import "jquery-form"` registers the plugin on the jQuery that `import "jquery"` resolves to. The package also works with CommonJS, AMD and a plain script tag; see [Installation](index.md#installation). It does not include TypeScript type declarations.
 
-Yes! jQuery Form Plugin has an extensive set of tests that are used to validate its functionality.  
-See [Testing](https://github.com/jquery-form/form/blob/main/CONTRIBUTING.md#testing) in the contributing guide to run them.
+#### Does it support file uploads?
 
-#### Does jQuery Form Plugin support file uploads?
+Yes. A form with a selected file is sent with `FormData`, with no extra code. See the [file upload example](examples.md#file-upload).
 
-Yes!
+#### How do I display upload progress?
+
+Pass an [`uploadProgress`](options.md#uploadprogress) callback. It receives the progress event, the bytes sent, the total and the percentage as the upload proceeds. The iframe transport (`iframe: true`) cannot report progress.
 
 #### Why aren't all my input values posted?
 
-jQuery Form serialization adheres closely to the HTML spec. Only [successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set) are valid for submission.
+The plugin sends the same fields as a normal submission: only [successful controls](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#constructing-the-form-data-set). A control is not sent when it has no `name`, is disabled, or is an unchecked checkbox or radio button, or a submit button that did not submit the form.
 
-#### How do I display upload progress information?
+#### Is there a test suite?
 
-Pass an [`uploadProgress`](options.md#uploadprogress) callback. It receives the progress event, the bytes sent, the total and the percentage, as the upload proceeds. The iframe transport (`iframe: true`) cannot report progress.
+Yes. It runs in Chromium, Firefox and WebKit against each supported jQuery version, and end-to-end tests post forms to a real server. See [Testing](https://github.com/jquery-form/form/blob/main/CONTRIBUTING.md#testing) in the contributing guide to run it.
