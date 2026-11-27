@@ -55,18 +55,18 @@ Full rationale: [ADR-0002](docs/adr/0002-branching-and-release.md).
 * **`main`** is the only trunk. Work in short-lived branches; open PRs into `main`.
 * **4.x then 5.0** are sequential on `main` (no standing `next` branch). After 5.0, rare 4.x patches use an on-demand `release/4.x` branch cut from the last v4 tag.
 * **npm:** `latest` tracks the current major; after 5.0, 4.x publishes use the `v4` dist-tag.
-* **Releases:** maintainers bump the version, tag `vX.Y.Z`, and publish to npm manually. CI verifies; it does not publish.
+* **Releases:** a maintainer bumps the version and pushes a `vX.Y.Z` tag. The [Release workflow](.github/workflows/release.yml) runs `npm test`, checks that the committed `dist/` matches the build, and, once a maintainer approves the `npm` environment, publishes to npm through trusted publishing, with provenance.
 
 ## Testing
 
 jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/), [ESLint](https://eslint.org/), [Prettier](https://prettier.io/), and [Vitest](https://vitest.dev/) browser mode to build and validate the source. Here is how to set that up:
 
 1. Install the [Node.js](https://nodejs.org/) version in `.nvmrc` (with nvm: `nvm use`).
-2. Install dependencies and the test browser:
+2. Install dependencies and the test browsers (`npm test` runs the suite in Chromium and WebKit):
 
    ```shell
    npm ci
-   npx playwright install chromium
+   npx playwright install chromium webkit
    ```
 
 3. Run lint, the build, and the tests:
@@ -75,7 +75,7 @@ jQuery Form uses [Node.js](https://nodejs.org/), [Rollup](https://rollupjs.org/)
    npm test
    ```
 
-Edit `src/jquery.form.js` (an ES module), never `dist/`. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
+Edit the ES modules in `src/`, never `dist/`. `src/jquery.form.js` is the entry point that registers the plugin's methods; the other modules hold the serialization, the transports and the helpers it uses. `npm test` rebuilds `dist/`; commit the rebuilt files with your change, since CI fails if they differ from the build.
 
 ### End-to-end tests
 
