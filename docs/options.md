@@ -3,16 +3,15 @@
 
 ## ajaxForm and ajaxSubmit Options
 
-Both `ajaxForm` and `ajaxSubmit` support numerous options which can be provided using plain JavaScript `options` object containing any of the options below:  
-**Note:** Aside from the options listed below, you can also pass any of the standard [$.ajax settings](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings) to ajaxForm and ajaxSubmit.
+`ajaxForm` and `ajaxSubmit` take an options object with any of the options below. You can also pass any of the [`$.ajax` settings](https://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings), such as `timeout` or `headers`; they are passed on to the request.
 
 ### beforeFormUnbind
 
 Default: `null`  
-Callback function invoked by `ajaxForm` just before it removes the form's handlers and binds them again, so it runs each time `ajaxForm` is called on the form. It provides a chance to manipulate the form before the events are bound again. It is invoked with two arguments: the jQuery object for the form, and the Options Object passed into `ajaxForm`. It is not called for a `delegation` binding.
+Callback function invoked by `ajaxForm` just before it removes the form's handlers and binds them again, so it runs each time `ajaxForm` is called on the form. It provides a chance to manipulate the form before the events are bound again. It is invoked with two arguments: the jQuery object for the form, and the options object passed to `ajaxForm`. It is not called for a `delegation` binding.
 
 ```javascript
-beforeFormUnbind: function($form, options) {
+beforeFormUnbind: function ($form, options) {
   // your callback code
 }
 ```
@@ -20,10 +19,10 @@ beforeFormUnbind: function($form, options) {
 ### beforeSerialize
 
 Default: `null`  
-Callback function to be invoked before the form is serialized. This provides an opportunity to manipulate the form before it's values are retrieved. The `beforeSerialize` function is invoked with two arguments: the jQuery object for the form, and the Options Object passed into ajaxForm/ajaxSubmit.
+Callback function to be invoked before the form is serialized. This provides an opportunity to manipulate the form before its values are read. Return `false` to cancel the submission. The `beforeSerialize` function is invoked with two arguments: the jQuery object for the form, and the options object passed to `ajaxForm` or `ajaxSubmit`.
 
 ```javascript
-beforeSerialize: function($form, options) {
+beforeSerialize: function ($form, options) {
   // return false to cancel submit
 }
 ```
@@ -31,10 +30,10 @@ beforeSerialize: function($form, options) {
 ### beforeSubmit
 
 Default: `null`  
-Callback function to be invoked before the form is submitted. The 'beforeSubmit' callback can be provided as a hook for running pre-submit logic or for validating the form data. If the 'beforeSubmit' callback returns false then the form will not be submitted. The 'beforeSubmit' callback is invoked with three arguments: the form data in array format, the jQuery object for the form, and the Options Object passed into ajaxForm/ajaxSubmit.
+Callback function to be invoked before the form is submitted, for running pre-submit logic or validating the form data. If it returns `false`, the form is not submitted. It is invoked with three arguments: the fields as an array of `{ name, value }` objects (the result of [`formToArray`](api.md#formtoarray)), the jQuery object for the form, and the options object passed to `ajaxForm` or `ajaxSubmit`.
 
 ```javascript
-beforeSubmit: function(arr, $form, options) {
+beforeSubmit: function (arr, $form, options) {
   // The array of form data takes the following form:
   // [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
 
@@ -44,8 +43,8 @@ beforeSubmit: function(arr, $form, options) {
 
 ### clearForm
 
-Default: `null`  
-Boolean flag indicating whether the form should be cleared if the submit is successful
+Default: `false`  
+Set to `true` to clear the form's fields after a successful submission, as [`clearForm()`](api.md#clearform) does. Hidden inputs are kept unless [`includeHidden`](#includehidden) says otherwise.
 
 ### data
 
@@ -59,13 +58,13 @@ data: { key1: 'value1', key2: 'value2' }
 ### dataType
 
 Default: `null`  
-Expected data type of the response. One of: null, 'xml', 'script', or 'json'. The `dataType` option provides a means for specifying how the server response should be handled. It is passed to `$.ajax` as its `dataType`; the iframe transport parses the response the same way. The following values are supported:
+The expected type of the response, which decides how it is parsed before `success` receives it. It is passed to `$.ajax` as its `dataType`, so any `$.ajax` type works, such as `"text"` or `"html"`; the iframe transport parses the response the same way. Without it, jQuery picks the type from the response's content type. The common values are:
 
-**'xml'**: if dataType == 'xml' the server response is treated as XML and the 'success' callback method, if specified, will be passed the responseXML value
+**`"xml"`**: the response is parsed as XML, and `success` receives the XML document.
 
-**'json'**: if dataType == 'json' the server response will be evaluted and passed to the 'success' callback, if specified
+**`"json"`**: the response is parsed as JSON, and `success` receives the resulting value.
 
-**'script'**: if dataType == 'script' the server response is evaluated in the global context
+**`"script"`**: the response is run as JavaScript in the global context. Use it only with endpoints you control (see [Trusted options](#trusted-options)).
 
 ### delegation
 
@@ -80,12 +79,13 @@ $(document).ajaxForm({ delegation: "form.ajax" });
 
 ### error
 
-Callback function to be invoked upon error. It is passed the following arguments:
+Default: `null`  
+Callback function to be invoked when the request fails. It is passed the following arguments:
 
 1. `jqXHR`, object (the error response body is in `responseText`)
 2. `textStatus`, string
 3. `errorThrown`, string
-4. `$form` jQuery object containing form element
+4. `$form`, the jQuery object for the form
 
 ### filtering
 
@@ -93,7 +93,7 @@ Default: `null`
 Callback function that filters the fields before they are serialized. It is called with each `button`, `input`, `select` and `textarea` to serialize, in tree order (for a form, the ones it owns, including controls outside it that name it in their `form` attribute), and its index, as `jQuery.map` calls its callback: return the element to keep it, or `null` or `undefined` to leave it out.
 
 ```javascript
-filtering: function(el, index) {
+filtering: function (el, index) {
   if (!$(el).hasClass("ignore")) {
     return el;
   }
@@ -105,7 +105,7 @@ The [`iframe`](#iframe) transport ignores `filtering`, because the browser posts
 ### forceSync
 
 Default: `false`  
-Boolean value. Set to true to remove short delay before posting the form with the [`iframe`](#iframe) option. The delay is used to allow the browser to render DOM updates prior to performing a native form submit. This improves usability when displaying notifications to the user, such as "Please Wait…" **(version added: 2.38)**
+Set to `true` to remove the short delay before the form is posted with the [`iframe`](#iframe) option. The delay lets the browser render DOM updates before the native submission, such as a "Please wait…" message. **(version added: 2.38)**
 
 ### iframe
 
@@ -131,13 +131,18 @@ The response is loaded as a document in the hidden iframe, with the same origin 
 ### iframeSrc
 
 Default: `about:blank`  
-String value that should be used for the iframe's src attribute when/if an iframe is used.
+The `src` of the hidden iframe that the [`iframe`](#iframe) option creates. It is a [trusted option](#trusted-options).
 
 ### iframeTarget
 
 Default: `null`  
-Identifies the iframe element to be used as the response target for file uploads. By default, the plugin will create a temporary iframe element to capture the response when uploading files. This options allows you to use an existing iframe if you wish. When using this option the plugin will make no attempt at handling the response from the server. **(version added: 2.76)**  
+An existing iframe to post [`iframe`](#iframe) uploads to, instead of the temporary iframe the plugin creates. With this option, the plugin does not read the server's response. **(version added: 2.76)**  
 The value may be a selector string, a jQuery object, or a DOM element. A string is matched in the form's document with `jQuery.find` and is never parsed as HTML.
+
+### includeHidden
+
+Default: `undefined`  
+Used with the [`clearForm`](#clearform) option: `true` also clears every hidden input, and a selector string clears the hidden inputs that match it. It is passed to [`clearForm()`](api.md#clearform) as its argument.
 
 ### method
 
@@ -148,7 +153,7 @@ The method is read after `beforeSubmit` and the `form-submit-validate` event, so
 ### replaceTarget
 
 Default: `false`  
-Optionally used along with the the [`target`](#target) option. Set to `true` if the target should be replaced or `false` if only the target _contents_ should be replaced. **(version added: 2.43)**
+Used with the [`target`](#target) option. Set to `true` to replace the target element itself with the response, or leave it `false` to replace only the target's _contents_. **(version added: 2.43)**
 
 ### requestFormat
 
@@ -157,18 +162,18 @@ Set to `"json"` to send the form as a JSON body instead of a urlencoded one ([#5
 
 ### resetForm
 
-Default: `null`  
-Boolean flag indicating whether the form should be reset if the submit is successful
+Default: `false`  
+Set to `true` to reset the form after a successful submission, as [`resetForm()`](api.md#resetform) does.
 
 ### success
 
 Default: `null`  
-Callback function to be invoked after the form has been submitted. If a 'success' callback function is provided it is invoked after the response has been returned from the server. It is passed the following standard jQuery arguments:
+Callback function to be invoked when the server's response has arrived and the request succeeded. It is passed these arguments:
 
-1. `data`, formatted according to the dataType parameter or the dataFilter callback function, if specified
+1. `data`, parsed according to the [`dataType`](#datatype) option, after any `dataFilter` callback
 2. `textStatus`, string
 3. `jqXHR`, object
-4. `$form` jQuery object containing form element
+4. `$form`, the jQuery object for the form
 
 ### target
 
@@ -195,7 +200,7 @@ An alias for `method` option. Overridden by the `method` value if both are prese
 ### uploadProgress
 
 Default: `null`  
-Callback function to be invoked with upload progress information (if supported by the browser). The callback is passed the following arguments:
+Callback function to be invoked as an upload proceeds. It is not called for [`iframe`](#iframe) uploads. It is passed these arguments:
 
 1. event; the browser event
 2. position (integer)
@@ -204,8 +209,8 @@ Callback function to be invoked with upload progress information (if supported b
 
 ### url
 
-Default: value of form's `action` attribute  
-URL to which the form data will be submitted.
+Default: the form's `action`  
+The URL to send the form to. It is a [trusted option](#trusted-options).
 
 ## Trusted options
 
@@ -214,9 +219,9 @@ These options are trusted input only: pass values your code controls, never valu
 - `url`, and the form's `action`
 - `iframeSrc`
 - `dataType: "script"`, which evaluates the response
-- the keys of `data` and `extraData` (values may come from users)
+- the keys of `data` (values may come from users)
 
-A string in `target`, `iframeTarget` or the `includeHidden` selector of `clearForm` and `clearFields` is only matched as a selector and never parsed as HTML.
+A string in `target`, `iframeTarget` or `includeHidden` (the option, or the argument of `clearForm` and `clearFields`) is only matched as a selector and never parsed as HTML.
 
 ## Differences from a native submission
 
@@ -229,15 +234,13 @@ The fields the plugin sends match a native submission of the form, in the same o
 ## Example
 
 ```javascript
-// prepare Options Object
-var options = {
+const options = {
   target: "#divToUpdate",
-  url: "comment.php",
-  success: function () {
+  url: "/comments",
+  success: () => {
     alert("Thanks for your comment!");
   },
 };
 
-// pass options to ajaxForm
 $("#myForm").ajaxForm(options);
 ```
