@@ -703,7 +703,10 @@ Field values and selector options (F1, F3):
 - `formToArray`, `formSerialize`, `fieldSerialize` and `ajaxSubmit` use the internal successful-controls module. `$.fieldValue` and `$.fn.fieldValue` stay public readers with the same results, but replacing `$.fieldValue` no longer changes what is sent. The extension point is jQuery `valHooks`. The guide has a `valHooks` example. 4.6.0 warns about the override under `debug` (F2).
 - Selector options never parse HTML. A string `target` goes through `jQuery.find(target)`, a string `iframeTarget` through `jQuery.find(iframeTarget, ownerDocument)`, and a string `includeHidden` through `jQuery.filter(includeHidden, [el]).length`. Elements and jQuery objects pass through. Positional pseudos in `includeHidden` test the element alone. This removes the HTML parsing of selector options that `security-review.md` finding 11 describes, including the `iframeTarget` lookup behind CodeQL alert 7, and the trusted-options note for finding 11 narrows to `url`, `action` and `iframeSrc`.
 
-Docs examples and FAQ (added 2026-11-10, after the 4.5.0 release):
+Docs examples and FAQ (added 2026-11-10, after the 4.5.0 release). Done 2026-11-26, before the beta:
+`docs/examples.md` is rewritten for the 5.0 API with no demo server (each example names the
+response it expects, and the PHP snippets escape their output), and `CONTRIBUTING.md` describes
+`release.yml`, the `src` modules and the WebKit install. Step 7 updated the README for the peer dependency; its jQuery 4 line now names 4.x users.
 
 - `docs/examples.md` posts to Mike Alsup's demo scripts on malsup.com (`dummy.php`,
   `json-echo.php` and others) and loads `submit.gif` from there. Replace them
@@ -745,8 +748,8 @@ Steps 0-8 are done. Step 8 (2026-11-26, on the rebased tip):
   and the removed `semantic` comparison. The other 986 tests pass on both builds: kept contracts.
 - Stryker over `src/*.js` on jQuery 3.7.1: 95.51% (1969 mutants, 88 survived), above the 94.34% floor. After the architecture review changes: 95.51% again (1967 mutants, 88 survived, none in the new code), and the floor is raised to 95.0%.
 - The 5.0 metrics column is re-measured.
-- The CodeQL canary (CodeQL 2.27.3, re-downloaded; the canary script was rebuilt because the Phase 12
-  copy was lost) scans `src` as the CodeQL workflow does, with `security-extended` and the repo's
+- The CodeQL canary (CodeQL 2.27.6, the version CI uses; the canary script was rebuilt because the
+  Phase 12 copy was lost) scans `src` as the CodeQL workflow does, with `security-extended` and the repo's
   query pack. The 5.0 source has no results from either. Each reopened sink is flagged: both W1
   sinks, W2, W3 (the 4.x form-id selector injected, since 5.0 has no such code), W4, and
   `selectorOption` parsing HTML (by `security-extended`'s unsafe jQuery plugin query, as alerts 7 and
