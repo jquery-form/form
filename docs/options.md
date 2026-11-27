@@ -100,6 +100,8 @@ filtering: function(el, index) {
 }
 ```
 
+The [`iframe`](#iframe) transport ignores `filtering`, because the browser posts the form itself.
+
 ### forceSync
 
 Default: `false`  
@@ -111,6 +113,8 @@ Default: `false`
 Set to `true` to post the form through a hidden iframe, as a native form submission targeting the frame, instead of `XMLHttpRequest`. The iframe transport is used only when this option is truthy. Without it, a form with a selected file or a `multipart/form-data` enctype is sent with `FormData`, and [`uploadProgress`](#uploadprogress) reports its progress.
 
 The iframe transport is kept in 5.0 and may be removed in 6.0. If you use `iframe: true`, comment on [issue #629](https://github.com/jquery-form/form/issues/629) with your use case.
+
+The browser posts the form's own controls, so the [`filtering`](#filtering) option and changes that [`beforeSubmit`](#beforesubmit) makes to its fields array do not change what an iframe upload sends. The [`data`](#data) option and the clicked button are added as hidden fields.
 
 The upload's jqXHR (`$form.data("jqxhr")`) resolves `.done` and `.then` with `(data, "success", xhr)`: the parsed data that `success` receives, as `$.ajax` does. Its rejections differ from `$.ajax`:
 

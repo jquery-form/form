@@ -2538,6 +2538,29 @@ describe("form", function () {
             assert.strictEqual(added, 0);
           });
 
+          it("should post the form's own controls, also those the filtering option leaves out", function () {
+            const $form = createIframeForm("ajax/iframe-text.html");
+            const filtered = [];
+            let posted;
+
+            startStubbedUpload(
+              $form,
+              {
+                filtering: function (el) {
+                  filtered.push(el.name);
+
+                  return null;
+                },
+              },
+              function (form) {
+                posted = $(form).find("[name=upload]:enabled").length;
+              },
+            );
+
+            assert.deepEqual(filtered, ["upload"]);
+            assert.strictEqual(posted, 1);
+          });
+
           it("should report a server abort when the form is not in the document", async function () {
             const $form = $(
               '<form method="post" action="ajax/iframe-text.html"><input name="upload" value="yes"></form>',
