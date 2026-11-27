@@ -612,7 +612,10 @@ Release Phase 13 as 4.6.0, the same way as 4.5.0. Fixes found here go in 4.6.0, 
 
 ## Phase 14: 5.0 (breaking)
 
-Status (local `phase-14` branch): steps 0-8 are done, and the version is `5.0.0-beta.1`. Nothing is pushed.
+Status: steps 0-8 are done. `5.0.0-beta.1` is on npm on `next` (2026-11-27, release run 45936197202,
+with provenance; `latest` stays 4.6.0), from the `v5.0.0-beta.1` tag on the tip of PR #646
+(`5349abd`). The PR stays open until 5.0.0, at least two weeks later; merge it with a merge commit
+so the beta tag's commit stays in `main`'s history.
 
 Rebased once onto `main` after the 4.6.0 merge (B3), on 2026-11-26; the old tip is
 `refs/backup/pre-4.6.0-rebase/phase-14`. 47 commits remain: the metrics dedupe commit came out empty,
@@ -796,7 +799,10 @@ Before the 5.0 release:
   `src` banner and `dist`).
 - When `release/4.x` is cut from `v4.6.0` (R2), cherry-pick the `release.yml` dist-tag commit onto
   it first. Its copy publishes with a plain `npm publish`, which would move `latest` back to 4.x.
-- Beta release, by the user unless noted: remove the `do-not-push` guard, push `phase-14` and
+- ~~Beta release~~ — `5.0.0-beta.1` published 2026-11-27; checked: dist-tags, the `>=3.5.0` peer
+  dependency, the SLSA provenance attestation, and the published `dist` byte-for-byte against the tag.
+  Left: post the #629 body and the release notes (drafts at the root of the `form` checkout).
+  Steps as done, by the user unless noted: remove the `do-not-push` guard, push `phase-14` and
   open the Phase 14 PR with the I6 text (Claude can do these on the user's word); post the
   revised #629 body and the beta notes; push the `v5.0.0-beta.1` tag on the PR tip and approve
   the `npm` environment. Then `npm dist-tag ls jquery-form` must show `latest: 4.6.0` and
