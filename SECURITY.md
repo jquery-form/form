@@ -2,12 +2,16 @@
 
 ## Supported versions
 
-| Version                   | Supported |
-| ------------------------- | --------- |
-| 4.x (latest release)      | Yes       |
-| 3.x and earlier           | No        |
+| Version                   | Supported   |
+| ------------------------- | ----------- |
+| 5.x (latest release)      | Yes         |
+| 4.x (latest release)      | Best effort |
+| 3.x and earlier           | No          |
 
-Fixes land on `main` and ship in the next 4.x release.
+Fixes land on `main` and ship in the next 5.x release. A fix for 4.x, when one is made, ships in
+a 4.x release from the `release/4.x` branch, on the `v4` npm dist-tag. There is no set period for
+4.x fixes, so plan to move to 5.x. Pre-releases, such as `5.0.0-beta.1`, are not supported once a
+later release replaces them.
 
 ## Reporting a vulnerability
 
