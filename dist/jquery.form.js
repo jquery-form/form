@@ -1,6 +1,6 @@
 /*!
  * jQuery Form Plugin
- * version: 4.6.0
+ * version: 5.0.0-beta.1
  * Requires jQuery v3.5 or later
  * Project repository: https://github.com/jquery-form/form
 

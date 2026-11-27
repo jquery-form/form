@@ -1,6 +1,6 @@
 {
   "name": "jquery-form",
-  "version": "4.6.0",
+  "version": "5.0.0-beta.1",
   "description": "The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.",
   "keywords": [
     "jquery",
