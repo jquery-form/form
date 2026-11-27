@@ -780,6 +780,17 @@ Before the 5.0 release:
 
   Deferred to 5.x (listed under 5.x below, with reasons).
 
+- ~~A polish pass over the public docs~~ — done 2026-11-26 (user's request). README: a "New in
+  5.0" section, current copy and code style, 4.x pointers in one Compatibility bullet. Site: the
+  migration guide is in the menu; the API page documents `formToArray`, `enable`, `selected`,
+  `$.fieldValue` and debug output; Form Fields replaces the dead demo with a results table
+  (computed with the built plugin); the FAQ and Getting Started are rewritten; `options.md` gains
+  `includeHidden`, describes `dataType` as parsing, not evaluating, and drops the internal
+  `extraData` from Trusted options. `SECURITY.md`: 5.x supported, 4.x "best effort" with no set
+  period (user's decision, no concrete guarantee), and the guide says the same.
+- At the 5.0.0 release (not the beta): point the README and `docs/index.md` CDN snippets at
+  5.0.0, with SRI hashes checked against the published `dist/jquery.form.min.js`.
+
 Test rules:
 
 - The oracle drops each allowlist class that an N item changes. CRLF, USV, SUBMIT-LABEL and the N11 quirks stay. E2E runs on jQuery 3.5.0, 3.7.1 and 4.0.0, with IFRAME-SUBMITTER and EMPTY-FILE removed. The published-file tests gain `exports` cases, Node `import` resolving to the `.mjs`, and a failing deep `src` import, and the 1.7.2 cases go. One local Stryker run at step 8 must not score below 94.34%. From the architecture review on, a local Stryker run over `src/*.js` on the Chromium suite with jQuery 3.7.1 must not score below 95.0% before a release, and a run over the changed `src` lines (`MUTATE_RANGES`, as in `docs/research/mutation-testing-4.6.0.md`) leaves no survivor that is not killed by a new test or listed as equivalent. The ignored probe copies are kept (W2).
