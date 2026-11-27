@@ -743,7 +743,7 @@ Steps 0-8 are done. Step 8 (2026-11-26, on the rebased tip):
   three jQuery versions, and every failure maps to a guide entry. The 70 oracle failures come from
   the six allowlist classes 5.0 drops (CHARSET, DIRNAME, IMG-VALUE, IMG-UNNAMED, IMG-ORDER, SEM-ORDER)
   and the removed `semantic` comparison. The other 986 tests pass on both builds: kept contracts.
-- Stryker over `src/*.js` on jQuery 3.7.1: 95.51% (1969 mutants, 88 survived), above the 94.34% floor.
+- Stryker over `src/*.js` on jQuery 3.7.1: 95.51% (1969 mutants, 88 survived), above the 94.34% floor. After the architecture review changes: 95.51% again (1967 mutants, 88 survived, none in the new code), and the floor is raised to 95.0%.
 - The 5.0 metrics column is re-measured.
 - The CodeQL canary (CodeQL 2.27.3, re-downloaded; the canary script was rebuilt because the Phase 12
   copy was lost) scans `src` as the CodeQL workflow does, with `security-extended` and the repo's
@@ -758,12 +758,28 @@ Before the 5.0 release:
   `countParsedHTML(run, marker)` in `test/suite/helpers.js` hooks `jQuery.parseHTML` and
   `jQuery.htmlPrefilter` (a parse inside `parseHTML` counts once), counts only strings containing
   `marker` when one is given, and returns `{ count, error }`. Tests that expect no error assert it.
-- An architecture review with the improve-codebase-architecture skill (decided 2026-11-26), after
-  step 8 and before the beta. Act on what it finds before the release, or list it for 5.x.
+- ~~An architecture review with the improve-codebase-architecture skill~~ — done 2026-11-26. It
+  ranked seven candidates. Because `src` is no longer published (K3), the module layout is internal:
+  a restructure can land in any 5.x minor without a guide entry, so only a change to what is sent
+  had to be settled before the beta. Done before the beta:
+  - The submitter's `dirname` field comes from the same rule on both wires. `submitterFields`
+    moved from `submitter.js` to `successful-controls.js`, and it and `addCandidate` share
+    `withDirname`. Before this, an `iframe: true` upload dropped a clicked submit input's
+    direction, which the XHR transport sent (an N7 gap). A test fails on 4.6.0, and the guide's
+    `dirname` entry names the iframe case.
+  - `filtering` on an iframe upload: pinned by a kept-contract test (the browser posts the form's
+    own controls, as in 4.x) and documented in `docs/options.md` under `filtering` and `iframe`,
+    with the `beforeSubmit` fields-array case that was already pinned.
+  - The field helpers (`fieldSerialize`, `fieldValue`, `clearForm`, `clearFields`, `resetForm`,
+    `enable`, `selected`) moved from `jquery.form.js` to `src/field-helpers.js`. The entry still
+    registers them on `$.fn` in the same order, and they still call each other through `$.fn`.
+    The `dist` wrappers and exports are unchanged; only the code order inside changed.
+
+  Deferred to 5.x (listed under 5.x below, with reasons).
 
 Test rules:
 
-- The oracle drops each allowlist class that an N item changes. CRLF, USV, SUBMIT-LABEL and the N11 quirks stay. E2E runs on jQuery 3.5.0, 3.7.1 and 4.0.0, with IFRAME-SUBMITTER and EMPTY-FILE removed. The published-file tests gain `exports` cases, Node `import` resolving to the `.mjs`, and a failing deep `src` import, and the 1.7.2 cases go. One local Stryker run at step 8 must not score below 94.34%. The ignored probe copies are kept (W2).
+- The oracle drops each allowlist class that an N item changes. CRLF, USV, SUBMIT-LABEL and the N11 quirks stay. E2E runs on jQuery 3.5.0, 3.7.1 and 4.0.0, with IFRAME-SUBMITTER and EMPTY-FILE removed. The published-file tests gain `exports` cases, Node `import` resolving to the `.mjs`, and a failing deep `src` import, and the 1.7.2 cases go. One local Stryker run at step 8 must not score below 94.34%. From the architecture review on, a local Stryker run over `src/*.js` on the Chromium suite with jQuery 3.7.1 must not score below 95.0% before a release, and a run over the changed `src` lines (`MUTATE_RANGES`, as in `docs/research/mutation-testing-4.6.0.md`) leaves no survivor that is not killed by a new test or listed as equivalent. The ignored probe copies are kept (W2).
 - This replaces the Phase 13 rule that every new test passes on both builds. Every behavior change has at least one test that fails on the 4.6.0 build (the `phase-13` tip, in a detached worktree removed afterwards) and a guide entry. At step 8 the whole 5.0 suite runs against that build. Every failure maps to a guide entry. A test that passes on both is a kept contract. Removed or edited tests are named in commit bodies (W3, R4).
 
 Per-commit checks (W4):
@@ -780,6 +796,35 @@ Out of 5.0 (W5): `SubmitEvent.submitter`, `new FormData(form, submitter)`, type 
 - Use `new FormData(form, submitter)`. It also gives the browser's default submit label for a clicked `<input type=submit>` without a `value` (N6).
 - Ship type declarations generated from JSDoc, and keep the source in plain JS.
 - Add a promise-friendly API alongside chaining.
+
+Architecture, from the 2026-11-26 review (none of these changes what is sent, so none blocks 5.0):
+
+- Capture the submitter once in `prepare` and carry it in the Submission, so serialization and
+  both transports take it as an argument instead of reading the 100 ms store. Do it with
+  `SubmitEvent.submitter`, which needs the same seam. The iframe path still reads the submitter's
+  value as `el.value`, while XHR reads it through `valueOf` (`valHooks`); settle that here.
+- A request-encoding module: the fields, `data` and the submitter go in, and one wire comes out
+  (urlencoded body or URL query, JSON, FormData, the iframe's hidden inputs). Today four modules
+  each build a wire (`submission.js` `extraQuery`/`queryPairs`/`jsonBody`/`encode`,
+  `successful-controls.js` `urlencode`, `xhr-transport.js` `deepSerialize`/`sendFormData`,
+  `iframe-post.js`), `wellFormed` is called at five sites, and `defineKey` duplicates `setKey`.
+  The oracle could then check every wire. Deferred because `new FormData(form, submitter)`
+  reshapes this module; doing it first would mean doing it twice.
+- A transport seam with two adapters, XHR and iframe: settings merged once (written three times
+  now), a payload from the encoding module, and `chooseTransport` reading the collected fields
+  instead of querying the DOM again. `sendAjax` goes. Depends on the encoding module. Risk: the
+  `options` object `form-submit-notify` receives shows the transports' writes (the FormData path
+  sets `options.data = null`), so a change there is observable and needs a guide entry. The
+  promise API would sit at this seam.
+- Remove the one-adapter seams: `createSubmission(forms, serialization)`,
+  `createIframeTransport(forms)` and `createSuccessfulControls()` each have one adapter, and no test
+  substitutes them. Fold `formAttribute` and `formProperty` into `form-members.js` (X1 keeps the
+  property reader) and import directly. Low risk, low value; a companion to the field-helpers move.
+- Only if 6.0 keeps the iframe transport (I1): deepen `iframe-post.js` (seven exports, one caller
+  that runs the save, set, add, submit and restore sequence) into one post operation.
+- Not planned: separating the derived request from the caller's `options` object. `prepare`,
+  `deliver` and the transports write to it, and `beforeSubmit`, the events and
+  `submission.test.js` observe those writes. It would break callers for little gain.
 
 ## Metrics (throughout)
 
